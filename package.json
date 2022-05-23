@@ -1,7 +1,7 @@
 {
   "name": "node-matter",
   "version": "0.0.0",
-  "description": "Matter protocol in node",
+  "description": "Matter protocol in node.js",
   "author": "Marco Fucci di Napoli <mfucci@gmail.com> (https://www.linkedin.com/in/marco-fucci-di-napoli/)",
   "scripts": {
     "clean": "rm -rf build",
@@ -21,8 +21,5 @@
   "dependencies": {
     "bn.js": "^5.2.0",
     "elliptic": "^6.5.4"
-  },
-  "bin": {
-    "keeplocal": "./build/HelloWorld.js"
   }
 }

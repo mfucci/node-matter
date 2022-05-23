@@ -1,0 +1,85 @@
+Little endian
+
+--- header ---
+
+04 <- message flags VERSION: 4 bit | S: 1 bit | RESERVED: 1 bit | DSIZ: 2 bit
+00 00 <- session ID
+00 <- Secure flags P: 1 bit | C: 1 bit | MX: 1 bit | RESERVED: 3 bit | Session Type: 2 bit
+0a 4f f2 17 <- message counter
+
+7e a0 c8 a7 cb 6a 63 52 <- source node ID (since S is set)
+
+--- unencrypted message ---
+
+05 <- exchange flags
+20 <- message type = PBKDFParamRequest
+d3 64 <- exchange ID
+00 00 <- protocol ID
+
+15 (anonymous Start struct)
+    30 (context specific Byte array length 1)   01 (Tag = 1) 20 (length = 32)               47 15 a4 06 c6 b0 49 6a d5 20 39 e3 47 db 85 28 cb 69 a1 cb 2f ce 6f 23 18 55 2a e6 5e 10 3a ca
+    25 (context specific UInt16) 02 (Tag = 2) 33 dc
+    24 (context specific UInt8) 03 (Tag = 3) 00
+    28 (context specific False) 04 (Tag = 4)
+    35 (context specific Start struct) 05 (Tag = 5)
+        25 (context specific UInt16) 01 (Tag = 1) 88 13
+        25 (context specific UInt16) 02 (Tag = 2) 2c 01
+    18 (anonymous End of container)
+18 (anonymous End of container)
+
+
+==== Message 2 ====
+
+--- packet header ---
+
+01  <- message flags VERSION: 4 bit | S: 1 bit | RESERVED: 1 bit | DSIZ: 2 bit
+00 00 <- session ID
+00  <- Secure flags P: 1 bit | C: 1 bit | MX: 1 bit | RESERVED: 3 bit | Session Type: 2 bit
+21 87 12 79 <- message counter
+7e a0 c8 a7 cb 6a 63 52 <- destination node ID (since DSIZ = 1)
+
+--- payload header ---
+
+06 <- exchange flags Ack
+21 <- message type = PBKDFParamResponse
+d3 64 <- exchange ID
+00 00 <- protocol ID
+0a 4f f2 17 <- acked Message ID
+
+--- payload ---
+
+15 (anonymous Start struct)
+    30 (context specific Byte array length 1) 01 (Tag = 1) 20 (length = 32) 47 15 a4 06 c6 b0 49 6a d5 20 39 e3 47 db 85 28 cb 69 a1 cb 2f ce 6f 23 18 55 2a e6 5e 10 3a ca
+    30 (context specific Byte array length 1) 02 (Tag = 2) 20 (length = 32) 17 83 30 2d 95 a4 a9 fb 0d ec b8 fd d6 56 4b 90 a9 57 68 14 59 ae ee 06 99 61 be a6 1d 7b 24 71
+    25 (context specific UInt16) 03 (Tag = 3) 9d 89
+    35 (context specific Start struct) 04 (Tag = 4)
+        25 (context specific UInt16) 01 (Tag = 1) e8 03
+        30 (context specific Byte array length 1) 02 (Tag = 2) 20 (length = 32) 99 f8 13 dd 41 bd 08 1a 1c 63 e8 11 82 8f 06 62 59 4b ca 89 cd 9d 4e d2 6f 74 27 fd b2 a0 27 36
+    18 (anonymous End of container)
+    35 (context specific Start struct) 05 (Tag = 5)
+        25 (context specific UInt16) 01 (Tag = 1) 88 13
+        25 (context specific UInt16) 02 (Tag = 2) 2c 01
+    18 (anonymous End of container)
+18 (anonymous End of container)
+
+
+
+=== Encrypted Message ===
+
+00 <- message flags VERSION: 4 bit | S: 1 bit | RESERVED: 1 bit | DSIZ: 2 bit
+1d 35 <- Session Id
+00 <- Secure flags P: 1 bit | C: 1 bit | MX: 1 bit | RESERVED: 3 bit | Session Type: 2 bit
+22 14 53 00
+
+00 22 14 53 00 00 00 00 00 00 00 00 00 
+
+00 1d 35 00 22 14 53 00
+
+ec 2b 93 10 25 da da 82 ed 67 52 1c 96 6d 24 54 d1 31 a2 71 02 3b e6 99
+e4 e2 79 66 50 f5 68 e5 90 fd 9b 65 f4 56 c7 20
+a6 0a 0d a1 27 ea a5 39 74 c5 d4 1d 3d 93 3e d7
+b5 8a 9c e5 b5 cb 96 ad 94 a7 76 26 11 c4 87 74
+cf 75 45 83 27 e7 4c 34 66 8a 45 dc 99 43 54 6f
+8a 6a a1 dc d4 0b d4 b8 01 4b ef b4 99 54 a0 97
+a6 0c bd ff 33 3e e3 f2 fd 1f 49 
+

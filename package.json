@@ -1,0 +1,28 @@
+{
+  "name": "node-matter",
+  "version": "0.0.0",
+  "description": "Matter protocol in node",
+  "author": "Marco Fucci di Napoli <mfucci@gmail.com> (https://www.linkedin.com/in/marco-fucci-di-napoli/)",
+  "scripts": {
+    "clean": "rm -rf build",
+    "build": "tsc",
+    "test": "mocha"
+  },
+  "devDependencies": {
+    "@types/bytebuffer": "^5.0.43",
+    "@types/mocha": "^9.1.1",
+    "@types/bn.js": "^5.1.0",
+    "@types/elliptic": "^6.4.14",
+    "bytebuffer": "^5.0.1",
+    "mocha": "^10.0.0",
+    "ts-node": "^10.5.0",
+    "typescript": "^4.5.5"
+  },
+  "dependencies": {
+    "bn.js": "^5.2.0",
+    "elliptic": "^6.5.4"
+  },
+  "bin": {
+    "keeplocal": "./build/HelloWorld.js"
+  }
+}

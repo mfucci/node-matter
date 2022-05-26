@@ -1,5 +1,5 @@
 import assert from "assert";
-import { Message, MessageCodec, Packet, SessionType } from "../../src/codec/Message";
+import { Message, MessageCodec, SessionType } from "../../src/codec/MessageCodec";
 import { SecureSession } from "../../src/session/SecureSession";
 
 const DECRYPT_KEY = Buffer.from("bacb178b2588443d5d5b1e4559e7accc", "hex");

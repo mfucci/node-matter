@@ -1,9 +1,9 @@
 import { Crypto } from "../crypto/Crypto";
 import { getSessionManager } from "../session/SessionManager";
-import { PakeMessenger } from "./PakeMessenger";
+import { PakeMessenger } from "./PaseMessenger";
 import { ExchangeHandler, MessageExchange } from "../transport/Dispatcher";
 import { Spake2p } from "../crypto/Spake2p";
-import { PbkdfParameters } from "./PakeMessages";
+import { PbkdfParameters } from "./PaseMessages";
 
 const DEFAULT_PASSCODE_ID = 0;
 const SPAKE_CONTEXT = "CHIP PAKE V1 Commissioning";

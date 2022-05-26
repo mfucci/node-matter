@@ -1,7 +1,7 @@
 import BN from "bn.js";
 import { ec } from "elliptic";
 import { Crypto } from "./Crypto";
-import { PbkdfParameters } from "../commission/PakeMessages";
+import { PbkdfParameters } from "../commission/PaseMessages";
 
 const P256_CURVE = new ec("p256").curve;
 

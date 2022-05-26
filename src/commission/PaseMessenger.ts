@@ -1,8 +1,8 @@
-import { Tlv } from "../codec/Tlv";
+import { TlvObjectCodec } from "../codec/TlvObjectCodec";
 import { MessageExchange } from "../transport/Dispatcher";
 import { LEBufferReader } from "../util/LEBufferReader";
 import { LEBufferWriter } from "../util/LEBufferWriter";
-import { PasePake1Message, PasePake2, PasePake2Message, PasePake3Message, PbkdfParamRequestMessage, PbkdfParamResponse, PbkdfParamResponseMessage, StatusResponseMessage } from "./PakeMessages";
+import { PasePake1Template, PasePake2, PasePake2Template, PasePake3Template, PbkdfParamRequestTemplate, PbkdfParamResponse, PbkdfParamResponseTemplate } from "./PaseMessages";
 
 const enum SpakeMessageType {
     PbkdfParamRequest = 0x20,
@@ -26,8 +26,6 @@ const enum GeneralStatusCode {
 }
 
 export class PakeMessenger {
-    private readonly tlv = new Tlv();
-
     constructor(
         private readonly exchange: MessageExchange,
     ) {}
@@ -35,11 +33,11 @@ export class PakeMessenger {
     async readPbkdfParamRequest() {
         const { payloadHeader: { messageType }, payload } = await this.exchange.nextMessage();
         if (messageType !== SpakeMessageType.PbkdfParamRequest) throw new Error(`Received unexpected message type: ${messageType}`);
-        return { requestPayload: payload, request: this.tlv.decode(payload, PbkdfParamRequestMessage) } ;
+        return { requestPayload: payload, request: TlvObjectCodec.decode(payload, PbkdfParamRequestTemplate) } ;
     }
 
     async sendPbkdfParamResponse(response: PbkdfParamResponse) {
-        const payload = this.tlv.encode(response, PbkdfParamResponseMessage);
+        const payload = TlvObjectCodec.encode(response, PbkdfParamResponseTemplate);
         await this.exchange.send(SpakeMessageType.PbkdfParamResponse, payload);
         return payload;
     }
@@ -48,18 +46,18 @@ export class PakeMessenger {
         const { payloadHeader: { messageType }, payload } = await this.exchange.nextMessage();
         this.throwIfError(messageType, payload);
         if (messageType !== SpakeMessageType.PasePake1) throw new Error(`Received unexpected message type: ${messageType}`);
-        return this.tlv.decode(payload, PasePake1Message);
+        return TlvObjectCodec.decode(payload, PasePake1Template);
     }
 
     async sendPasePake2(pasePake2: PasePake2) {
-        await this.exchange.send(SpakeMessageType.PasePake2, this.tlv.encode(pasePake2, PasePake2Message));
+        await this.exchange.send(SpakeMessageType.PasePake2, TlvObjectCodec.encode(pasePake2, PasePake2Template));
     }
 
     async readPasePake3() {
         const { payloadHeader: { messageType }, payload } = await this.exchange.nextMessage();
         this.throwIfError(messageType, payload);
         if (messageType !== SpakeMessageType.PasePake3) throw new Error(`Received unexpected message type: ${messageType}`);
-        return this.tlv.decode(payload, PasePake3Message);
+        return TlvObjectCodec.decode(payload, PasePake3Template);
     }
 
     sendError() {

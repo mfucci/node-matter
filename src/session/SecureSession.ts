@@ -1,4 +1,4 @@
-import { Message, MessageCodec, Packet } from "../codec/Message";
+import { Message, MessageCodec, Packet } from "../codec/MessageCodec";
 import { Crypto } from "../crypto/Crypto";
 import { UNDEFINED_NODE_ID } from "../transport/Dispatcher";
 import { LEBufferWriter } from "../util/LEBufferWriter";

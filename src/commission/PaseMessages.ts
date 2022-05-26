@@ -1,17 +1,17 @@
-import { ElementType, Field, OptionalField, Structure, ObjectMap } from "../codec/Tlv";
-import { Tag } from "../models/Tag";
+import { Field, ObjectTemplate, OptionalField } from "../codec/TlvObjectCodec";
+import { PrimitiveType } from "../codec/TlvCodec";
 
-const { ByteString, UnsignedInt, Boolean } = ElementType;
+const { ByteString, UnsignedInt, Boolean } = PrimitiveType;
 
 export interface MrpParameters {
     idleRetransTimeout?: number,
     activeRetransTimeout?: number,
 }
 
-const MrpParametersMap: ObjectMap<MrpParameters> = {
+const MrpParametersTemplate = ObjectTemplate<MrpParameters>({
     idleRetransTimeout: OptionalField(1, UnsignedInt),
     activeRetransTimeout: OptionalField(2, UnsignedInt),
-};
+});
 
 export interface PbkdfParamRequest {
     initiatorRandom: Buffer,
@@ -21,12 +21,12 @@ export interface PbkdfParamRequest {
     mrpParameters?: MrpParameters,
 }
 
-export const PbkdfParamRequestMessage = Structure<PbkdfParamRequest>(Tag.Anonymous, {
+export const PbkdfParamRequestTemplate = ObjectTemplate<PbkdfParamRequest>({
     initiatorRandom: Field(1, ByteString),
     initiatorSessionId: Field(2, UnsignedInt),
     passcodeId: Field(3, UnsignedInt),
     hasPbkdfParameters: Field(4, Boolean),
-    mrpParameters: OptionalField(5, MrpParametersMap),
+    mrpParameters: OptionalField(5, MrpParametersTemplate),
 });
 
 export interface PbkdfParameters {
@@ -42,22 +42,22 @@ export interface PbkdfParamResponse {
     mrpParameters?: MrpParameters,
 }
 
-export const PbkdfParamResponseMessage = Structure<PbkdfParamResponse>(Tag.Anonymous, {
+export const PbkdfParamResponseTemplate = ObjectTemplate<PbkdfParamResponse>({
     initiatorRandom: Field(1, ByteString),
     responderRandom: Field(2, ByteString),
     responderSessionId: Field(3, UnsignedInt),
-    pbkdfParameters: OptionalField(4, {
+    pbkdfParameters: OptionalField(4, ObjectTemplate<PbkdfParameters>({
         iteration: Field(1, UnsignedInt),
         salt: Field(2, ByteString),
-    }),
-    mrpParameters: OptionalField(5, MrpParametersMap),
+    })),
+    mrpParameters: OptionalField(5, MrpParametersTemplate),
 });
 
 export interface PasePake1 {
     x: Buffer,
 }
 
-export const PasePake1Message = Structure<PasePake1>(Tag.Anonymous, {
+export const PasePake1Template = ObjectTemplate<PasePake1>({
     x: Field(1, ByteString),
 });
 
@@ -66,7 +66,7 @@ export interface PasePake2 {
     verifier: Buffer,
 }
 
-export const PasePake2Message = Structure<PasePake2>(Tag.Anonymous, {
+export const PasePake2Template = ObjectTemplate<PasePake2>({
     y: Field(1, ByteString),
     verifier: Field(2, ByteString),
 });
@@ -75,8 +75,6 @@ export interface PasePake3 {
     verifier: Buffer,
 }
 
-export const PasePake3Message = Structure<PasePake3>(Tag.Anonymous, {
+export const PasePake3Template = ObjectTemplate<PasePake3>({
     verifier: Field(1, ByteString),
 });
-
-export const StatusResponseMessage = Field(0, UnsignedInt);

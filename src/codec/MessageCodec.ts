@@ -1,4 +1,3 @@
-import { UNICAST_UNSECURE_SESSION_ID } from "../session/SessionManager";
 import { LEBufferReader } from "../util/LEBufferReader";
 import { LEBufferWriter } from "../util/LEBufferWriter";
 

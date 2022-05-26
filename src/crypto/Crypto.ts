@@ -1,12 +1,13 @@
 import BN from "bn.js";
 import crypto from "crypto";
 
-const ALGORITHM = "aes-128-ccm";
+const ENCRYPT_ALGORITHM = "aes-128-ccm";
+const HASH_ALGORITHM = "sha256";
 const AUTH_TAG_LENGTH = 16;
 
 export class Crypto {
     static encrypt(key: Buffer, data: Buffer, nonce: Buffer, aad: Buffer) {
-        const cipher = crypto.createCipheriv(ALGORITHM, key, nonce, { authTagLength: AUTH_TAG_LENGTH });
+        const cipher = crypto.createCipheriv(ENCRYPT_ALGORITHM, key, nonce, { authTagLength: AUTH_TAG_LENGTH });
         cipher.setAAD(aad, { plaintextLength: data.length });
         const result = cipher.update(data);
         cipher.final();
@@ -14,7 +15,7 @@ export class Crypto {
     }
 
     static decrypt(key: Buffer, data: Buffer, tag: Buffer, nonce: Buffer, aad: Buffer) {
-        const cipher = crypto.createDecipheriv(ALGORITHM, key, nonce, { authTagLength: AUTH_TAG_LENGTH });
+        const cipher = crypto.createDecipheriv(ENCRYPT_ALGORITHM, key, nonce, { authTagLength: AUTH_TAG_LENGTH });
         cipher.setAAD(aad, { plaintextLength: data.length });
         cipher.setAuthTag(tag);
         const result = cipher.update(data);
@@ -42,7 +43,7 @@ export class Crypto {
     }
 
     static hash(data: Buffer | Buffer[]) {
-        const hasher = crypto.createHash("sha256");
+        const hasher = crypto.createHash(HASH_ALGORITHM);
         if (Array.isArray(data)) {
             data.forEach(chunk => hasher.update(chunk));
         } else {
@@ -53,7 +54,7 @@ export class Crypto {
 
     static pbkdf2(secret: Buffer, salt: Buffer, iteration: number, keyLength: number) {
         return new Promise<Buffer>((resolver, rejecter) => {
-            crypto.pbkdf2(secret, salt, iteration, keyLength, "sha256", (error, key) => {
+            crypto.pbkdf2(secret, salt, iteration, keyLength, HASH_ALGORITHM, (error, key) => {
                 if (error !== null) rejecter(error);
                 resolver(key);
             });
@@ -62,7 +63,7 @@ export class Crypto {
 
     static hkdf(secret: Buffer, salt: Buffer, info: Buffer, keyLength: number) {
         return new Promise<Buffer>((resolver, rejecter) => {
-            crypto.hkdf("sha256", secret, salt, info, keyLength, (error, key) => {
+            crypto.hkdf(HASH_ALGORITHM, secret, salt, info, keyLength, (error, key) => {
                 if (error !== null) rejecter(error);
                 resolver(Buffer.from(key));
             });
@@ -70,8 +71,13 @@ export class Crypto {
     }
 
     static hmac(key: Buffer, data: Buffer) {
-        const hmac = crypto.createHmac("sha256", key);
+        const hmac = crypto.createHmac(HASH_ALGORITHM, key);
         hmac.update(data);
         return hmac.digest();
+    }
+
+    static sign(privateKey: Buffer, data: Buffer) {
+        const sign = crypto.createSign(HASH_ALGORITHM);
+        return sign.sign({ key: privateKey,  dsaEncoding: "ieee-p1363" });
     }
 }

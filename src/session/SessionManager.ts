@@ -1,4 +1,4 @@
-import { Message, Packet } from "../codec/Message";
+import { Message, Packet } from "../codec/MessageCodec";
 import { Crypto } from "../crypto/Crypto";
 import { Singleton } from "../util/Singleton";
 import { SecureSession } from "./SecureSession";

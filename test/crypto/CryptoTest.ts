@@ -1,21 +1,20 @@
 import assert from "assert";
-import ByteBuffer from "bytebuffer";
 import { Crypto } from "../../src/crypto/Crypto";
 
-const KEY = ByteBuffer.fromHex("ab f2 27 fe ff ea 8c 38 e6 88 dd cb ff c4 59 f1".replace(/ /g, "")).toBuffer();
-const ENCRYPTED_DATA = ByteBuffer.fromHex("c4 52 7b d6 96 55 18 e8 38 2e".replace(/ /g, "")).toBuffer();
-const PLAIN_DATA = ByteBuffer.fromHex("03 10 4f 3c 00 00 e9 8c eb 00".replace(/ /g, "")).toBuffer();
-const NONCE = ByteBuffer.fromHex("00 0c e3 99 00 00 00 00 00 00 00 00 00".replace(/ /g, "")).toBuffer();
-const ADDITIONAL_AUTH_DATA = ByteBuffer.fromHex("00 45 6a 00 0c e3 99 00".replace(/ /g, "")).toBuffer();
-const TAG = ByteBuffer.fromHex("db bd 28 f2 7f 42 49 2d 07 66 12 4f 99 61 a7 72".replace(/ /g, "")).toBuffer();
+const KEY = Buffer.from("abf227feffea8c38e688ddcbffc459f1", "hex");
+const ENCRYPTED_DATA = Buffer.from("c4527bd6965518e8382e", "hex");
+const PLAIN_DATA = Buffer.from("03104f3c0000e98ceb00", "hex");
+const NONCE = Buffer.from("000ce399000000000000000000", "hex");
+const ADDITIONAL_AUTH_DATA = Buffer.from("00456a000ce39900", "hex");
+const TAG = Buffer.from("dbbd28f27f42492d0766124f9961a772", "hex");
 
 
-const KEY_2 = ByteBuffer.fromHex("4e 4c 13 53 a1 33 39 7f 7a 75 57 c1 fb d9 ca 38".replace(/ /g, "")).toBuffer();
-const ENCRYPTED_DATA_2 = ByteBuffer.fromHex("cb 50 87 1c cd 35 d4 30 b9 d9 f9 f2 a5 0c 07 f6 b0 e6 8a c7 8f 67 1d e6 70 bc 66 22 c3 53 8b 10 18 4a c5 8e 70 47 53 01 ed ae 3d".replace(/ /g, "")).toBuffer();
-const PLAIN_DATA_2 = ByteBuffer.fromHex("06 09 52 3c 01 00 0f e3 99 00 15 28 00 36 01 15 35 01 37 00 24 00 00 24 01 3e 24 02 0b 18 35 01 24 00 00 18 18 18 18 24 ff 01 18".replace(/ /g, "")).toBuffer();
-const NONCE_2 = ByteBuffer.fromHex("00 ec 8c eb 00 00 00 00 00 00 00 00 00".replace(/ /g, "")).toBuffer();
-const ADDITIONAL_AUTH_DATA_2 = ByteBuffer.fromHex("00 c7 a2 00 ec 8c eb 00".replace(/ /g, "")).toBuffer();
-const TAG_2 = ByteBuffer.fromHex("45 dd 16 9b fa d3 a4 36 7c b8 eb 82 16 76 b1 62".replace(/ /g, "")).toBuffer();
+const KEY_2 = Buffer.from("4e4c1353a133397f7a7557c1fbd9ca38", "hex");
+const ENCRYPTED_DATA_2 = Buffer.from("cb50871ccd35d430b9d9f9f2a50c07f6b0e68ac78f671de670bc6622c3538b10184ac58e70475301edae3d", "hex");
+const PLAIN_DATA_2 = Buffer.from("0609523c01000fe399001528003601153501370024000024013e24020b1835012400001818181824ff0118", "hex");
+const NONCE_2 = Buffer.from("00ec8ceb000000000000000000", "hex");
+const ADDITIONAL_AUTH_DATA_2 = Buffer.from("00c7a200ec8ceb00", "hex");
+const TAG_2 = Buffer.from("45dd169bfad3a4367cb8eb821676b162", "hex");
 
 describe("Crypto", () => {
 

@@ -9,11 +9,10 @@
     "test": "mocha"
   },
   "devDependencies": {
-    "@types/bytebuffer": "^5.0.43",
-    "@types/mocha": "^9.1.1",
     "@types/bn.js": "^5.1.0",
+    "@types/bytebuffer": "^5.0.43",
     "@types/elliptic": "^6.4.14",
-    "bytebuffer": "^5.0.1",
+    "@types/mocha": "^9.1.1",
     "mocha": "^10.0.0",
     "ts-node": "^10.5.0",
     "typescript": "^4.5.5"

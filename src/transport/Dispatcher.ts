@@ -1,9 +1,13 @@
 import { Crypto } from "../crypto/Crypto";
-import { Message, MessageCodec, SessionType } from "../codec/Message";
-import { PakeCommissioner } from "../commission/PakeCommissioner";
+import { Message, MessageCodec, SessionType } from "../codec/MessageCodec";
+import { PakeCommissioner } from "../commission/PaseCommissioner";
 import { Channel } from "./Channel";
 import { Queue } from "../util/Queue";
 import { getSessionManager, Session } from "../session/SessionManager";
+import { InteractionManager } from "../interaction/InteractionManager";
+import { Device } from "../model/Device";
+import { Endpoint } from "../model/Endpoint";
+import { BasicCluster } from "../cluster/BasicCluster";
 
 export const UNDEFINED_NODE_ID = BigInt(0);
 
@@ -22,6 +26,21 @@ export class Dispatcher {
         20202021,
         { iteration: 1000, salt: Crypto.getRandomData(32) },
     );
+    private readonly interactionManager = new InteractionManager(new Device([
+        new Endpoint(
+            0x00,
+            "MA-rootdevice",
+            [
+                new BasicCluster({
+                    vendorName: "node-matter",
+                    vendorId: 0xFFF1,
+                    productName: "Matter test device",
+                    productId: 0X8001,
+                }),
+            ],
+        )
+    ]));
+
 
     onMessage(channel: Channel<Buffer>, messageBytes: Buffer) {
         var packet = MessageCodec.decodePacket(messageBytes);
@@ -41,6 +60,9 @@ export class Dispatcher {
             switch (message.payloadHeader.protocolId) {
                 case Protocol.SECURE_CHANNEL:
                     this.spake.onNewExchange(exchange);
+                    break;
+                case Protocol.INTERACTION_MODEL:
+                    this.interactionManager.onNewExchange(exchange);
                     break;
                 default:
                     throw new Error(`Unsupported protocol ${message.payloadHeader.protocolId}`);

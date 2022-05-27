@@ -1,7 +1,7 @@
 import { Device } from "../model/Device";
+import { Session } from "../session/SessionManager";
 import { ExchangeHandler, MessageExchange } from "../transport/Dispatcher";
-import { InvokeRequest, InvokeResponse, ReadRequest, ReadResponse } from "./InteractionMessages";
-import { InteractionMessenger } from "./InteractionMessenger";
+import { InteractionMessenger, InvokeRequest, InvokeResponse, ReadRequest, ReadResponse } from "./InteractionMessenger";
 
 export class InteractionManager implements ExchangeHandler {
     constructor(
@@ -12,7 +12,7 @@ export class InteractionManager implements ExchangeHandler {
         const messenger = new InteractionMessenger(
             exchange,
             readRequest => this.handleReadRequest(readRequest),
-            invokeRequest => this.handleInvokeRequest(invokeRequest),
+            (session, invokeRequest) => this.handleInvokeRequest(session, invokeRequest),
         );
         await messenger.handleRequest();
     }
@@ -25,10 +25,10 @@ export class InteractionManager implements ExchangeHandler {
         };
     }
 
-    handleInvokeRequest({invokes}: InvokeRequest): InvokeResponse {
+    handleInvokeRequest(session: Session, {invokes}: InvokeRequest): InvokeResponse {
         return {
             suppressResponse: false,
-            responses: invokes.flatMap(({path, args}) => this.device.invoke(path, args)).map(response => ({response})),
+            responses: invokes.flatMap(({path, args}) => this.device.invoke(session, path, args)).map(response => ({response})),
         };
     }
 }

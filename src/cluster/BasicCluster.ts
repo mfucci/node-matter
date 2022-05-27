@@ -1,4 +1,5 @@
-import { PrimitiveType } from "../codec/TlvCodec";
+import { TlvType } from "../codec/TlvCodec";
+import { StringT, UnsignedIntT } from "../codec/TlvObjectCodec";
 import { Attribute } from "../model/Attribute";
 import { Cluster } from "../model/Cluster";
 
@@ -16,10 +17,10 @@ export class BasicCluster extends Cluster {
             "Basic",
             [],
             [
-                new Attribute(1, "VendorName", PrimitiveType.String, vendorName),
-                new Attribute(2, "VendorID", PrimitiveType.UnsignedInt, vendorId),
-                new Attribute(3, "ProductName", PrimitiveType.String, productName),
-                new Attribute(4, "ProductID", PrimitiveType.UnsignedInt, productId),
+                new Attribute(1, "VendorName", StringT, vendorName),
+                new Attribute(2, "VendorID", UnsignedIntT, vendorId),
+                new Attribute(3, "ProductName", StringT, productName),
+                new Attribute(4, "ProductID", UnsignedIntT, productId),
             ],
         );
     }

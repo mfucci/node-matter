@@ -1,6 +1,18 @@
 import { Element } from "../codec/TlvCodec";
-import { AttributePath, CommandPath } from "../interaction/InteractionMessages";
+import { Session } from "../session/SessionManager";
 import { Endpoint } from "./Endpoint";
+
+interface AttributePath {
+    endpointId?: number,
+    clusterId: number,
+    attributeId: number,
+}
+
+interface CommandPath {
+    endpointId: number,
+    clusterId: number,
+    commandId: number,
+}
 
 export class Device {
     private readonly endpoints = new Map<number, Endpoint>();
@@ -20,9 +32,9 @@ export class Device {
         })
     }
 
-    invoke(path: CommandPath, args: Element) {
+    invoke(session: Session, path: CommandPath, args: Element) {
         const {endpointId, clusterId, commandId} = path;
-        const response = this.endpoints.get(endpointId)?.invoke(clusterId, commandId, args);
+        const response = this.endpoints.get(endpointId)?.invoke(session, clusterId, commandId, args);
         if (response === undefined) return [];
         return [{path, response}];
     }

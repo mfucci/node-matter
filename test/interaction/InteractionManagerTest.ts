@@ -1,8 +1,8 @@
 import assert from "assert";
 import { BasicCluster } from "../../src/cluster/BasicCluster";
-import { PrimitiveType } from "../../src/codec/TlvCodec";
+import { TlvType } from "../../src/codec/TlvCodec";
 import { InteractionManager } from "../../src/interaction/InteractionManager";
-import { ReadRequest, ReadResponse } from "../../src/interaction/InteractionMessages";
+import { ReadRequest, ReadResponse } from "../../src/interaction/InteractionMessenger";
 import { Device } from "../../src/model/Device";
 import { Endpoint } from "../../src/model/Endpoint";
 import { Tag } from "../../src/models/Tag";
@@ -30,7 +30,7 @@ const READ_RESPONSE: ReadResponse = {
             },
             value: {
                 tag: Tag.Anonymous,
-                type: PrimitiveType.UnsignedInt,
+                type: TlvType.UnsignedInt,
                 value: 1,
             },
             version: 0,
@@ -43,7 +43,7 @@ const READ_RESPONSE: ReadResponse = {
             },
             value: {
                 tag: Tag.Anonymous,
-                type: PrimitiveType.UnsignedInt,
+                type: TlvType.UnsignedInt,
                 value: 2,
             },
             version: 0,
@@ -64,8 +64,6 @@ describe("InteractionManager", () => {
             const result = interactionManager.handleReadRequest(READ_REQUEST);
 
             assert.deepEqual(result, READ_RESPONSE);
-
-            console.log( crypto.getHashes());
         });
     });
 });

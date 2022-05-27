@@ -1,4 +1,5 @@
 import { Element } from "../codec/TlvCodec";
+import { Session } from "../session/SessionManager";
 import { Cluster } from "./Cluster";
 
 export class Endpoint {
@@ -16,7 +17,7 @@ export class Endpoint {
         return this.clusters.get(clusterId)?.getAttributeValue(attributeId);
     }
 
-    invoke(clusterId: number, commandId: number, args: Element): Element | undefined {
-        return this.clusters.get(clusterId)?.invoke(commandId, args);
+    invoke(session: Session, clusterId: number, commandId: number, args: Element): Element | undefined {
+        return this.clusters.get(clusterId)?.invoke(session, commandId, args);
     }
 }

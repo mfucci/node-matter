@@ -55,7 +55,7 @@ export class Dispatcher {
             const exchange = this.exchanges.get(exchangeId);
             exchange?.onMessageReceived(message);
         } else {
-            const exchange = MessageExchange.fromInitialMessage(this.messageCounter, new MessageChannel(channel, session), message);
+            const exchange = MessageExchange.fromInitialMessage(session, channel, this.messageCounter, message);
             this.exchanges.set(exchangeId, exchange);
             switch (message.payloadHeader.protocolId) {
                 case Protocol.SECURE_CHANNEL:
@@ -102,23 +102,28 @@ export class MessageCounter {
 
 export class MessageExchange {
     private readonly messageCodec = new MessageCodec();
+    private readonly channel: MessageChannel;
     private ackedMessageId: number | undefined;
     private messagesQueue = new Queue<Message>();
 
     constructor(
-        private readonly channel: MessageChannel,
+        private readonly session: Session,
+        channel: Channel<Buffer>,
         private readonly messageCounter: MessageCounter,
         private readonly initialMessage: Message,
     ) {
+        this.channel = new MessageChannel(channel, session);
         this.ackedMessageId = initialMessage.payloadHeader.requiresAck ? initialMessage.packetHeader.messageId : undefined;
         this.messagesQueue.write(initialMessage);
     }
 
     static fromInitialMessage(
+            session: Session,
+            channel: Channel<Buffer>,
             messageCounter: MessageCounter,
-            channel: MessageChannel,
             initialMessage: Message) {
         return new MessageExchange(
+            session,
             channel,
             messageCounter,
             initialMessage,
@@ -158,6 +163,10 @@ export class MessageExchange {
 
     nextMessage() {
         return this.messagesQueue.read();
+    }
+
+    getSession() {
+        return this.session;
     }
 
     async waitFor(messageType: number) {

@@ -49,6 +49,10 @@ export class SecureSession implements Session {
         return { header, bytes: Buffer.concat([encryptedBytes, tag])};
     }
 
+    getAttestationChallengeKey(): Buffer {
+        return this.attestationKey;
+    }
+
     private generateNonce(securityFlags: number, messageId: number, nodeId: bigint) {
         const buffer = new LEBufferWriter();
         buffer.writeUInt8(securityFlags);

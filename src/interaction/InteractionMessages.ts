@@ -1,113 +1,53 @@
-import { PrimitiveType} from "../codec/TlvCodec";
-import { ArrayTemplate, Field, ObjectTemplate, OptionalField, RawElementTemplate } from "../codec/TlvObjectCodec";
-import { Tag } from "../models/Tag";
+import { TlvType } from "../codec/TlvCodec";
+import { AnyT, ArrayT, BooleanT, Field, JsType, ObjectT, OptionalField, UnsignedIntT } from "../codec/TlvObjectCodec";
 
-const { UnsignedInt, Boolean, List } = PrimitiveType;
-
-export interface AttributePath {
-    endpointId?: number,
-    clusterId: number,
-    attributeId: number,
-}
-
-const AttributePathTemplate = ObjectTemplate<AttributePath>({
-    endpointId: OptionalField(2, UnsignedInt),
-    clusterId: Field(3, UnsignedInt),
-    attributeId: Field(4, UnsignedInt),
-}, Tag.Anonymous, List);
-
-export interface ReadRequest {
-    attributes: AttributePath[],
-    isFabricFiltered: boolean,
-    interactionModelRevision: number,
-}
-
-export const ReadRequestTemplate = ObjectTemplate<ReadRequest>({
-    attributes: Field(0, ArrayTemplate(AttributePathTemplate)),
-    isFabricFiltered: Field(3, Boolean),
-    interactionModelRevision: Field(0xFF, UnsignedInt),
+export const ReadRequestT = ObjectT({
+    attributes: Field(0, ArrayT(ObjectT({
+        endpointId: OptionalField(2, UnsignedIntT),
+        clusterId: Field(3, UnsignedIntT),
+        attributeId: Field(4, UnsignedIntT),
+    }, TlvType.List))),
+    isFabricFiltered: Field(3, BooleanT),
+    interactionModelRevision: Field(0xFF, UnsignedIntT),
 });
 
-interface AttributeValue {
-    version: number,
-    path: AttributePath,
-    value: any,
-}
-
-interface AttributeReport {
-    value: AttributeValue,
-}
-
-export interface ReadResponse {
-    values: AttributeReport[],
-    isFabricFiltered: boolean,
-    interactionModelRevision: number,
-}
-
-export const ReadResponseTemplate = ObjectTemplate<ReadResponse>({
-    values: Field(1, ArrayTemplate(ObjectTemplate<AttributeReport>({
-        value: Field(1, ObjectTemplate<AttributeValue>({
-            version: OptionalField(0, UnsignedInt),
-            path: Field(1, AttributePathTemplate),
-            value: Field(2, RawElementTemplate),
+export const ReadResponseT = ObjectT({
+    values: Field(1, ArrayT(ObjectT({
+        value: Field(1, ObjectT({
+            version: Field(0, UnsignedIntT),
+            path: Field(1, ObjectT({
+                endpointId: Field(2, UnsignedIntT),
+                clusterId: Field(3, UnsignedIntT),
+                attributeId: Field(4, UnsignedIntT),
+            }, TlvType.List)),
+            value: Field(2, AnyT),
         })),
     }))),
-    isFabricFiltered: Field(4, Boolean),
-    interactionModelRevision: Field(0xFF, UnsignedInt),
+    isFabricFiltered: Field(4, BooleanT),
+    interactionModelRevision: Field(0xFF, UnsignedIntT),
 });
 
-export interface CommandPath {
-    endpointId: number,
-    clusterId: number,
-    commandId: number,
-}
+const CommandPathT = ObjectT({
+    endpointId: Field(0, UnsignedIntT),
+    clusterId: Field(1, UnsignedIntT),
+    commandId: Field(2, UnsignedIntT),
+}, TlvType.List);
 
-const InvokePathTemplate = ObjectTemplate<CommandPath>({
-    endpointId: OptionalField(0, UnsignedInt),
-    clusterId: Field(1, UnsignedInt),
-    commandId: Field(2, UnsignedInt),
-}, Tag.Anonymous, List);
-
-interface Invoke {
-    path: CommandPath,
-    args: any,
-}
-
-export interface InvokeRequest {
-    suppressResponse: boolean,
-    timedRequest: boolean,
-    invokes: Invoke[],
-}
-
-interface Response {
-    path: CommandPath,
-    response: any,
-}
-
-interface InvokeReport {
-    response: Response,
-}
-
-export interface InvokeResponse {
-    suppressResponse: boolean,
-    responses: InvokeReport[],
-}
-
-export const InvokeRequestTemplate = ObjectTemplate<InvokeRequest>({
-    suppressResponse: Field(0, Boolean),
-    timedRequest: Field(1, Boolean),
-    invokes: Field(2, ArrayTemplate(ObjectTemplate<Invoke>({
-        path: Field(0, InvokePathTemplate),
-        args: Field(1, RawElementTemplate),
+export const InvokeRequestT = ObjectT({
+    suppressResponse: Field(0, BooleanT),
+    timedRequest: Field(1, BooleanT),
+    invokes: Field(2, ArrayT(ObjectT({
+        path: Field(0, CommandPathT),
+        args: Field(1, AnyT),
     }))),
 });
 
-export const InvokeResponseTemplate = ObjectTemplate<InvokeResponse>({
-    suppressResponse: Field(0, Boolean),
-    responses: Field(1, ArrayTemplate(ObjectTemplate<InvokeReport>({
-        response: Field(0, ObjectTemplate<Response>({
-            path: Field(0, InvokePathTemplate),
-            response: Field(1, RawElementTemplate),
+export const InvokeResponseT = ObjectT({
+    suppressResponse: Field(0, BooleanT),
+    responses: Field(1, ArrayT(ObjectT({
+        response: Field(0, ObjectT({
+            path: Field(0, CommandPathT),
+            response: Field(1, AnyT),
         })),
     }))),
 });

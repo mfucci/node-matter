@@ -1,4 +1,5 @@
 import { Element } from "../codec/TlvCodec";
+import { Session } from "../session/SessionManager";
 import { Attribute } from "./Attribute";
 import { Command } from "./Command";
 
@@ -28,7 +29,7 @@ export class Cluster {
         return this.attributesMap.get(attributeId)?.getValue();
     }
 
-    invoke(commandId: number, args: Element): Element | undefined {
-        return this.commandsMap.get(commandId)?.invoke(args);
+    invoke(session: Session, commandId: number, args: Element): Element | undefined {
+        return this.commandsMap.get(commandId)?.invoke(session, args);
     }
 }

@@ -3,6 +3,7 @@ import crypto from "crypto";
 
 const ENCRYPT_ALGORITHM = "aes-128-ccm";
 const HASH_ALGORITHM = "sha256";
+const EC_CURVE = "prime256v1";
 const AUTH_TAG_LENGTH = 16;
 
 export class Crypto {
@@ -79,5 +80,9 @@ export class Crypto {
     static sign(privateKey: Buffer, data: Buffer) {
         const sign = crypto.createSign(HASH_ALGORITHM);
         return sign.sign({ key: privateKey,  dsaEncoding: "ieee-p1363" });
+    }
+
+    static createKeyPair() {
+        return crypto.generateKeyPairSync("ec", { namedCurve: EC_CURVE });
     }
 }

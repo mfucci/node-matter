@@ -1,7 +1,7 @@
 import { Cluster } from "../model/Cluster";
 import { Attribute } from "../model/Attribute";
-import { PrimitiveType } from "../codec/TlvCodec";
-import { Field, ObjectTemplate } from "../codec/TlvObjectCodec";
+import { TlvType } from "../codec/TlvCodec";
+import { Field, JsType, ObjectT, StringT, UnsignedIntT } from "../codec/TlvObjectCodec";
 import { Command } from "../model/Command";
 
 const enum RegulatoryLocationType {
@@ -18,55 +18,39 @@ const enum CommissioningError {
     BusyWithOtherAdmin = 4,
 }
 
-interface BasicCommissioningInfo {
-    failSafeExpiryLengthSeconds: number,
-}
-
-const BasicCommissioningInfoTemplate = ObjectTemplate<BasicCommissioningInfo>({
-    failSafeExpiryLengthSeconds: Field(0, PrimitiveType.UnsignedInt),
+const BasicCommissioningInfoT = ObjectT({
+    failSafeExpiryLengthSeconds: Field(0, UnsignedIntT),
 });
 
-interface SuccessFailureReponse {
-    errorCode: number,
-    debugText: string,
-}
-
-const SuccessFailureReponseTemplate = ObjectTemplate<SuccessFailureReponse>({
-    errorCode: Field(0, PrimitiveType.UnsignedInt),
-    debugText: Field(1, PrimitiveType.String),
+const SuccessFailureReponseT = ObjectT({
+    errorCode: Field(0, UnsignedIntT),
+    debugText: Field(1, StringT),
 });
 
-interface ArmFailSafeRequest {
-    expiryLengthSeconds: number,
-    breadcrumb: number,
-}
-
-const ArmFailSafeRequestTemplate = ObjectTemplate<ArmFailSafeRequest>({
-    expiryLengthSeconds: Field(0, PrimitiveType.UnsignedInt),
-    breadcrumb: Field(1, PrimitiveType.UnsignedInt),
+const ArmFailSafeRequestT = ObjectT({
+    expiryLengthSeconds: Field(0, UnsignedIntT),
+    breadcrumb: Field(1, UnsignedIntT),
 });
 
-interface SetRegulatoryConfigRequest {
-    config: RegulatoryLocationType,
-    countryCode: string,
-    breadcrumb: number,
-}
-
-const SetRegulatoryConfigRequestTemplate = ObjectTemplate<SetRegulatoryConfigRequest>({
-    config: Field(0, PrimitiveType.UnsignedInt),
-    countryCode: Field(1, PrimitiveType.String),
-    breadcrumb: Field(2, PrimitiveType.UnsignedInt),
+const SetRegulatoryConfigRequestT = ObjectT({
+    config: Field(0,UnsignedIntT),
+    countryCode: Field(1, StringT),
+    breadcrumb: Field(2, UnsignedIntT),
 });
 
-const NoArgumentsTemplate = ObjectTemplate<{}>({});
+type ArmFailSafeRequest = JsType<typeof ArmFailSafeRequestT>;
+type SetRegulatoryConfigRequest = JsType<typeof SetRegulatoryConfigRequestT>;
+type SuccessFailureReponse = JsType<typeof SuccessFailureReponseT>;
+
+const NoArgumentsT = ObjectT({});
 const SuccessResponse = {errorCode: CommissioningError.Ok, debugText: ""};
 
 export class GeneralCommissioningCluster extends Cluster {
     private readonly attributes = {
-        breadcrumb: new Attribute(0, "Breadcrumb", PrimitiveType.UnsignedInt, 0),
-        comminssioningInfo: new Attribute<BasicCommissioningInfo>(1, "BasicCommissioningInfo", BasicCommissioningInfoTemplate, {failSafeExpiryLengthSeconds: 60 /* 1mn */}),
-        regulatoryConfig: new Attribute<RegulatoryLocationType>(2, "RegulatoryConfig", PrimitiveType.UnsignedInt, RegulatoryLocationType.Indoor),
-        locationCapbility: new Attribute<RegulatoryLocationType>(3, "LocationCapability", PrimitiveType.UnsignedInt, RegulatoryLocationType.IndoorOutdoor),
+        breadcrumb: new Attribute(0, "Breadcrumb", UnsignedIntT, 0),
+        comminssioningInfo: new Attribute(1, "BasicCommissioningInfo", BasicCommissioningInfoT, {failSafeExpiryLengthSeconds: 60 /* 1mn */}),
+        regulatoryConfig: new Attribute(2, "RegulatoryConfig", UnsignedIntT, RegulatoryLocationType.Indoor),
+        locationCapbility: new Attribute(3, "LocationCapability", UnsignedIntT, RegulatoryLocationType.IndoorOutdoor),
     }
 
     constructor() {
@@ -74,9 +58,9 @@ export class GeneralCommissioningCluster extends Cluster {
             0x30,
             "General Commissioning",
             [
-                new Command(0, "ArmFailSafe", ArmFailSafeRequestTemplate, SuccessFailureReponseTemplate, request => this.handleArmFailSafeRequest(request)),
-                new Command(2, "SetRegulatoryConfig", SetRegulatoryConfigRequestTemplate, SuccessFailureReponseTemplate, request => this.setRegulatoryConfig(request)),
-                new Command(4, "CommissioningComplete", NoArgumentsTemplate, SuccessFailureReponseTemplate, () => this.handleCommissioningComplete()),
+                new Command(0, "ArmFailSafe", ArmFailSafeRequestT, SuccessFailureReponseT, request => this.handleArmFailSafeRequest(request)),
+                new Command(2, "SetRegulatoryConfig", SetRegulatoryConfigRequestT, SuccessFailureReponseT, request => this.setRegulatoryConfig(request)),
+                new Command(4, "CommissioningComplete", NoArgumentsT, SuccessFailureReponseT, () => this.handleCommissioningComplete()),
             ],
         );
 

@@ -9,4 +9,8 @@ export class UnsecureSession implements Session {
     encode(message: Message): Packet {
         return MessageCodec.encodePayload(message);
     }
+
+    getAttestationChallengeKey(): Buffer {
+        throw new Error("Not supported on an unsecure session");
+    }
 }

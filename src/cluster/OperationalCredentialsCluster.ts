@@ -1,82 +1,55 @@
-import { PrimitiveType } from "../codec/TlvCodec";
-import { Field, ObjectTemplate, OptionalField, TlvObjectCodec } from "../codec/TlvObjectCodec";
+import { TlvType } from "../codec/TlvCodec";
+import { ByteStringT, Field, JsType, ObjectT, OptionalField, TlvObjectCodec, UnsignedIntT } from "../codec/TlvObjectCodec";
 import { Crypto } from "../crypto/Crypto";
 import { Cluster } from "../model/Cluster";
 import { Command } from "../model/Command";
+import { Session } from "../session/SessionManager";
 
 const enum CertificateType {
     DeviceAttestation = 1,
     ProductAttestationIntermediate = 2,
 }
 
-interface RequestWithNonce {
-    nonce: Buffer,
-}
-
-const RequestWithNonceTemplate = ObjectTemplate<RequestWithNonce>({
-    nonce: Field(0, PrimitiveType.ByteString),
+const RequestWithNonceT = ObjectT({
+    nonce: Field(0, ByteStringT),
 });
+type RequestWithNonce = JsType<typeof RequestWithNonceT>;
 
-interface AttestationResponse {
-    attestationElements: Buffer,
-    signature: Buffer,
-}
-
-const AttestationResponseTemplate = ObjectTemplate<AttestationResponse>({
-    attestationElements: Field(0, PrimitiveType.ByteString),
-    signature: Field(1, PrimitiveType.ByteString),
+const AttestationResponseT = ObjectT({
+    attestationElements: Field(0, ByteStringT),
+    signature: Field(1, ByteStringT),
 });
+type AttestationResponse = JsType<typeof AttestationResponseT>;
 
-interface CsrResponse {
-    elements: Buffer,
-    signature: Buffer,
-}
-
-const CsrResponseTemplate = ObjectTemplate<CsrResponse>({
-    elements: Field(0, PrimitiveType.ByteString),
-    signature: Field(1, PrimitiveType.ByteString),
+const CsrResponseT = ObjectT({
+    elements: Field(0, ByteStringT),
+    signature: Field(1, ByteStringT),
 });
+type CsrResponse = JsType<typeof CsrResponseT>;
 
-
-interface CertificateChainRequest {
-    type: CertificateType,
-}
-
-const CertificateChainRequestTemplate = ObjectTemplate<CertificateChainRequest>({
-    type: Field(0, PrimitiveType.UnsignedInt),
+const CertificateChainRequestT = ObjectT({
+    type: Field(0, UnsignedIntT),
 });
+type CertificateChainRequest = JsType<typeof CertificateChainRequestT>;
 
-interface CertificateChainResponse {
-    certificate: Buffer,
-}
-
-const CertificateChainResponseTemplate = ObjectTemplate<CertificateChainResponse>({
-    certificate: Field(0, PrimitiveType.ByteString),
+const CertificateChainResponseT = ObjectT({
+    certificate: Field(0, ByteStringT),
 });
+type CertificateChainResponse = JsType<typeof CertificateChainResponseT>;
 
-interface AddNocRequest {
-    nocValue: Buffer,
-    icacaValue?: Buffer,
-    ipkValue: Buffer,
-    caseAdminNode: number,
-    adminVendorId: number,
-}
-
-const AddNocRequestTemplate = ObjectTemplate<AddNocRequest>({
-    nocValue: Field(0, PrimitiveType.ByteString),
-    icacaValue: OptionalField(1, PrimitiveType.ByteString),
-    ipkValue: Field(2, PrimitiveType.ByteString),
-    caseAdminNode: Field(3, PrimitiveType.UnsignedInt),
-    adminVendorId: Field(4, PrimitiveType.UnsignedInt),
+const AddNocRequestT = ObjectT({
+    nocValue: Field(0, ByteStringT),
+    icacaValue: OptionalField(1, ByteStringT),
+    ipkValue: Field(2, ByteStringT),
+    caseAdminNode: Field(3, ByteStringT),
+    adminVendorId: Field(4, ByteStringT),
 });
+type AddNocRequest = JsType<typeof AddNocRequestT>;
 
-interface AddTrustedRootCertificateRequest {
-    certificate: Buffer,
-}
-
-const AddTrustedRootCertificateRequestTemplate = ObjectTemplate<AddTrustedRootCertificateRequest>({
-    certificate: Field(0, PrimitiveType.ByteString),
+const AddTrustedRootCertificateRequestT = ObjectT({
+    certificate: Field(0, ByteStringT),
 });
+type AddTrustedRootCertificateRequest = JsType<typeof AddTrustedRootCertificateRequestT>;
 
 const enum Status {
     Success = 0x00,
@@ -91,17 +64,12 @@ const enum Status {
     InvalidFabricIndex = 0x0b,
 }
 
-interface StatusResponse {
-    status: Status,
-    fabricIndex?: number,
-    debugText?: string,
-}
-
-const StatusResponseTemplate = ObjectTemplate<StatusResponse>({
-    status: Field(0, PrimitiveType.UnsignedInt),
-    fabricIndex: OptionalField(1, PrimitiveType.UnsignedInt),
-    debugText: OptionalField(2, PrimitiveType.UnsignedInt),
+const StatusResponseT = ObjectT({
+    status: Field(0, UnsignedIntT),
+    fabricIndex: OptionalField(1, UnsignedIntT),
+    debugText: OptionalField(2, UnsignedIntT),
 });
+type StatusResponse = JsType<typeof StatusResponseT>;
 
 // Chip-Test-DAC-FFF1-8000-000A-Key.pem
 const DeviceAttestationCertificatePrivateKey = Buffer.from("05c6c3a84dc605cc3cc8058009b01b329cf60cf15970c6a90eadaae2de49649e", "hex");
@@ -114,19 +82,23 @@ const ProductAttestationIntermediateCertificate = Buffer.from("308201BF30820166A
 
 const CertificateDeclaration = Buffer.from("33082021906092a864886f70d010702a082020a30820206020103310d300b06096086480165030402013082017106092a864886f70d010701a08201620482015e152400012501f1ff3602050080050180050280050380050480050580050680050780050880050980050a80050b80050c80050d80050e80050f80051080051180051280051380051480051580051680051780051880051980051a80051b80051c80051d80051e80051f80052080052180052280052380052480052580052680052780052880052980052a80052b80052c80052d80052e80052f80053080053180053280053380053480053580053680053780053880053980053a80053b80053c80053d80053e80053f80054080054180054280054380054480054580054680054780054880054980054a80054b80054c80054d80054e80054f80055080055180055280055380055480055580055680055780055880055980055a80055b80055c80055d80055e80055f80056080056180056280056380182403162c04135a494732303134325a423333303030332d32342405002406002507942624080018317d307b020103801462fa823359acfaa9963e1cfa140addf504f37160300b0609608648016503040201300a06082a8648ce3d04030204473045022024e5d1f47a7d7b0d206a26ef699b7c9757b72d469089de3192e678c745e7f60c022100f8aa2fa711fcb79b97e397ceda667bae464e2bd3ffdfc3cced7aa8ca5f4c1a7c", "hex");
 
-interface Attestation {
-    declaration: Buffer,
-    nonce: Buffer,
-    timestamp: number,
-    firmwareInfo?: Buffer,
-}
-
-const AttestationTemplate = ObjectTemplate<Attestation>({
-    declaration: Field(1, PrimitiveType.ByteString),
-    nonce: Field(2, PrimitiveType.ByteString),
-    timestamp: Field(3, PrimitiveType.UnsignedInt),
-    firmwareInfo: OptionalField(4, PrimitiveType.ByteString),
+const AttestationT = ObjectT({
+    declaration: Field(1, ByteStringT),
+    nonce: Field(2, ByteStringT),
+    timestamp: Field(3, UnsignedIntT),
+    firmwareInfo: OptionalField(4, ByteStringT),
 });
+type Attestation = JsType<typeof AttestationT>;
+
+const CertificateSigningRequestT = ObjectT({
+    csr: Field(1, ByteStringT),
+    nonce: Field(2, ByteStringT),
+    vendorReserved1: OptionalField(3, ByteStringT),
+    vendorReserved2: OptionalField(4, ByteStringT),
+    vendorReserved3: OptionalField(5, ByteStringT),
+});
+type CertificateSigningRequest = JsType<typeof CertificateSigningRequestT>;
+
 
 export class OperationalCredentialsCluster extends Cluster {
     constructor() {
@@ -134,21 +106,21 @@ export class OperationalCredentialsCluster extends Cluster {
             0x3e,
             "Operational Credentials",
             [
-                new Command(0, "AttestationRequest", RequestWithNonceTemplate, AttestationResponseTemplate, request => this.handleAttestationRequest(request)),
-                new Command(2, "CertificateChainRequest", CertificateChainRequestTemplate, CertificateChainResponseTemplate, request => this.handleCertificateChainRequest(request)),
-                new Command(4, "CSRRequest", RequestWithNonceTemplate, CsrResponseTemplate, request => this.handleCsrRequest(request)),
-                new Command(6, "AddNOC", AddNocRequestTemplate, StatusResponseTemplate, request => this.addNoc(request)),
-                new Command(11, "AddTrustedRootCertificate", AddTrustedRootCertificateRequestTemplate, StatusResponseTemplate, request => this.addTrustedRootCertificate(request)),
+                new Command(0, "AttestationRequest", RequestWithNonceT, AttestationResponseT, (request, session) => this.handleAttestationRequest(request, session)),
+                new Command(2, "CertificateChainRequest", CertificateChainRequestT, CertificateChainResponseT, request => this.handleCertificateChainRequest(request)),
+                new Command(4, "CSRRequest", RequestWithNonceT, CsrResponseT, request => this.handleCertifciateSignRequest(request)),
+                new Command(6, "AddNOC", AddNocRequestT, StatusResponseT, request => this.addNoc(request)),
+                new Command(11, "AddTrustedRootCertificate", AddTrustedRootCertificateRequestT, StatusResponseT, request => this.addTrustedRootCertificate(request)),
             ],
             [],
         );
     }
 
-    private handleAttestationRequest({nonce}: RequestWithNonce): AttestationResponse {
-        const attestationElements = TlvObjectCodec.encode({ declaration: CertificateDeclaration, nonce, timestamp: 0 }, AttestationTemplate);
+    private handleAttestationRequest({nonce}: RequestWithNonce, session: Session): AttestationResponse {
+        const attestationElements = TlvObjectCodec.encode({ declaration: CertificateDeclaration, nonce, timestamp: 0 }, AttestationT);
         const digest = Crypto.hash([
-            // get attestation challenge key
-            TlvObjectCodec.encode({ declaration: CertificateDeclaration, nonce, timestamp: 0 }, AttestationTemplate),
+            session.getAttestationChallengeKey(),
+            TlvObjectCodec.encode({ declaration: CertificateDeclaration, nonce, timestamp: 0 }, AttestationT),
         ]);
         return {attestationElements, signature: Crypto.sign(DeviceAttestationCertificatePrivateKey, digest)};
     }
@@ -164,7 +136,9 @@ export class OperationalCredentialsCluster extends Cluster {
         }
     }
 
-    private handleCsrRequest(request: RequestWithNonce): CsrResponse {
+    private handleCertifciateSignRequest({nonce}: RequestWithNonce): CsrResponse {
+        const { privateKey , publicKey } = Crypto.createKeyPair();
+        // TODO: create CSR
         return {elements: Buffer.from(""), signature: Buffer.from("")};
     }
 

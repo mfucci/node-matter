@@ -41,4 +41,5 @@ export class SessionManager {
 export interface Session {
     decode(packet: Packet): Message,
     encode(message: Message): Packet,
+    getAttestationChallengeKey(): Buffer,
 }

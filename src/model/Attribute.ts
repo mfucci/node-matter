@@ -1,6 +1,4 @@
-import { PrimitiveType } from "../codec/TlvCodec";
 import { Template, TlvObjectCodec } from "../codec/TlvObjectCodec";
-import { Tag } from "../models/Tag";
 
 export class Attribute<T> {
     private value: T;
@@ -10,11 +8,11 @@ export class Attribute<T> {
     constructor(
         readonly id: number,
         readonly name: string,
-        templateOrType: Template<T> | PrimitiveType,
+        template: Template<T>,
         defaultValue: T,
     ) {
         this.value = defaultValue;
-        this.template = typeof templateOrType === "number" ? {tag: Tag.Anonymous, type: templateOrType} : templateOrType;
+        this.template = template;
     }
 
     set(value: T) {

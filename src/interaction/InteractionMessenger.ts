@@ -1,6 +1,7 @@
-import { TlvObjectCodec } from "../codec/TlvObjectCodec";
+import { JsType, TlvObjectCodec } from "../codec/TlvObjectCodec";
+import { Session } from "../session/SessionManager";
 import { MessageExchange } from "../transport/Dispatcher";
-import { InvokeRequest, InvokeRequestTemplate, InvokeResponse, InvokeResponseTemplate, ReadRequest, ReadRequestTemplate, ReadResponse, ReadResponseTemplate } from "./InteractionMessages";
+import { InvokeRequestT, InvokeResponseT, ReadRequestT, ReadResponseT } from "./InteractionMessages";
 
 export const enum MessageType {
     StatusResponse = 0x01,
@@ -15,25 +16,34 @@ export const enum MessageType {
     TimedRequest = 0x0a,
 }
 
+export type InvokeRequest = JsType<typeof InvokeRequestT>;
+export type InvokeResponse = JsType<typeof InvokeResponseT>;
+export type ReadRequest = JsType<typeof ReadRequestT>;
+export type ReadResponse = JsType<typeof ReadResponseT>;
+
 export class InteractionMessenger {
+    private readonly session: Session;
+
     constructor(
         private readonly exchange: MessageExchange,
         private readonly handleReadRequest: (request: ReadRequest) => ReadResponse,
-        private readonly handleInvokeRequest: (request: InvokeRequest) => InvokeResponse,
-    ) {}
+        private readonly handleInvokeRequest: (session: Session, request: InvokeRequest) => InvokeResponse,
+    ) {
+        this.session = exchange.getSession();
+    }
 
     async handleRequest() {
         const message = await this.exchange.nextMessage();
         switch (message.payloadHeader.messageType) {
             case MessageType.ReadRequest:
-                const readRequest = TlvObjectCodec.decode(message.payload, ReadRequestTemplate);
+                const readRequest = TlvObjectCodec.decode(message.payload, ReadRequestT);
                 const readResponse = this.handleReadRequest(readRequest);
-                this.exchange.send(MessageType.StatusResponse, TlvObjectCodec.encode(readResponse, ReadResponseTemplate));
+                this.exchange.send(MessageType.StatusResponse, TlvObjectCodec.encode(readResponse, ReadResponseT));
                 break;
             case MessageType.InvokeCommandRequest:
-                const invokeRequest = TlvObjectCodec.decode(message.payload, InvokeRequestTemplate);
-                const invokeResponse = this.handleInvokeRequest(invokeRequest);
-                this.exchange.send(MessageType.StatusResponse, TlvObjectCodec.encode(invokeResponse, InvokeResponseTemplate));
+                const invokeRequest = TlvObjectCodec.decode(message.payload, InvokeRequestT);
+                const invokeResponse = this.handleInvokeRequest(this.session, invokeRequest);
+                this.exchange.send(MessageType.StatusResponse, TlvObjectCodec.encode(invokeResponse, InvokeResponseT));
                 break;
             default:
                 throw new Error(`Unsupported message type ${message.payloadHeader.messageType}`);

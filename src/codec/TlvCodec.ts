@@ -13,7 +13,7 @@ const enum TagControl {
     FullyQualified8Bytes = 0xE0,
 }
 
-export enum PrimitiveType {
+export enum TlvType {
     SignedInt = 0x00,
     UnsignedInt = 0x04,
     Boolean = 0x08,
@@ -36,7 +36,7 @@ export const enum ElementSize {
 }
 
 export interface Element {
-    type: PrimitiveType,
+    type: TlvType,
     value: any,
     tag: Tag,
 }
@@ -82,56 +82,56 @@ export class TlvCodec {
 
     private static decodeValue(reader: LEBufferReader, typeSizeByte: Number) {
         switch (typeSizeByte) {
-            case PrimitiveType.SignedInt + ElementSize.Byte1:
-                return {value: reader.readInt8(), type: PrimitiveType.SignedInt};
-            case PrimitiveType.SignedInt + ElementSize.Byte2:
-                return {value: reader.readInt16(), type: PrimitiveType.SignedInt};
-            case PrimitiveType.SignedInt + ElementSize.Byte4:
-                return {value: reader.readInt32(), type: PrimitiveType.SignedInt};
-            case PrimitiveType.SignedInt + ElementSize.Byte8:
-                return {value: reader.readInt64(), type: PrimitiveType.SignedInt};
-            case PrimitiveType.UnsignedInt + ElementSize.Byte1:
-                return {value: reader.readUInt8(), type: PrimitiveType.UnsignedInt};
-            case PrimitiveType.UnsignedInt + ElementSize.Byte2:
-                return {value: reader.readUInt16(), type: PrimitiveType.UnsignedInt};
-            case PrimitiveType.UnsignedInt + ElementSize.Byte4:
-                return {value: reader.readUInt32(), type: PrimitiveType.UnsignedInt};
-            case PrimitiveType.UnsignedInt + ElementSize.Byte8:
-                return {value: reader.readUInt64(), type: PrimitiveType.UnsignedInt};
-            case PrimitiveType.Boolean:
-                return {value: false, type: PrimitiveType.Boolean};
-            case PrimitiveType.Boolean + 1:
-                return {value: true, type: PrimitiveType.Boolean};
-            case PrimitiveType.Float:
-                return {value: reader.readFloat(), type: PrimitiveType.Float};
-            case PrimitiveType.Double:
-                return {value: reader.readDouble(), type: PrimitiveType.Double};
-            case PrimitiveType.String + ElementSize.Byte1:
-                return {value: reader.readString(reader.readUInt8()), type: PrimitiveType.String};
-            case PrimitiveType.String + ElementSize.Byte2:
-                return {value: reader.readString(reader.readUInt16()), type: PrimitiveType.String};
-            case PrimitiveType.String + ElementSize.Byte4:
-                return {value: reader.readString(reader.readUInt32()), type: PrimitiveType.String};
-            case PrimitiveType.String + ElementSize.Byte8:
-                return {value: reader.readString(Number(reader.readUInt64())), type: PrimitiveType.String};
-            case PrimitiveType.ByteString + ElementSize.Byte1:
-                return {value: reader.readBytes(reader.readUInt8()), type: PrimitiveType.ByteString};
-            case PrimitiveType.ByteString + ElementSize.Byte2:
-                return {value: reader.readBytes(reader.readUInt16()), type: PrimitiveType.ByteString};
-            case PrimitiveType.ByteString + ElementSize.Byte4:
-                return {value: reader.readBytes(reader.readUInt32()), type: PrimitiveType.ByteString};
-            case PrimitiveType.ByteString + ElementSize.Byte8:
-                return {value: reader.readBytes(Number(reader.readUInt64())), type: PrimitiveType.ByteString};
-            case PrimitiveType.Null:
-                return {value: null, type: PrimitiveType.Null};
-            case PrimitiveType.Array:
-                return {value: this.decodeContainer(reader), type: PrimitiveType.Array};
-            case PrimitiveType.List:
-                return {value: this.decodeContainer(reader), type: PrimitiveType.List};
-            case PrimitiveType.Structure:
-                return {value: this.decodeContainer(reader), type: PrimitiveType.Structure};
-            case PrimitiveType.EndOfContainer:
-                return {value: undefined, type: PrimitiveType.EndOfContainer};
+            case TlvType.SignedInt + ElementSize.Byte1:
+                return {value: reader.readInt8(), type: TlvType.SignedInt};
+            case TlvType.SignedInt + ElementSize.Byte2:
+                return {value: reader.readInt16(), type: TlvType.SignedInt};
+            case TlvType.SignedInt + ElementSize.Byte4:
+                return {value: reader.readInt32(), type: TlvType.SignedInt};
+            case TlvType.SignedInt + ElementSize.Byte8:
+                return {value: reader.readInt64(), type: TlvType.SignedInt};
+            case TlvType.UnsignedInt + ElementSize.Byte1:
+                return {value: reader.readUInt8(), type: TlvType.UnsignedInt};
+            case TlvType.UnsignedInt + ElementSize.Byte2:
+                return {value: reader.readUInt16(), type: TlvType.UnsignedInt};
+            case TlvType.UnsignedInt + ElementSize.Byte4:
+                return {value: reader.readUInt32(), type: TlvType.UnsignedInt};
+            case TlvType.UnsignedInt + ElementSize.Byte8:
+                return {value: reader.readUInt64(), type: TlvType.UnsignedInt};
+            case TlvType.Boolean:
+                return {value: false, type: TlvType.Boolean};
+            case TlvType.Boolean + 1:
+                return {value: true, type: TlvType.Boolean};
+            case TlvType.Float:
+                return {value: reader.readFloat(), type: TlvType.Float};
+            case TlvType.Double:
+                return {value: reader.readDouble(), type: TlvType.Double};
+            case TlvType.String + ElementSize.Byte1:
+                return {value: reader.readString(reader.readUInt8()), type: TlvType.String};
+            case TlvType.String + ElementSize.Byte2:
+                return {value: reader.readString(reader.readUInt16()), type: TlvType.String};
+            case TlvType.String + ElementSize.Byte4:
+                return {value: reader.readString(reader.readUInt32()), type: TlvType.String};
+            case TlvType.String + ElementSize.Byte8:
+                return {value: reader.readString(Number(reader.readUInt64())), type: TlvType.String};
+            case TlvType.ByteString + ElementSize.Byte1:
+                return {value: reader.readBytes(reader.readUInt8()), type: TlvType.ByteString};
+            case TlvType.ByteString + ElementSize.Byte2:
+                return {value: reader.readBytes(reader.readUInt16()), type: TlvType.ByteString};
+            case TlvType.ByteString + ElementSize.Byte4:
+                return {value: reader.readBytes(reader.readUInt32()), type: TlvType.ByteString};
+            case TlvType.ByteString + ElementSize.Byte8:
+                return {value: reader.readBytes(Number(reader.readUInt64())), type: TlvType.ByteString};
+            case TlvType.Null:
+                return {value: null, type: TlvType.Null};
+            case TlvType.Array:
+                return {value: this.decodeContainer(reader), type: TlvType.Array};
+            case TlvType.List:
+                return {value: this.decodeContainer(reader), type: TlvType.List};
+            case TlvType.Structure:
+                return {value: this.decodeContainer(reader), type: TlvType.Structure};
+            case TlvType.EndOfContainer:
+                return {value: undefined, type: TlvType.EndOfContainer};
             default:
                 throw new Error(`Unexpected elementType 0x${typeSizeByte.toFixed(16)}`);
         }
@@ -141,7 +141,7 @@ export class TlvCodec {
         const result = new Array<Element>();
         while (true) {
             const element = this.decodeElementInternal(reader);
-            if (element.type === PrimitiveType.EndOfContainer) return result;
+            if (element.type === TlvType.EndOfContainer) return result;
             // TODO: check type compatibility
             result.push(element);
         }
@@ -156,21 +156,21 @@ export class TlvCodec {
     private static encodeElementInternal(writer: LEBufferWriter, element: Element | undefined) {
         if (element === undefined) return;
         switch (element.type) {
-            case PrimitiveType.ByteString:
+            case TlvType.ByteString:
                 return this.encodeByteString(writer, element);
-            case PrimitiveType.String:
+            case TlvType.String:
                 return this.encodeString(writer, element);
-            case PrimitiveType.UnsignedInt:
+            case TlvType.UnsignedInt:
                 return this.encodeUnsignedInt(writer, element);
-            case PrimitiveType.SignedInt:
+            case TlvType.SignedInt:
                 return this.encodeSignedInt(writer, element);
-            case PrimitiveType.Boolean:
+            case TlvType.Boolean:
                 return this.encodeBoolean(writer, element);
-            case PrimitiveType.Structure:
+            case TlvType.Structure:
                 return this.encodeContainer(writer, element);
-            case PrimitiveType.Array:
+            case TlvType.Array:
                 return this.encodeContainer(writer, element);
-            case PrimitiveType.List:
+            case TlvType.List:
                 return this.encodeContainer(writer, element);
             default:
                 throw new Error(`Unsupported element type: ${element.type}`);
@@ -180,7 +180,7 @@ export class TlvCodec {
     private static encodeString(writer: LEBufferWriter, {value, tag}: Element) {
         const length = value.length;
         const size = this.getUnsignedIntSize(length); 
-        this.encodeControlByteAndTag(writer, PrimitiveType.String | size, tag);
+        this.encodeControlByteAndTag(writer, TlvType.String | size, tag);
         this.encodeUnsignedIntBytes(writer, length, size);
         writer.writeString(value);
     }
@@ -188,34 +188,34 @@ export class TlvCodec {
     private static encodeByteString(writer: LEBufferWriter, {value, tag}: Element) {
         const length = value.length;
         const size = this.getUnsignedIntSize(length);
-        this.encodeControlByteAndTag(writer, PrimitiveType.ByteString | size, tag);
+        this.encodeControlByteAndTag(writer, TlvType.ByteString | size, tag);
         this.encodeUnsignedIntBytes(writer, length, size);
         writer.writeBytes(value);
     }
 
     private static encodeUnsignedInt(writer: LEBufferWriter, {value, tag}: Element) {
         const size = this.getUnsignedIntSize(value);
-        this.encodeControlByteAndTag(writer, PrimitiveType.UnsignedInt | size, tag);
+        this.encodeControlByteAndTag(writer, TlvType.UnsignedInt | size, tag);
         this.encodeUnsignedIntBytes(writer, value, size);
     }
 
     private static encodeSignedInt(writer: LEBufferWriter, {value, tag}: Element) {
         const size = this.getSignedIntSize(value);
-        this.encodeControlByteAndTag(writer, PrimitiveType.UnsignedInt | size, tag);
+        this.encodeControlByteAndTag(writer, TlvType.UnsignedInt | size, tag);
         this.encodeSignedIntBytes(writer, value, size);
     }
 
     private static encodeBoolean(writer: LEBufferWriter, {value, tag}: Element) {
-        this.encodeControlByteAndTag(writer, PrimitiveType.Boolean | (value ? 1 : 0), tag);
+        this.encodeControlByteAndTag(writer, TlvType.Boolean | (value ? 1 : 0), tag);
     }
 
     private static encodeContainer(writer: LEBufferWriter, {type, value, tag}: Element) {
         this.encodeControlByteAndTag(writer, type, tag);
         (value as Element[]).forEach(element => this.encodeElementInternal(writer, element));
-        this.encodeControlByteAndTag(writer, PrimitiveType.EndOfContainer, Tag.Anonymous);
+        this.encodeControlByteAndTag(writer, TlvType.EndOfContainer, Tag.Anonymous);
     }
 
-    private static encodeControlByteAndTag(writer: LEBufferWriter, valueType: PrimitiveType, tag: Tag) {
+    private static encodeControlByteAndTag(writer: LEBufferWriter, valueType: TlvType, tag: Tag) {
         var tagControl;
         var longTag = (tag.id & 0xFFFF0000) !== 0;
         if (tag.isAnonymous()) {

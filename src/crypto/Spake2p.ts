@@ -1,13 +1,17 @@
 import BN from "bn.js";
 import { ec } from "elliptic";
 import { Crypto } from "./Crypto";
-import { PbkdfParameters } from "../commission/PaseMessages";
 
 const P256_CURVE = new ec("p256").curve;
 
 // M and N constants from https://datatracker.ietf.org/doc/html/draft-bar-cfrg-spake2plus-01
 const M = P256_CURVE.decodePoint("02886e2f97ace46e55ba9dd7242579f2993b64e16ef3dcab95afd497333d8fa12f", "hex");
 const N = P256_CURVE.decodePoint("03d8bbd6c639c62937b04d997f38c3770719c629d7014d49a24b4f98baa1292b49", "hex");
+
+export interface PbkdfParameters {
+    iteration: number,
+    salt: Buffer,
+}
 
 export class Spake2p {
     constructor(

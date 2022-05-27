@@ -1,17 +1,26 @@
 import assert from "assert";
-import { PrimitiveType } from "../../src/codec/TlvCodec";
-import { MrpParameters, PbkdfParamRequest } from "../../src/commission/PaseMessages";
-import { Field, ObjectTemplate, OptionalField, TlvObjectCodec } from "../../src/codec/TlvObjectCodec";
-import { ReadResponseTemplate } from "../../src/interaction/InteractionMessages";
+import { TlvType } from "../../src/codec/TlvCodec";
+import { BooleanT, ByteStringT, JsType, ObjectT, Field, TlvObjectCodec, UnsignedIntT, OptionalField } from "../../src/codec/TlvObjectCodec";
+import { ReadResponseT } from "../../src/interaction/InteractionMessages";
 import { Tag } from "../../src/models/Tag";
 
-const { ByteString, UnsignedInt, Boolean } = PrimitiveType;
+
+const TEST_TEMPLATE = ObjectT({
+    initiatorRandom: Field(1, ByteStringT),
+    initiatorSessionId: Field(2, UnsignedIntT),
+    passcodeId: OptionalField(3, UnsignedIntT),
+    hasPbkdfParameters: Field(4, BooleanT),
+    mrpParameters: OptionalField(5, ObjectT({
+        idleRetransTimeout: OptionalField(1, UnsignedIntT),
+        activeRetransTimeout: OptionalField(2, UnsignedIntT),
+    })),
+});
 
 const ENCODED = Buffer.from("153001204715a406c6b0496ad52039e347db8528cb69a1cb2fce6f2318552ae65e103aca250233dc240300280435052501881325022c011818", "hex");
 const ENCODED_NO_OPTIONALS = Buffer.from("153001204715a406c6b0496ad52039e347db8528cb69a1cb2fce6f2318552ae65e103aca250233dc280418", "hex");
 const ENCODED_ARRAY_VARIABLE = Buffer.from("1536011535012600799ac60c37012402002403312404031824021418181535012600ddad82d6370124020024033024040118350224003c18181818290424ff0118", "hex");
 
-const DECODED = {
+const DECODED: JsType<typeof TEST_TEMPLATE> = {
     initiatorRandom: Buffer.from("4715a406c6b0496ad52039e347db8528cb69a1cb2fce6f2318552ae65e103aca", "hex"),
     initiatorSessionId: 56371,
     passcodeId: 0,
@@ -19,7 +28,7 @@ const DECODED = {
     mrpParameters: { idleRetransTimeout: 5000, activeRetransTimeout: 300 },
 };
 
-const DECODED_NO_OPTIONALS = {
+const DECODED_NO_OPTIONALS: JsType<typeof TEST_TEMPLATE> = {
     initiatorRandom: Buffer.from("4715a406c6b0496ad52039e347db8528cb69a1cb2fce6f2318552ae65e103aca", "hex"),
     initiatorSessionId: 56371,
     hasPbkdfParameters: false,
@@ -30,38 +39,27 @@ const DECODED_ARRAY_VARIABLE = {
         { value: {
             version: 0x0cc69a79,
             path: {
-                endpoint: 0,
-                cluster: 0x31,
-                attribute: 0x03,
+                endpointId: 0,
+                clusterId: 0x31,
+                attributeId: 0x03,
             },
-            value: { tag: Tag.Anonymous, type: PrimitiveType.UnsignedInt, value: 0x14},
+            value: { tag: Tag.Anonymous, type: TlvType.UnsignedInt, value: 0x14},
         }},
         { value: {
             version: 0xd682addd,
             path: {
-                endpoint: 0,
-                cluster: 0x30,
-                attribute: 0x01,
+                endpointId: 0,
+                clusterId: 0x30,
+                attributeId: 0x01,
             },
-            value: { tag: Tag.Anonymous, type: PrimitiveType.Structure, value: [
-                {tag: Tag.contextual(0), type: UnsignedInt, value: 0x3c},
+            value: { tag: Tag.Anonymous, type: TlvType.Structure, value: [
+                {tag: Tag.contextual(0), type: TlvType.UnsignedInt, value: 0x3c},
             ]},
         }},
     ],
     isFabricFiltered: true,
     interactionModelRevision: 1,
 };
-
-const TEST_TEMPLATE = ObjectTemplate<PbkdfParamRequest>({
-    initiatorRandom: Field(1, ByteString),
-    initiatorSessionId: Field(2, UnsignedInt),
-    passcodeId: OptionalField(3, UnsignedInt),
-    hasPbkdfParameters: Field(4, Boolean),
-    mrpParameters: OptionalField(5, ObjectTemplate<MrpParameters>({
-        idleRetransTimeout: OptionalField(1, UnsignedInt),
-        activeRetransTimeout: OptionalField(2, UnsignedInt),
-    })),
-});
 
 describe("TlvObjectCodec", () => {
     context("decode", () => {
@@ -78,7 +76,7 @@ describe("TlvObjectCodec", () => {
         });
 
         it("decodes a structure with lists and variable types", () => {
-            const result = TlvObjectCodec.decode(ENCODED_ARRAY_VARIABLE, ReadResponseTemplate);
+            const result = TlvObjectCodec.decode(ENCODED_ARRAY_VARIABLE, ReadResponseT);
 
             assert.deepEqual(result, DECODED_ARRAY_VARIABLE);
         });
@@ -98,7 +96,7 @@ describe("TlvObjectCodec", () => {
         });
 
         it("encodes a structure with lists and variable types", () => {
-            const result = TlvObjectCodec.encode(DECODED_ARRAY_VARIABLE, ReadResponseTemplate);
+            const result = TlvObjectCodec.encode(DECODED_ARRAY_VARIABLE, ReadResponseT);
 
             assert.deepEqual(result.toString("hex"), ENCODED_ARRAY_VARIABLE.toString("hex"));
         });

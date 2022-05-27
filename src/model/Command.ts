@@ -1,5 +1,6 @@
 import { Element } from "../codec/TlvCodec";
 import { Template, TlvObjectCodec } from "../codec/TlvObjectCodec";
+import { Session } from "../session/SessionManager";
 
 export class Command<RequestT, ResponseT> {
     constructor(
@@ -7,12 +8,12 @@ export class Command<RequestT, ResponseT> {
         readonly name: string,
         private readonly requestTemplate: Template<RequestT>,
         private readonly responseTemplate: Template<ResponseT>,
-        private readonly handler: (request: RequestT) => ResponseT,
+        private readonly handler: (request: RequestT, session: Session) => ResponseT,
     ) {}
 
-    invoke(args: Element) {
+    invoke(session: Session, args: Element) {
         const request = TlvObjectCodec.decodeElement(args, this.requestTemplate);
-        const response = this.handler(request);
+        const response = this.handler(request, session);
         return TlvObjectCodec.encodeElement(response, this.responseTemplate);
     }
 }

@@ -1,8 +1,8 @@
 import assert from "assert";
-import { PrimitiveType, TlvCodec } from "../../src/codec/TlvCodec";
+import { TlvType, TlvCodec } from "../../src/codec/TlvCodec";
 import { Tag } from "../../src/models/Tag";
 
-const { Structure, ByteString, UnsignedInt, Boolean, List, Array } = PrimitiveType;
+const { Structure, ByteString, UnsignedInt, Boolean, List, Array } = TlvType;
 
 const ENCODED = Buffer.from("153001204715a406c6b0496ad52039e347db8528cb69a1cb2fce6f2318552ae65e103aca250233dc240300280435052501881325022c011818", "hex");
 const ENCODED_2 = Buffer.from("153001204715a406c6b0496ad52039e347db8528cb69a1cb2fce6f2318552ae65e103aca3002201783302d95a4a9fb0decb8fdd6564b90a957681459aeee069961bea61d7b247125039d8935042501e80330022099f813dd41bd081a1c63e811828f0662594bca89cd9d4ed26f7427fdb2a027361835052501881325022c011818", "hex");

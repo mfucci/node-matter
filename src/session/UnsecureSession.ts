@@ -13,4 +13,8 @@ export class UnsecureSession implements Session {
     getAttestationChallengeKey(): Buffer {
         throw new Error("Not supported on an unsecure session");
     }
+
+    setFabricIndex(index: number): void {
+        throw new Error("Not supported on an unsecure session");
+    }
 }

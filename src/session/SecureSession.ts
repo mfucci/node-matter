@@ -8,6 +8,7 @@ const SESSION_KEYS_INFO = Buffer.from("SessionKeys");
 const AUTH_TAG_LENGTH = 16;
 
 export class SecureSession implements Session {
+    private fabricIndex?: number;
 
     constructor(
         private readonly peerSessionId: number,
@@ -51,6 +52,10 @@ export class SecureSession implements Session {
 
     getAttestationChallengeKey(): Buffer {
         return this.attestationKey;
+    }
+
+    setFabricIndex(index: number) {
+        this.fabricIndex = index;
     }
 
     private generateNonce(securityFlags: number, messageId: number, nodeId: bigint) {

@@ -6,7 +6,7 @@ import { UnsecureSession } from "./UnsecureSession";
 
 export const UNICAST_UNSECURE_SESSION_ID = 0x0000;
 
-export const getSessionManager = Singleton(() => new SessionManager);
+export const getSessionManager = Singleton(() => new SessionManager());
 
 export class SessionManager {
     private readonly sessions = new Map<number, Session>();
@@ -42,4 +42,5 @@ export interface Session {
     decode(packet: Packet): Message,
     encode(message: Message): Packet,
     getAttestationChallengeKey(): Buffer,
+    setFabricIndex(index: number): void,
 }

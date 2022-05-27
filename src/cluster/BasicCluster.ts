@@ -1,4 +1,3 @@
-import { TlvType } from "../codec/TlvCodec";
 import { StringT, UnsignedIntT } from "../codec/TlvObjectCodec";
 import { Attribute } from "../model/Attribute";
 import { Cluster } from "../model/Cluster";

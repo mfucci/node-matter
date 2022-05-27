@@ -23,6 +23,7 @@ export const StringT:Template<string> = { tlvType: TlvType.String};
 export const BooleanT:Template<boolean> = { tlvType: TlvType.Boolean};
 export const ByteStringT:Template<Buffer> = { tlvType: TlvType.ByteString};
 export const UnsignedIntT:Template<number> = { tlvType: TlvType.UnsignedInt};
+export const UnsignedLongT:Template<bigint> = { tlvType: TlvType.UnsignedInt};
 export const AnyT:Template<any> = { };
 export const ArrayT = <T,>(itemTemplate: Template<T>) => ({ tlvType: TlvType.Array, itemTemplate } as Template<T[]>);
 export const ObjectT = <F extends FieldTemplates>(fieldTemplates: F, tlvType: TlvType = TlvType.Structure) => ({ tlvType, fieldTemplates } as Template<TypeFromFieldTemplates<F>>);

@@ -1,7 +1,7 @@
 const COMMON_PROFILE = 0x00000000;
 const UNSPECIFIED_PROFILE = 0xFFFFFFFF;
 
-export class Tag {
+export class TlvTag {
     constructor(
         readonly profile: number,
         readonly id: number) {}
@@ -25,12 +25,12 @@ export class Tag {
         }
     }
 
-    equals({profile, id}: Tag) {
+    equals({profile, id}: TlvTag) {
         return this.profile === profile && this.id === id;
     }
 
     isAnonymous() {
-        return this.equals(Tag.Anonymous);
+        return this.equals(TlvTag.Anonymous);
     }
 
     isContextual() {
@@ -41,6 +41,6 @@ export class Tag {
         return this.profile === COMMON_PROFILE;
     }
 
-    static readonly Anonymous = new Tag(UNSPECIFIED_PROFILE, 0xFFFFFFFF);
-    static readonly contextual = (id: number) => new Tag(UNSPECIFIED_PROFILE, id);
+    static readonly Anonymous = new TlvTag(UNSPECIFIED_PROFILE, 0xFFFFFFFF);
+    static readonly contextual = (id: number) => new TlvTag(UNSPECIFIED_PROFILE, id);
 }

@@ -1,5 +1,6 @@
 import { Message, MessageCodec, Packet } from "../codec/MessageCodec";
 import { Crypto } from "../crypto/Crypto";
+import { Fabric } from "../fabric/Fabric";
 import { UNDEFINED_NODE_ID } from "../transport/Dispatcher";
 import { LEBufferWriter } from "../util/LEBufferWriter";
 import { Session } from "./SessionManager";
@@ -8,7 +9,7 @@ const SESSION_KEYS_INFO = Buffer.from("SessionKeys");
 const AUTH_TAG_LENGTH = 16;
 
 export class SecureSession implements Session {
-    private fabricIndex?: number;
+    private fabric?: Fabric;
 
     constructor(
         private readonly peerSessionId: number,
@@ -18,8 +19,8 @@ export class SecureSession implements Session {
         private readonly attestationKey: Buffer,
     ) {}
 
-    static async create(peerSessionId: number, sharedSecret: Buffer, isInitiator: boolean) {
-        const keys = await Crypto.hkdf(sharedSecret, Buffer.alloc(0), SESSION_KEYS_INFO, 16 * 3);
+    static async create(peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean) {
+        const keys = await Crypto.hkdf(sharedSecret, salt, SESSION_KEYS_INFO, 16 * 3);
         const decryptKey = isInitiator ? keys.slice(16, 32) : keys.slice(0, 16);
         const encryptKey = isInitiator ? keys.slice(0, 16) : keys.slice(16, 32);
         const attestationKey = keys.slice(32, 48);
@@ -54,8 +55,8 @@ export class SecureSession implements Session {
         return this.attestationKey;
     }
 
-    setFabricIndex(index: number) {
-        this.fabricIndex = index;
+    setFabric(fabric: Fabric) {
+        this.fabric = fabric;
     }
 
     private generateNonce(securityFlags: number, messageId: number, nodeId: bigint) {

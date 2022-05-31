@@ -1,13 +1,13 @@
 import { Crypto } from "../crypto/Crypto";
 import { getSessionManager } from "../session/SessionManager";
-import { PakeMessenger } from "./PaseMessenger";
+import { PaseMessenger } from "./PaseMessenger";
 import { ExchangeHandler, MessageExchange } from "../transport/Dispatcher";
 import { PbkdfParameters, Spake2p } from "../crypto/Spake2p";
 
 const DEFAULT_PASSCODE_ID = 0;
 const SPAKE_CONTEXT = "CHIP PAKE V1 Commissioning";
 
-export class PakeCommissioner implements ExchangeHandler {
+export class PaseCommissioner implements ExchangeHandler {
 
     constructor(
         private readonly setupPinCode: number,
@@ -15,22 +15,22 @@ export class PakeCommissioner implements ExchangeHandler {
         ) {}
 
     async onNewExchange(exchange: MessageExchange) {
-        const messenger = new PakeMessenger(exchange);
+        const messenger = new PaseMessenger(exchange);
         try {
-            await this.handlePbkdfParamRequest(new PakeMessenger(exchange));
+            await this.handlePairingRequest(messenger);
         } catch (error) {
             console.log("An error occured during the commissioning", error);
             await messenger.sendError();
         }
     }
 
-    private async handlePbkdfParamRequest(messenger: PakeMessenger) {
+    private async handlePairingRequest(messenger: PaseMessenger) {
         console.log("handlePbkdfParamRequest");
         const { requestPayload, request: { initiatorRandom, mrpParameters, passcodeId, hasPbkdfParameters, initiatorSessionId } } = await messenger.readPbkdfParamRequest();
         if (passcodeId !== DEFAULT_PASSCODE_ID) throw new Error(`Unsupported passcode ID ${passcodeId}`);
 
-        const sessionSessionManager = getSessionManager();
-        const secureSessionId = sessionSessionManager.getNextAvailableSessionId();
+        const sessionManager = getSessionManager();
+        const secureSessionId = sessionManager.getNextAvailableSessionId();
 
         // TODO: do something with mrpParameters
 
@@ -63,7 +63,7 @@ export class PakeCommissioner implements ExchangeHandler {
         if (!verifier.equals(hAY)) throw new Error("Received incorrect key confirmation from the initiator");
         console.log("All good!");
 
-        await sessionSessionManager.createSecureSession(secureSessionId, initiatorSessionId, Ke, false);
+        await sessionManager.createSecureSession(secureSessionId, initiatorSessionId, Ke, Buffer.alloc(0), false);
 
         await messenger.sendSuccess();
     }

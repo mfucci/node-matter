@@ -1,5 +1,6 @@
 import { Message, Packet } from "../codec/MessageCodec";
 import { Crypto } from "../crypto/Crypto";
+import { Fabric } from "../fabric/Fabric";
 import { Singleton } from "../util/Singleton";
 import { SecureSession } from "./SecureSession";
 import { UnsecureSession } from "./UnsecureSession";
@@ -16,8 +17,8 @@ export class SessionManager {
         this.sessions.set(UNICAST_UNSECURE_SESSION_ID, new UnsecureSession());
     }
 
-    async createSecureSession(sessionId: number, peerSessionId: number, sharedSecret: Buffer, isInitiator: boolean) {
-        const session = await SecureSession.create(peerSessionId, sharedSecret, isInitiator);
+    async createSecureSession(sessionId: number, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean) {
+        const session = await SecureSession.create(peerSessionId, sharedSecret, salt, isInitiator);
         this.sessions.set(sessionId, session);
         return session;
     }
@@ -42,5 +43,5 @@ export interface Session {
     decode(packet: Packet): Message,
     encode(message: Message): Packet,
     getAttestationChallengeKey(): Buffer,
-    setFabricIndex(index: number): void,
+    setFabric(fabric: Fabric): void;
 }

@@ -1,6 +1,6 @@
 import { Crypto } from "../crypto/Crypto";
 import { Message, MessageCodec, SessionType } from "../codec/MessageCodec";
-import { PakeCommissioner } from "../commission/PaseCommissioner";
+import { PaseCommissioner } from "../secure/PaseCommissioner";
 import { Channel } from "./Channel";
 import { Queue } from "../util/Queue";
 import { getSessionManager, Session } from "../session/SessionManager";
@@ -8,6 +8,8 @@ import { InteractionManager } from "../interaction/InteractionManager";
 import { Device } from "../model/Device";
 import { Endpoint } from "../model/Endpoint";
 import { BasicCluster } from "../cluster/BasicCluster";
+import { SecureChannelDispatcher } from "../secure/SecureChannelDispatcher";
+import { CaseCommissioner } from "../secure/CaseCommissioner";
 
 export const UNDEFINED_NODE_ID = BigInt(0);
 
@@ -22,10 +24,11 @@ export class Dispatcher {
     private readonly exchanges = new Map<number, MessageExchange>();
     private readonly sessionManager = getSessionManager();
 
-    private readonly spake = new PakeCommissioner(
-        20202021,
-        { iteration: 1000, salt: Crypto.getRandomData(32) },
+    private readonly secureChannelDispatcher = new SecureChannelDispatcher(
+        new PaseCommissioner(20202021, { iteration: 1000, salt: Crypto.getRandomData(32) }),
+        new CaseCommissioner(),
     );
+
     private readonly interactionManager = new InteractionManager(new Device([
         new Endpoint(
             0x00,
@@ -59,7 +62,7 @@ export class Dispatcher {
             this.exchanges.set(exchangeId, exchange);
             switch (message.payloadHeader.protocolId) {
                 case Protocol.SECURE_CHANNEL:
-                    this.spake.onNewExchange(exchange);
+                    this.secureChannelDispatcher.onNewExchange(exchange);
                     break;
                 case Protocol.INTERACTION_MODEL:
                     this.interactionManager.onNewExchange(exchange);
@@ -167,6 +170,10 @@ export class MessageExchange {
 
     getSession() {
         return this.session;
+    }
+
+    getInitialMessageType() {
+        return this.initialMessage.payloadHeader.messageType;
     }
 
     async waitFor(messageType: number) {

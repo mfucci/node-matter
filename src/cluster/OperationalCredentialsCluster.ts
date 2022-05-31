@@ -1,13 +1,10 @@
 import { TlvObjectCodec } from "../codec/TlvObjectCodec";
 import { Crypto } from "../crypto/Crypto";
-import { Fabric } from "../fabric/Fabric";
-import { getFabricManager } from "../fabric/FabricManager";
-import { getGroupDataProvider } from "../fabric/GroupDataProvider";
-import { KeySet, Policy } from "../fabric/KeySet";
+import { FabricBuilder, KeySet, KeySetType, Policy } from "../fabric/Fabric";
 import { Cluster } from "../model/Cluster";
 import { Command } from "../model/Command";
 import { Session } from "../session/SessionManager";
-import { AddNocRequestT, AddTrustedRootCertificateRequestT, AttestationResponseT, AttestationT, CertificateChainRequestT, CertificateChainResponseT, CertificateType, CsrResponseT, RequestWithNonceT, Status, StatusResponseT } from "./OperationalCredentialsMessages";
+import { AddNocRequestT, AddTrustedRootCertificateRequestT, AttestationResponseT, AttestationT, CertificateChainRequestT, CertificateChainResponseT, CertificateSigningRequestT, CertificateType, CsrResponseT, RequestWithNonceT, Status, StatusResponseT } from "./OperationalCredentialsMessages";
 
 // Chip-Test-DAC-FFF1-8000-000A-Key.pem
 const DeviceAttestationCertificatePrivateKey = Buffer.from("05c6c3a84dc605cc3cc8058009b01b329cf60cf15970c6a90eadaae2de49649e", "hex");
@@ -20,10 +17,8 @@ const ProductAttestationIntermediateCertificate = Buffer.from("308201BF30820166A
 
 const CertificateDeclaration = Buffer.from("33082021906092a864886f70d010702a082020a30820206020103310d300b06096086480165030402013082017106092a864886f70d010701a08201620482015e152400012501f1ff3602050080050180050280050380050480050580050680050780050880050980050a80050b80050c80050d80050e80050f80051080051180051280051380051480051580051680051780051880051980051a80051b80051c80051d80051e80051f80052080052180052280052380052480052580052680052780052880052980052a80052b80052c80052d80052e80052f80053080053180053280053380053480053580053680053780053880053980053a80053b80053c80053d80053e80053f80054080054180054280054380054480054580054680054780054880054980054a80054b80054c80054d80054e80054f80055080055180055280055380055480055580055680055780055880055980055a80055b80055c80055d80055e80055f80056080056180056280056380182403162c04135a494732303134325a423333303030332d32342405002406002507942624080018317d307b020103801462fa823359acfaa9963e1cfa140addf504f37160300b0609608648016503040201300a06082a8648ce3d04030204473045022024e5d1f47a7d7b0d206a26ef699b7c9757b72d469089de3192e678c745e7f60c022100f8aa2fa711fcb79b97e397ceda667bae464e2bd3ffdfc3cced7aa8ca5f4c1a7c", "hex");
 
-const IdentityProtectionKeySetId = 0;
-
 export class OperationalCredentialsCluster extends Cluster {
-    private fabricBeingCommissioned?: Fabric;
+    private farbicBuilder?: FabricBuilder;
 
     constructor() {
         super(
@@ -32,7 +27,7 @@ export class OperationalCredentialsCluster extends Cluster {
             [
                 new Command(0, "AttestationRequest", RequestWithNonceT, AttestationResponseT, ({nonce}, session) => this.handleAttestationRequest(nonce, session)),
                 new Command(2, "CertificateChainRequest", CertificateChainRequestT, CertificateChainResponseT, ({type}) => this.handleCertificateChainRequest(type)),
-                new Command(4, "CSRRequest", RequestWithNonceT, CsrResponseT, ({nonce}) => this.handleCertificateSignRequest(nonce)),
+                new Command(4, "CSRRequest", RequestWithNonceT, CsrResponseT, ({nonce}, session) => this.handleCertificateSignRequest(nonce, session)),
                 new Command(6, "AddNOC", AddNocRequestT, StatusResponseT, ({nocCert, icaCert, ipkValue, caseAdminNode, adminVendorId}, session) => this.addNewOperationalCertificates(nocCert, icaCert, ipkValue, caseAdminNode, adminVendorId, session)),
                 new Command(11, "AddTrustedRootCertificate", AddTrustedRootCertificateRequestT, StatusResponseT, ({certificate}) => this.addTrustedRootCertificate(certificate)),
             ],
@@ -41,12 +36,8 @@ export class OperationalCredentialsCluster extends Cluster {
     }
 
     private handleAttestationRequest(nonce: Buffer, session: Session) {
-        const attestationElements = TlvObjectCodec.encode({ declaration: CertificateDeclaration, nonce, timestamp: 0 }, AttestationT);
-        const digest = Crypto.hash([
-            session.getAttestationChallengeKey(),
-            TlvObjectCodec.encode({ declaration: CertificateDeclaration, nonce, timestamp: 0 }, AttestationT),
-        ]);
-        return {attestationElements, signature: Crypto.sign(DeviceAttestationCertificatePrivateKey, digest)};
+        const elements = TlvObjectCodec.encode({ declaration: CertificateDeclaration, nonce, timestamp: 0 }, AttestationT);
+        return {elements: elements, signature: this.signWithDeviceKey(session, elements)};
     }
 
     private handleCertificateChainRequest(type: CertificateType) {
@@ -60,34 +51,38 @@ export class OperationalCredentialsCluster extends Cluster {
         }
     }
 
-    private handleCertificateSignRequest(nonce: Buffer) {
-        const { privateKey , publicKey } = Crypto.createKeyPair();
-        this.fabricBeingCommissioned = new Fabric();
-        // TODO: create CSR
-        return {elements: Buffer.from(""), signature: Buffer.from("")};
+    private handleCertificateSignRequest(nonce: Buffer, session: Session) {
+        this.farbicBuilder = new FabricBuilder();
+        const csr = this.farbicBuilder.createCertificateSigningRequestr();
+        const elements = TlvObjectCodec.encode({ csr, nonce }, CertificateSigningRequestT);
+        return {elements, signature: this.signWithDeviceKey(session, elements)};
     }
 
     private addNewOperationalCertificates(nocCert: Buffer, icaCert: Buffer, ipkValue: Buffer, caseAdminNode: bigint, adminVendorId: number, session: Session) {
-        if (this.fabricBeingCommissioned === undefined) throw new Error("CSRRequest and AddTrustedRootCertificate should be called first!")
+        if (this.farbicBuilder === undefined) throw new Error("CSRRequest and AddTrustedRootCertificate should be called first!")
 
-        this.fabricBeingCommissioned.setNocCert(nocCert);
-        this.fabricBeingCommissioned.setIcaCert(icaCert);
-        this.fabricBeingCommissioned.setVendorId(adminVendorId);
+        this.farbicBuilder.setNewOpCert(nocCert);
+        this.farbicBuilder.setInetmediateCACert(icaCert);
+        this.farbicBuilder.setVendorId(adminVendorId);
 
-        const fabricIndex = getFabricManager().addFabric(this.fabricBeingCommissioned);
+        const fabric = this.farbicBuilder.build();
+        this.farbicBuilder = undefined;
+        fabric.addKeySet(new KeySet(KeySetType.IdentityProtection, Policy.trustFirst, ipkValue))
 
-        const keySet = new KeySet(IdentityProtectionKeySetId, Policy.trustFirst, ipkValue);
+        session.setFabric(fabric);
 
-        getGroupDataProvider().setKetSet(fabricIndex, this.fabricBeingCommissioned.getCompressedId(), keySet);
-
-        session.setFabricIndex(fabricIndex);
+        // TODO: create ACL with caseAdminNode
 
         return {status: Status.Success};
     }
 
     private addTrustedRootCertificate(certificate: Buffer) {
-        if (this.fabricBeingCommissioned === undefined) throw new Error("CSRRequest should be called first!")
-        this.fabricBeingCommissioned.setRootCert(certificate);
+        if (this.farbicBuilder === undefined) throw new Error("CSRRequest should be called first!")
+        this.farbicBuilder.setRootCert(certificate);
         return {status: Status.Success};
+    }
+
+    private signWithDeviceKey(session: Session, data: Buffer) {
+        return Crypto.sign(DeviceAttestationCertificatePrivateKey, [data, session.getAttestationChallengeKey()]);
     }
 }

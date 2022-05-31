@@ -1,4 +1,4 @@
-import { Tag } from "../models/Tag";
+import { TlvTag } from "./TlvTag";
 import { LEBufferReader } from "../util/LEBufferReader";
 import { LEBufferWriter } from "../util/LEBufferWriter";
 
@@ -38,7 +38,7 @@ export const enum ElementSize {
 export interface Element {
     type: TlvType,
     value: any,
-    tag: Tag,
+    tag: TlvTag,
 }
 
 export class TlvCodec {
@@ -58,23 +58,23 @@ export class TlvCodec {
         return {tag, typeSizeByte: controlByte & 0x1F};
     }
 
-    private static decodeTag(reader: LEBufferReader, tagControl: TagControl): Tag {
+    private static decodeTag(reader: LEBufferReader, tagControl: TagControl): TlvTag {
         switch (tagControl) {
             case TagControl.Anonymous:
-                return Tag.Anonymous;
+                return TlvTag.Anonymous;
             case TagControl.ContextSpecific:
-                return Tag.contextual(reader.readUInt8());
+                return TlvTag.contextual(reader.readUInt8());
             case TagControl.CommonProfile2Bytes:
-                return Tag.contextual(reader.readUInt16());
+                return TlvTag.contextual(reader.readUInt16());
             case TagControl.CommonProfile4Bytes:
-                return Tag.contextual(reader.readUInt32());
+                return TlvTag.contextual(reader.readUInt32());
             case TagControl.ImplicitProfile2Bytes:
                 case TagControl.ImplicitProfile4Bytes:
                 throw new Error(`Unsupported implicit profile ${tagControl}`);
             case TagControl.FullyQualified6Bytes:
-                return new Tag(reader.readUInt32(), reader.readUInt16());
+                return new TlvTag(reader.readUInt32(), reader.readUInt16());
             case TagControl.FullyQualified6Bytes:
-                return new Tag(reader.readUInt32(), reader.readUInt32());
+                return new TlvTag(reader.readUInt32(), reader.readUInt32());
             default:
                 throw new Error(`Unexpected tagControl ${tagControl}`);
         }
@@ -212,10 +212,10 @@ export class TlvCodec {
     private static encodeContainer(writer: LEBufferWriter, {type, value, tag}: Element) {
         this.encodeControlByteAndTag(writer, type, tag);
         (value as Element[]).forEach(element => this.encodeElementInternal(writer, element));
-        this.encodeControlByteAndTag(writer, TlvType.EndOfContainer, Tag.Anonymous);
+        this.encodeControlByteAndTag(writer, TlvType.EndOfContainer, TlvTag.Anonymous);
     }
 
-    private static encodeControlByteAndTag(writer: LEBufferWriter, valueType: TlvType, tag: Tag) {
+    private static encodeControlByteAndTag(writer: LEBufferWriter, valueType: TlvType, tag: TlvTag) {
         var tagControl;
         var longTag = (tag.id & 0xFFFF0000) !== 0;
         if (tag.isAnonymous()) {

@@ -1,11 +1,11 @@
-import { Tag } from "../models/Tag";
+import { TlvTag } from "./TlvTag";
 import { TlvType, Element, TlvCodec } from "./TlvCodec";
 
 // Type structure definitions
 export type Template<T> = {tlvType?: TlvType};
 type ArrayTemplate<T> = Template<T> & {itemTemplate: Template<T>};
 type ObjectTemplate<T> = Template<T> & {fieldTemplates: FieldTemplates};
-type TaggedTemplate<T> = Template<T> & {tag?: Tag};
+type TaggedTemplate<T> = Template<T> & {tag?: TlvTag};
 type Field<T> = TaggedTemplate<T> & {optional: false};
 type OptionalField<T> = TaggedTemplate<T> & {optional: true};
 type FieldTemplates = {[key: string]: Field<any> | OptionalField<any>};
@@ -19,15 +19,15 @@ type TypeFromFieldTemplates<T extends FieldTemplates> = { [P in RequiredKeys<T>]
 export type JsType<Type> = Type extends Template<infer T> ? T : never;
 
 // Template definitions
-export const StringT:Template<string> = { tlvType: TlvType.String};
-export const BooleanT:Template<boolean> = { tlvType: TlvType.Boolean};
-export const ByteStringT:Template<Buffer> = { tlvType: TlvType.ByteString};
-export const UnsignedIntT:Template<number> = { tlvType: TlvType.UnsignedInt};
-export const UnsignedLongT:Template<bigint> = { tlvType: TlvType.UnsignedInt};
+export const StringT:Template<string> = { tlvType: TlvType.String };
+export const BooleanT:Template<boolean> = { tlvType: TlvType.Boolean };
+export const ByteStringT:Template<Buffer> = { tlvType: TlvType.ByteString };
+export const UnsignedIntT:Template<number> = { tlvType: TlvType.UnsignedInt };
+export const UnsignedLongT:Template<bigint> = { tlvType: TlvType.UnsignedInt };
 export const AnyT:Template<any> = { };
 export const ArrayT = <T,>(itemTemplate: Template<T>) => ({ tlvType: TlvType.Array, itemTemplate } as Template<T[]>);
 export const ObjectT = <F extends FieldTemplates>(fieldTemplates: F, tlvType: TlvType = TlvType.Structure) => ({ tlvType, fieldTemplates } as Template<TypeFromFieldTemplates<F>>);
-export const Field = <T,>(id: number, type: Template<T>):Field<T> =>  ({...type, tag: Tag.contextual(id), optional: false});
+export const Field = <T,>(id: number, type: Template<T>):Field<T> =>  ({...type, tag: TlvTag.contextual(id), optional: false});
 export const OptionalField = <T,>(id: number, type: Template<T>):OptionalField<T> =>  ({...Field(id, type), optional: true});
 
 export class TlvObjectCodec {
@@ -40,13 +40,13 @@ export class TlvObjectCodec {
     }
 
     private static decodeInternal(element: Element | undefined, template: TaggedTemplate<any>): any {
-        const {tlvType: expectedType, tag: expectedTag = Tag.Anonymous} = template;
+        const {tlvType: expectedType, tag: expectedTag = TlvTag.Anonymous} = template;
         if (element === undefined) return undefined;
         const {tag, value, type} = element;
         if (!tag.equals(expectedTag)) throw new Error(`Unexpected tag ${tag}. Expected was ${expectedTag}`);
         if (expectedType === undefined) {
             // Don't process the element since it has a variable type
-            return {tag: Tag.Anonymous, value, type};
+            return {tag: TlvTag.Anonymous, value, type};
         }
         if (type !== expectedType) throw new Error(`Unexpected type ${type}. Expected was ${expectedType}`);
 
@@ -80,7 +80,7 @@ export class TlvObjectCodec {
         const result: any = {};
         for (var key in fieldTemplates) {
             const template = fieldTemplates[key];
-            const {tag: expectedTag = Tag.Anonymous} = template;
+            const {tag: expectedTag = TlvTag.Anonymous} = template;
             const element = elements.find(({tag}) => tag.equals(expectedTag));
             const value = this.decodeInternal(element, template);
             if (value === undefined) {
@@ -101,7 +101,7 @@ export class TlvObjectCodec {
     }
 
     private static encodeInternal(value: any, template: TaggedTemplate<any>): Element | undefined {
-        const {tlvType: type, tag = Tag.Anonymous} = template;
+        const {tlvType: type, tag = TlvTag.Anonymous} = template;
         if (value === undefined) return undefined;
 
         switch (type) {

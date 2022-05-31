@@ -348,3 +348,93 @@ a6 0c bd ff 33 3e e3 f2 fd 1f 49
 18
 
 30 01 40 29 2d 30 6f 70 05 83 f4 81 a5 af b8 e2 30 ef 2b 2d cb e1 c3 44 d0 af 70 ab c1 6a f6 c8 a8 b4 69 4d eb 64 08 be 67 b3 18 7d 97 dd 0c c4 85 8a c1 db 1a 1f 25 e9 41 7c 67 02 ec 4a 7e 8c 7e 5c 54
+
+
+================= Add NOC request =======
+
+15
+    28 00
+    28 01
+    36 02
+        15
+            37 00
+                24 00 00
+                24 01 3e
+                24 02 06 
+            18
+            35 01 
+                30 00 f1 15 30 01 01 01 24 02 01 37 03 24 14 00 18 26 04 80 12 54 28 26 05 80 15 20 3b 37 06 24 15 01 24 11 09 18 24 07 01 24 08 01 30 09 41 04 9a c1 dc 99 95 e6 89 7f 2b f1 42 0a 6e fd ba 30 78 1a c3 dc db 7b b1 5e 99 30 50 ff 0c e9 2c 52 72 7b 02 9c 30 f1 1f 16 3b 17 7d 3b fa 37 f0 15 db 15 69 94 80 1f 0e 0f 9b 64 c7 2b f8 a1 51 53 37 0a 35 01 28 01 18 24 02 01 36 03 04 02 04 01 18 30 04 14 02 cc e0 d7 bf a2 9e 98 e4 54 be 38 e2 7b fe 6c 0f 16 23 02 30 05 14 e7 66 06 93 62 d7 e3 5b 79 68 71 61 64 4d 22 2b dd e9 3a 68 18 30 0b 40 50 e8 18 3c 29 0f 43 8a 57 51 6f ae a0 06 28 2d 6d 2b 51 78 d5 d1 5d fc c3 ec 8a 92 32 db 94 28 94 ff 2d 2c e9 41 d3 b4 2d d8 a2 cd 51 ee a4 f3 f5 0b 66 75 79 59 36 88 68 c3 a0 a1 b5 fe 66 5f 18
+                30 01 00
+                30 02 10 74 65 6d 70 6f 72 61 72 79 20 69 70 6b 20 30 31
+                26 03 69 b6 01 00 25 04 70 dc
+            18
+        18
+    18
+    24 ff 01
+18 
+
+
+== cert ===
+
+15
+    30 01 01 01
+    24 02 01
+    37 03
+        24 14 00
+    18
+    26 04 80 12 54 28
+    26 05 80 15 20 3b
+    37 06
+        24 15 01
+        24 11 09
+    18 
+    24 07 01
+    24 08 01
+    30 09 41 04 9a c1 dc 99 95 e6 89 7f 2b f1 42 0a 6e fd ba 30 78 1a c3 dc db 7b b1 5e 99 30 50 ff 0c e9 2c 52 72 7b 02 9c 30 f1 1f 16 3b 17 7d 3b fa 37 f0 15 db 15 69 94 80 1f 0e 0f 9b 64 c7 2b f8 a1 51 53
+    37 0a
+        35 01
+            28 01
+        18
+        24 02 01
+        36 03
+            04 02
+            04 01 
+        18
+        30 04 14 02 cc e0 d7 bf a2 9e 98 e4 54 be 38 e2 7b fe 6c 0f 16 23 02
+        30 05 14 e7 66 06 93 62 d7 e3 5b 79 68 71 61 64 4d 22 2b dd e9 3a 68
+    18
+    30 0b 40 50 e8 18 3c 29 0f 43 8a 57 51 6f ae a0 06 28 2d 6d 2b 51 78 d5 d1 5d fc c3 ec 8a 92 32 db 94 28 94 ff 2d 2c e9 41 d3 b4 2d d8 a2 cd 51 ee a4 f3 f5 0b 66 75 79 59 36 88 68 c3 a0 a1 b5 fe 66 5f
+18
+
+=================  Pase ===============
+
+06 <- exchange flags Ack
+21 <- message type = PBKDFParamResponse
+d3 64 <- exchange ID
+00 00 <- protocol ID
+0a 4f f2 17 <- acked Message ID
+
+
+04 <- has source node 
+00 00 <- session ID
+00 <- Secure flags
+0e 4f f2 17 <- message counter
+ec 08 d0 59 ca 5e 69 a2
+
+--- payload header ---
+
+05 < req Ack / IsInitiator
+30 < mesage ID
+dd 64 <- exchangeId
+00 00 < pto ID
+
+15
+    30 01 20 14 75 46 b4 2b 42 12 ae 62 e3 b3 93 b9 73 e7 89 2e 02 a8 6d 38 7d 8f 48 29 b0 86 14 95 b5 74 3a
+    25 02 34 dc
+    30 03 20 e6 20 53 e0 b5 22 67 73 ab 96 83 3d 79 13 3c 86 5d db 5a 67 c9 ea 93 24 71 c7 34 05 af cd 68 da
+    30 04 41 04 05 96 66 f3 2e fa a8 e6 e0 99 c2 47 2e 4b 30 25 ab 08 cc 2d 8c 29 09 6b ad f5 05 c5 3b 32 70 f2 45 5a 14 2e 08 4c a4 45 52 72 a5 e3 d9 78 a2 ef 79 00 f9 f8 7f 86 21 8c ee c0 c2 07 f4 38 cf 2b
+    35 05
+        25 01 88 13
+        25 02 2c 01
+    18
+18

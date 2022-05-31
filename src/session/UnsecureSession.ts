@@ -1,4 +1,5 @@
 import { Packet, Message, MessageCodec } from "../codec/MessageCodec";
+import { Fabric } from "../fabric/Fabric";
 import { Session } from "./SessionManager";
 
 export class UnsecureSession implements Session {
@@ -14,7 +15,7 @@ export class UnsecureSession implements Session {
         throw new Error("Not supported on an unsecure session");
     }
 
-    setFabricIndex(index: number): void {
+    setFabric(fabric: Fabric): void {
         throw new Error("Not supported on an unsecure session");
     }
 }

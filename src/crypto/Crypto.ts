@@ -84,7 +84,7 @@ export class Crypto {
         });
     }
 
-    static hkdf(secret: Buffer, salt: Buffer, info: Buffer) {
+    static hkdf(secret: Buffer, salt: Buffer, info: Buffer, length: number = SYMMETRIC_KEY_LENGTH) {
         return new Promise<Buffer>((resolver, rejecter) => {
             crypto.hkdf(HASH_ALGORITHM, secret, salt, info, SYMMETRIC_KEY_LENGTH, (error, key) => {
                 if (error !== null) rejecter(error);

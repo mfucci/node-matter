@@ -51,9 +51,9 @@ export class OperationalCredentialsCluster extends Cluster {
         }
     }
 
-    private handleCertificateSignRequest(nonce: Buffer, session: Session) {
-        this.farbicBuilder = new FabricBuilder();
-        const csr = this.farbicBuilder.createCertificateSigningRequestr();
+    private async handleCertificateSignRequest(nonce: Buffer, session: Session) {
+        this.farbicBuilder = await FabricBuilder.create();
+        const csr = this.farbicBuilder.createCertificateSigningRequest();
         const elements = TlvObjectCodec.encode({ csr, nonce }, CertificateSigningRequestT);
         return {elements, signature: this.signWithDeviceKey(session, elements)};
     }

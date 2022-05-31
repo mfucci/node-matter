@@ -3,8 +3,6 @@ import { PasePake1T, PasePake2T, PasePake3T, PbkdfParamRequestT, PbkdfParamRespo
 import { MessageType } from "./SecureChannelMessages";
 import { SecureChannelMessenger } from "./SecureChannelMessenger";
 
-export type PasePake2 = JsType<typeof PasePake2T>;
-
 export class PaseMessenger extends SecureChannelMessenger {
     async readPbkdfParamRequest() {
         const { payloadHeader: { messageType }, payload } = await this.exchange.nextMessage();
@@ -12,7 +10,7 @@ export class PaseMessenger extends SecureChannelMessenger {
         return { requestPayload: payload, request: TlvObjectCodec.decode(payload, PbkdfParamRequestT) } ;
     }
 
-    async sendPbkdfParamResponse<T>(response: T) {
+    async sendPbkdfParamResponse(response: JsType<typeof PbkdfParamResponseT>) {
         const payload = TlvObjectCodec.encode(response, PbkdfParamResponseT);
         await this.exchange.send(MessageType.PbkdfParamResponse, payload);
         return payload;
@@ -25,7 +23,7 @@ export class PaseMessenger extends SecureChannelMessenger {
         return TlvObjectCodec.decode(payload, PasePake1T);
     }
 
-    async sendPasePake2(pasePake2: PasePake2) {
+    async sendPasePake2(pasePake2: JsType<typeof PasePake2T>) {
         await this.exchange.send(MessageType.PasePake2, TlvObjectCodec.encode(pasePake2, PasePake2T));
     }
 

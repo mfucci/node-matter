@@ -1,6 +1,6 @@
 import { Crypto } from "../crypto/Crypto";
 import { Message, MessageCodec, SessionType } from "../codec/MessageCodec";
-import { PaseCommissioner } from "../secure/PaseCommissioner";
+import { PasePairing } from "../secure/PasePairing";
 import { Channel } from "./Channel";
 import { Queue } from "../util/Queue";
 import { getSessionManager, Session } from "../session/SessionManager";
@@ -9,7 +9,7 @@ import { Device } from "../model/Device";
 import { Endpoint } from "../model/Endpoint";
 import { BasicCluster } from "../cluster/BasicCluster";
 import { SecureChannelDispatcher } from "../secure/SecureChannelDispatcher";
-import { CaseCommissioner } from "../secure/CaseCommissioner";
+import { CasePairing } from "../secure/CasePairing";
 
 export const UNDEFINED_NODE_ID = BigInt(0);
 
@@ -25,8 +25,8 @@ export class Dispatcher {
     private readonly sessionManager = getSessionManager();
 
     private readonly secureChannelDispatcher = new SecureChannelDispatcher(
-        new PaseCommissioner(20202021, { iteration: 1000, salt: Crypto.getRandomData(32) }),
-        new CaseCommissioner(),
+        new PasePairing(20202021, { iteration: 1000, salt: Crypto.getRandomData(32) }),
+        new CasePairing(),
     );
 
     private readonly interactionManager = new InteractionManager(new Device([

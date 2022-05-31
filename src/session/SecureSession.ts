@@ -31,24 +31,16 @@ export class SecureSession implements Session {
         const headerBytes = MessageCodec.encodePacketHeader(header);
         const securityFlags = headerBytes.readUInt8(3);
         const nonce = this.generateNonce(securityFlags, header.messageId, UNDEFINED_NODE_ID);
-        const bytesLength = bytes.length;
-        const encryptedBytes = bytes.slice(0, bytesLength - AUTH_TAG_LENGTH);
-        const tag = bytes.slice(bytesLength - AUTH_TAG_LENGTH);
-        const decryptedBytes = Crypto.decrypt(this.decryptKey, encryptedBytes, tag, nonce, headerBytes);
-
-        return MessageCodec.decodePayload({ header, bytes: decryptedBytes });
+        return MessageCodec.decodePayload({ header, bytes: Crypto.decrypt(this.decryptKey, bytes, nonce, headerBytes) });
     }
     
     encode(message: Message): Packet {
         message.packetHeader.sessionId = this.peerSessionId;
         const {header, bytes} = MessageCodec.encodePayload(message);
         const headerBytes = MessageCodec.encodePacketHeader(message.packetHeader);
-        console.log(headerBytes.toString("hex"));
         const securityFlags = headerBytes.readUInt8(3);
         const nonce = this.generateNonce(securityFlags, header.messageId, UNDEFINED_NODE_ID);
-        const { data: encryptedBytes, tag } = Crypto.encrypt(this.encryptKey, bytes, nonce, headerBytes);
-
-        return { header, bytes: Buffer.concat([encryptedBytes, tag])};
+        return { header, bytes: Crypto.encrypt(this.encryptKey, bytes, nonce, headerBytes)};
     }
 
     getAttestationChallengeKey(): Buffer {

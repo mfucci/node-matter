@@ -14,7 +14,7 @@ const KDFSR3_INFO = Buffer.from("Sigma3");
 const TBE_DATA2_NONCE = Buffer.from("NCASE_Sigma2N");
 const TBE_DATA3_NONCE = Buffer.from("NCASE_Sigma3N");
 
-export class CaseCommissioner {
+export class CasePairing {
     private readonly sessionManager: SessionManager = getSessionManager();
 
     async onNewExchange(exchange: MessageExchange) {

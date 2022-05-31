@@ -17,7 +17,7 @@ export class Endpoint {
         return this.clusters.get(clusterId)?.getAttributeValue(attributeId);
     }
 
-    invoke(session: Session, clusterId: number, commandId: number, args: Element): Element | undefined {
+    async invoke(session: Session, clusterId: number, commandId: number, args: Element): Promise<Element | undefined> {
         return this.clusters.get(clusterId)?.invoke(session, commandId, args);
     }
 }

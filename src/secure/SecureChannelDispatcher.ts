@@ -1,13 +1,13 @@
 import { MessageExchange } from "../transport/Dispatcher";
-import { CaseCommissioner } from "./CaseCommissioner";
-import { PaseCommissioner } from "./PaseCommissioner";
+import { CasePairing } from "./CasePairing";
+import { PasePairing } from "./PasePairing";
 import { MessageType } from "./SecureChannelMessages";
 
 export class SecureChannelDispatcher {
 
     constructor(
-        private readonly paseCommissioner: PaseCommissioner,
-        private readonly caseCommissioner: CaseCommissioner,
+        private readonly paseCommissioner: PasePairing,
+        private readonly caseCommissioner: CasePairing,
     ) {}
 
     onNewExchange(exchange: MessageExchange) {

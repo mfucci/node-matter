@@ -29,7 +29,7 @@ export class Cluster {
         return this.attributesMap.get(attributeId)?.getValue();
     }
 
-    invoke(session: Session, commandId: number, args: Element): Element | undefined {
+    async invoke(session: Session, commandId: number, args: Element): Promise<Element | undefined> {
         return this.commandsMap.get(commandId)?.invoke(session, args);
     }
 }

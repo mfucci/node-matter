@@ -15,6 +15,7 @@ export class Udp {
 
     start() {
         this.server.bind(this.port);
+        console.log("Matter server listening");
     }
 }
 
@@ -34,6 +35,8 @@ class UdpChannel implements Channel<Buffer> {
             });
         });
     }
-}
 
-new Udp(new Dispatcher()).start();
+    getName() {
+        return `udp://${this.peerIp}:${this.peerPort}`;
+    }
+}

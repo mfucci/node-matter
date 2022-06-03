@@ -1,5 +1,4 @@
-import { TlvType } from "../codec/TlvCodec";
-import { ArrayT, BooleanT, ByteStringT, Field, JsType, ObjectT, OptionalField, UnsignedIntT, UnsignedLongT } from "../codec/TlvObjectCodec";
+import { ByteStringT, Field, JsType, ObjectT, OptionalField, UnsignedIntT, UnsignedLongT } from "../codec/TlvObjectCodec";
 
 export const enum CertificateType {
     DeviceAttestation = 1,
@@ -35,7 +34,6 @@ export const AddNocRequestT = ObjectT({
     caseAdminNode: Field(3, UnsignedLongT),
     adminVendorId: Field(4, UnsignedIntT),
 });
-type AddNocRequest = JsType<typeof AddNocRequestT>;
 
 export const AddTrustedRootCertificateRequestT = ObjectT({
     certificate: Field(0, ByteStringT),

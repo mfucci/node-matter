@@ -8,6 +8,9 @@ const AUTH_TAG_LENGTH = 16;
 const RANDOM_LENGTH = 32;
 const SYMMETRIC_KEY_LENGTH = 16;
 
+const EC_PRIVATE_KEY_PKCS8_HEADER = Buffer.from("308141020100301306072a8648ce3d020106082a8648ce3d030107042730250201010420", "hex");
+const EC_PUBLIC_KEY_SPKI_HEADER = Buffer.from("3059301306072a8648ce3d020106082a8648ce3d030107034200", "hex");
+
 export interface KeyPair {
     publicKey: Buffer,
     privateKey: Buffer,
@@ -17,7 +20,7 @@ export class Crypto {
     static encrypt(key: Buffer, data: Buffer, nonce: Buffer, aad?: Buffer) {
         const cipher = crypto.createCipheriv(ENCRYPT_ALGORITHM, key, nonce, { authTagLength: AUTH_TAG_LENGTH });
         if (aad !== undefined) {
-            cipher.setAAD(aad, { plaintextLength: data.length })
+            cipher.setAAD(aad, { plaintextLength: data.length})
         };
         const encrypted = cipher.update(data);
         cipher.final();
@@ -26,13 +29,12 @@ export class Crypto {
 
     static decrypt(key: Buffer, data: Buffer, nonce: Buffer, aad?: Buffer) {
         const cipher = crypto.createDecipheriv(ENCRYPT_ALGORITHM, key, nonce, { authTagLength: AUTH_TAG_LENGTH });
+        const plaintextLength = data.length - AUTH_TAG_LENGTH;
         if (aad !== undefined) {
-            cipher.setAAD(aad, { plaintextLength: data.length })
+            cipher.setAAD(aad, { plaintextLength })
         };
-        const encrypted = data.slice(0, data.length - AUTH_TAG_LENGTH);
-        const tag = data.slice(data.length - AUTH_TAG_LENGTH);
-        cipher.setAuthTag(tag);
-        const result = cipher.update(encrypted);
+        cipher.setAuthTag(data.slice(plaintextLength));
+        const result = cipher.update(data.slice(0, plaintextLength));
         cipher.final();
         return result;
     }
@@ -62,6 +64,7 @@ export class Crypto {
 
     static ecdh(publicKey: Buffer) {
         const ecdh = crypto.createECDH(EC_CURVE);
+        ecdh.generateKeys();
         return {publicKey: ecdh.getPublicKey(), sharedSecret: ecdh.computeSecret(publicKey)};
     }
 
@@ -86,7 +89,7 @@ export class Crypto {
 
     static hkdf(secret: Buffer, salt: Buffer, info: Buffer, length: number = SYMMETRIC_KEY_LENGTH) {
         return new Promise<Buffer>((resolver, rejecter) => {
-            crypto.hkdf(HASH_ALGORITHM, secret, salt, info, SYMMETRIC_KEY_LENGTH, (error, key) => {
+            crypto.hkdf(HASH_ALGORITHM, secret, salt, info, length, (error, key) => {
                 if (error !== null) rejecter(error);
                 resolver(Buffer.from(key));
             });
@@ -99,29 +102,26 @@ export class Crypto {
         return hmac.digest();
     }
 
-    static sign(privateKey: Buffer, data: Buffer | Buffer[]) {
+    static sign(privateKey: Buffer, data: Buffer | Buffer[], dsaEncoding:("ieee-p1363" | "der")  = "ieee-p1363") {
         const signer = crypto.createSign(HASH_ALGORITHM);
         if (Array.isArray(data)) {
             data.forEach(chunk => signer.update(chunk));
         } else {
             signer.update(data);
         }
-        return signer.sign({ key: privateKey,  dsaEncoding: "ieee-p1363" });
+        return signer.sign({ key: Buffer.concat([EC_PRIVATE_KEY_PKCS8_HEADER, privateKey]), format: "der", type: "pkcs8", dsaEncoding });
     }
-
+    
     static verify(publicKey: Buffer, data: Buffer, signature: Buffer) {
         const verifier = crypto.createVerify(HASH_ALGORITHM);
         verifier.update(data);
-        const success = verifier.verify({ key: publicKey,  dsaEncoding: "ieee-p1363" }, signature);
+        const success = verifier.verify({ key: Buffer.concat([EC_PUBLIC_KEY_SPKI_HEADER, publicKey]), format: "der", type: "spki",  dsaEncoding: "ieee-p1363" }, signature);
         if (!success) throw new Error("Signature verification failed");
     }
 
-    static async createKeyPair(): Promise<KeyPair> {
-        return new Promise<KeyPair>((resolver, rejecter) => {
-            crypto.generateKeyPair("ec", { namedCurve: EC_CURVE }, (error, publicKey, privateKey) => {
-                if (error !== null) rejecter(error);
-                resolver({ publicKey: publicKey.export(), privateKey: privateKey.export() });
-            });
-        });
+    static createKeyPair(): KeyPair {
+        const ecdh = crypto.createECDH(EC_CURVE);
+        ecdh.generateKeys();
+        return { publicKey: ecdh.getPublicKey(), privateKey: ecdh.getPrivateKey() };
     }
 }

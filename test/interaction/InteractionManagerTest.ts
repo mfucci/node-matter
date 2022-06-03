@@ -1,13 +1,12 @@
 import assert from "assert";
 import { BasicCluster } from "../../src/cluster/BasicCluster";
 import { TlvType } from "../../src/codec/TlvCodec";
+import { TlvTag } from "../../src/codec/TlvTag";
 import { InteractionManager } from "../../src/interaction/InteractionManager";
 import { ReadRequest, ReadResponse } from "../../src/interaction/InteractionMessenger";
 import { Device } from "../../src/model/Device";
 import { Endpoint } from "../../src/model/Endpoint";
-import { Tag } from "../../src/models/Tag";
-
-import crypto from "crypto";
+import { MessageExchange } from "../../src/transport/Dispatcher";
 
 const READ_REQUEST: ReadRequest = {
     interactionModelRevision: 1,
@@ -29,7 +28,7 @@ const READ_RESPONSE: ReadResponse = {
                 attributeId: 2,
             },
             value: {
-                tag: Tag.Anonymous,
+                tag: TlvTag.Anonymous,
                 type: TlvType.UnsignedInt,
                 value: 1,
             },
@@ -42,7 +41,7 @@ const READ_RESPONSE: ReadResponse = {
                 attributeId: 4,
             },
             value: {
-                tag: Tag.Anonymous,
+                tag: TlvTag.Anonymous,
                 type: TlvType.UnsignedInt,
                 value: 2,
             },
@@ -61,7 +60,7 @@ describe("InteractionManager", () => {
                 ])
             ]));
 
-            const result = interactionManager.handleReadRequest(READ_REQUEST);
+            const result = interactionManager.handleReadRequest(undefined as unknown as MessageExchange, READ_REQUEST);
 
             assert.deepEqual(result, READ_RESPONSE);
         });

@@ -18,7 +18,7 @@ export class SessionManager {
     }
 
     async createSecureSession(sessionId: number, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean) {
-        const session = await SecureSession.create(peerSessionId, sharedSecret, salt, isInitiator);
+        const session = await SecureSession.create(sessionId, peerSessionId, sharedSecret, salt, isInitiator);
         this.sessions.set(sessionId, session);
         return session;
     }
@@ -40,6 +40,7 @@ export class SessionManager {
 }
 
 export interface Session {
+    getName(): string;
     decode(packet: Packet): Message,
     encode(message: Message): Packet,
     getAttestationChallengeKey(): Buffer,

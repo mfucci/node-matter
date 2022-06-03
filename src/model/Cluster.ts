@@ -18,7 +18,7 @@ export class Cluster {
     }
 
     addCommands(commands: Command<any, any>[]) {
-        commands.forEach(command => this.commandsMap.set(command.id, command));
+        commands.forEach(command => this.commandsMap.set(command.invokeId, command));
     }
 
     addAttributes(attributes: Attribute<any>[]) {
@@ -29,7 +29,7 @@ export class Cluster {
         return this.attributesMap.get(attributeId)?.getValue();
     }
 
-    async invoke(session: Session, commandId: number, args: Element): Promise<Element | undefined> {
+    async invoke(session: Session, commandId: number, args: Element) {
         return this.commandsMap.get(commandId)?.invoke(session, args);
     }
 }

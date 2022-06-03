@@ -18,4 +18,8 @@ export class UnsecureSession implements Session {
     setFabric(fabric: Fabric): void {
         throw new Error("Not supported on an unsecure session");
     }
+
+    getName() {
+        return "unsecure";
+    }
 }

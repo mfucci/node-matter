@@ -1,4 +1,5 @@
 export const OBJECT_ID_KEY = "_objectId";
+export const END_MARKER = {};
 
 const enum DerType {
     UnsignedInt = 0x02,
@@ -8,6 +9,7 @@ const enum DerType {
     Sequence = 0x10,
     Set = 0x11,
     UTF8String = 0x0C,
+    EndMarker = 0xA0,
 }
 
 export class DerCodec {
@@ -16,6 +18,8 @@ export class DerCodec {
             return this.encodeArray(value);
         } else if (Buffer.isBuffer(value)) {
             return this.encodeBitString(value);
+        } else if (value === END_MARKER) {
+            return this.encodeEndMarker();
         } else if (typeof value === "object") {
             return this.encodeObject(value);
         } else if (typeof value === "string") {
@@ -32,7 +36,11 @@ export class DerCodec {
     }
 
     private static encodeBitString(value: Buffer) {
-        return this.encodeAnsi1(DerType.BitString, value);
+        return this.encodeAnsi1(DerType.BitString, Buffer.concat([Buffer.alloc(1), value]));
+    }
+
+    private static encodeEndMarker() {
+        return this.encodeAnsi1(DerType.EndMarker, Buffer.alloc(0));
     }
 
     private static encodeObject(object: any) {
@@ -52,10 +60,6 @@ export class DerCodec {
     }
 
     private static encodeUnsignedInt(value: number) {
-        return this.encodeAnsi1(DerType.UnsignedInt, this.encodeUnsignedIntBytes(value));
-    }
-
-    private static encodeUnsignedIntBytes(value: number) {
         const buffer = Buffer.alloc(5);
         buffer.writeUInt32BE(value, 1);
         var start = 0;
@@ -65,19 +69,29 @@ export class DerCodec {
             start++;
             if (start === 4) break;
         }
+        return this.encodeAnsi1(DerType.UnsignedInt, buffer.slice(start));
+    }
+
+    private static encodeLengthBytes(value: number) {
+        const buffer = Buffer.alloc(5);
+        buffer.writeUInt32BE(value, 1);
+        var start = 0;
+        while (true) {
+            if (buffer.readUint8(start) !== 0) break;
+            start++;
+            if (start === 4) break;
+        }
+        const lengthLength = buffer.length - start;
+        if (lengthLength > 1 || buffer.readUint8(start) >= 0x80) {
+            start--;
+            buffer.writeUInt8(0x80 + lengthLength, start);
+        }
         return buffer.slice(start);
     }
 
     private static encodeAnsi1(tag: number, data: Buffer, constructed: boolean = false) {
         const tagBuffer = Buffer.alloc(1);
         tagBuffer.writeUInt8(tag | (constructed ? 0x20 : 0));
-        const lengthBuffer = this.encodeUnsignedIntBytes(data.length);
-        if (lengthBuffer.length > 1) {
-            const lengthLengthBuffer = Buffer.alloc(1);
-            lengthLengthBuffer.writeUInt8(0x80 + lengthBuffer.length);
-            return Buffer.concat([tagBuffer, lengthLengthBuffer, lengthBuffer, data]);
-        } else {
-            return Buffer.concat([tagBuffer, lengthBuffer, data]);
-        }
+        return Buffer.concat([tagBuffer, this.encodeLengthBytes(data.length), data]);
     }
 }

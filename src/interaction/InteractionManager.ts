@@ -11,13 +11,15 @@ export class InteractionManager implements ExchangeHandler {
     async onNewExchange(exchange: MessageExchange) {
         const messenger = new InteractionMessenger(
             exchange,
-            readRequest => this.handleReadRequest(readRequest),
-            (session, invokeRequest) => this.handleInvokeRequest(session, invokeRequest),
+            readRequest => this.handleReadRequest(exchange, readRequest),
+            invokeRequest => this.handleInvokeRequest(exchange, invokeRequest),
         );
         await messenger.handleRequest();
     }
 
-    handleReadRequest({attributes}: ReadRequest): ReadResponse {
+    handleReadRequest(exchange: MessageExchange, {attributes}: ReadRequest): ReadResponse {
+        console.log(`Received read request from ${exchange.getChannel().getName()}: ${attributes.map(({endpointId = "*", clusterId, attributeId}) => `${endpointId}/${clusterId}/${attributeId}`).join(", ")}`);
+
         return {
             isFabricFiltered: true,
             interactionModelRevision: 1,
@@ -25,10 +27,20 @@ export class InteractionManager implements ExchangeHandler {
         };
     }
 
-    handleInvokeRequest(session: Session, {invokes}: InvokeRequest): InvokeResponse {
+    async handleInvokeRequest(exchange: MessageExchange, {invokes}: InvokeRequest): Promise<InvokeResponse> {
+        console.log(`Received invoke request from ${exchange.getChannel().getName()}: ${invokes.map(({path: {endpointId, clusterId, commandId}}) => `${endpointId}/${clusterId}/${commandId}`).join(", ")}`);
+
+        const results = (await Promise.all(invokes.map(({path, args}) => this.device.invoke(exchange.getSession(), path, args)))).flat();
         return {
             suppressResponse: false,
-            responses: invokes.flatMap(({path, args}) => this.device.invoke(session, path, args)).map(response => ({response})),
+            interactionModelRevision: 1,
+            responses: results.map(({commandPath: {endpointId, clusterId, commandId}, result: {responseId, result, response}}) => {
+                if (response === undefined) {
+                    return { result: { path: {endpointId, clusterId, commandId}, result: { code: result}} };
+                } else {
+                    return { response: { path: {endpointId, clusterId, responseId}, response} };
+                }
+            }),
         };
     }
 }

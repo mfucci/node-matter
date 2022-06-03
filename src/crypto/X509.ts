@@ -1,4 +1,4 @@
-import { DerCodec } from "../codec/DerCodec";
+import { DerCodec, END_MARKER } from "../codec/DerCodec";
 import { Crypto, KeyPair } from "./Crypto";
 
 const ORGANIZATION_NAME_ID = {_objectId: Buffer.from("55040A", "hex")};
@@ -17,12 +17,13 @@ export class X509 {
                 type: { algorithm: EC_PUBLIC_KEY_ID, curve: CURVE_P256_V1_ID },
                 bytes: keys.publicKey,
             },
+            endSignedBytes: END_MARKER,
         };
 
         return DerCodec.encode({
             request,
-            signAlgorithm: ECDSA_WITH_SHA256_ID,
-            signature: Crypto.sign(keys.privateKey, DerCodec.encode(request)),
+            signAlgorithm: { algorithm: ECDSA_WITH_SHA256_ID },
+            signature: Crypto.sign(keys.privateKey, DerCodec.encode(request), "der"),
         });
     }
 }

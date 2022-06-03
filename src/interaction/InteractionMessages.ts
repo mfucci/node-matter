@@ -27,17 +27,15 @@ export const ReadResponseT = ObjectT({
     interactionModelRevision: Field(0xFF, UnsignedIntT),
 });
 
-const CommandPathT = ObjectT({
-    endpointId: Field(0, UnsignedIntT),
-    clusterId: Field(1, UnsignedIntT),
-    commandId: Field(2, UnsignedIntT),
-}, TlvType.List);
-
 export const InvokeRequestT = ObjectT({
     suppressResponse: Field(0, BooleanT),
     timedRequest: Field(1, BooleanT),
     invokes: Field(2, ArrayT(ObjectT({
-        path: Field(0, CommandPathT),
+        path: Field(0, ObjectT({
+            endpointId: Field(0, UnsignedIntT),
+            clusterId: Field(1, UnsignedIntT),
+            commandId: Field(2, UnsignedIntT),
+        }, TlvType.List)),
         args: Field(1, AnyT),
     }))),
 });
@@ -45,9 +43,24 @@ export const InvokeRequestT = ObjectT({
 export const InvokeResponseT = ObjectT({
     suppressResponse: Field(0, BooleanT),
     responses: Field(1, ArrayT(ObjectT({
-        response: Field(0, ObjectT({
-            path: Field(0, CommandPathT),
+        response: OptionalField(0, ObjectT({
+            path: Field(0, ObjectT({
+                endpointId: Field(0, UnsignedIntT),
+                clusterId: Field(1, UnsignedIntT),
+                responseId: Field(2, UnsignedIntT),
+            }, TlvType.List)),
             response: Field(1, AnyT),
         })),
+        result: OptionalField(1, ObjectT({
+            path: Field(0, ObjectT({
+                endpointId: Field(0, UnsignedIntT),
+                clusterId: Field(1, UnsignedIntT),
+                commandId: Field(2, UnsignedIntT),
+            }, TlvType.List)),
+            result: Field(1, ObjectT({
+                code: Field(0, UnsignedIntT),
+            })),
+        })),
     }))),
+    interactionModelRevision: Field(0xFF, UnsignedIntT),
 });

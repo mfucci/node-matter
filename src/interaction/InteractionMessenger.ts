@@ -22,15 +22,12 @@ export type ReadRequest = JsType<typeof ReadRequestT>;
 export type ReadResponse = JsType<typeof ReadResponseT>;
 
 export class InteractionMessenger {
-    private readonly session: Session;
 
     constructor(
         private readonly exchange: MessageExchange,
         private readonly handleReadRequest: (request: ReadRequest) => ReadResponse,
-        private readonly handleInvokeRequest: (session: Session, request: InvokeRequest) => InvokeResponse,
-    ) {
-        this.session = exchange.getSession();
-    }
+        private readonly handleInvokeRequest: (request: InvokeRequest) => Promise<InvokeResponse>,
+    ) {}
 
     async handleRequest() {
         const message = await this.exchange.nextMessage();
@@ -38,12 +35,12 @@ export class InteractionMessenger {
             case MessageType.ReadRequest:
                 const readRequest = TlvObjectCodec.decode(message.payload, ReadRequestT);
                 const readResponse = this.handleReadRequest(readRequest);
-                this.exchange.send(MessageType.StatusResponse, TlvObjectCodec.encode(readResponse, ReadResponseT));
+                this.exchange.send(MessageType.ReportData, TlvObjectCodec.encode(readResponse, ReadResponseT));
                 break;
             case MessageType.InvokeCommandRequest:
                 const invokeRequest = TlvObjectCodec.decode(message.payload, InvokeRequestT);
-                const invokeResponse = this.handleInvokeRequest(this.session, invokeRequest);
-                this.exchange.send(MessageType.StatusResponse, TlvObjectCodec.encode(invokeResponse, InvokeResponseT));
+                const invokeResponse = await this.handleInvokeRequest(invokeRequest);
+                this.exchange.send(MessageType.InvokeCommandResponse, TlvObjectCodec.encode(invokeResponse, InvokeResponseT));
                 break;
             default:
                 throw new Error(`Unsupported message type ${message.payloadHeader.messageType}`);

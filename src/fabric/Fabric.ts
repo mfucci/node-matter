@@ -69,6 +69,7 @@ export class Fabric {
 }
 
 export class FabricBuilder {
+    private keyPair = Crypto.createKeyPair();
     private vendorId?: number;
     private rootCert?: Buffer;
     private intermediateCACert?: Buffer;
@@ -76,14 +77,6 @@ export class FabricBuilder {
     private fabricId?: number;
     private nodeId?: number;
     private rootPublicKey?: Buffer;
-
-    static async create() {
-        return new FabricBuilder(await Crypto.createKeyPair());
-    }
-
-    constructor(
-        private readonly keyPair: KeyPair,
-    ) {}
 
     createCertificateSigningRequest() {
         return X509.createCertificateSigningRequest(this.keyPair);

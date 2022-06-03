@@ -10,6 +10,9 @@ import { Endpoint } from "../model/Endpoint";
 import { BasicCluster } from "../cluster/BasicCluster";
 import { SecureChannelDispatcher } from "../secure/SecureChannelDispatcher";
 import { CasePairing } from "../secure/CasePairing";
+import { OperationalCredentialsCluster } from "../cluster/OperationalCredentialsCluster";
+import { OnOffCluster } from "../cluster/OnOffCluster";
+import { GeneralCommissioningCluster } from "../cluster/GeneralCommissioningCluster";
 
 export const UNDEFINED_NODE_ID = BigInt(0);
 
@@ -40,6 +43,8 @@ export class Dispatcher {
                     productName: "Matter test device",
                     productId: 0X8001,
                 }),
+                new GeneralCommissioningCluster(),
+                new OperationalCredentialsCluster(),
             ],
         )
     ]));
@@ -88,6 +93,10 @@ export class MessageChannel implements Channel<Message> {
         const packet = this.session.encode(message);
         const bytes = MessageCodec.encodePacket(packet);
         return this.channel.send(bytes);
+    }
+
+    getName() {
+        return `${this.channel.getName()} on session ${this.session.getName()}`;
     }
 }
 
@@ -174,6 +183,10 @@ export class MessageExchange {
 
     getInitialMessageType() {
         return this.initialMessage.payloadHeader.messageType;
+    }
+
+    getChannel() {
+        return this.channel;
     }
 
     async waitFor(messageType: number) {

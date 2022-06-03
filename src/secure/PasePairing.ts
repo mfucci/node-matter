@@ -26,6 +26,7 @@ export class PasePairing implements ExchangeHandler {
     }
 
     private async handlePairingRequest(messenger: PaseMessenger) {
+        console.log(`Pase: Received pairing request from ${messenger.getChannelName()}`);
         const sessionId = this.sessionManager.getNextAvailableSessionId();
         const random = Crypto.getRandom();
 
@@ -48,5 +49,6 @@ export class PasePairing implements ExchangeHandler {
         // All good! Creating secure session
         await this.sessionManager.createSecureSession(sessionId, peerSessionId, Ke, Buffer.alloc(0), false);
         await messenger.sendSuccess();
+        console.log(`Pase: Paired succesfully with ${messenger.getChannelName()}`);
     }
 }

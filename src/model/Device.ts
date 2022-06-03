@@ -32,10 +32,10 @@ export class Device {
         })
     }
 
-    invoke(session: Session, path: CommandPath, args: Element) {
-        const {endpointId, clusterId, commandId} = path;
-        const response = this.endpoints.get(endpointId)?.invoke(session, clusterId, commandId, args);
-        if (response === undefined) return [];
-        return [{path, response}];
+    async invoke(session: Session, commandPath: CommandPath, args: Element) {
+        const {endpointId, clusterId, commandId} = commandPath;
+        const result = await this.endpoints.get(endpointId)?.invoke(session, clusterId, commandId, args);
+        if (result === undefined) return [];
+        return [{ commandPath, result }];
     }
 }

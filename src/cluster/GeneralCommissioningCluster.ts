@@ -1,6 +1,5 @@
 import { Cluster } from "../model/Cluster";
 import { Attribute } from "../model/Attribute";
-import { TlvType } from "../codec/TlvCodec";
 import { Field, JsType, ObjectT, StringT, UnsignedIntT } from "../codec/TlvObjectCodec";
 import { Command } from "../model/Command";
 
@@ -58,9 +57,9 @@ export class GeneralCommissioningCluster extends Cluster {
             0x30,
             "General Commissioning",
             [
-                new Command(0, "ArmFailSafe", ArmFailSafeRequestT, SuccessFailureReponseT, request => this.handleArmFailSafeRequest(request)),
-                new Command(2, "SetRegulatoryConfig", SetRegulatoryConfigRequestT, SuccessFailureReponseT, request => this.setRegulatoryConfig(request)),
-                new Command(4, "CommissioningComplete", NoArgumentsT, SuccessFailureReponseT, () => this.handleCommissioningComplete()),
+                new Command(0, 1, "ArmFailSafe", ArmFailSafeRequestT, SuccessFailureReponseT, request => this.handleArmFailSafeRequest(request)),
+                new Command(2, 3, "SetRegulatoryConfig", SetRegulatoryConfigRequestT, SuccessFailureReponseT, request => this.setRegulatoryConfig(request)),
+                new Command(4, 5, "CommissioningComplete", NoArgumentsT, SuccessFailureReponseT, () => this.handleCommissioningComplete()),
             ],
         );
 

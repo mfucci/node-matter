@@ -1,7 +1,7 @@
 import { Crypto } from "../crypto/Crypto";
 import { getSessionManager } from "../session/SessionManager";
 import { PaseMessenger } from "./PaseMessenger";
-import { ExchangeHandler, MessageExchange } from "../transport/Dispatcher";
+import { ExchangeHandler, MessageExchange, UNDEFINED_NODE_ID } from "../transport/Dispatcher";
 import { PbkdfParameters, Spake2p } from "../crypto/Spake2p";
 
 const DEFAULT_PASSCODE_ID = 0;
@@ -47,7 +47,7 @@ export class PasePairing implements ExchangeHandler {
         if (!verifier.equals(hAY)) throw new Error("Received incorrect key confirmation from the initiator");
 
         // All good! Creating secure session
-        await this.sessionManager.createSecureSession(sessionId, peerSessionId, Ke, Buffer.alloc(0), false);
+        await this.sessionManager.createSecureSession(sessionId, UNDEFINED_NODE_ID, UNDEFINED_NODE_ID, peerSessionId, Ke, Buffer.alloc(0), false);
         await messenger.sendSuccess();
         console.log(`Pase: Paired succesfully with ${messenger.getChannelName()}`);
     }

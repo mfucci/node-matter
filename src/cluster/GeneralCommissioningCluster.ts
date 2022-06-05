@@ -1,7 +1,7 @@
 import { Cluster } from "../model/Cluster";
 import { Attribute } from "../model/Attribute";
 import { Field, JsType, ObjectT, StringT, UnsignedIntT } from "../codec/TlvObjectCodec";
-import { Command } from "../model/Command";
+import { Command, NoArgumentsT } from "../model/Command";
 
 const enum RegulatoryLocationType {
     Indoor = 0,
@@ -41,7 +41,6 @@ type ArmFailSafeRequest = JsType<typeof ArmFailSafeRequestT>;
 type SetRegulatoryConfigRequest = JsType<typeof SetRegulatoryConfigRequestT>;
 type SuccessFailureReponse = JsType<typeof SuccessFailureReponseT>;
 
-const NoArgumentsT = ObjectT({});
 const SuccessResponse = {errorCode: CommissioningError.Ok, debugText: ""};
 
 export class GeneralCommissioningCluster extends Cluster {

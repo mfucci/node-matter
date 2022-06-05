@@ -2,7 +2,7 @@ import { TlvTag } from "./TlvTag";
 import { TlvType, Element, TlvCodec } from "./TlvCodec";
 
 // Type structure definitions
-export type Template<T> = {tlvType?: TlvType};
+export type Template<T> = {tlvType?: TlvType, readAsBigint?: boolean};
 type ArrayTemplate<T> = Template<T> & {itemTemplate: Template<T>};
 type ObjectTemplate<T> = Template<T> & {fieldTemplates: FieldTemplates};
 type TaggedTemplate<T> = Template<T> & {tag?: TlvTag};
@@ -23,7 +23,7 @@ export const StringT:Template<string> = { tlvType: TlvType.String };
 export const BooleanT:Template<boolean> = { tlvType: TlvType.Boolean };
 export const ByteStringT:Template<Buffer> = { tlvType: TlvType.ByteString };
 export const UnsignedIntT:Template<number> = { tlvType: TlvType.UnsignedInt };
-export const UnsignedLongT:Template<bigint> = { tlvType: TlvType.UnsignedInt };
+export const UnsignedLongT:Template<bigint> = { tlvType: TlvType.UnsignedInt, readAsBigint: true };
 export const AnyT:Template<any> = { };
 export const ArrayT = <T,>(itemTemplate: Template<T>) => ({ tlvType: TlvType.Array, itemTemplate } as Template<T[]>);
 export const ObjectT = <F extends FieldTemplates>(fieldTemplates: F, tlvType: TlvType = TlvType.Structure) => ({ tlvType, fieldTemplates } as Template<TypeFromFieldTemplates<F>>);
@@ -40,7 +40,7 @@ export class TlvObjectCodec {
     }
 
     private static decodeInternal(element: Element | undefined, template: TaggedTemplate<any>): any {
-        const {tlvType: expectedType, tag: expectedTag = TlvTag.Anonymous} = template;
+        const {tlvType: expectedType, tag: expectedTag = TlvTag.Anonymous, readAsBigint } = template;
         if (element === undefined) return undefined;
         const {tag, value, type} = element;
         if (!tag.equals(expectedTag)) throw new Error(`Unexpected tag ${tag}. Expected was ${expectedTag}`);
@@ -54,11 +54,13 @@ export class TlvObjectCodec {
             case TlvType.Boolean:
             case TlvType.String:
             case TlvType.ByteString:
-            case TlvType.SignedInt:
-            case TlvType.UnsignedInt:
             case TlvType.Float:
             case TlvType.Double:
             case TlvType.Null:
+                return value;
+            case TlvType.UnsignedInt:
+            case TlvType.SignedInt:
+                if (readAsBigint) return BigInt(value);
                 return value;
             case TlvType.EndOfContainer:
                 throw new Error("Invalid template");

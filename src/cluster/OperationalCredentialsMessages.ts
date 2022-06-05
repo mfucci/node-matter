@@ -1,4 +1,4 @@
-import { ByteStringT, Field, JsType, ObjectT, OptionalField, UnsignedIntT, UnsignedLongT } from "../codec/TlvObjectCodec";
+import { ByteStringT, Field, ObjectT, OptionalField, UnsignedIntT, UnsignedLongT } from "../codec/TlvObjectCodec";
 
 export const enum CertificateType {
     DeviceAttestation = 1,

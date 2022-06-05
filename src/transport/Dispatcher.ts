@@ -46,11 +46,19 @@ export class Dispatcher {
                 new GeneralCommissioningCluster(),
                 new OperationalCredentialsCluster(),
             ],
-        )
+        ),
+        new Endpoint(
+            0x01,
+            "MA-OnOff",
+            [
+                new OnOffCluster(),
+            ]
+        ),
     ]));
 
 
     onMessage(channel: Channel<Buffer>, messageBytes: Buffer) {
+        console.log("onBytes", messageBytes.toString("hex"));
         var packet = MessageCodec.decodePacket(messageBytes);
         if (packet.header.sessionType === SessionType.Group) throw new Error("Group messages are not supported");
 

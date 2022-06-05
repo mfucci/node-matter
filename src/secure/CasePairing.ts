@@ -37,7 +37,7 @@ export class CasePairing {
         const { sessionId: peerSessionId, resumptionId: peerResumptionId, destinationId, random: peerRandom, ecdhPublicKey: peerEcdhPublicKey, mrpParams } = sigma1;
         if (peerResumptionId !== undefined) throw new Error("CASE session resume not supported");
         const fabric = getFabricManager().findFabricFromDestinationId(destinationId, peerRandom);
-        const { newOpCert, intermediateCACert, identityProtectionKey } = fabric;
+        const { nodeId, newOpCert, intermediateCACert, identityProtectionKey } = fabric;
         const { publicKey: ecdhPublicKey, sharedSecret } = Crypto.ecdh(peerEcdhPublicKey);
 
         // Generate sigma 2
@@ -60,13 +60,14 @@ export class CasePairing {
         const { newOpCert: peerNewOpCert, intermediateCACert: peerIntermediateCACert, signature: peerSignature } = TlvObjectCodec.decode(peerEncryptedData, TagBasedEcryptionDataT);
         fabric.verifyCredentials(peerNewOpCert, peerIntermediateCACert);
         const peerSignatureData = TlvObjectCodec.encode({ newOpCert: peerNewOpCert, intermediateCACert: peerIntermediateCACert, ecdhPublicKey: peerEcdhPublicKey, peerEcdhPublicKey: ecdhPublicKey }, TagBasedSignatureDataT);
-        const peerPublicKey = TlvObjectCodec.decode(peerNewOpCert, CertificateT).ellipticCurvePublicKey;
+        const { ellipticCurvePublicKey: peerPublicKey, subject: { nodeId: peerNodeId } } = TlvObjectCodec.decode(peerNewOpCert, CertificateT);
+        if (peerNodeId === undefined) throw new Error("Missing nodeId in peer noc certificate"); 
         Crypto.verify(peerPublicKey, peerSignatureData, peerSignature);
 
         console.log("All good!");
         // All good! Create secure session
         const secureSessionSalt = Buffer.concat([identityProtectionKey, Crypto.hash([ sigma1Bytes, sigma2Bytes, sigma3Bytes ])]);
-        await this.sessionManager.createSecureSession(sessionId, peerSessionId, sharedSecret, secureSessionSalt, false);
+        await this.sessionManager.createSecureSession(sessionId, nodeId, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, false);
         await messenger.sendSuccess();
     }
 }

@@ -17,8 +17,8 @@ export class SessionManager {
         this.sessions.set(UNICAST_UNSECURE_SESSION_ID, new UnsecureSession());
     }
 
-    async createSecureSession(sessionId: number, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean) {
-        const session = await SecureSession.create(sessionId, peerSessionId, sharedSecret, salt, isInitiator);
+    async createSecureSession(sessionId: number, nodeId: bigint, peerNodeId: bigint, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean) {
+        const session = await SecureSession.create(sessionId, nodeId, peerNodeId, peerSessionId, sharedSecret, salt, isInitiator);
         this.sessions.set(sessionId, session);
         return session;
     }

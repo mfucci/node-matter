@@ -1,5 +1,4 @@
 import { JsType, TlvObjectCodec } from "../codec/TlvObjectCodec";
-import { Session } from "../session/SessionManager";
 import { MessageExchange } from "../transport/Dispatcher";
 import { InvokeRequestT, InvokeResponseT, ReadRequestT, ReadResponseT } from "./InteractionMessages";
 

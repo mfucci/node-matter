@@ -1,7 +1,6 @@
 import { Message, MessageCodec, Packet } from "../codec/MessageCodec";
 import { Crypto } from "../crypto/Crypto";
 import { Fabric } from "../fabric/Fabric";
-import { UNDEFINED_NODE_ID } from "../transport/Dispatcher";
 import { LEBufferWriter } from "../util/LEBufferWriter";
 import { Session } from "./SessionManager";
 
@@ -13,6 +12,8 @@ export class SecureSession implements Session {
 
     constructor(
         private readonly id: number,
+        private readonly nodeId: bigint,
+        private readonly peerNodeId: bigint,
         private readonly peerSessionId: number,
         private readonly sharedSecret: Buffer,
         private readonly decryptKey: Buffer,
@@ -20,18 +21,18 @@ export class SecureSession implements Session {
         private readonly attestationKey: Buffer,
     ) {}
 
-    static async create(id: number, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean) {
+    static async create(id: number, nodeId: bigint, peerNodeId: bigint, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean) {
         const keys = await Crypto.hkdf(sharedSecret, salt, SESSION_KEYS_INFO, 16 * 3);
         const decryptKey = isInitiator ? keys.slice(16, 32) : keys.slice(0, 16);
         const encryptKey = isInitiator ? keys.slice(0, 16) : keys.slice(16, 32);
         const attestationKey = keys.slice(32, 48);
-        return new SecureSession(id, peerSessionId, sharedSecret, decryptKey, encryptKey, attestationKey);
+        return new SecureSession(id, nodeId, peerNodeId, peerSessionId, sharedSecret, decryptKey, encryptKey, attestationKey);
     }
 
     decode({ header, bytes }: Packet): Message {
         const headerBytes = MessageCodec.encodePacketHeader(header);
         const securityFlags = headerBytes.readUInt8(3);
-        const nonce = this.generateNonce(securityFlags, header.messageId, UNDEFINED_NODE_ID);
+        const nonce = this.generateNonce(securityFlags, header.messageId, this.peerNodeId);
         console.log("decode",  Crypto.decrypt(this.decryptKey, bytes, nonce, headerBytes).toString("hex"));
         return MessageCodec.decodePayload({ header, bytes: Crypto.decrypt(this.decryptKey, bytes, nonce, headerBytes) });
     }
@@ -42,7 +43,7 @@ export class SecureSession implements Session {
         console.log("encode",  bytes.toString("hex"));
         const headerBytes = MessageCodec.encodePacketHeader(message.packetHeader);
         const securityFlags = headerBytes.readUInt8(3);
-        const nonce = this.generateNonce(securityFlags, header.messageId, UNDEFINED_NODE_ID);
+        const nonce = this.generateNonce(securityFlags, header.messageId, this.nodeId);
         return { header, bytes: Crypto.encrypt(this.encryptKey, bytes, nonce, headerBytes)};
     }
 

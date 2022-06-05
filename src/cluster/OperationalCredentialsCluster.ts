@@ -4,7 +4,7 @@ import { FabricBuilder } from "../fabric/Fabric";
 import { getFabricManager } from "../fabric/FabricManager";
 import { getMdnsServer } from "../mdns/MdnsServer";
 import { Cluster } from "../model/Cluster";
-import { Command, CommandNoReponse } from "../model/Command";
+import { Command, NoResponseT } from "../model/Command";
 import { Session } from "../session/SessionManager";
 import { AddNocRequestT, AddTrustedRootCertificateRequestT, AttestationResponseT, AttestationT, CertificateChainRequestT, CertificateChainResponseT, CertificateSigningRequestT, CertificateType, CsrResponseT, RequestWithNonceT, Status, StatusResponseT } from "./OperationalCredentialsMessages";
 
@@ -31,7 +31,7 @@ export class OperationalCredentialsCluster extends Cluster {
                 new Command(2, 3, "CertificateChainRequest", CertificateChainRequestT, CertificateChainResponseT, ({type}) => this.handleCertificateChainRequest(type)),
                 new Command(4, 5, "CSRRequest", RequestWithNonceT, CsrResponseT, ({nonce}, session) => this.handleCertificateSignRequest(nonce, session)),
                 new Command(6, 8, "AddNOC", AddNocRequestT, StatusResponseT, ({nocCert, icaCert, ipkValue, caseAdminNode, adminVendorId}, session) => this.addNewOperationalCertificates(nocCert, icaCert, ipkValue, caseAdminNode, adminVendorId, session)),
-                new CommandNoReponse(11, "AddTrustedRootCertificate", AddTrustedRootCertificateRequestT, ({certificate}) => this.addTrustedRootCertificate(certificate)),
+                new Command(11, 11, "AddTrustedRootCertificate", AddTrustedRootCertificateRequestT, NoResponseT, ({certificate}) => this.addTrustedRootCertificate(certificate)),
             ],
             [],
         );

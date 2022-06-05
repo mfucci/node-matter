@@ -1,6 +1,8 @@
 import { TlvObjectCodec } from "../codec/TlvObjectCodec";
 import { Crypto } from "../crypto/Crypto";
-import { FabricBuilder, KeySet, KeySetType, Policy } from "../fabric/Fabric";
+import { FabricBuilder } from "../fabric/Fabric";
+import { getFabricManager } from "../fabric/FabricManager";
+import { getMdnsServer } from "../mdns/MdnsServer";
 import { Cluster } from "../model/Cluster";
 import { Command, CommandNoReponse } from "../model/Command";
 import { Session } from "../session/SessionManager";
@@ -58,20 +60,22 @@ export class OperationalCredentialsCluster extends Cluster {
         return {elements, signature: this.signWithDeviceKey(session, elements)};
     }
 
-    private addNewOperationalCertificates(nocCert: Buffer, icaCert: Buffer, ipkValue: Buffer, caseAdminNode: bigint, adminVendorId: number, session: Session) {
+    private async addNewOperationalCertificates(nocCert: Buffer, icaCert: Buffer, ipkValue: Buffer, caseAdminNode: bigint, adminVendorId: number, session: Session) {
         if (this.fabricBuilder === undefined) throw new Error("CSRRequest and AddTrustedRootCertificate should be called first!")
 
         this.fabricBuilder.setNewOpCert(nocCert);
-        this.fabricBuilder.setInetmediateCACert(icaCert);
+        if (icaCert.length > 0) this.fabricBuilder.setIntermediateCACert(icaCert);
         this.fabricBuilder.setVendorId(adminVendorId);
+        this.fabricBuilder.setIdentityProtectionKey(ipkValue);
 
-        const fabric = this.fabricBuilder.build();
+        const fabric = await this.fabricBuilder.build();
         this.fabricBuilder = undefined;
-        fabric.addKeySet(new KeySet(KeySetType.IdentityProtection, Policy.trustFirst, ipkValue))
-
+        getFabricManager().addFabric(fabric);
         session.setFabric(fabric);
 
         // TODO: create ACL with caseAdminNode
+
+        getMdnsServer().announceDevice(fabric);
 
         return {status: Status.Success};
     }

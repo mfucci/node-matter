@@ -58,6 +58,7 @@ export class Dispatcher {
         if (session === undefined) throw new Error(`Cannot find a session for ID ${packet.header.sessionId}`);
 
         const message = session.decode(packet);
+        console.log("onMessage", message.payload.toString("hex"));
         const exchangeId = message.payloadHeader.exchangeId;
         if (this.exchanges.has(exchangeId)) {
             const exchange = this.exchanges.get(exchangeId);

@@ -39,5 +39,5 @@ export const TagBasedEcryptionDataT = ObjectT({
     newOpCert: Field(1, ByteStringT),
     intermediateCACert: OptionalField(2, ByteStringT),
     signature: Field(3, ByteStringT),
-    resumptionId: Field(4, ByteStringT),
+    resumptionId: OptionalField(4, ByteStringT),
 });

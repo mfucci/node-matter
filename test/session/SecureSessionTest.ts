@@ -1,7 +1,13 @@
+/**
+ * @license
+ * Copyright 2022 Marco Fucci di Napoli (mfucci@gmail.com)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import assert from "assert";
 import { Message, MessageCodec, SessionType } from "../../src/codec/MessageCodec";
 import { SecureSession } from "../../src/session/SecureSession";
-import { UNDEFINED_NODE_ID } from "../../src/transport/Dispatcher";
+import { UNDEFINED_NODE_ID } from "../../src/session/SessionManager";
 
 const DECRYPT_KEY = Buffer.from("bacb178b2588443d5d5b1e4559e7accc", "hex");
 const MESSAGE_ENCRYPTED = Buffer.from("001d350022145300ec2b931025dada82ed67521c966d2454d131a271023be699e4e2796650f568e590fd9b65f456c720a60a0da127eaa53974c5d41d3d933ed7b58a9ce5b5cb96ad94a7762611c48774cf75458327e74c34668a45dc9943546f8a6aa1dcd40bd4b8014befb49954a097a60cbdff333ee3f2fd1f49", "hex");
@@ -27,7 +33,7 @@ const MESSAGE: Message = {
 const ENCRYPTED_BYTES = Buffer.from("1f9c4e278a2e2a755ebb4fcb9478211efb09aa9518fcafb56d74f135544636037c16fb6b62347794da0c5bde142e1a8b1cc96575e9e55471c08b58f7640b7d7f4173c8ff967c39e9961f30a29cb1f64f68df4b5bc1e742587f778eeb9ec586c162ff384558596792a2c1e43c150cd0e9ec1484c50950f17cd6c084d07caed94ce45c20004210cbde48da44ebcf7d931657f03e07e3ea29ae41868b804bf39e628323cd025507773f07268301aa1e77a82927fce041241839cee4114f6307b6befe3befde87a2d3f13eeef96b27b36e788d907b44bef2d195aa802692f4f12acc015aede3cd29da272d1e4b7f3f59683d25bf08f0e29fba2a8a9b", "hex");
 
 describe("SecureSession", () => {
-    const secureSession = new SecureSession(1, UNDEFINED_NODE_ID, 0x8d4b, Buffer.alloc(0), DECRYPT_KEY, ENCRYPT_KEY, Buffer.alloc(0));
+    const secureSession = new SecureSession(1, UNDEFINED_NODE_ID, UNDEFINED_NODE_ID, 0x8d4b, Buffer.alloc(0), DECRYPT_KEY, ENCRYPT_KEY, Buffer.alloc(0));
 
     context("decrypt", () => {
         it("decrypts a message", () => {

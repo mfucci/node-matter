@@ -1,8 +1,18 @@
 {
   "name": "node-matter",
-  "version": "0.0.0",
-  "description": "Matter protocol in node.js",
+  "version": "0.0.1",
+  "description": "Matter protocol for node.js",
+  "keywords": [
+    "iot",
+    "home automation",
+    "smart device"
+  ],
+  "license": "Apache-2.0",
   "author": "Marco Fucci di Napoli <mfucci@gmail.com> (https://www.linkedin.com/in/marco-fucci-di-napoli/)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mfucci/node-matter.git"
+  },
   "scripts": {
     "clean": "rm -rf build",
     "build": "tsc",
@@ -20,5 +30,8 @@
   "dependencies": {
     "bn.js": "^5.2.0",
     "elliptic": "^6.5.4"
+  },
+  "bin": {
+    "matter": "./build/Main.js"
   }
 }

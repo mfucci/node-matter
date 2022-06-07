@@ -1,3 +1,9 @@
+/**
+ * @license
+ * Copyright 2022 Marco Fucci di Napoli (mfucci@gmail.com)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { TlvType } from "../codec/TlvCodec";
 import { AnyT, ArrayT, BooleanT, Field, JsType, ObjectT, OptionalField, UnsignedIntT } from "../codec/TlvObjectCodec";
 

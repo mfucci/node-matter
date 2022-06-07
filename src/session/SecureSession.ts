@@ -1,3 +1,9 @@
+/**
+ * @license
+ * Copyright 2022 Marco Fucci di Napoli (mfucci@gmail.com)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { Message, MessageCodec, Packet } from "../codec/MessageCodec";
 import { Crypto } from "../crypto/Crypto";
 import { Fabric } from "../fabric/Fabric";
@@ -33,14 +39,12 @@ export class SecureSession implements Session {
         const headerBytes = MessageCodec.encodePacketHeader(header);
         const securityFlags = headerBytes.readUInt8(3);
         const nonce = this.generateNonce(securityFlags, header.messageId, this.peerNodeId);
-        console.log("decode",  Crypto.decrypt(this.decryptKey, bytes, nonce, headerBytes).toString("hex"));
         return MessageCodec.decodePayload({ header, bytes: Crypto.decrypt(this.decryptKey, bytes, nonce, headerBytes) });
     }
     
     encode(message: Message): Packet {
         message.packetHeader.sessionId = this.peerSessionId;
         const {header, bytes} = MessageCodec.encodePayload(message);
-        console.log("encode",  bytes.toString("hex"));
         const headerBytes = MessageCodec.encodePacketHeader(message.packetHeader);
         const securityFlags = headerBytes.readUInt8(3);
         const nonce = this.generateNonce(securityFlags, header.messageId, this.nodeId);

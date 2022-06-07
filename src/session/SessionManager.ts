@@ -1,9 +1,17 @@
+/**
+ * @license
+ * Copyright 2022 Marco Fucci di Napoli (mfucci@gmail.com)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { Message, Packet } from "../codec/MessageCodec";
 import { Crypto } from "../crypto/Crypto";
 import { Fabric } from "../fabric/Fabric";
 import { Singleton } from "../util/Singleton";
 import { SecureSession } from "./SecureSession";
 import { UnsecureSession } from "./UnsecureSession";
+
+export const UNDEFINED_NODE_ID = BigInt(0);
 
 export const UNICAST_UNSECURE_SESSION_ID = 0x0000;
 

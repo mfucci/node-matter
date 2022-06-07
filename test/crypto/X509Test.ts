@@ -1,3 +1,9 @@
+/**
+ * @license
+ * Copyright 2022 Marco Fucci di Napoli (mfucci@gmail.com)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import assert from "assert";
 import { X509 } from "../../src/crypto/X509";
 
@@ -10,6 +16,7 @@ describe("X509", () => {
         it("generates a valid CSR", () => {
             const result = X509.createCertificateSigningRequest({ publicKey: PUBLIC_KEY, privateKey: PRIVATE_KEY });
 
+            // TODO: verify that the CSR is valid. The signature contains random, so it cannot be compared against a fixed byte array.
             console.log(result.toString("hex"));
         });
     });

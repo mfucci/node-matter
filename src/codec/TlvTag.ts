@@ -1,3 +1,9 @@
+/**
+ * @license
+ * Copyright 2022 Marco Fucci di Napoli (mfucci@gmail.com)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 const COMMON_PROFILE = 0x00000000;
 const UNSPECIFIED_PROFILE = 0xFFFFFFFF;
 

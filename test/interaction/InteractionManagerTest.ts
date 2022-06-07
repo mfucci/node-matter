@@ -1,12 +1,18 @@
+/**
+ * @license
+ * Copyright 2022 Marco Fucci di Napoli (mfucci@gmail.com)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import assert from "assert";
-import { BasicCluster } from "../../src/cluster/BasicCluster";
+import { BasicCluster } from "../../src/interaction/cluster/BasicCluster";
 import { TlvType } from "../../src/codec/TlvCodec";
 import { TlvTag } from "../../src/codec/TlvTag";
-import { InteractionManager } from "../../src/interaction/InteractionManager";
+import { InteractionProtocol } from "../../src/interaction/InteractionProtocol";
 import { ReadRequest, ReadResponse } from "../../src/interaction/InteractionMessenger";
-import { Device } from "../../src/model/Device";
-import { Endpoint } from "../../src/model/Endpoint";
-import { MessageExchange } from "../../src/transport/Dispatcher";
+import { Device } from "../../src/interaction/model/Device";
+import { Endpoint } from "../../src/interaction/model/Endpoint";
+import { MessageExchange } from "../../src/server/MatterServer";
 
 const READ_REQUEST: ReadRequest = {
     interactionModelRevision: 1,
@@ -50,17 +56,17 @@ const READ_RESPONSE: ReadResponse = {
     ]
 };
 
-describe("InteractionManager", () => {
+describe("InteractionProtocol", () => {
 
     context("handleReadRequest", () => {
         it("replies with attribute values", () => {
-            const interactionManager = new InteractionManager(new Device([
+            const interactionProtocol = new InteractionProtocol(new Device([
                 new Endpoint(0, "root", [
                     new BasicCluster({vendorName: "vendor", vendorId: 1, productName: "product", productId: 2}),
                 ])
             ]));
 
-            const result = interactionManager.handleReadRequest(undefined as unknown as MessageExchange, READ_REQUEST);
+            const result = interactionProtocol.handleReadRequest(({getChannel: () => ({getName: () => "test"})}) as MessageExchange, READ_REQUEST);
 
             assert.deepEqual(result, READ_RESPONSE);
         });

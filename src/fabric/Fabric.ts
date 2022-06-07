@@ -1,3 +1,9 @@
+/**
+ * @license
+ * Copyright 2022 Marco Fucci di Napoli (mfucci@gmail.com)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { TlvObjectCodec } from "../codec/TlvObjectCodec";
 import { Crypto, KeyPair } from "../crypto/Crypto";
 import { X509 } from "../crypto/X509";

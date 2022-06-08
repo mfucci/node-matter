@@ -1,4 +1,3 @@
-Figure out how to have npm display TS badge
 Extract device certificate so it can be changed from Main.ts
 Close message exchanges
 Retry sending a message if there is no ack from the other side
@@ -10,5 +9,6 @@ Add more nodes
 Implement ACL
 Remove elliptic dependency
 Remove BN dependency in favor of BigInt
-Add support for WiFi / Bluetooth / Thread
-Make it compatible with a web API
+Add support for WiFi / Bluetooth / Thread commisionning
+Add IPv6 support
+Make it compatible with a web API to use it in a browser / webview

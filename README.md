@@ -63,8 +63,9 @@ It should work with any Matter-compatible home automation app when Matter will b
 For now, you can control it with Matter test app: https://github.com/project-chip/connectedhomeip/tree/master/src/android/CHIPTest
 You can find a compiled apk in /matter-test-apk in this repository.
 
-*Provisioning the device*: click "provision with WiFi" > "Input Device address" > type IP address of the machine running node-matter
-*Controlling the device*: click "Light on/of" and you can control the light
+**Provisioning the device**: click "provision with WiFi" > "Input Device address" > type IP address of the machine running node-matter
+
+**Controlling the device**: click "Light on/of" and you can control the light
 
 ## FAQ
 

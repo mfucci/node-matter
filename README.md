@@ -2,13 +2,13 @@
 
 [![license](https://img.shields.io/badge/license-Apache2-green.svg?style=flat)](https://raw.githubusercontent.com/mfucci/node-matter/master/LICENSE) 
 
-Matter protocol for node.js.
+Matter protocol for node.js with no native dependencies (and very limited dependencies).
 
-Matter is a new secure / reliable / local / standard protocol for smart devices that will launch at the end of 2022 supported and Google / Apple / Amazon and 200+ other companies.
-It is supposed to bring a revolution in smart home automation by unifying WiFi / Bluetooth / Zigbee (through Thread) and by making all smart devices inter-compatible and secure (through the standard and secure Matter protocol).
-Official website: https://csa-iot.org/all-solutions/matter/
+Matter is a new secure / reliable / local / standard protocol for smart devices that will launch at the end of 2022.
 
-This project is a rewrite of Matter protocol in Typescript with no native dependencies to make it very portable.
+It is supported and Google / Apple / Amazon and 200+ other companies and it is supposed to bring a revolution in smart home automation by unifying WiFi / Bluetooth / Zigbee (through Thread) and by making all smart devices inter-compatible and secure (through the standard and secure Matter protocol).
+
+To know more about Matter: https://csa-iot.org/all-solutions/matter/
 
 ## Installation
 
@@ -22,7 +22,7 @@ npm i -g node-matter
 node-matter
 ```
 
-This starts a Matter server listening to port 5540.
+This starts a Matter server listening on port 5540.
 
 This first version only includes the OnOff cluster (on/off smart thing, like a plug or a bulb).
 You can use -on and -off parameter to run a script to control something.
@@ -32,9 +32,9 @@ For instance, on a Raspberry Pi, this will turn on / off the red LED:
 node-matter -on "echo 255 > /sys/class/leds/led1/brightness" -off "echo 0 > /sys/class/leds/led1/brightness"
 ```
 
-## Changing the default parameters
+## Modifying the server behavior
 
-Look in Main.ts, everything is defined there. You can add / remove clusters, etc...
+Main.ts defines the server behavior. You can add / remove clusters, change default parameters, etc...
 
 ```typescript
 new MatterServer()
@@ -81,8 +81,9 @@ Not yet, but I know how to make it works with a few tricks.
 
 Adding more clusters should be pretty easy now the core protocol is working.
 Have a look at the implementation of the OnOff cluster: pretty simple, right?
-I am planning on adding more clusters.
+
+I am planning on adding more clusters, so stay tuned or pinged me to implement first the one you need.
 
 ### Contact the author
 
-For other questions, you can reach out to me at: mfucci@gmail.com or post a message on the github forum.
+For other questions, you can reach out to: mfucci@gmail.com or post a message on the github forum.

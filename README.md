@@ -10,6 +10,8 @@ It is supported and Google / Apple / Amazon and 200+ other companies and it is s
 
 To know more about Matter: https://csa-iot.org/all-solutions/matter/
 
+Note: node-matter requires Node 16+ for the required Crypto primitives
+
 ## Installation
 
 ```bash

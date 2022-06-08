@@ -7,6 +7,10 @@
     "home automation",
     "smart device"
   ],
+  "engines": {
+    "_comment": "For Crypto.hkdf support",
+    "node": ">=16"
+  },
   "license": "Apache-2.0",
   "author": "Marco Fucci di Napoli <mfucci@gmail.com> (https://www.linkedin.com/in/marco-fucci-di-napoli/)",
   "repository": {

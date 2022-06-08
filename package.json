@@ -1,10 +1,11 @@
 {
   "name": "node-matter",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Matter protocol for node.js",
   "keywords": [
     "iot",
     "home automation",
+    "matter",
     "smart device"
   ],
   "engines": {
@@ -13,6 +14,10 @@
   },
   "license": "Apache-2.0",
   "author": "Marco Fucci di Napoli <mfucci@gmail.com> (https://www.linkedin.com/in/marco-fucci-di-napoli/)",
+  "bugs": {
+    "url": "https://github.com/mfucci/node-matter/issues"
+  },
+  "homepage": "https://github.com/mfucci/node-matter",
   "repository": {
     "type": "git",
     "url": "https://github.com/mfucci/node-matter.git"
@@ -35,6 +40,11 @@
     "bn.js": "^5.2.0",
     "elliptic": "^6.5.4"
   },
+  "files": [
+    "build/**/*"
+  ],
+  "main": "build/Main.js",
+  "types": "build/Main.d.ts",
   "bin": {
     "matter": "./build/Main.js"
   }

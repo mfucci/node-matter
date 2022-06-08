@@ -8,6 +8,7 @@ Add certificate validation
 Add support for brightness level
 Add more nodes
 Implement ACL
-Get rid of elliptic dependency
+Remove elliptic dependency
+Remove BN dependency in favor of BigInt
 Add support for WiFi / Bluetooth / Thread
 Make it compatible with a web API

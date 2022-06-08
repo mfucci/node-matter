@@ -8,7 +8,7 @@ import { Element } from "../../codec/TlvCodec";
 import { ObjectT, Template, TlvObjectCodec } from "../../codec/TlvObjectCodec";
 import { Session } from "../../session/SessionManager";
 
-const enum ResultCode {
+export const enum ResultCode {
     Success = 0x00,
 }
 

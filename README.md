@@ -19,7 +19,7 @@ npm i -g node-matter
 ## Usage
 
 ```bash
-node-matter
+matter
 ```
 
 This starts a Matter server listening on port 5540.
@@ -29,7 +29,7 @@ You can use -on and -off parameter to run a script to control something.
 For instance, on a Raspberry Pi, this will turn on / off the red LED:
 
 ```bash
-node-matter -on "echo 255 > /sys/class/leds/led1/brightness" -off "echo 0 > /sys/class/leds/led1/brightness"
+matter -on "echo 255 > /sys/class/leds/led1/brightness" -off "echo 0 > /sys/class/leds/led1/brightness"
 ```
 
 ## Modifying the server behavior

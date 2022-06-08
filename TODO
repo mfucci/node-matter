@@ -1,0 +1,13 @@
+Figure out how to have npm display TS badge
+Extract device certificate so it can be changed from Main.ts
+Close message exchanges
+Retry sending a message if there is no ack from the other side
+Listen for MDNS queries and reply
+Add an integration test to make sure the whole flow is working
+Add certificate validation
+Add support for brightness level
+Add more nodes
+Implement ACL
+Get rid of elliptic dependency
+Add support for WiFi / Bluetooth / Thread
+Make it compatible with a web API

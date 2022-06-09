@@ -1,4 +1,3 @@
-Extract device certificate so it can be changed from Main.ts
 Close message exchanges
 Retry sending a message if there is no ack from the other side
 Listen for MDNS queries and reply

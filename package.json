@@ -1,6 +1,6 @@
 {
   "name": "node-matter",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Matter protocol for node.js",
   "keywords": [
     "iot",

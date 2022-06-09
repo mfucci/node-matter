@@ -7,6 +7,7 @@
 export const SECURE_CHANNEL_PROTOCOL_ID = 0x00000000;
 
 export const enum MessageType {
+    StandaloneAck = 0x10,
     PbkdfParamRequest = 0x20,
     PbkdfParamResponse = 0x21,
     PasePake1 = 0x22,

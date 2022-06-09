@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { MessageExchange, ProtocolHandler } from "../../server/MatterServer";
+import { ProtocolHandler } from "../../server/MatterServer";
+import { MessageExchange } from "../../server/MessageExchange";
 import { CasePairing } from "./CasePairing";
 import { PasePairing } from "./PasePairing";
 import { MessageType } from "./SecureChannelMessages";

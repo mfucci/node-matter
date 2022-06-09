@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { MessageExchange } from "../../server/MatterServer";
+import { MessageExchange } from "../../server/MessageExchange";
 import { LEBufferReader } from "../../util/LEBufferReader";
 import { LEBufferWriter } from "../../util/LEBufferWriter";
 import { GeneralStatusCode, ProtocolStatusCode, MessageType, SECURE_CHANNEL_PROTOCOL_ID } from "./SecureChannelMessages";
@@ -23,7 +23,7 @@ export class SecureChannelMessenger {
     }
 
     getChannelName() {
-        return this.exchange.getChannel().getName();
+        return this.exchange.channel.getName();
     }
 
     private async sendStatusReport(generalStatus: GeneralStatusCode, protocolStatus: ProtocolStatusCode) {

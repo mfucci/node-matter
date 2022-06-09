@@ -5,7 +5,7 @@
  */
 
 import { JsType, TlvObjectCodec } from "../codec/TlvObjectCodec";
-import { MessageExchange } from "../server/MatterServer";
+import { MessageExchange } from "../server/MessageExchange";
 import { InvokeRequestT, InvokeResponseT, ReadRequestT, ReadResponseT } from "./InteractionMessages";
 
 export const enum MessageType {

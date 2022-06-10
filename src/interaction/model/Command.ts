@@ -6,7 +6,7 @@
 
 import { Element } from "../../codec/TlvCodec";
 import { ObjectT, Template, TlvObjectCodec } from "../../codec/TlvObjectCodec";
-import { Session } from "../../session/SessionManager";
+import { Session } from "../../session/Session";
 
 export const enum ResultCode {
     Success = 0x00,

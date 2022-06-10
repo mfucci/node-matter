@@ -11,7 +11,7 @@ import { getFabricManager } from "../../fabric/FabricManager";
 import { getMdnsServer } from "../../mdns/MdnsServer";
 import { Cluster } from "../model/Cluster";
 import { Command, NoResponseT } from "../model/Command";
-import { Session } from "../../session/SessionManager";
+import { Session } from "../../session/Session";
 import { AddNocRequestT, AddTrustedRootCertificateRequestT, AttestationResponseT, AttestationT, CertificateChainRequestT, CertificateChainResponseT, CertificateSigningRequestT, CertificateType, CsrResponseT, RequestWithNonceT, Status, StatusResponseT } from "./OperationalCredentialsMessages";
 
 interface OperationalCredentialsClusterConf {

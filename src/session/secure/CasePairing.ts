@@ -70,7 +70,7 @@ export class CasePairing implements ProtocolHandler {
 
         // All good! Create secure session
         const secureSessionSalt = Buffer.concat([identityProtectionKey, Crypto.hash([ sigma1Bytes, sigma2Bytes, sigma3Bytes ])]);
-        await this.sessionManager.createSecureSession(sessionId, nodeId, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, false);
+        await this.sessionManager.createSecureSession(sessionId, nodeId, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, false, mrpParams?.idleRetransTimeoutMs, mrpParams?.activeRetransTimeoutMs);
         await messenger.sendSuccess();
         console.log(`Case: Paired succesfully with ${messenger.getChannelName()}`);
     }

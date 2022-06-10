@@ -21,12 +21,8 @@ export class FabricManager {
     }
 
     findFabricFromDestinationId(destinationId: Buffer, initiatorRandom: Buffer) {
-        console.log("destinationId", destinationId.toString("hex"));
-        console.log("initiatorRandom", initiatorRandom.toString("hex"));
-
         for (var fabric of this.fabrics) {
             const candidateDestinationId = fabric.getDestinationId(initiatorRandom);
-            console.log("candidate", candidateDestinationId.toString("hex"));
             if (!candidateDestinationId.equals(destinationId)) continue;
             return fabric;
         }

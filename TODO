@@ -1,4 +1,3 @@
-Retry sending a message if there is no ack from the other side
 Listen for MDNS queries and reply
 Add an integration test to make sure the whole flow is working
 Add certificate validation

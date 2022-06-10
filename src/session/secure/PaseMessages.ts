@@ -12,8 +12,8 @@ export const PbkdfParamRequestT = ObjectT({
     passcodeId: Field(3, UnsignedIntT),
     hasPbkdfParameters: Field(4, BooleanT),
     mrpParameters: OptionalField(5, ObjectT({
-        idleRetransTimeout: OptionalField(1, UnsignedIntT),
-        activeRetransTimeout: OptionalField(2, UnsignedIntT),
+        idleRetransTimeoutMs: OptionalField(1, UnsignedIntT),
+        activeRetransTimeoutMs: OptionalField(2, UnsignedIntT),
     })),
 });
 
@@ -26,8 +26,8 @@ export const PbkdfParamResponseT = ObjectT({
         salt: Field(2, ByteStringT),
     })),
     mrpParameters: OptionalField(5, ObjectT({
-        idleRetransTimeout: OptionalField(1, UnsignedIntT),
-        activeRetransTimeout: OptionalField(2, UnsignedIntT),
+        idleRetransTimeoutMs: OptionalField(1, UnsignedIntT),
+        activeRetransTimeoutMs: OptionalField(2, UnsignedIntT),
     })),
 });
 

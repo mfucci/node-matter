@@ -53,8 +53,8 @@ export class PasePairing implements ProtocolHandler {
         const { verifier } = await messenger.readPasePake3();
         if (!verifier.equals(hAY)) throw new Error("Received incorrect key confirmation from the initiator");
 
-        // All good! Creating secure session
-        await this.sessionManager.createSecureSession(sessionId, UNDEFINED_NODE_ID, UNDEFINED_NODE_ID, peerSessionId, Ke, Buffer.alloc(0), false);
+        // All good! Creating the secure session
+        await this.sessionManager.createSecureSession(sessionId, UNDEFINED_NODE_ID, UNDEFINED_NODE_ID, peerSessionId, Ke, Buffer.alloc(0), false, mrpParameters?.idleRetransTimeoutMs, mrpParameters?.activeRetransTimeoutMs);
         await messenger.sendSuccess();
         console.log(`Pase: Paired succesfully with ${messenger.getChannelName()}`);
     }

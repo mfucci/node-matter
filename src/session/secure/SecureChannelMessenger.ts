@@ -23,7 +23,7 @@ export class SecureChannelMessenger {
     }
 
     getChannelName() {
-        return this.exchange.channel.getName();
+        return this.exchange.channel.channel.getName();
     }
 
     private async sendStatusReport(generalStatus: GeneralStatusCode, protocolStatus: ProtocolStatusCode) {

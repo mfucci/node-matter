@@ -5,7 +5,7 @@
  */
 
 import { Element } from "../../codec/TlvCodec";
-import { Session } from "../../session/SessionManager";
+import { Session } from "../../session/Session";
 import { Cluster } from "./Cluster";
 
 export class Endpoint {

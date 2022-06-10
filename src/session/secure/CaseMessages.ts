@@ -12,8 +12,8 @@ export const CaseSigma1T = ObjectT({
     destinationId: Field(3, ByteStringT),
     ecdhPublicKey: Field(4, ByteStringT),
     mrpParams: OptionalField(5, ObjectT({
-        idleRetransTimeout: OptionalField(1, UnsignedIntT),
-        activeRetransTimeout: OptionalField(2, UnsignedIntT),
+        idleRetransTimeoutMs: OptionalField(1, UnsignedIntT),
+        activeRetransTimeoutMs: OptionalField(2, UnsignedIntT),
     })),
     resumptionId: OptionalField(6, ByteStringT),
     resumeMic: OptionalField(7, ByteStringT),
@@ -25,8 +25,8 @@ export const CaseSigma2T = ObjectT({
     ecdhPublicKey: Field(3, ByteStringT),
     encrypted: Field(4, ByteStringT),
     mrpParams: OptionalField(5, ObjectT({
-        idleRetransTimeout: OptionalField(1, UnsignedIntT),
-        activeRetransTimeout: OptionalField(2, UnsignedIntT),
+        idleRetransTimeoutMs: OptionalField(1, UnsignedIntT),
+        activeRetransTimeoutMs: OptionalField(2, UnsignedIntT),
     })),
 });
 

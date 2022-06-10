@@ -4,11 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Message, Packet } from "../codec/MessageCodec";
 import { Crypto } from "../crypto/Crypto";
-import { Fabric } from "../fabric/Fabric";
 import { Singleton } from "../util/Singleton";
 import { SecureSession } from "./SecureSession";
+import { Session } from "./Session";
 import { UnsecureSession } from "./UnsecureSession";
 
 export const UNDEFINED_NODE_ID = BigInt(0);
@@ -25,8 +24,8 @@ export class SessionManager {
         this.sessions.set(UNICAST_UNSECURE_SESSION_ID, new UnsecureSession());
     }
 
-    async createSecureSession(sessionId: number, nodeId: bigint, peerNodeId: bigint, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean) {
-        const session = await SecureSession.create(sessionId, nodeId, peerNodeId, peerSessionId, sharedSecret, salt, isInitiator);
+    async createSecureSession(sessionId: number, nodeId: bigint, peerNodeId: bigint, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
+        const session = await SecureSession.create(sessionId, nodeId, peerNodeId, peerSessionId, sharedSecret, salt, isInitiator, idleRetransTimeoutMs, activeRetransTimeoutMs);
         this.sessions.set(sessionId, session);
         return session;
     }
@@ -45,12 +44,4 @@ export class SessionManager {
     getSession(sessionId: number) {
         return this.sessions.get(sessionId);
     }
-}
-
-export interface Session {
-    getName(): string;
-    decode(packet: Packet): Message,
-    encode(message: Message): Packet,
-    getAttestationChallengeKey(): Buffer,
-    setFabric(fabric: Fabric): void;
 }

@@ -12,7 +12,7 @@ import { InteractionProtocol } from "../../src/interaction/InteractionProtocol";
 import { ReadRequest, ReadResponse } from "../../src/interaction/InteractionMessenger";
 import { Device } from "../../src/interaction/model/Device";
 import { Endpoint } from "../../src/interaction/model/Endpoint";
-import { MessageExchange } from "../../src/server/MatterServer";
+import { MessageExchange } from "../../src/server/MessageExchange";
 
 const READ_REQUEST: ReadRequest = {
     interactionModelRevision: 1,
@@ -66,7 +66,7 @@ describe("InteractionProtocol", () => {
                 ])
             ]));
 
-            const result = interactionProtocol.handleReadRequest(({getChannel: () => ({getName: () => "test"})}) as MessageExchange, READ_REQUEST);
+            const result = interactionProtocol.handleReadRequest(({channel: {getName: () => "test"}}) as MessageExchange, READ_REQUEST);
 
             assert.deepEqual(result, READ_RESPONSE);
         });

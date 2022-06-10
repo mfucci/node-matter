@@ -6,7 +6,7 @@
 
 import { Packet, Message, MessageCodec } from "../codec/MessageCodec";
 import { Fabric } from "../fabric/Fabric";
-import { Session } from "./SessionManager";
+import { DEFAULT_ACTIVE_RETRANSMISSION_TIMEOUT_MS, DEFAULT_IDLE_RETRANSMISSION_TIMEOUT_MS, DEFAULT_RETRANSMISSION_RETRIES, Session } from "./Session";
 
 export class UnsecureSession implements Session {
     decode(packet: Packet): Message {
@@ -27,5 +27,13 @@ export class UnsecureSession implements Session {
 
     getName() {
         return "unsecure";
+    }
+
+    getMrpParameters() {
+        return {
+            idleRetransmissionTimeoutMs: DEFAULT_IDLE_RETRANSMISSION_TIMEOUT_MS,
+            activeRetransmissionTimeoutMs: DEFAULT_ACTIVE_RETRANSMISSION_TIMEOUT_MS,
+            retransmissionRetries: DEFAULT_RETRANSMISSION_RETRIES,
+        }
     }
 }

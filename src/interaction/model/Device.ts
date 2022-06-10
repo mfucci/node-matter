@@ -5,7 +5,7 @@
  */
 
 import { Element } from "../../codec/TlvCodec";
-import { Session } from "../../session/SessionManager";
+import { Session } from "../../session/Session";
 import { Endpoint } from "./Endpoint";
 
 interface AttributePath {

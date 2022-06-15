@@ -12,7 +12,7 @@ export class UdpChannel implements Channel {
 
     constructor(
         private readonly port: number = 5540,
-        ) {
+    ) {
         this.server.on('error', error => console.log(`server error:${error.stack}`));
     }
 

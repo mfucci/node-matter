@@ -6,7 +6,7 @@
 
 import { networkInterfaces, NetworkInterfaceInfo } from "os";
 
-export function getIpMacAddresses() {
+export function getIpMacAddresses(): {ip: string, mac: string} {
     const interfaces = networkInterfaces();
     for (var name in interfaces) {
         const netInterfaces = interfaces[name] as NetworkInterfaceInfo[];

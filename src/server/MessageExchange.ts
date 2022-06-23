@@ -67,6 +67,7 @@ export class MessageExchange {
 
         if (messageId === this.receivedMessageToAck?.packetHeader.messageId) {
             // Received a message retransmission but the reply is not ready yet, ignoring
+            // TODO: send a standalone ack if ack is requested
             return;
         }
         if (messageId === this.sentMessageToAck?.payloadHeader.ackedMessageId) {
@@ -75,20 +76,21 @@ export class MessageExchange {
             this.channel.send(this.sentMessageToAck);
             return;
         }
-        if (ackedMessageId !== undefined && this.sentMessageToAck === undefined) throw new Error(`Received ack for message ${ackedMessageId.toString(16)} but no sent message required an ack`);
+        if (ackedMessageId !== undefined && this.sentMessageToAck?.packetHeader.messageId !== ackedMessageId) {
+            // Received an unexpected ack, might be for a message retransmission, ignoring
+            return;
+        }
         if (this.sentMessageToAck !== undefined) {
             if (ackedMessageId === undefined) throw new Error("Previous message ack is missing");
-            const expectedAckMessageId = this.sentMessageToAck.packetHeader.messageId
-            if (ackedMessageId !== expectedAckMessageId) throw new Error(`Received incorrect ack: expected ${expectedAckMessageId.toString(16)}, received ${ackedMessageId.toString(16)}`);
             // The other side has received our previous message
             this.sentMessageToAck = undefined;
             clearTimeout(this.retransmissionTimeoutId);
         }
         if (messageType === MessageType.StandaloneAck) {
             // This indicates the end of this message exchange
-            if (requiresAck) throw new Error("Standalone acks should bot require an ack");
-            this.messagesQueue.close();
-            this.closeCallback();
+            if (requiresAck) throw new Error("Standalone acks should but require an ack");
+            // Wait some time before closing this exchange to handle potential retransmissions
+            setTimeout(() => this.closeExchange(), this.activeRetransmissionTimeoutMs * 3);
             return;
         }
         if (requiresAck) {
@@ -146,5 +148,10 @@ export class MessageExchange {
         retransmissionCount++;
         if (retransmissionCount === this.retransmissionRetries) return;
         this.retransmissionTimeoutId = setTimeout(() => this.retransmitMessage(message, retransmissionCount), this.activeRetransmissionTimeoutMs);
+    }
+
+    private closeExchange() {
+        this.messagesQueue.close();
+        this.closeCallback();
     }
 }

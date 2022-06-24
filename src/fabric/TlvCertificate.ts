@@ -11,7 +11,7 @@ export const CertificateT = ObjectT({
     serialNumber: Field(1, ByteStringT),
     signatureAlgorithm: Field(2, UnsignedIntT),
     issuer: Field(3, ObjectT({
-        rcacId: Field(20, UnsignedIntT),
+        rcacId: OptionalField(20, UnsignedIntT),
     }, TlvType.List)),
     notBefore: Field(4, UnsignedIntT),
     notAfter: Field(5, UnsignedIntT),

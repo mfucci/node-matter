@@ -9,3 +9,4 @@ Add support for WiFi / Bluetooth / Thread commisionning
 Add IPv6 support
 Make it compatible with a web API to use it in a browser / webview
 Add support for QName compression in DnsCodec
+Review message ack / retransmission logic: doesn't handle well slow requests as is

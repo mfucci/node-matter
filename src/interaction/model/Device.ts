@@ -5,7 +5,6 @@
  */
 
 import { Element } from "../../codec/TlvCodec";
-import { Session } from "../../session/Session";
 import { Endpoint } from "./Endpoint";
 
 interface AttributePath {
@@ -38,9 +37,9 @@ export class Device {
         })
     }
 
-    async invoke(session: Session, commandPath: CommandPath, args: Element) {
+    async invoke(commandPath: CommandPath, args: Element) {
         const {endpointId, clusterId, commandId} = commandPath;
-        const result = await this.endpoints.get(endpointId)?.invoke(session, clusterId, commandId, args);
+        const result = await this.endpoints.get(endpointId)?.invoke(clusterId, commandId, args);
         if (result === undefined) return [];
         return [{ commandPath, result }];
     }

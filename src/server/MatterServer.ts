@@ -4,27 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Crypto } from "../crypto/Crypto";
-import { MessageCodec, SessionType } from "../codec/MessageCodec";
 import { getSessionManager } from "../session/SessionManager";
 import { MessageExchange } from "./MessageExchange";
+import { MessageCounter } from "./MessageCounter";
+import { Channel } from "../channel/Channel";
+import { ProtocolHandler, ProtocolHandlerBuilder } from "./ProtocolHandler";
+import { END_OF_STREAM, Stream } from "../util/Stream";
+import { SecureMessageStream } from "../session/SecureMessageStream";
+import { Message } from "../codec/MessageCodec";
+import { SecureMessage } from "../session/SecureMessage";
 
 export const enum Protocol {
     SECURE_CHANNEL = 0x0000,
     INTERACTION_MODEL = 0x0001,
-}
-
-export interface ExchangeSocket<T> {
-    send(data: T): Promise<void>;
-    getName():string;
-}
-
-export interface Channel {
-    bind(listener: (socket: ExchangeSocket<Buffer>, messageBytes: Buffer) => void): void;
-}
-
-export interface ProtocolHandler {
-    onNewExchange(exchange: MessageExchange): void;
 }
 
 export class MatterServer {
@@ -40,45 +32,47 @@ export class MatterServer {
         return this;
     }
 
-    addProtocolHandler(protocol: Protocol, protocolHandler: ProtocolHandler) {
-        this.protocolHandlers.set(protocol, protocolHandler);
+    addProtocolHandler(protocol: Protocol, protocolHandlerBuilder: ProtocolHandlerBuilder) {
+        this.protocolHandlers.set(protocol, protocolHandlerBuilder.build(this));
         return this;
     }
 
     start() {
-        this.channels.forEach(channel => channel.bind((socket, data) => this.onMessage(socket, data)));
+        this.channels.forEach(channel => channel.bind(socket => this.onConnection(socket)));
     }
 
-    private onMessage(socket: ExchangeSocket<Buffer>, messageBytes: Buffer) {
-        var packet = MessageCodec.decodePacket(messageBytes);
-        if (packet.header.sessionType === SessionType.Group) throw new Error("Group messages are not supported");
+    getSessionManager() {
+        return this.sessionManager;
+    }
 
-        const session = this.sessionManager.getSession(packet.header.sessionId);
-        if (session === undefined) throw new Error(`Cannot find a session for ID ${packet.header.sessionId}`);
+    private async onConnection(socket: Stream<Buffer>) {
+        const messageStream = new SecureMessageStream(socket, this.sessionManager);
+        
+        try {
+            while (true) {
+                await this.handleMessage(messageStream);
+            }
+        } catch (error) {
+            if (error === END_OF_STREAM) return;
+            throw error;
+        }
+    }
 
-        const message = session.decode(packet);
-        const exchangeId = message.payloadHeader.exchangeId;
-        if (this.exchanges.has(exchangeId)) {
-            const exchange = this.exchanges.get(exchangeId);
-            exchange?.onMessageReceived(message);
-        } else {
-            const exchange = MessageExchange.fromInitialMessage(session, socket, this.messageCounter, message, () => this.exchanges.delete(exchangeId));
+    private async handleMessage(messageStream: Stream<SecureMessage>) {
+        const secureMessage = await messageStream.read();
+        const { message, session }  = secureMessage;
+        const {message: {payloadHeader: {exchangeId, protocolId}}} = secureMessage;
+        var exchange = this.exchanges.get(exchangeId);
+        if (exchange === undefined) {
+            // TODO: refactor this to handle mrp in a separate stream
+            const mrpParameters = this.sessionManager.getSession(message.packetHeader.sessionId)?.getMrpParameters();
+            if (mrpParameters === undefined) throw new Error("Cannot find the session");
+            exchange = new MessageExchange({session, ...mrpParameters, ...message.packetHeader, ...message.payloadHeader}, messageStream, this.messageCounter, () => this.exchanges.delete(exchangeId));
             this.exchanges.set(exchangeId, exchange);
-            const protocolHandler = this.protocolHandlers.get(message.payloadHeader.protocolId);
-            if (protocolHandler === undefined) throw new Error(`Unsupported protocol ${message.payloadHeader.protocolId}`);
+            const protocolHandler = this.protocolHandlers.get(protocolId);
+            if (protocolHandler === undefined) throw new Error(`Unsupported protocol ${protocolId}`);
             protocolHandler.onNewExchange(exchange);
         }
-    }
-}
-
-export class MessageCounter {
-    private messageCounter = Crypto.getRandomUInt32();
-
-    getIncrementedCounter() {
-        this.messageCounter++;
-        if (this.messageCounter > 0xFFFFFFFF) {
-            this.messageCounter = 0;
-        }
-        return this.messageCounter;
+        exchange.onMessageReceived(message);
     }
 }

@@ -13,6 +13,7 @@ import { Cluster } from "../model/Cluster";
 import { Command, NoResponseT } from "../model/Command";
 import { Session } from "../../session/Session";
 import { AddNocRequestT, AddTrustedRootCertificateRequestT, AttestationResponseT, AttestationT, CertificateChainRequestT, CertificateChainResponseT, CertificateSigningRequestT, CertificateType, CsrResponseT, RequestWithNonceT, Status, StatusResponseT } from "./OperationalCredentialsMessages";
+import { MatterServer } from "../../server/MatterServer";
 
 interface OperationalCredentialsClusterConf {
     devicePrivateKey: Buffer,
@@ -24,15 +25,18 @@ interface OperationalCredentialsClusterConf {
 export class OperationalCredentialsCluster extends Cluster {
     private fabricBuilder?: FabricBuilder;
 
-    constructor(private readonly conf: OperationalCredentialsClusterConf) {
+    constructor(
+        private readonly server: MatterServer,
+        private readonly conf: OperationalCredentialsClusterConf,
+    ) {
         super(
             0x3e,
             "Operational Credentials",
             [
-                new Command(0, 1, "AttestationRequest", RequestWithNonceT, AttestationResponseT, ({nonce}, session) => this.handleAttestationRequest(nonce, session)),
+                new Command(0, 1, "AttestationRequest", RequestWithNonceT, AttestationResponseT, ({nonce}) => this.handleAttestationRequest(nonce)),
                 new Command(2, 3, "CertificateChainRequest", CertificateChainRequestT, CertificateChainResponseT, ({type}) => this.handleCertificateChainRequest(type)),
-                new Command(4, 5, "CSRRequest", RequestWithNonceT, CsrResponseT, ({nonce}, session) => this.handleCertificateSignRequest(nonce, session)),
-                new Command(6, 8, "AddNOC", AddNocRequestT, StatusResponseT, ({nocCert, icaCert, ipkValue, caseAdminNode, adminVendorId}, session) => this.addNewOperationalCertificates(nocCert, icaCert, ipkValue, caseAdminNode, adminVendorId, session)),
+                new Command(4, 5, "CSRRequest", RequestWithNonceT, CsrResponseT, ({nonce}) => this.handleCertificateSignRequest(nonce)),
+                new Command(6, 8, "AddNOC", AddNocRequestT, StatusResponseT, ({nocCert, icaCert, ipkValue, caseAdminNode, adminVendorId}) => this.addNewOperationalCertificates(nocCert, icaCert, ipkValue, caseAdminNode, adminVendorId)),
                 new Command(11, 11, "AddTrustedRootCertificate", AddTrustedRootCertificateRequestT, NoResponseT, ({certificate}) => this.addTrustedRootCertificate(certificate)),
             ],
             [],

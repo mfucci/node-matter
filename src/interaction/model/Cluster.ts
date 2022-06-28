@@ -5,7 +5,6 @@
  */
 
 import { Element } from "../../codec/TlvCodec";
-import { Session } from "../../session/Session";
 import { Attribute } from "./Attribute";
 import { Command } from "./Command";
 
@@ -35,7 +34,7 @@ export class Cluster {
         return this.attributesMap.get(attributeId)?.getValue();
     }
 
-    async invoke(session: Session, commandId: number, args: Element) {
-        return this.commandsMap.get(commandId)?.invoke(session, args);
+    async invoke(commandId: number, args: Element) {
+        return this.commandsMap.get(commandId)?.invoke(args);
     }
 }

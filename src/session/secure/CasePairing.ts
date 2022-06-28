@@ -6,7 +6,7 @@
 
 import { Crypto } from "../../crypto/Crypto";
 import { getFabricManager } from "../../fabric/FabricManager";
-import { ProtocolHandler } from "../../server/MatterServer";
+import { ProtocolHandler } from "../../server/ProtocolHandler";
 import { MessageExchange } from "../../server/MessageExchange";
 import { CaseMessenger } from "./CaseMessenger";
 import { TlvObjectCodec } from "../../codec/TlvObjectCodec";

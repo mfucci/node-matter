@@ -5,7 +5,6 @@
  */
 
 import { Element } from "../../codec/TlvCodec";
-import { Session } from "../../session/Session";
 import { Cluster } from "./Cluster";
 
 export class Endpoint {
@@ -23,7 +22,7 @@ export class Endpoint {
         return this.clusters.get(clusterId)?.getAttributeValue(attributeId);
     }
 
-    async invoke(session: Session, clusterId: number, commandId: number, args: Element) {
-        return this.clusters.get(clusterId)?.invoke(session, commandId, args);
+    async invoke(clusterId: number, commandId: number, args: Element) {
+        return this.clusters.get(clusterId)?.invoke(commandId, args);
     }
 }

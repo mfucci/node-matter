@@ -7,7 +7,7 @@
 import { Crypto } from "../../crypto/Crypto";
 import { getSessionManager, UNDEFINED_NODE_ID } from "../SessionManager";
 import { PaseMessenger } from "./PaseMessenger";
-import { ProtocolHandler } from "../../server/MatterServer";
+import { ProtocolHandler } from "../../server/ProtocolHandler";
 import { MessageExchange } from "../../server/MessageExchange";
 import { PbkdfParameters, Spake2p } from "../../crypto/Spake2p";
 

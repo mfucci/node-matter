@@ -5,12 +5,24 @@
  */
 
 import { Device } from "./model/Device";
-import { ProtocolHandler } from "../server/MatterServer";
+import { ProtocolHandler, ProtocolHandlerBuilder } from "../server/ProtocolHandler";
 import { MessageExchange } from "../server/MessageExchange";
 import { InteractionMessenger, InvokeRequest, InvokeResponse, ReadRequest, ReadResponse } from "./InteractionMessenger";
+import { MatterServer } from "../server/MatterServer";
+
+export class InteractionProtocolBuilder implements ProtocolHandlerBuilder {
+    constructor(
+        private readonly device: Device,
+    ) {}
+
+    build(server: MatterServer): ProtocolHandler {
+        return new InteractionProtocol(server, this.device);
+    }
+}
 
 export class InteractionProtocol implements ProtocolHandler {
     constructor(
+        private readonly server: MatterServer,
         private readonly device: Device,
     ) {}
 
@@ -24,7 +36,7 @@ export class InteractionProtocol implements ProtocolHandler {
     }
 
     handleReadRequest(exchange: MessageExchange, {attributes}: ReadRequest): ReadResponse {
-        console.log(`Received read request from ${exchange.channel.getName()}: ${attributes.map(({endpointId = "*", clusterId, attributeId}) => `${endpointId}/${clusterId}/${attributeId}`).join(", ")}`);
+        console.log(`Received read request from ${exchange}: ${attributes.map(({endpointId = "*", clusterId, attributeId}) => `${endpointId}/${clusterId}/${attributeId}`).join(", ")}`);
 
         return {
             isFabricFiltered: true,
@@ -34,9 +46,9 @@ export class InteractionProtocol implements ProtocolHandler {
     }
 
     async handleInvokeRequest(exchange: MessageExchange, {invokes}: InvokeRequest): Promise<InvokeResponse> {
-        console.log(`Received invoke request from ${exchange.channel.getName()}: ${invokes.map(({path: {endpointId, clusterId, commandId}}) => `${endpointId}/${clusterId}/${commandId}`).join(", ")}`);
+        console.log(`Received invoke request from ${exchange}: ${invokes.map(({path: {endpointId, clusterId, commandId}}) => `${endpointId}/${clusterId}/${commandId}`).join(", ")}`);
 
-        const results = (await Promise.all(invokes.map(({path, args}) => this.device.invoke(exchange.session, path, args)))).flat();
+        const results = (await Promise.all(invokes.map(({path, args}) => this.device.invoke(path, args)))).flat();
         return {
             suppressResponse: false,
             interactionModelRevision: 1,

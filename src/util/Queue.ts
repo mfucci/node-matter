@@ -7,10 +7,7 @@
  */
 
 import { getPromiseResolver } from "./Promises";
-
-export const enum ERROR {
-    EOF = "EOF",
-}
+import { END_OF_STREAM } from "./Stream";
 
 export class Queue<T> {
     private readonly queue = new Array<T>();
@@ -19,7 +16,7 @@ export class Queue<T> {
 
     async read(): Promise<T> {
         const { promise, resolver, rejecter } = await getPromiseResolver<T>();
-        if (this.closed) throw ERROR.EOF;
+        if (this.closed) throw END_OF_STREAM;
         const data = this.queue.shift();
         if (data !== undefined) {
             return data;
@@ -29,7 +26,7 @@ export class Queue<T> {
     }
 
     write(data: T) {
-        if (this.closed) throw ERROR.EOF;
+        if (this.closed) throw END_OF_STREAM;
         if (this.pendingRead !== undefined) {
             this.pendingRead.resolver(data);
             this.pendingRead = undefined;
@@ -42,6 +39,6 @@ export class Queue<T> {
         if (this.closed) return;
         this.closed = true;
         if (this.pendingRead === undefined) return;
-        this.pendingRead.rejecter(ERROR.EOF);
+        this.pendingRead.rejecter(END_OF_STREAM);
     }
 }

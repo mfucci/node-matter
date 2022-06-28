@@ -6,7 +6,6 @@
 
 import { Element } from "../../codec/TlvCodec";
 import { ObjectT, Template, TlvObjectCodec } from "../../codec/TlvObjectCodec";
-import { Session } from "../../session/Session";
 
 export const enum ResultCode {
     Success = 0x00,
@@ -22,12 +21,12 @@ export class Command<RequestT, ResponseT> {
         readonly name: string,
         protected readonly requestTemplate: Template<RequestT>,
         protected readonly responseTemplate: Template<ResponseT>,
-        protected readonly handler: (request: RequestT, session: Session) => Promise<ResponseT> | ResponseT,
+        protected readonly handler: (request: RequestT) => Promise<ResponseT> | ResponseT,
     ) {}
 
-    async invoke(session: Session, args: Element): Promise<{ result: ResultCode, responseId: number, response?: Element } | undefined> {
+    async invoke(args: Element): Promise<{ result: ResultCode, responseId: number, response?: Element } | undefined> {
         const request = TlvObjectCodec.decodeElement(args, this.requestTemplate);
-        const response = await this.handler(request, session);
+        const response = await this.handler(request);
         return { result: ResultCode.Success, responseId: this.responseId, response: TlvObjectCodec.encodeElement(response, this.responseTemplate) };
     }
 }

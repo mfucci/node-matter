@@ -30,8 +30,8 @@ export class InteractionMessenger {
 
     constructor(
         private readonly exchange: MessageExchange,
-        private readonly handleReadRequest: (request: ReadRequest) => ReadResponse,
-        private readonly handleInvokeRequest: (request: InvokeRequest) => Promise<InvokeResponse>,
+        private readonly handleReadRequest: (request: ReadRequest, sessionId: number) => ReadResponse,
+        private readonly handleInvokeRequest: (request: InvokeRequest, sessionId: number) => Promise<InvokeResponse>,
     ) {}
 
     async handleRequest() {

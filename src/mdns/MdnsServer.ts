@@ -39,7 +39,7 @@ export class MdnsServer {
         this.server.on('message', message => this.handleDnsMessage(message));
         this.server.on('listening', () => this.server.setBroadcast(true));
         this.server.on('error', error => console.log(error));
-        this.server.bind(MDNS_BROADCAST_PORT, MDNS_BROADCAST_IP);
+        this.server.bind(MDNS_BROADCAST_PORT);
     }
 
     private handleDnsMessage(messageBytes: Buffer) {
@@ -48,12 +48,11 @@ export class MdnsServer {
 
         const message = DnsCodec.decode(messageBytes);
         if (message.messageType !== MessageType.Query) return;
-        const answers = message.queries.flatMap(({name, recordType}) => this.records.filter(record => record.name === name && record.recordType === recordType));
+        const answers = message.queries.flatMap(query => this.queryRecords(query));
         if (answers.length === 0) return;
-        this.send({
-            answers,
-            additionalRecords: this.records.filter(({recordType}) => recordType !== RecordType.PTR),
-        });
+
+        const additionalRecords = this.records.filter(record => !answers.includes(record));
+        this.send({ answers, additionalRecords });
     }
 
     addRecordsForFabric(fabric: Fabric) {
@@ -90,5 +89,13 @@ export class MdnsServer {
             if (error !== null) rejecter(error);
             resolver();
         }));
+    }
+
+    private queryRecords({name, recordType}: {name: string, recordType: RecordType}) {
+        if (recordType === RecordType.ANY) {
+            return this.records.filter(record => record.name === name);
+        } else {
+            return this.records.filter(record => record.name === name && record.recordType === recordType);
+        }
     }
 }

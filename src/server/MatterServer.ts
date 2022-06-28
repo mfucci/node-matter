@@ -8,6 +8,7 @@ import { Crypto } from "../crypto/Crypto";
 import { MessageCodec, SessionType } from "../codec/MessageCodec";
 import { getSessionManager } from "../session/SessionManager";
 import { MessageExchange } from "./MessageExchange";
+import { getMdnsServer } from "../mdns/MdnsServer";
 
 export const enum Protocol {
     SECURE_CHANNEL = 0x0000,
@@ -47,6 +48,7 @@ export class MatterServer {
 
     start() {
         this.channels.forEach(channel => channel.bind((socket, data) => this.onMessage(socket, data)));
+        getMdnsServer().start();
     }
 
     private onMessage(socket: ExchangeSocket<Buffer>, messageBytes: Buffer) {

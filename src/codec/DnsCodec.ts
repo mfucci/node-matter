@@ -46,7 +46,7 @@ export interface DnsMessage {
 
 export const enum MessageType {
     Query = 0x0000,
-    Response = 0x8000,
+    Response = 0x8400,
 }
 
 export const enum RecordType {
@@ -55,6 +55,7 @@ export const enum RecordType {
     TXT = 0x10,
     AAAA = 0x1C,
     SRV = 0x21,
+    ANY = 0xFF,
 }
 
 const enum RecordClass {

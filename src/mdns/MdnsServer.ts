@@ -19,7 +19,12 @@ const MATTER_SERVICE_QNAME = "_matter._tcp.local";
 export const getMdnsServer = Singleton(() => new MdnsServer());
 
 export class MdnsServer {
-    private readonly server = dgram.createSocket({type: "udp4", reuseAddr: true});
+    private readonly server = dgram.createSocket({
+        // TODO: also support IPv6
+        type: "udp4",
+        // This option should allow to run in parallel of other MDNS servers on this device
+        reuseAddr: true,
+    });
     private readonly records = new Array<Record<any>>();
     private readonly ip: string;
     private readonly localHostname: string; 
@@ -33,18 +38,21 @@ export class MdnsServer {
     start() {
         this.server.on('message', message => this.handleDnsMessage(message));
         this.server.on('listening', () => this.server.setBroadcast(true));
-        this.server.bind(MDNS_BROADCAST_PORT, MDNS_BROADCAST_IP);
+        this.server.on('error', error => console.log(error));
+        this.server.bind(MDNS_BROADCAST_PORT);
     }
 
     private handleDnsMessage(messageBytes: Buffer) {
+        // No need to process the DNS message if there are no records to serve
+        if (this.records.length === 0) return;
+
         const message = DnsCodec.decode(messageBytes);
         if (message.messageType !== MessageType.Query) return;
-        const answers = message.queries.flatMap(({name, recordType}) => this.records.filter(record => record.name === name && record.recordType === recordType));
+        const answers = message.queries.flatMap(query => this.queryRecords(query));
         if (answers.length === 0) return;
-        this.send({
-            answers,
-            additionalRecords: this.records.filter(({recordType}) => recordType !== RecordType.PTR),
-        });
+
+        const additionalRecords = this.records.filter(record => !answers.includes(record));
+        this.send({ answers, additionalRecords });
     }
 
     addRecordsForFabric(fabric: Fabric) {
@@ -60,8 +68,10 @@ export class MdnsServer {
             PtrRecord(SERVICE_DISCOVERY_QNAME, fabricQname),
             PtrRecord(MATTER_SERVICE_QNAME, deviceMatterQname),
             PtrRecord(fabricQname, deviceMatterQname),
+            // TODO: A record depends of the interface
             ARecord(this.localHostname, this.ip),
             //AAAARecord(this.localHostname, "fe80::9580:b733:6f54:9f43"),
+            // TODO: the Matter port should not be hardcoded here
             SrvRecord(deviceMatterQname, {priority: 0, weight: 0, port: 5540, target: this.localHostname }),
             TxtRecord(deviceMatterQname, ["SII=5000", "SAI=300", "T=1"]),
         ]);
@@ -79,5 +89,13 @@ export class MdnsServer {
             if (error !== null) rejecter(error);
             resolver();
         }));
+    }
+
+    private queryRecords({name, recordType}: {name: string, recordType: RecordType}) {
+        if (recordType === RecordType.ANY) {
+            return this.records.filter(record => record.name === name);
+        } else {
+            return this.records.filter(record => record.name === name && record.recordType === recordType);
+        }
     }
 }

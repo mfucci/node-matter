@@ -7,19 +7,16 @@
  */
 
 import { getPromiseResolver } from "./Promises";
+import { END_OF_STREAM, Stream } from "./Stream";
 
-export const enum ERROR {
-    EOF = "EOF",
-}
-
-export class Queue<T> {
+export class Queue<T> implements Stream<T> {
     private readonly queue = new Array<T>();
     private pendingRead?: { resolver: (data: T) => void, rejecter: (reason: any) => void};
     private closed = false;
 
     async read(): Promise<T> {
         const { promise, resolver, rejecter } = await getPromiseResolver<T>();
-        if (this.closed) throw ERROR.EOF;
+        if (this.closed) throw END_OF_STREAM;
         const data = this.queue.shift();
         if (data !== undefined) {
             return data;
@@ -28,8 +25,8 @@ export class Queue<T> {
         return promise;
     }
 
-    write(data: T) {
-        if (this.closed) throw ERROR.EOF;
+    async write(data: T) {
+        if (this.closed) throw END_OF_STREAM;
         if (this.pendingRead !== undefined) {
             this.pendingRead.resolver(data);
             this.pendingRead = undefined;
@@ -42,6 +39,6 @@ export class Queue<T> {
         if (this.closed) return;
         this.closed = true;
         if (this.pendingRead === undefined) return;
-        this.pendingRead.rejecter(ERROR.EOF);
+        this.pendingRead.rejecter(END_OF_STREAM);
     }
 }

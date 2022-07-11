@@ -6,9 +6,10 @@
 
 import { Crypto } from "../crypto/Crypto";
 import { MessageCodec, SessionType } from "../codec/MessageCodec";
-import { getSessionManager } from "../session/SessionManager";
+import { SessionManager } from "../session/SessionManager";
 import { MessageExchange } from "./MessageExchange";
-import { getMdnsServer } from "../mdns/MdnsServer";
+import { MdnsServer } from "../mdns/MdnsServer";
+import { FabricManager } from "../fabric/FabricManager";
 
 export const enum Protocol {
     SECURE_CHANNEL = 0x0000,
@@ -29,12 +30,22 @@ export interface ProtocolHandler {
 }
 
 export class MatterServer {
+    static async create() {
+        const mdnsServer = await MdnsServer.create();
+        return new MatterServer(mdnsServer);
+    }
+
+    constructor(
+        private readonly mdnsServer: MdnsServer,
+    ) {}
+
     private readonly channels = new Array<Channel>();
     private readonly protocolHandlers = new Map<Protocol, ProtocolHandler>();
 
     private readonly messageCounter = new MessageCounter();
     private readonly exchanges = new Map<number, MessageExchange>();
-    private readonly sessionManager = getSessionManager();
+    private readonly sessionManager = new SessionManager(this);
+    private readonly fabricManager = new FabricManager();
 
     addChannel(channel: Channel) {
         this.channels.push(channel);
@@ -48,7 +59,18 @@ export class MatterServer {
 
     start() {
         this.channels.forEach(channel => channel.bind((socket, data) => this.onMessage(socket, data)));
-        getMdnsServer().start();
+    }
+
+    getMdnsServer() {
+        return this.mdnsServer;
+    }
+
+    getSessionManager() {
+        return this.sessionManager;
+    }
+
+    getFabricManager() {
+        return this.fabricManager;
     }
 
     private onMessage(socket: ExchangeSocket<Buffer>, messageBytes: Buffer) {

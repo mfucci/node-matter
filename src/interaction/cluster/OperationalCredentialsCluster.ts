@@ -7,8 +7,6 @@
 import { TlvObjectCodec } from "../../codec/TlvObjectCodec";
 import { Crypto } from "../../crypto/Crypto";
 import { FabricBuilder } from "../../fabric/Fabric";
-import { getFabricManager } from "../../fabric/FabricManager";
-import { getMdnsServer } from "../../mdns/MdnsServer";
 import { Cluster } from "../model/Cluster";
 import { Command, NoResponseT } from "../model/Command";
 import { Session } from "../../session/Session";
@@ -72,12 +70,12 @@ export class OperationalCredentialsCluster extends Cluster {
 
         const fabric = await this.fabricBuilder.build();
         this.fabricBuilder = undefined;
-        getFabricManager().addFabric(fabric);
+        session.getServer().getFabricManager().addFabric(fabric);
         session.setFabric(fabric);
 
         // TODO: create ACL with caseAdminNode
 
-        const mdnsServer = getMdnsServer();
+        const mdnsServer = session.getServer().getMdnsServer();
         mdnsServer.addRecordsForFabric(fabric);
         await mdnsServer.announce();
 

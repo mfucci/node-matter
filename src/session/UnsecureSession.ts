@@ -6,9 +6,14 @@
 
 import { Packet, Message, MessageCodec } from "../codec/MessageCodec";
 import { Fabric } from "../fabric/Fabric";
+import { MatterServer } from "../server/MatterServer";
 import { DEFAULT_ACTIVE_RETRANSMISSION_TIMEOUT_MS, DEFAULT_IDLE_RETRANSMISSION_TIMEOUT_MS, DEFAULT_RETRANSMISSION_RETRIES, Session } from "./Session";
 
 export class UnsecureSession implements Session {
+    constructor(
+        private readonly matterServer: MatterServer,
+    ) {}
+
     decode(packet: Packet): Message {
         return MessageCodec.decodePayload(packet);
     }
@@ -35,5 +40,9 @@ export class UnsecureSession implements Session {
             activeRetransmissionTimeoutMs: DEFAULT_ACTIVE_RETRANSMISSION_TIMEOUT_MS,
             retransmissionRetries: DEFAULT_RETRANSMISSION_RETRIES,
         }
+    }
+
+    getServer() {
+        return this.matterServer;
     }
 }

@@ -7,6 +7,7 @@
 import { Message, MessageCodec, Packet } from "../codec/MessageCodec";
 import { Crypto } from "../crypto/Crypto";
 import { Fabric } from "../fabric/Fabric";
+import { MatterServer } from "../server/MatterServer";
 import { LEBufferWriter } from "../util/LEBufferWriter";
 import { DEFAULT_ACTIVE_RETRANSMISSION_TIMEOUT_MS, DEFAULT_IDLE_RETRANSMISSION_TIMEOUT_MS, DEFAULT_RETRANSMISSION_RETRIES, Session } from "./Session";
 
@@ -16,6 +17,7 @@ export class SecureSession implements Session {
     private fabric?: Fabric;
 
     constructor(
+        private readonly matterServer: MatterServer,
         private readonly id: number,
         private readonly nodeId: bigint,
         private readonly peerNodeId: bigint,
@@ -29,12 +31,12 @@ export class SecureSession implements Session {
         private readonly retransmissionRetries: number = DEFAULT_RETRANSMISSION_RETRIES,
     ) {}
 
-    static async create(id: number, nodeId: bigint, peerNodeId: bigint, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
+    static async create(matterServer: MatterServer, id: number, nodeId: bigint, peerNodeId: bigint, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
         const keys = await Crypto.hkdf(sharedSecret, salt, SESSION_KEYS_INFO, 16 * 3);
         const decryptKey = isInitiator ? keys.slice(16, 32) : keys.slice(0, 16);
         const encryptKey = isInitiator ? keys.slice(0, 16) : keys.slice(16, 32);
         const attestationKey = keys.slice(32, 48);
-        return new SecureSession(id, nodeId, peerNodeId, peerSessionId, sharedSecret, decryptKey, encryptKey, attestationKey, idleRetransTimeoutMs, activeRetransTimeoutMs);
+        return new SecureSession(matterServer, id, nodeId, peerNodeId, peerSessionId, sharedSecret, decryptKey, encryptKey, attestationKey, idleRetransTimeoutMs, activeRetransTimeoutMs);
     }
 
     decode({ header, bytes }: Packet): Message {
@@ -68,6 +70,10 @@ export class SecureSession implements Session {
     getMrpParameters() {
         const {idleRetransmissionTimeoutMs, activeRetransmissionTimeoutMs, retransmissionRetries} = this;
         return {idleRetransmissionTimeoutMs, activeRetransmissionTimeoutMs, retransmissionRetries};
+    }
+
+    getServer() {
+        return this.matterServer;
     }
 
     private generateNonce(securityFlags: number, messageId: number, nodeId: bigint) {

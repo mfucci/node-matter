@@ -5,7 +5,7 @@
  */
 
 import { Crypto } from "../../crypto/Crypto";
-import { getSessionManager, UNDEFINED_NODE_ID } from "../SessionManager";
+import { SessionManager, UNDEFINED_NODE_ID } from "../SessionManager";
 import { PaseMessenger } from "./PaseMessenger";
 import { ProtocolHandler } from "../../server/MatterServer";
 import { MessageExchange } from "../../server/MessageExchange";
@@ -15,7 +15,6 @@ const DEFAULT_PASSCODE_ID = 0;
 const SPAKE_CONTEXT = Buffer.from("CHIP PAKE V1 Commissioning");
 
 export class PasePairing implements ProtocolHandler {
-    private sessionManager = getSessionManager();
 
     constructor(
         private readonly setupPinCode: number,
@@ -25,16 +24,16 @@ export class PasePairing implements ProtocolHandler {
     async onNewExchange(exchange: MessageExchange) {
         const messenger = new PaseMessenger(exchange);
         try {
-            await this.handlePairingRequest(messenger);
+            await this.handlePairingRequest(exchange.session.getServer().getSessionManager(), messenger);
         } catch (error) {
             console.log("An error occured during the commissioning", error);
             await messenger.sendError();
         }
     }
 
-    private async handlePairingRequest(messenger: PaseMessenger) {
+    private async handlePairingRequest(sessionManager: SessionManager, messenger: PaseMessenger) {
         console.log(`Pase: Received pairing request from ${messenger.getChannelName()}`);
-        const sessionId = this.sessionManager.getNextAvailableSessionId();
+        const sessionId = sessionManager.getNextAvailableSessionId();
         const random = Crypto.getRandom();
 
         // Read pbkdRequest and send pbkdResponse
@@ -54,7 +53,7 @@ export class PasePairing implements ProtocolHandler {
         if (!verifier.equals(hAY)) throw new Error("Received incorrect key confirmation from the initiator");
 
         // All good! Creating the secure session
-        await this.sessionManager.createSecureSession(sessionId, UNDEFINED_NODE_ID, UNDEFINED_NODE_ID, peerSessionId, Ke, Buffer.alloc(0), false, mrpParameters?.idleRetransTimeoutMs, mrpParameters?.activeRetransTimeoutMs);
+        await sessionManager.createSecureSession(sessionId, UNDEFINED_NODE_ID, UNDEFINED_NODE_ID, peerSessionId, Ke, Buffer.alloc(0), false, mrpParameters?.idleRetransTimeoutMs, mrpParameters?.activeRetransTimeoutMs);
         await messenger.sendSuccess();
         console.log(`Pase: Paired succesfully with ${messenger.getChannelName()}`);
     }

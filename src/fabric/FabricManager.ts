@@ -4,10 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Singleton } from "../util/Singleton";
 import { Fabric } from "./Fabric";
-
-export const getFabricManager = Singleton(() => new FabricManager());
 
 export class FabricManager {
     private readonly fabrics = new Array<Fabric>();

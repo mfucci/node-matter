@@ -5,7 +5,7 @@
  */
 
 import { Crypto } from "../crypto/Crypto";
-import { Singleton } from "../util/Singleton";
+import { MatterServer } from "../server/MatterServer";
 import { SecureSession } from "./SecureSession";
 import { Session } from "./Session";
 import { UnsecureSession } from "./UnsecureSession";
@@ -14,18 +14,18 @@ export const UNDEFINED_NODE_ID = BigInt(0);
 
 export const UNICAST_UNSECURE_SESSION_ID = 0x0000;
 
-export const getSessionManager = Singleton(() => new SessionManager());
-
 export class SessionManager {
     private readonly sessions = new Map<number, Session>();
     private nextSessionId = Crypto.getRandomUInt16();
 
-    constructor() {
-        this.sessions.set(UNICAST_UNSECURE_SESSION_ID, new UnsecureSession());
+    constructor(
+        private readonly matterServer: MatterServer
+    ) {
+        this.sessions.set(UNICAST_UNSECURE_SESSION_ID, new UnsecureSession(matterServer));
     }
 
     async createSecureSession(sessionId: number, nodeId: bigint, peerNodeId: bigint, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
-        const session = await SecureSession.create(sessionId, nodeId, peerNodeId, peerSessionId, sharedSecret, salt, isInitiator, idleRetransTimeoutMs, activeRetransTimeoutMs);
+        const session = await SecureSession.create(this.matterServer, sessionId, nodeId, peerNodeId, peerSessionId, sharedSecret, salt, isInitiator, idleRetransTimeoutMs, activeRetransTimeoutMs);
         this.sessions.set(sessionId, session);
         return session;
     }

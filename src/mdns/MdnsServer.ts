@@ -13,6 +13,7 @@ const MDNS_BROADCAST_IP = "224.0.0.251";
 const MDNS_BROADCAST_PORT = 5353;
 const SERVICE_DISCOVERY_QNAME = "_services._dns-sd._udp.local";
 const MATTER_SERVICE_QNAME = "_matter._tcp.local";
+const MATTER_DEVICE_DISCOVERY_QNAME = "_matterc._udp.local";
 
 export class MdnsServer {
     static async create() {
@@ -24,6 +25,18 @@ export class MdnsServer {
         private readonly multicastServer: UdpMulticastServer,
     ) {
         multicastServer.onMessage((message, remoteIp) => this.handleDnsMessage(message, remoteIp));
+	const myQname = `nodematterdevice.${MATTER_DEVICE_DISCOVERY_QNAME}`;
+        this.records.push.apply(this.records, [
+            () => PtrRecord(SERVICE_DISCOVERY_QNAME, MATTER_DEVICE_DISCOVERY_QNAME),
+            () => PtrRecord(MATTER_DEVICE_DISCOVERY_QNAME, myQname),
+            (ip, hostname) => ARecord(hostname, ip),
+            // TODO: support IPv6
+            // AAAARecord(this.localHostname, "fe80::9580:b733:6f54:9f43"),
+            // TODO: the Matter port should not be hardcoded here
+            (ip, hostname) => SrvRecord(myQname, {priority: 0, weight: 0, port: 5540, target: hostname }),
+            () => TxtRecord(myQname, ["CM=1"]),
+        ]);
+        this.announce();
     }
 
     private readonly records = new Array<(ip: string, hostname: string) => Record<any>>();
@@ -40,7 +53,6 @@ export class MdnsServer {
         
         const answers = message.queries.flatMap(query => this.queryRecords(query, records));
         if (answers.length === 0) return;
-
         const additionalRecords = records.filter(record => !answers.includes(record));
         this.multicastServer.send(ip, DnsCodec.encode({ answers, additionalRecords }));
     }
@@ -52,7 +64,7 @@ export class MdnsServer {
         const fabricId = fabric.operationalId.toString("hex").toUpperCase();
         const fabricQname = `_I${fabricId}._sub.${MATTER_SERVICE_QNAME}`;
         const deviceMatterQname = `${fabricId}-${nodeId}.${MATTER_SERVICE_QNAME}`;
-        this.records.length = 0;
+        this.records.length = 1;
         this.records.push.apply(this.records, [
             () => PtrRecord(SERVICE_DISCOVERY_QNAME, MATTER_SERVICE_QNAME),
             () => PtrRecord(SERVICE_DISCOVERY_QNAME, fabricQname),
@@ -77,6 +89,7 @@ export class MdnsServer {
     }
 
     private queryRecords({name, recordType}: {name: string, recordType: RecordType}, records: Record<any>[]) {
+
         if (recordType === RecordType.ANY) {
             return records.filter(record => record.name === name);
         } else {

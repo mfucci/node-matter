@@ -5,13 +5,13 @@
  */
 
 import { TlvType } from "../codec/TlvCodec";
-import { AnyT, ArrayT, BooleanT, Field, JsType, ObjectT, OptionalField, UnsignedIntT } from "../codec/TlvObjectCodec";
+import { AnyT, ArrayT, BooleanT, Field, ObjectT, OptionalField, UnsignedIntT } from "../codec/TlvObjectCodec";
 
 export const ReadRequestT = ObjectT({
     attributes: Field(0, ArrayT(ObjectT({
         endpointId: OptionalField(2, UnsignedIntT),
-        clusterId: Field(3, UnsignedIntT),
-        attributeId: Field(4, UnsignedIntT),
+        clusterId: OptionalField(3, UnsignedIntT),
+        attributeId: OptionalField(4, UnsignedIntT),
     }, TlvType.List))),
     isFabricFiltered: Field(3, BooleanT),
     interactionModelRevision: Field(0xFF, UnsignedIntT),

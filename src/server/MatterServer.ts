@@ -10,6 +10,7 @@ import { SessionManager } from "../session/SessionManager";
 import { MessageExchange } from "./MessageExchange";
 import { MdnsServer } from "../mdns/MdnsServer";
 import { FabricManager } from "../fabric/FabricManager";
+import { MatterMdnsServer } from "../mdns/MatterMdnsServer";
 
 export const enum Protocol {
     SECURE_CHANNEL = 0x0000,
@@ -31,12 +32,11 @@ export interface ProtocolHandler {
 
 export class MatterServer {
     static async create() {
-        const mdnsServer = await MdnsServer.create();
-        return new MatterServer(mdnsServer);
+        return new MatterServer(await MatterMdnsServer.create());
     }
 
     constructor(
-        private readonly mdnsServer: MdnsServer,
+        private readonly mdnsServer: MatterMdnsServer,
     ) {}
 
     private readonly channels = new Array<Channel>();

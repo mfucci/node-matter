@@ -54,7 +54,7 @@ export class GeneralCommissioningCluster extends Cluster {
         breadcrumb: new Attribute(0, "Breadcrumb", UnsignedIntT, 0),
         comminssioningInfo: new Attribute(1, "BasicCommissioningInfo", BasicCommissioningInfoT, {failSafeExpiryLengthSeconds: 60 /* 1mn */}),
         regulatoryConfig: new Attribute(2, "RegulatoryConfig", UnsignedIntT, RegulatoryLocationType.Indoor),
-        locationCapbility: new Attribute(3, "LocationCapability", UnsignedIntT, RegulatoryLocationType.IndoorOutdoor),
+        locationCapability: new Attribute(3, "LocationCapability", UnsignedIntT, RegulatoryLocationType.IndoorOutdoor),
     }
 
     constructor() {

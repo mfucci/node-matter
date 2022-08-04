@@ -24,7 +24,7 @@ export class InteractionProtocol implements ProtocolHandler {
     }
 
     handleReadRequest(exchange: MessageExchange, {attributes}: ReadRequest): ReadResponse {
-        console.log(`Received read request from ${exchange.channel.getName()}: ${attributes.map(({endpointId = "*", clusterId, attributeId}) => `${endpointId}/${clusterId}/${attributeId}`).join(", ")}`);
+        console.log(`Received read request from ${exchange.channel.getName()}: ${attributes.map(({endpointId = "*", clusterId = "*", attributeId = "*"}) => `${endpointId}/${clusterId}/${attributeId}`).join(", ")}`);
 
         return {
             isFabricFiltered: true,

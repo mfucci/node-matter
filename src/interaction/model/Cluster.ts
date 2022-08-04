@@ -31,8 +31,14 @@ export class Cluster {
         attributes.forEach(attribute => this.attributesMap.set(attribute.id, attribute));
     }
     
-    getAttributeValue(attributeId: number) {
-        return this.attributesMap.get(attributeId)?.getValue();
+    getAttributeValue(attributeId?: number) {
+        // If attributeId is not provided, iterate over all attributes
+        var attributeIds = (attributeId === undefined) ? [...this.attributesMap.keys()] : [ attributeId ];
+
+        return attributeIds.flatMap(attributeId => {
+            const valueVersion = this.attributesMap.get(attributeId)?.getValue();
+            return (valueVersion === undefined) ? [] : [{attributeId, ...valueVersion}];
+        })
     }
 
     async invoke(session: Session, commandId: number, args: Element) {

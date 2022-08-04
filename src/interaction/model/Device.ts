@@ -10,8 +10,8 @@ import { Endpoint } from "./Endpoint";
 
 interface AttributePath {
     endpointId?: number,
-    clusterId: number,
-    attributeId: number,
+    clusterId?: number,
+    attributeId?: number,
 }
 
 interface CommandPath {
@@ -21,26 +21,28 @@ interface CommandPath {
 }
 
 export class Device {
-    private readonly endpoints = new Map<number, Endpoint>();
+    private readonly endpointsMap = new Map<number, Endpoint>();
     
     constructor(endpoints: Endpoint[]) {
-        endpoints.forEach(endpoint => this.endpoints.set(endpoint.id, endpoint));
+        endpoints.forEach(endpoint => this.endpointsMap.set(endpoint.id, endpoint));
     }
 
     getAttributeValues({endpointId, clusterId, attributeId}: AttributePath) {
-        var endpointIds = (endpointId === undefined) ? [...this.endpoints.keys()] : [endpointId];
+        // If the endpoint is not provided, iterate over all endpoints
+        var endpointIds = (endpointId === undefined) ? [...this.endpointsMap.keys()] : [ endpointId ];
         return endpointIds.flatMap(endpointId => {
-            const path = { endpointId, clusterId, attributeId };
-            const valueVersion = this.endpoints.get(endpointId)?.getAttributeValue(clusterId, attributeId);
-            if (valueVersion === undefined) return [];
-            const { value, version } = valueVersion;
-            return [{value, path, version}];
+            const values = this.endpointsMap.get(endpointId)?.getAttributeValue(clusterId, attributeId);
+            if (values === undefined) return [];
+            return values.map(({clusterId, attributeId, value, version}) => ({
+                path: { endpointId, clusterId, attributeId },
+                value, version
+            }));
         })
     }
 
     async invoke(session: Session, commandPath: CommandPath, args: Element) {
         const {endpointId, clusterId, commandId} = commandPath;
-        const result = await this.endpoints.get(endpointId)?.invoke(session, clusterId, commandId, args);
+        const result = await this.endpointsMap.get(endpointId)?.invoke(session, clusterId, commandId, args);
         if (result === undefined) return [];
         return [{ commandPath, result }];
     }

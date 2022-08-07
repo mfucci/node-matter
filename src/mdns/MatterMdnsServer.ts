@@ -5,10 +5,12 @@
  */
 
 import { ARecord, PtrRecord, SrvRecord, TxtRecord } from "../codec/DnsCodec";
+import { Crypto } from "../crypto/Crypto";
 import { Fabric } from "../fabric/Fabric";
 import { MdnsServer } from "./MdnsServer";
 
 const SERVICE_DISCOVERY_QNAME = "_services._dns-sd._udp.local";
+const MATTER_COMMISSION_SERVICE_QNAME = "_matterc._udp.local";
 const MATTER_SERVICE_QNAME = "_matter._tcp.local";
 
 export class MatterMdnsServer {
@@ -20,6 +22,49 @@ export class MatterMdnsServer {
     constructor(
         private readonly mdnsServer: MdnsServer,
     ) {}
+
+    addRecordsForCommission(deviceName: string, deviceType: number, vendorId: number, productId: number, discriminator: number) {
+        const shortDiscriminator = (discriminator >> 8) & 0x0F;
+        const instanceId = Crypto.getRandomData(8).toString("hex").toUpperCase();
+        const vendorQname = `_V${vendorId}._sub.${MATTER_COMMISSION_SERVICE_QNAME}`;
+        const deviceTypeQname = `_T${deviceType}._sub.${MATTER_COMMISSION_SERVICE_QNAME}`;
+        const shortDiscriminatorQname = `_S${shortDiscriminator}._sub.${MATTER_COMMISSION_SERVICE_QNAME}`;
+        const longDiscriminatorQname = `_L${discriminator}._sub.${MATTER_COMMISSION_SERVICE_QNAME}`;
+        const commissionModeQname = `_CM._sub.${MATTER_COMMISSION_SERVICE_QNAME}`;
+        const deviceQname = `${instanceId}.${MATTER_COMMISSION_SERVICE_QNAME}`;
+        this.mdnsServer.setRecordsGenerator((ip, mac) => {
+            const hostname = mac.replace(/:/g, "").toUpperCase() + "0000.local";
+            return [
+                PtrRecord(SERVICE_DISCOVERY_QNAME, MATTER_COMMISSION_SERVICE_QNAME),
+                PtrRecord(SERVICE_DISCOVERY_QNAME, vendorQname),
+                PtrRecord(SERVICE_DISCOVERY_QNAME, deviceTypeQname),
+                PtrRecord(SERVICE_DISCOVERY_QNAME, shortDiscriminatorQname),
+                PtrRecord(SERVICE_DISCOVERY_QNAME, longDiscriminatorQname),
+                PtrRecord(SERVICE_DISCOVERY_QNAME, commissionModeQname),
+                PtrRecord(MATTER_COMMISSION_SERVICE_QNAME, deviceQname),
+                PtrRecord(vendorQname, deviceQname),
+                PtrRecord(deviceTypeQname, deviceQname),
+                PtrRecord(shortDiscriminatorQname, deviceQname),
+                PtrRecord(longDiscriminatorQname, deviceQname),
+                PtrRecord(commissionModeQname, deviceQname),
+                SrvRecord(deviceQname, {priority: 0, weight: 0, port: 5540, target: hostname }),
+                ARecord(hostname, ip),
+                // TODO: support IPv6
+                TxtRecord(deviceQname, [
+                    `VP=${vendorId}+${productId}`,  /* Vendor / Product */
+                    `DT=${deviceType}`,             /* Device Type */
+                    `DN=${deviceName}`,             /* Device Name */
+                    "SII=5000",                     /* Sleepy Idle Interval */
+                    "SAI=300",                      /* Sleepy Active Interval */
+                    "T=1",                          /* TCP supported */
+                    `D=${discriminator}`,           /* Discriminator */
+                    "CM=1",                         /* Commission Mode */
+                    "PH=33",                        /* Pairing Hint */
+                    "PI=",                          /* Pairing Instruction */
+                ]),
+            ];
+        });
+    }
 
     addRecordsForFabric(fabric: Fabric) {
         const nodeIdBuffer = Buffer.alloc(8);

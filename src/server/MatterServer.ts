@@ -31,8 +31,10 @@ export interface ProtocolHandler {
 }
 
 export class MatterServer {
-    static async create() {
-        return new MatterServer(await MatterMdnsServer.create());
+    static async create(deviceName: string, deviceType: number, vendorId: number, productId: number, discriminator: number) {
+        const mdnsServer = await MatterMdnsServer.create();
+        mdnsServer.addRecordsForCommission(deviceName, deviceType, vendorId, productId, discriminator);
+        return new MatterServer(mdnsServer);
     }
 
     constructor(
@@ -59,6 +61,7 @@ export class MatterServer {
 
     start() {
         this.channels.forEach(channel => channel.bind((socket, data) => this.onMessage(socket, data)));
+        this.mdnsServer.announce();
     }
 
     getMdnsServer() {

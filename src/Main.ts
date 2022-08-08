@@ -49,7 +49,14 @@ const CertificateDeclaration = Buffer.from("3082021906092a864886f70d010702a08202
 
 class Main {
     async start() {
-        (await MatterServer.create())
+        const deviceName = "Matter test device";
+        const deviceType = 257 /* Dimmable bulb */;
+        const vendorName = "node-matter";
+        const vendorId = 0xFFF1;
+        const productName = "Matter test device";
+        const productId = 0X8001;
+        const discriminator = 3840;
+        (await MatterServer.create(deviceName, deviceType, vendorId, productId, discriminator))
             .addChannel(new UdpChannel(5540))
             .addProtocolHandler(Protocol.SECURE_CHANNEL, new SecureChannelHandler(
                     new PasePairing(20202021, { iteration: 1000, salt: Crypto.getRandomData(32) }),
@@ -57,7 +64,7 @@ class Main {
                 ))
             .addProtocolHandler(Protocol.INTERACTION_MODEL, new InteractionProtocol(new Device([
                 new Endpoint(0x00, "MA-rootdevice", [
-                    new BasicCluster({ vendorName: "node-matter", vendorId: 0xFFF1, productName: "Matter test device", productId: 0X8001 }),
+                    new BasicCluster({ vendorName, vendorId, productName, productId }),
                     new GeneralCommissioningCluster(),
                     new OperationalCredentialsCluster({devicePrivateKey: DevicePrivateKey, deviceCertificate: DeviceCertificate, deviceIntermediateCertificate: ProductIntermediateCertificate, certificateDeclaration: CertificateDeclaration}),
                 ]),

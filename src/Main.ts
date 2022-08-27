@@ -63,13 +63,13 @@ class Main {
                     new CasePairing(),
                 ))
             .addProtocolHandler(Protocol.INTERACTION_MODEL, new InteractionProtocol(new Device([
-                new Endpoint(0x00, "MA-rootdevice", [
+                new Endpoint(0x00, "MA-rootdevice", 0x0016, [
                     new BasicCluster({ vendorName, vendorId, productName, productId }),
                     new GeneralCommissioningCluster(),
                     new OperationalCredentialsCluster({devicePrivateKey: DevicePrivateKey, deviceCertificate: DeviceCertificate, deviceIntermediateCertificate: ProductIntermediateCertificate, certificateDeclaration: CertificateDeclaration}),
                 ]),
-                new Endpoint(0x01, "MA-OnOff", [
-                        new OnOffCluster(commandExecutor("on"), commandExecutor("off")),
+                new Endpoint(0x01, "MA-OnOff", 0x0100, [
+                    new OnOffCluster(commandExecutor("on"), commandExecutor("off")),
                 ]),
             ])))
             .start()

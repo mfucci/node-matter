@@ -6,7 +6,7 @@
 
 import { JsType, TlvObjectCodec } from "../codec/TlvObjectCodec";
 import { MessageExchange } from "../server/MessageExchange";
-import { InvokeRequestT, InvokeResponseT, ReadRequestT, ReadResponseT } from "./InteractionMessages";
+import { InvokeRequestT, InvokeResponseT, ReadRequestT, ReadResponseT, SubscribeRequestT, SubscribeResponseT } from "./InteractionMessages";
 
 export const enum MessageType {
     StatusResponse = 0x01,
@@ -21,16 +21,19 @@ export const enum MessageType {
     TimedRequest = 0x0a,
 }
 
-export type InvokeRequest = JsType<typeof InvokeRequestT>;
-export type InvokeResponse = JsType<typeof InvokeResponseT>;
 export type ReadRequest = JsType<typeof ReadRequestT>;
 export type ReadResponse = JsType<typeof ReadResponseT>;
+export type SubscribeRequest = JsType<typeof SubscribeRequestT>;
+export type SubscribeResponse = JsType<typeof SubscribeResponseT>;
+export type InvokeRequest = JsType<typeof InvokeRequestT>;
+export type InvokeResponse = JsType<typeof InvokeResponseT>;
 
 export class InteractionMessenger {
 
     constructor(
         private readonly exchange: MessageExchange,
         private readonly handleReadRequest: (request: ReadRequest) => ReadResponse,
+        private readonly handleSubscribeRequest: (request: SubscribeRequest) => SubscribeResponse,
         private readonly handleInvokeRequest: (request: InvokeRequest) => Promise<InvokeResponse>,
     ) {}
 
@@ -41,6 +44,11 @@ export class InteractionMessenger {
                 const readRequest = TlvObjectCodec.decode(message.payload, ReadRequestT);
                 const readResponse = this.handleReadRequest(readRequest);
                 this.exchange.send(MessageType.ReportData, TlvObjectCodec.encode(readResponse, ReadResponseT));
+                break;
+            case MessageType.SubscribeRequest:
+                const subscribeRequest = TlvObjectCodec.decode(message.payload, SubscribeRequestT);
+                const subscribeResponse = this.handleSubscribeRequest(subscribeRequest);
+                this.exchange.send(MessageType.ReportData, TlvObjectCodec.encode(subscribeResponse, SubscribeResponseT));
                 break;
             case MessageType.InvokeCommandRequest:
                 const invokeRequest = TlvObjectCodec.decode(message.payload, InvokeRequestT);

@@ -20,8 +20,8 @@ export function getIpMacAddresses(): {ip: string, mac: string}[] {
     const interfaces = networkInterfaces();
     for (const name in interfaces) {
         const netInterfaces = interfaces[name] as NetworkInterfaceInfo[];
-        for (const {internal, family, mac, address} of netInterfaces) {
-            if (internal || family !== "IPv4") continue;
+        for (const {family, mac, address} of netInterfaces) {
+            if (family !== "IPv4") continue;
             result.push({ip: address, mac});
         }
     }
@@ -33,8 +33,8 @@ export function getIpMacOnInterface(remoteAddress: string): {ip: string, mac: st
     const interfaces = networkInterfaces();
     for (const name in interfaces) {
         const netInterfaces = interfaces[name] as NetworkInterfaceInfo[];
-        for (const {internal, family, mac, address, netmask} of netInterfaces) {
-            if (internal || family !== "IPv4") continue;
+        for (const {family, mac, address, netmask} of netInterfaces) {
+            if (family !== "IPv4") continue;
             const netmaskNumber = ipToNumber(netmask);
             const ipNumber = ipToNumber(address);
             if ((ipNumber & netmaskNumber) !== (remoteAddressNumber & netmaskNumber)) continue;

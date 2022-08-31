@@ -22,7 +22,7 @@ export class DescriptorCluster extends Cluster {
                     type: Field(0, UnsignedIntT),
                     revision: Field(1, UnsignedIntT),
                 })), [{
-                    type: endpoint.type,
+                    type: endpoint.device.code,
                     revision: 1,
                 }]),
                 new Attribute(1, "ServerList", ArrayT(UnsignedIntT), [CLUSTER_ID, ...endpoint.getClusterIds()]),

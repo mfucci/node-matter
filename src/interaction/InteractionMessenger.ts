@@ -48,7 +48,7 @@ export class InteractionMessenger {
             case MessageType.SubscribeRequest:
                 const subscribeRequest = TlvObjectCodec.decode(message.payload, SubscribeRequestT);
                 const subscribeResponse = this.handleSubscribeRequest(subscribeRequest);
-                this.exchange.send(MessageType.ReportData, TlvObjectCodec.encode(subscribeResponse, SubscribeResponseT));
+                this.exchange.send(MessageType.SubscribeResponse, TlvObjectCodec.encode(subscribeResponse, SubscribeResponseT));
                 break;
             case MessageType.InvokeCommandRequest:
                 const invokeRequest = TlvObjectCodec.decode(message.payload, InvokeRequestT);

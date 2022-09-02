@@ -62,7 +62,33 @@ new MatterServer()
 
 It should work with any Matter-compatible home automation app when Matter will be released.
 
-For now, you can control it with Matter test app: https://github.com/project-chip/connectedhomeip/tree/master/src/android/CHIPTest
+### chip-tool
+
+Compile chip-tool from [project-chip](https://github.com/project-chip/connectedhomeip/tree/c438b8945e26a84f68ba3608de202e4b939a9080/examples/chip-tool)
+
+**Provisioning the device**:
+
+```
+chip-tool pairing onnetwork 222 20202021
+```
+
+**Controlling the device**: 
+
+```
+chip-tool onoff toggle 222 1
+```
+
+**Clearing the data**:
+
+```
+chip-tool pairing unpair 222
+and/or
+chip-tool storage clear-all
+```
+
+### Android mobile app
+
+You can also control it with Matter test app: https://github.com/project-chip/connectedhomeip/tree/master/src/android/CHIPTest
 You can find a compiled apk in /matter-test-apk in this repository.
 
 **Provisioning the device**: click "provision with WiFi" > "Input Device address" > type IP address of the machine running node-matter

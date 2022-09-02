@@ -14,8 +14,7 @@ export class Endpoint {
 
     constructor(
         readonly id: number,
-        readonly name: string,
-        readonly type: number,
+        readonly device: {name: string, code: number},
         clusters: Cluster[],
     ) {
         clusters.forEach(cluster => this.clustersMap.set(cluster.id, cluster));

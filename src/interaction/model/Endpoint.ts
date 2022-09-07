@@ -6,6 +6,7 @@
 
 import { Element } from "../../codec/TlvCodec";
 import { Session } from "../../session/Session";
+import { DescriptorCluster } from "../cluster/DescriptorCluster";
 import { Cluster } from "./Cluster";
 
 export class Endpoint {
@@ -13,10 +14,15 @@ export class Endpoint {
 
     constructor(
         readonly id: number,
-        readonly name: string,
+        readonly device: {name: string, code: number},
         clusters: Cluster[],
     ) {
         clusters.forEach(cluster => this.clustersMap.set(cluster.id, cluster));
+    }
+
+    addDescriptorCluster(endpoints: Endpoint[]) {
+        const descriptorCluster = new DescriptorCluster(this, endpoints);
+        this.clustersMap.set(descriptorCluster.id, descriptorCluster);
     }
 
     getAttributeValue(clusterId?: number, attributeId?: number) {
@@ -28,6 +34,10 @@ export class Endpoint {
             if (values === undefined) return [];
             return values.map(value => ({clusterId, ...value}));
         })
+    }
+
+    getClusterIds() {
+        return [...this.clustersMap.keys()];
     }
 
     async invoke(session: Session, clusterId: number, commandId: number, args: Element) {

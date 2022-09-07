@@ -5,14 +5,16 @@
  */
 
 import { TlvType } from "../codec/TlvCodec";
-import { AnyT, ArrayT, BooleanT, Field, ObjectT, OptionalField, UnsignedIntT } from "../codec/TlvObjectCodec";
+import { AnyT, ArrayT, BooleanT, Field, ObjectT, OptionalField, UnsignedIntT, UnsignedLongT } from "../codec/TlvObjectCodec";
+
+const AttributePathT = ObjectT({
+    endpointId: OptionalField(2, UnsignedIntT),
+    clusterId: OptionalField(3, UnsignedIntT),
+    attributeId: OptionalField(4, UnsignedIntT),
+}, TlvType.List);
 
 export const ReadRequestT = ObjectT({
-    attributes: Field(0, ArrayT(ObjectT({
-        endpointId: OptionalField(2, UnsignedIntT),
-        clusterId: OptionalField(3, UnsignedIntT),
-        attributeId: OptionalField(4, UnsignedIntT),
-    }, TlvType.List))),
+    attributes: Field(0, ArrayT(AttributePathT)),
     isFabricFiltered: Field(3, BooleanT),
     interactionModelRevision: Field(0xFF, UnsignedIntT),
 });
@@ -31,6 +33,39 @@ export const ReadResponseT = ObjectT({
     }))),
     isFabricFiltered: Field(4, BooleanT),
     interactionModelRevision: Field(0xFF, UnsignedIntT),
+});
+
+export const SubscribeRequestT = ObjectT({
+    keepSubscriptions: Field(0, BooleanT),
+    minIntervalFloorSeconds: Field(1, UnsignedIntT),
+    maxIntervalCeilingSeconds: Field(2, UnsignedIntT),
+    attributeRequests: OptionalField(3, ArrayT(AttributePathT)),
+    eventRequests: OptionalField(4, ArrayT(ObjectT({
+        node: Field(0, UnsignedIntT),
+        endpoint: Field(1, UnsignedIntT),
+        cluster: Field(2, UnsignedIntT),
+        event: Field(3, UnsignedIntT),
+        isUrgent: Field(4, BooleanT),
+    }, TlvType.List))),
+    eventFilters: OptionalField(5, ArrayT(ObjectT({
+        node: Field(0, UnsignedIntT),
+        eventMin: Field(1, UnsignedLongT),
+    }, TlvType.List))),
+    isFabricFiltered: Field(7, BooleanT),
+    dataVersionFilters: OptionalField(8, ArrayT(ObjectT({
+        path: Field(0, ObjectT({
+            node: Field(0, UnsignedIntT),
+            endpoint: Field(1, UnsignedIntT),
+            cluster: Field(2, UnsignedIntT),
+        }, TlvType.List)),
+        dataVersion: Field(1, UnsignedIntT),
+    }))),
+});
+
+export const SubscribeResponseT = ObjectT({
+    subscriptionId: Field(0, UnsignedIntT),
+    minIntervalFloorSeconds: Field(1, UnsignedIntT),
+    maxIntervalCeilingSeconds: Field(2, UnsignedIntT),
 });
 
 export const InvokeRequestT = ObjectT({

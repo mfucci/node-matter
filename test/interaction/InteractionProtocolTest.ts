@@ -13,6 +13,7 @@ import { ReadRequest, ReadResponse } from "../../src/interaction/InteractionMess
 import { Device } from "../../src/interaction/model/Device";
 import { Endpoint } from "../../src/interaction/model/Endpoint";
 import { MessageExchange } from "../../src/server/MessageExchange";
+import { DEVICE } from "../../src/Devices";
 
 const READ_REQUEST: ReadRequest = {
     interactionModelRevision: 1,
@@ -61,7 +62,7 @@ describe("InteractionProtocol", () => {
     context("handleReadRequest", () => {
         it("replies with attribute values", () => {
             const interactionProtocol = new InteractionProtocol(new Device([
-                new Endpoint(0, "root", [
+                new Endpoint(0, DEVICE.ROOT, [
                     new BasicCluster({vendorName: "vendor", vendorId: 1, productName: "product", productId: 2}),
                 ])
             ]));

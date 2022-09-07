@@ -7,7 +7,7 @@
 import { Device } from "./model/Device";
 import { ProtocolHandler } from "../server/MatterServer";
 import { MessageExchange } from "../server/MessageExchange";
-import { InteractionMessenger, InvokeRequest, InvokeResponse, ReadRequest, ReadResponse } from "./InteractionMessenger";
+import { InteractionMessenger, InvokeRequest, InvokeResponse, ReadRequest, ReadResponse, SubscribeRequest, SubscribeResponse } from "./InteractionMessenger";
 
 export class InteractionProtocol implements ProtocolHandler {
     constructor(
@@ -18,6 +18,7 @@ export class InteractionProtocol implements ProtocolHandler {
         const messenger = new InteractionMessenger(
             exchange,
             readRequest => this.handleReadRequest(exchange, readRequest),
+            subscribeRequest => this.handleSubscribeRequest(exchange, subscribeRequest),
             invokeRequest => this.handleInvokeRequest(exchange, invokeRequest),
         );
         await messenger.handleRequest();
@@ -30,6 +31,18 @@ export class InteractionProtocol implements ProtocolHandler {
             isFabricFiltered: true,
             interactionModelRevision: 1,
             values: attributes.flatMap(path => this.device.getAttributeValues(path)).map(value => ({value})),
+        };
+    }
+
+    handleSubscribeRequest(exchange: MessageExchange, { minIntervalFloorSeconds, maxIntervalCeilingSeconds }: SubscribeRequest): SubscribeResponse {
+        console.log(`Received subscribe request from ${exchange.channel.getName()}`);
+
+        // TODO: implement this
+
+        return {
+            subscriptionId: 0,
+            minIntervalFloorSeconds,
+            maxIntervalCeilingSeconds,
         };
     }
 

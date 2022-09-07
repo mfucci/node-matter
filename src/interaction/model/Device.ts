@@ -24,7 +24,10 @@ export class Device {
     private readonly endpointsMap = new Map<number, Endpoint>();
     
     constructor(endpoints: Endpoint[]) {
-        endpoints.forEach(endpoint => this.endpointsMap.set(endpoint.id, endpoint));
+        endpoints.forEach(endpoint => {
+            endpoint.addDescriptorCluster(endpoints);
+            this.endpointsMap.set(endpoint.id, endpoint);
+        });
     }
 
     getAttributeValues({endpointId, clusterId, attributeId}: AttributePath) {

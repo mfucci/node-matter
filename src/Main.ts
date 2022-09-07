@@ -20,6 +20,7 @@ import { GeneralCommissioningCluster } from "./interaction/cluster/GeneralCommis
 import { OperationalCredentialsCluster } from "./interaction/cluster/OperationalCredentialsCluster";
 import { OnOffCluster } from "./interaction/cluster/OnOffCluster";
 import { execSync } from "child_process";
+import { DEVICE } from "./Devices";
 
 const commandArguments = process.argv.slice(2);
 
@@ -63,13 +64,13 @@ class Main {
                     new CasePairing(),
                 ))
             .addProtocolHandler(Protocol.INTERACTION_MODEL, new InteractionProtocol(new Device([
-                new Endpoint(0x00, "MA-rootdevice", [
+                new Endpoint(0x00, DEVICE.ROOT, [
                     new BasicCluster({ vendorName, vendorId, productName, productId }),
                     new GeneralCommissioningCluster(),
                     new OperationalCredentialsCluster({devicePrivateKey: DevicePrivateKey, deviceCertificate: DeviceCertificate, deviceIntermediateCertificate: ProductIntermediateCertificate, certificateDeclaration: CertificateDeclaration}),
                 ]),
-                new Endpoint(0x01, "MA-OnOff", [
-                        new OnOffCluster(commandExecutor("on"), commandExecutor("off")),
+                new Endpoint(0x01, DEVICE.ON_OFF_LIGHT, [
+                    new OnOffCluster(commandExecutor("on"), commandExecutor("off")),
                 ]),
             ])))
             .start()

@@ -5,7 +5,6 @@
  */
 
 import { StringT, UnsignedIntT } from "../../codec/TlvObjectCodec";
-import { Attribute } from "../model/Attribute";
 import { Cluster } from "../model/Cluster";
 
 interface BasicClusterConf {
@@ -16,17 +15,18 @@ interface BasicClusterConf {
 }
 
 export class BasicCluster extends Cluster {
-    constructor({ vendorName, vendorId, productName, productId }: BasicClusterConf) {
+    static Builder = (conf: BasicClusterConf) => (endpointId: number) => new BasicCluster(endpointId, conf);
+
+    constructor(endpointId: number, { vendorName, vendorId, productName, productId }: BasicClusterConf) {
         super(
+            endpointId,
             0x28,
             "Basic",
-            [],
-            [
-                new Attribute(1, "VendorName", StringT, vendorName),
-                new Attribute(2, "VendorID", UnsignedIntT, vendorId),
-                new Attribute(3, "ProductName", StringT, productName),
-                new Attribute(4, "ProductID", UnsignedIntT, productId),
-            ],
         );
+
+        this.addAttribute(1, "VendorName", StringT, vendorName);
+        this.addAttribute(2, "VendorID", UnsignedIntT, vendorId);
+        this.addAttribute(3, "ProductName", StringT, productName);
+        this.addAttribute(4, "ProductID", UnsignedIntT, productId);
     }
 }

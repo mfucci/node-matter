@@ -15,13 +15,16 @@ export class Endpoint {
     constructor(
         readonly id: number,
         readonly device: {name: string, code: number},
-        clusters: Cluster[],
+        clusterBuilders: ((endpointId: number) => Cluster)[],
     ) {
-        clusters.forEach(cluster => this.clustersMap.set(cluster.id, cluster));
+        clusterBuilders.forEach(clusterBuilder => {
+            const cluster = clusterBuilder(id);
+            this.clustersMap.set(cluster.id, cluster);
+        });
     }
 
     addDescriptorCluster(endpoints: Endpoint[]) {
-        const descriptorCluster = new DescriptorCluster(this, endpoints);
+        const descriptorCluster = DescriptorCluster.Builder(endpoints)(this.id);
         this.clustersMap.set(descriptorCluster.id, descriptorCluster);
     }
 

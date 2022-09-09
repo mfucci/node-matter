@@ -5,6 +5,7 @@
  */
 
 import { Element } from "../../codec/TlvCodec";
+import { Template } from "../../codec/TlvObjectCodec";
 import { Session } from "../../session/Session";
 import { Attribute } from "./Attribute";
 import { Command } from "./Command";
@@ -14,21 +15,21 @@ export class Cluster {
     private readonly commandsMap = new Map<number, Command<any, any>>();
 
     constructor(
+        readonly endpointId: number,
         readonly id: number,
         readonly name: string,
-        commands?: Command<any, any>[],
-        attributes?: Attribute<any>[],
-    ) {
-        if (commands !== undefined) this.addCommands(commands);
-        if (attributes !== undefined) this.addAttributes(attributes);
+    ) {}
+
+    addAttribute<T>(id: number, name: string, template: Template<T>, defaultValue: T) {
+        const attribute = new Attribute(this.endpointId, this.id, id, name, template, defaultValue);
+        this.attributesMap.set(id, attribute);
+        return attribute;
     }
 
-    addCommands(commands: Command<any, any>[]) {
-        commands.forEach(command => this.commandsMap.set(command.invokeId, command));
-    }
-
-    addAttributes(attributes: Attribute<any>[]) {
-        attributes.forEach(attribute => this.attributesMap.set(attribute.id, attribute));
+    addCommand<RequestT, ResponseT>(invokeId: number, responseId: number, name: string, requestTemplate: Template<RequestT>, responseTemplate: Template<ResponseT>, handler: (request: RequestT, session: Session) => Promise<ResponseT> | ResponseT) {
+        const command = new Command(invokeId, responseId, this.name, requestTemplate, responseTemplate, handler);
+        this.commandsMap.set(invokeId, command);
+        return command;
     }
     
     getAttributeValue(attributeId?: number) {

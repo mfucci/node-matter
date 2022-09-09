@@ -5,9 +5,8 @@
  */
 
 import { Cluster } from "../model/Cluster";
-import { Attribute } from "../model/Attribute";
 import { Field, JsType, ObjectT, StringT, UnsignedIntT } from "../../codec/TlvObjectCodec";
-import { Command, NoArgumentsT } from "../model/Command";
+import { NoArgumentsT } from "../model/Command";
 
 const enum RegulatoryLocationType {
     Indoor = 0,
@@ -50,25 +49,27 @@ type SuccessFailureReponse = JsType<typeof SuccessFailureReponseT>;
 const SuccessResponse = {errorCode: CommissioningError.Ok, debugText: ""};
 
 export class GeneralCommissioningCluster extends Cluster {
-    private readonly attributes = {
-        breadcrumb: new Attribute(0, "Breadcrumb", UnsignedIntT, 0),
-        comminssioningInfo: new Attribute(1, "BasicCommissioningInfo", BasicCommissioningInfoT, {failSafeExpiryLengthSeconds: 60 /* 1mn */}),
-        regulatoryConfig: new Attribute(2, "RegulatoryConfig", UnsignedIntT, RegulatoryLocationType.Indoor),
-        locationCapability: new Attribute(3, "LocationCapability", UnsignedIntT, RegulatoryLocationType.IndoorOutdoor),
-    }
+    static Builder = () => (endpointId: number) => new GeneralCommissioningCluster(endpointId);
 
-    constructor() {
+    private readonly attributes;
+
+    constructor(endpointId: number) {
         super(
+            endpointId,
             0x30,
             "General Commissioning",
-            [
-                new Command(0, 1, "ArmFailSafe", ArmFailSafeRequestT, SuccessFailureReponseT, request => this.handleArmFailSafeRequest(request)),
-                new Command(2, 3, "SetRegulatoryConfig", SetRegulatoryConfigRequestT, SuccessFailureReponseT, request => this.setRegulatoryConfig(request)),
-                new Command(4, 5, "CommissioningComplete", NoArgumentsT, SuccessFailureReponseT, () => this.handleCommissioningComplete()),
-            ],
         );
 
-        this.addAttributes(Object.values(this.attributes));
+        this.addCommand(0, 1, "ArmFailSafe", ArmFailSafeRequestT, SuccessFailureReponseT, request => this.handleArmFailSafeRequest(request));
+        this.addCommand(2, 3, "SetRegulatoryConfig", SetRegulatoryConfigRequestT, SuccessFailureReponseT, request => this.setRegulatoryConfig(request));
+        this.addCommand(4, 5, "CommissioningComplete", NoArgumentsT, SuccessFailureReponseT, () => this.handleCommissioningComplete());
+
+        this.attributes = {
+            breadcrumb: this.addAttribute(0, "Breadcrumb", UnsignedIntT, 0),
+            comminssioningInfo: this.addAttribute(1, "BasicCommissioningInfo", BasicCommissioningInfoT, {failSafeExpiryLengthSeconds: 60 /* 1mn */}),
+            regulatoryConfig: this.addAttribute(2, "RegulatoryConfig", UnsignedIntT, RegulatoryLocationType.Indoor),
+            locationCapability: this.addAttribute(3, "LocationCapability", UnsignedIntT, RegulatoryLocationType.IndoorOutdoor),
+        };
     }
 
     private handleArmFailSafeRequest({breadcrumb}: ArmFailSafeRequest): SuccessFailureReponse {

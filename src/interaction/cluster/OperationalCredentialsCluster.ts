@@ -8,7 +8,7 @@ import { TlvObjectCodec } from "../../codec/TlvObjectCodec";
 import { Crypto } from "../../crypto/Crypto";
 import { FabricBuilder } from "../../fabric/Fabric";
 import { Cluster } from "../model/Cluster";
-import { Command, NoResponseT } from "../model/Command";
+import { NoResponseT } from "../model/Command";
 import { Session } from "../../session/Session";
 import { AddNocRequestT, AddTrustedRootCertificateRequestT, AttestationResponseT, AttestationT, CertificateChainRequestT, CertificateChainResponseT, CertificateSigningRequestT, CertificateType, CsrResponseT, RequestWithNonceT, Status, StatusResponseT } from "./OperationalCredentialsMessages";
 
@@ -20,21 +20,22 @@ interface OperationalCredentialsClusterConf {
 }
 
 export class OperationalCredentialsCluster extends Cluster {
+    static Builder = (conf: OperationalCredentialsClusterConf) => (endpointId: number) => new OperationalCredentialsCluster(endpointId, conf);
+
     private fabricBuilder?: FabricBuilder;
 
-    constructor(private readonly conf: OperationalCredentialsClusterConf) {
+    constructor(endpointId: number, private readonly conf: OperationalCredentialsClusterConf) {
         super(
+            endpointId,
             0x3e,
             "Operational Credentials",
-            [
-                new Command(0, 1, "AttestationRequest", RequestWithNonceT, AttestationResponseT, ({nonce}, session) => this.handleAttestationRequest(nonce, session)),
-                new Command(2, 3, "CertificateChainRequest", CertificateChainRequestT, CertificateChainResponseT, ({type}) => this.handleCertificateChainRequest(type)),
-                new Command(4, 5, "CSRRequest", RequestWithNonceT, CsrResponseT, ({nonce}, session) => this.handleCertificateSignRequest(nonce, session)),
-                new Command(6, 8, "AddNOC", AddNocRequestT, StatusResponseT, ({nocCert, icaCert, ipkValue, caseAdminNode, adminVendorId}, session) => this.addNewOperationalCertificates(nocCert, icaCert, ipkValue, caseAdminNode, adminVendorId, session)),
-                new Command(11, 11, "AddTrustedRootCertificate", AddTrustedRootCertificateRequestT, NoResponseT, ({certificate}) => this.addTrustedRootCertificate(certificate)),
-            ],
-            [],
         );
+        
+        this.addCommand(0, 1, "AttestationRequest", RequestWithNonceT, AttestationResponseT, ({nonce}, session) => this.handleAttestationRequest(nonce, session));
+        this.addCommand(2, 3, "CertificateChainRequest", CertificateChainRequestT, CertificateChainResponseT, ({type}) => this.handleCertificateChainRequest(type));
+        this.addCommand(4, 5, "CSRRequest", RequestWithNonceT, CsrResponseT, ({nonce}, session) => this.handleCertificateSignRequest(nonce, session));
+        this.addCommand(6, 8, "AddNOC", AddNocRequestT, StatusResponseT, ({nocCert, icaCert, ipkValue, caseAdminNode, adminVendorId}, session) => this.addNewOperationalCertificates(nocCert, icaCert, ipkValue, caseAdminNode, adminVendorId, session));
+        this.addCommand(11, 11, "AddTrustedRootCertificate", AddTrustedRootCertificateRequestT, NoResponseT, ({certificate}) => this.addTrustedRootCertificate(certificate));
     }
 
     private handleAttestationRequest(nonce: Buffer, session: Session) {

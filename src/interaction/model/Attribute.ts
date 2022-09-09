@@ -12,6 +12,8 @@ export class Attribute<T> {
     private template: Template<T>;
 
     constructor(
+        readonly endpointId: number,
+        readonly clusterId: number,
         readonly id: number,
         readonly name: string,
         template: Template<T>,

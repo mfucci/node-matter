@@ -31,15 +31,16 @@ export class Cluster {
         this.commandsMap.set(invokeId, command);
         return command;
     }
-    
-    getAttributeValue(attributeId?: number) {
-        // If attributeId is not provided, iterate over all attributes
-        var attributeIds = (attributeId === undefined) ? [...this.attributesMap.keys()] : [ attributeId ];
 
-        return attributeIds.flatMap(attributeId => {
-            const valueVersion = this.attributesMap.get(attributeId)?.getValue();
-            return (valueVersion === undefined) ? [] : [{attributeId, ...valueVersion}];
-        })
+    getAttributes(attributeId?: number): Attribute<any>[] {
+        if (attributeId === undefined) {
+            // If the attributeId is not provided, return all attributes
+            return [...this.attributesMap.values()];
+        }
+        
+        const attribute = this.attributesMap.get(attributeId);
+        if (attribute === undefined) return [];
+        return [attribute];
     }
 
     async invoke(session: Session, commandId: number, args: Element) {

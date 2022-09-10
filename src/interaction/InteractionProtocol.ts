@@ -24,13 +24,13 @@ export class InteractionProtocol implements ProtocolHandler {
         await messenger.handleRequest();
     }
 
-    handleReadRequest(exchange: MessageExchange, {attributes}: ReadRequest): ReadResponse {
-        console.log(`Received read request from ${exchange.channel.getName()}: ${attributes.map(({endpointId = "*", clusterId = "*", attributeId = "*"}) => `${endpointId}/${clusterId}/${attributeId}`).join(", ")}`);
+    handleReadRequest(exchange: MessageExchange, {attributes: attributePaths}: ReadRequest): ReadResponse {
+        console.log(`Received read request from ${exchange.channel.getName()}: ${attributePaths.map(({endpointId = "*", clusterId = "*", attributeId = "*"}) => `${endpointId}/${clusterId}/${attributeId}`).join(", ")}`);
 
         return {
             isFabricFiltered: true,
             interactionModelRevision: 1,
-            values: attributes.flatMap(path => this.device.getAttributeValues(path)).map(value => ({value})),
+            values: attributePaths.flatMap(path => this.device.getAttributes(path)).map(attribute => ({ value: attribute.getValue() })),
         };
     }
 

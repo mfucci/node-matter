@@ -34,6 +34,11 @@ export class Attribute<T> {
 
     getValue() {
         return {
+            path: {
+                endpointId: this.endpointId,
+                clusterId: this.clusterId,
+                attributeId: this.id,
+            },
             version: this.version,
             value: TlvObjectCodec.encodeElement(this.value, this.template),
         }

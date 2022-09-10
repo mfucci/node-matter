@@ -6,6 +6,7 @@
 
 import { Element } from "../../codec/TlvCodec";
 import { Session } from "../../session/Session";
+import { Attribute } from "./Attribute";
 import { Endpoint } from "./Endpoint";
 
 interface AttributePath {
@@ -30,17 +31,15 @@ export class Device {
         });
     }
 
-    getAttributeValues({endpointId, clusterId, attributeId}: AttributePath) {
-        // If the endpoint is not provided, iterate over all endpoints
-        var endpointIds = (endpointId === undefined) ? [...this.endpointsMap.keys()] : [ endpointId ];
-        return endpointIds.flatMap(endpointId => {
-            const values = this.endpointsMap.get(endpointId)?.getAttributeValue(clusterId, attributeId);
-            if (values === undefined) return [];
-            return values.map(({clusterId, attributeId, value, version}) => ({
-                path: { endpointId, clusterId, attributeId },
-                value, version
-            }));
-        })
+    getAttributes({endpointId, clusterId, attributeId}: AttributePath): Attribute<any>[] {
+        if (endpointId === undefined) {
+            // If the endpoint is not provided, iterate over all endpoints
+            return [...this.endpointsMap.values()].flatMap(endpoint => endpoint.getAttributes(clusterId, attributeId));
+        }
+
+        const endpoint = this.endpointsMap.get(endpointId);
+        if (endpoint === undefined) return [];
+        return endpoint.getAttributes(clusterId, attributeId);
     }
 
     async invoke(session: Session, commandPath: CommandPath, args: Element) {

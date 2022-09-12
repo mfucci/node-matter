@@ -8,11 +8,16 @@ import { Packet, Message, MessageCodec } from "../codec/MessageCodec";
 import { Fabric } from "../fabric/Fabric";
 import { MatterServer } from "../server/MatterServer";
 import { DEFAULT_ACTIVE_RETRANSMISSION_TIMEOUT_MS, DEFAULT_IDLE_RETRANSMISSION_TIMEOUT_MS, DEFAULT_RETRANSMISSION_RETRIES, Session } from "./Session";
+import { UNICAST_UNSECURE_SESSION_ID } from "./SessionManager";
 
 export class UnsecureSession implements Session {
     constructor(
         private readonly matterServer: MatterServer,
     ) {}
+
+    isSecure(): boolean {
+        return false;
+    }
 
     decode(packet: Packet): Message {
         return MessageCodec.decodePayload(packet);
@@ -44,5 +49,21 @@ export class UnsecureSession implements Session {
 
     getServer() {
         return this.matterServer;
+    }
+
+    getId(): number {
+        return UNICAST_UNSECURE_SESSION_ID;
+    }
+
+    getPeerSessionId(): number {
+        return UNICAST_UNSECURE_SESSION_ID;
+    }
+
+    getNodeId() {
+        return undefined;
+    }
+
+    getPeerNodeId() {
+        return undefined;
     }
 }

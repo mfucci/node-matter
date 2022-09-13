@@ -9,7 +9,7 @@ import { BasicCluster } from "../../src/interaction/cluster/BasicCluster";
 import { TlvType } from "../../src/codec/TlvCodec";
 import { TlvTag } from "../../src/codec/TlvTag";
 import { InteractionProtocol } from "../../src/interaction/InteractionProtocol";
-import { ReadRequest, ReadResponse } from "../../src/interaction/InteractionMessenger";
+import { ReadRequest, DataReport } from "../../src/interaction/InteractionMessenger";
 import { Device } from "../../src/interaction/model/Device";
 import { Endpoint } from "../../src/interaction/model/Endpoint";
 import { MessageExchange } from "../../src/server/MessageExchange";
@@ -24,7 +24,7 @@ const READ_REQUEST: ReadRequest = {
     ],
 };
 
-const READ_RESPONSE: ReadResponse = {
+const READ_RESPONSE: DataReport = {
     interactionModelRevision: 1,
     isFabricFiltered: true,
     values: [
@@ -63,7 +63,7 @@ describe("InteractionProtocol", () => {
         it("replies with attribute values", () => {
             const interactionProtocol = new InteractionProtocol(new Device([
                 new Endpoint(0, DEVICE.ROOT, [
-                    new BasicCluster({vendorName: "vendor", vendorId: 1, productName: "product", productId: 2}),
+                    BasicCluster.Builder({ vendorName: "vendor", vendorId: 1, productName: "product", productId: 2 }),
                 ])
             ]));
 

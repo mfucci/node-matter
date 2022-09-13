@@ -7,10 +7,11 @@
 import { Cluster } from "../model/Cluster";
 import { BooleanT } from "../../codec/TlvObjectCodec";
 import { NoArgumentsT, NoResponseT } from "../model/Command";
+import { MatterServer } from "../../matter/MatterServer";
 
 const CLUSTER_ID = 0x06;
 
-export class OnOffCluster extends Cluster {
+export class OnOffCluster extends Cluster<MatterServer> {
     static Builder = (onCallback?: (() => void) | undefined, offCallback?: (() => void) | undefined) => (endpointId: number) => new OnOffCluster(endpointId, onCallback, offCallback);
 
     private readonly onOffAttribute;

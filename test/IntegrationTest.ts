@@ -72,7 +72,9 @@ describe("Integration", () => {
                 .start()
 
             const client = new MatterClient(await UdpInterface.create(5540, CLIENT_IP));
-            client.commission(SERVER_IP, discriminator);
+            await client.commission(SERVER_IP, discriminator);
+
+            assert.ok(true);
         });
     });
 });

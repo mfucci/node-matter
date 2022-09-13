@@ -6,13 +6,12 @@
 
 import { Packet, Message, MessageCodec } from "../codec/MessageCodec";
 import { Fabric } from "../fabric/Fabric";
-import { MatterServer } from "../matter/MatterServer";
 import { DEFAULT_ACTIVE_RETRANSMISSION_TIMEOUT_MS, DEFAULT_IDLE_RETRANSMISSION_TIMEOUT_MS, DEFAULT_RETRANSMISSION_RETRIES, Session } from "./Session";
 import { UNICAST_UNSECURE_SESSION_ID } from "./SessionManager";
 
-export class UnsecureSession implements Session {
+export class UnsecureSession<T> implements Session<T> {
     constructor(
-        private readonly matterServer: MatterServer,
+        private readonly context: T,
     ) {}
 
     isSecure(): boolean {
@@ -47,8 +46,8 @@ export class UnsecureSession implements Session {
         }
     }
 
-    getServer() {
-        return this.matterServer;
+    getContext() {
+        return this.context;
     }
 
     getId(): number {

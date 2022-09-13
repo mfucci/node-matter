@@ -21,10 +21,10 @@ interface CommandPath {
     commandId: number,
 }
 
-export class Device {
-    private readonly endpointsMap = new Map<number, Endpoint>();
+export class Device<ContextT> {
+    private readonly endpointsMap = new Map<number, Endpoint<ContextT>>();
     
-    constructor(endpoints: Endpoint[]) {
+    constructor(endpoints: Endpoint<ContextT>[]) {
         endpoints.forEach(endpoint => {
             endpoint.addDescriptorCluster(endpoints);
             this.endpointsMap.set(endpoint.id, endpoint);
@@ -42,7 +42,7 @@ export class Device {
         return endpoint.getAttributes(clusterId, attributeId);
     }
 
-    async invoke(session: Session, commandPath: CommandPath, args: Element) {
+    async invoke(session: Session<ContextT>, commandPath: CommandPath, args: Element) {
         const {endpointId, clusterId, commandId} = commandPath;
         const result = await this.endpointsMap.get(endpointId)?.invoke(session, clusterId, commandId, args);
         if (result === undefined) return [];

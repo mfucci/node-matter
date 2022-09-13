@@ -10,13 +10,13 @@ import { DescriptorCluster } from "../cluster/DescriptorCluster";
 import { Attribute } from "./Attribute";
 import { Cluster } from "./Cluster";
 
-export class Endpoint {
-    private readonly clustersMap = new Map<number, Cluster>();
+export class Endpoint<ContextT> {
+    private readonly clustersMap = new Map<number, Cluster<ContextT>>();
 
     constructor(
         readonly id: number,
         readonly device: {name: string, code: number},
-        clusterBuilders: ((endpointId: number) => Cluster)[],
+        clusterBuilders: ((endpointId: number) => Cluster<ContextT>)[],
     ) {
         clusterBuilders.forEach(clusterBuilder => {
             const cluster = clusterBuilder(id);
@@ -24,7 +24,7 @@ export class Endpoint {
         });
     }
 
-    addDescriptorCluster(endpoints: Endpoint[]) {
+    addDescriptorCluster(endpoints: Endpoint<ContextT>[]) {
         const descriptorCluster = DescriptorCluster.Builder(endpoints)(this.id);
         this.clustersMap.set(descriptorCluster.id, descriptorCluster);
     }
@@ -44,7 +44,7 @@ export class Endpoint {
         return [...this.clustersMap.keys()];
     }
 
-    async invoke(session: Session, clusterId: number, commandId: number, args: Element) {
+    async invoke(session: Session<ContextT>, clusterId: number, commandId: number, args: Element) {
         return this.clustersMap.get(clusterId)?.invoke(session, commandId, args);
     }
 }

@@ -10,8 +10,9 @@ import { MessageExchange } from "../../matter/common/MessageExchange";
 import { CasePairing } from "./CasePairing";
 import { PasePairing } from "./PasePairing";
 import { MessageType, SECURE_CHANNEL_PROTOCOL_ID } from "./SecureChannelMessages";
+import { MatterServer } from "../../matter/MatterServer";
 
-export class SecureChannelProtocol implements Protocol {
+export class SecureChannelProtocol implements Protocol<MatterServer> {
 
     constructor(
         private readonly paseCommissioner: PasePairing,
@@ -22,7 +23,7 @@ export class SecureChannelProtocol implements Protocol {
         return SECURE_CHANNEL_PROTOCOL_ID;
     }
 
-    onNewExchange(exchange: MessageExchange, message: Message) {
+    onNewExchange(exchange: MessageExchange<MatterServer>, message: Message) {
         const messageType = message.payloadHeader.messageType;
 
         switch (messageType) {

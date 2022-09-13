@@ -1,6 +1,5 @@
 import { Message, Packet } from "../codec/MessageCodec";
 import { Fabric } from "../fabric/Fabric";
-import { MatterServer } from "../matter/MatterServer";
 
 export const DEFAULT_IDLE_RETRANSMISSION_TIMEOUT_MS = 5000;
 export const DEFAULT_ACTIVE_RETRANSMISSION_TIMEOUT_MS = 300;
@@ -12,7 +11,7 @@ interface MrpParameters {
     retransmissionRetries: number,
 }
 
-export interface Session {
+export interface Session<T> {
     isSecure(): boolean;
     getName(): string;
     decode(packet: Packet): Message;
@@ -20,7 +19,7 @@ export interface Session {
     getAttestationChallengeKey(): Buffer;
     setFabric(fabric: Fabric): void;
     getMrpParameters(): MrpParameters;
-    getServer(): MatterServer;
+    getContext(): T;
     getId(): number;
     getPeerSessionId(): number;
     getNodeId(): bigint | undefined;

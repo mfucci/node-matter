@@ -14,18 +14,18 @@ export const UNDEFINED_NODE_ID = BigInt(0);
 
 export const UNICAST_UNSECURE_SESSION_ID = 0x0000;
 
-export class SessionManager {
-    private readonly sessions = new Map<number, Session>();
+export class SessionManager<T> {
+    private readonly sessions = new Map<number, Session<T>>();
     private nextSessionId = Crypto.getRandomUInt16();
 
     constructor(
-        private readonly matterServer: MatterServer
+        private readonly context: T,
     ) {
-        this.sessions.set(UNICAST_UNSECURE_SESSION_ID, new UnsecureSession(matterServer));
+        this.sessions.set(UNICAST_UNSECURE_SESSION_ID, new UnsecureSession(context));
     }
 
     async createSecureSession(sessionId: number, nodeId: bigint, peerNodeId: bigint, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
-        const session = await SecureSession.create(this.matterServer, sessionId, nodeId, peerNodeId, peerSessionId, sharedSecret, salt, isInitiator, idleRetransTimeoutMs, activeRetransTimeoutMs);
+        const session = await SecureSession.create(this.context, sessionId, nodeId, peerNodeId, peerSessionId, sharedSecret, salt, isInitiator, idleRetransTimeoutMs, activeRetransTimeoutMs);
         this.sessions.set(sessionId, session);
         return session;
     }

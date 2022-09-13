@@ -1,7 +1,7 @@
 import { Message } from "../../codec/MessageCodec";
 import { MessageExchange } from "./MessageExchange";
 
-export interface Protocol {
+export interface Protocol<ContextT> {
     getId(): number;
-    onNewExchange(exchange: MessageExchange, message: Message): void;
+    onNewExchange(exchange: MessageExchange<ContextT>, message: Message): void;
 }

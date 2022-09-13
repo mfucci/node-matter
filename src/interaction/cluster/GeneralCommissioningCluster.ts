@@ -7,6 +7,7 @@
 import { Cluster } from "../model/Cluster";
 import { Field, JsType, ObjectT, StringT, UnsignedIntT } from "../../codec/TlvObjectCodec";
 import { NoArgumentsT } from "../model/Command";
+import { MatterServer } from "../../matter/MatterServer";
 
 const enum RegulatoryLocationType {
     Indoor = 0,
@@ -48,7 +49,7 @@ type SuccessFailureReponse = JsType<typeof SuccessFailureReponseT>;
 
 const SuccessResponse = {errorCode: CommissioningError.Ok, debugText: ""};
 
-export class GeneralCommissioningCluster extends Cluster {
+export class GeneralCommissioningCluster extends Cluster<MatterServer> {
     static Builder = () => (endpointId: number) => new GeneralCommissioningCluster(endpointId);
 
     private readonly attributes;

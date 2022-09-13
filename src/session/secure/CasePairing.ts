@@ -19,11 +19,11 @@ const KDFSR3_INFO = Buffer.from("Sigma3");
 const TBE_DATA2_NONCE = Buffer.from("NCASE_Sigma2N");
 const TBE_DATA3_NONCE = Buffer.from("NCASE_Sigma3N");
 
-export class CasePairing implements Protocol {
-    async onNewExchange(exchange: MessageExchange) {
+export class CasePairing implements Protocol<MatterServer> {
+    async onNewExchange(exchange: MessageExchange<MatterServer>) {
         const messenger = new CaseMessenger(exchange);
         try {
-            await this.handleSigma1(exchange.session.getServer(), messenger);
+            await this.handleSigma1(exchange.session.getContext(), messenger);
         } catch (error) {
             console.log("An error occured during the commissioning", error);
             await messenger.sendError();
@@ -34,18 +34,17 @@ export class CasePairing implements Protocol {
         return SECURE_CHANNEL_PROTOCOL_ID;
     }
 
-    private async handleSigma1(matterServer: MatterServer, messenger: CaseMessenger) {
+    private async handleSigma1(server: MatterServer, messenger: CaseMessenger) {
         console.log(`Case: Received pairing request from ${messenger.getChannelName()}`);
         // Generate pairing info
-        const sessionManager = matterServer.getSessionManager();
-        const sessionId = sessionManager.getNextAvailableSessionId();
+        const sessionId = server.getNextAvailableSessionId();
         const random = Crypto.getRandom();
 
         // Read and process sigma 1
         const { sigma1Bytes, sigma1 } = await messenger.readSigma1();
         const { sessionId: peerSessionId, resumptionId: peerResumptionId, destinationId, random: peerRandom, ecdhPublicKey: peerEcdhPublicKey, mrpParams } = sigma1;
         if (peerResumptionId !== undefined) throw new Error("CASE session resume not supported");
-        const fabric = matterServer.getFabricManager().findFabricFromDestinationId(destinationId, peerRandom);
+        const fabric = server.findFabricFromDestinationId(destinationId, peerRandom);
         const { nodeId, newOpCert, intermediateCACert, identityProtectionKey } = fabric;
         const { publicKey: ecdhPublicKey, sharedSecret } = Crypto.ecdh(peerEcdhPublicKey);
 
@@ -73,7 +72,7 @@ export class CasePairing implements Protocol {
 
         // All good! Create secure session
         const secureSessionSalt = Buffer.concat([identityProtectionKey, Crypto.hash([ sigma1Bytes, sigma2Bytes, sigma3Bytes ])]);
-        await sessionManager.createSecureSession(sessionId, nodeId, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, false, mrpParams?.idleRetransTimeoutMs, mrpParams?.activeRetransTimeoutMs);
+        await server.createSecureSession(sessionId, nodeId, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, false, mrpParams?.idleRetransTimeoutMs, mrpParams?.activeRetransTimeoutMs);
         await messenger.sendSuccess();
         console.log(`Case: Paired succesfully with ${messenger.getChannelName()}`);
     }

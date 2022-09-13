@@ -6,6 +6,7 @@
 
 import { JsType, TlvObjectCodec } from "../codec/TlvObjectCodec";
 import { MessageExchange } from "../matter/common/MessageExchange";
+import { MatterServer } from "../matter/MatterServer";
 import { StatusResponseT } from "./cluster/OperationalCredentialsMessages";
 import { InvokeRequestT, InvokeResponseT, ReadRequestT, DataReportT, SubscribeRequestT, SubscribeResponseT } from "./InteractionMessages";
 
@@ -37,7 +38,7 @@ export type InvokeResponse = JsType<typeof InvokeResponseT>;
 export class InteractionMessenger {
 
     constructor(
-        private readonly exchange: MessageExchange,
+        private readonly exchange: MessageExchange<MatterServer>,
     ) {}
 
     async handleRequest(

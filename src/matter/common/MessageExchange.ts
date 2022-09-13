@@ -5,10 +5,10 @@ import { MessageCounter } from "../MatterServer";
 import { ExchangeSocket } from "./ExchangeSocket";
 import { MessageType } from "../../session/secure/SecureChannelMessages";
 
-class MessageChannel implements ExchangeSocket<Message> {
+class MessageChannel<ContextT> implements ExchangeSocket<Message> {
     constructor(
         readonly channel: ExchangeSocket<Buffer>,
-        private readonly session: Session,
+        private readonly session: Session<ContextT>,
     ) {}
 
     send(message: Message): Promise<void> {
@@ -22,9 +22,9 @@ class MessageChannel implements ExchangeSocket<Message> {
     }
 }
 
-export class MessageExchange {
+export class MessageExchange<ContextT> {
     private readonly messageCodec = new MessageCodec();
-    readonly channel: MessageChannel;
+    readonly channel: MessageChannel<ContextT>;
     private readonly activeRetransmissionTimeoutMs: number;
     private readonly retransmissionRetries: number;
     private readonly messagesQueue = new Queue<Message>();
@@ -32,14 +32,14 @@ export class MessageExchange {
     private sentMessageToAck: Message | undefined;
     private retransmissionTimeoutId:  NodeJS.Timeout | undefined;
 
-    static fromInitialMessage(
-        session: Session,
+    static fromInitialMessage<ContextT>(
+        session: Session<ContextT>,
         channel: ExchangeSocket<Buffer>,
         messageCounter: MessageCounter,
         initialMessage: Message,
         closeCallback: () => void,
     ) {
-        const exchange = new MessageExchange(
+        const exchange = new MessageExchange<ContextT>(
             session,
             channel,
             messageCounter,
@@ -55,8 +55,8 @@ export class MessageExchange {
         return exchange;
     }
 
-    static initiate(
-        session: Session,
+    static initiate<ContextT>(
+        session: Session<ContextT>,
         channel: ExchangeSocket<Buffer>,
         exchangeId: number,
         protocolId: number,
@@ -78,7 +78,7 @@ export class MessageExchange {
     }
 
     constructor(
-        readonly session: Session,
+        readonly session: Session<ContextT>,
         channel: ExchangeSocket<Buffer>,
         private readonly messageCounter: MessageCounter,
         private readonly isInitiator: boolean,

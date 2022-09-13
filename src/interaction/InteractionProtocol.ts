@@ -16,16 +16,16 @@ import { Session } from "../session/Session";
 
 export const INTERACTION_PROTOCOL_ID = 0x0001;
 
-export class InteractionProtocol implements Protocol {
+export class InteractionProtocol implements Protocol<MatterServer> {
     constructor(
-        private readonly device: Device,
+        private readonly device: Device<MatterServer>,
     ) {}
 
     getId() {
         return INTERACTION_PROTOCOL_ID;
     }
 
-    async onNewExchange(exchange: MessageExchange) {
+    async onNewExchange(exchange: MessageExchange<MatterServer>) {
         await new InteractionMessenger(exchange).handleRequest(
             readRequest => this.handleReadRequest(exchange, readRequest),
             subscribeRequest => this.handleSubscribeRequest(exchange, subscribeRequest),
@@ -33,7 +33,7 @@ export class InteractionProtocol implements Protocol {
         );
     }
 
-    handleReadRequest(exchange: MessageExchange, {attributes: attributePaths}: ReadRequest): DataReport {
+    handleReadRequest(exchange: MessageExchange<MatterServer>, {attributes: attributePaths}: ReadRequest): DataReport {
         console.log(`Received read request from ${exchange.channel.getName()}: ${attributePaths.map(({endpointId = "*", clusterId = "*", attributeId = "*"}) => `${endpointId}/${clusterId}/${attributeId}`).join(", ")}`);
 
         return {
@@ -43,12 +43,12 @@ export class InteractionProtocol implements Protocol {
         };
     }
 
-    handleSubscribeRequest(exchange: MessageExchange, { minIntervalFloorSeconds, maxIntervalCeilingSeconds, attributeRequests, keepSubscriptions }: SubscribeRequest): SubscribeResponse | undefined {
+    handleSubscribeRequest(exchange: MessageExchange<MatterServer>, { minIntervalFloorSeconds, maxIntervalCeilingSeconds, attributeRequests, keepSubscriptions }: SubscribeRequest): SubscribeResponse | undefined {
         console.log(`Received subscribe request from ${exchange.channel.getName()}`);
 
         if (!exchange.session.isSecure()) throw new Error("Subscriptions are only implemented on secure sessions");
 
-        const session = exchange.session as SecureSession;
+        const session = exchange.session as SecureSession<MatterServer>;
 
         if (!keepSubscriptions) {
             session.clearSubscriptions();
@@ -60,14 +60,14 @@ export class InteractionProtocol implements Protocol {
             if (attributeRequests.length === 0) throw new Error("Invalid subscription request");
 
             return {
-                subscriptionId: session.addSubscription(SubscriptionHandler.Builder(session, exchange.channel.channel, session.getServer(), attributes)),
+                subscriptionId: session.addSubscription(SubscriptionHandler.Builder(session, exchange.channel.channel, session.getContext(), attributes)),
                 minIntervalFloorSeconds,
                 maxIntervalCeilingSeconds,
             };
         }
     }
 
-    async handleInvokeRequest(exchange: MessageExchange, {invokes}: InvokeRequest): Promise<InvokeResponse> {
+    async handleInvokeRequest(exchange: MessageExchange<MatterServer>, {invokes}: InvokeRequest): Promise<InvokeResponse> {
         console.log(`Received invoke request from ${exchange.channel.getName()}: ${invokes.map(({path: {endpointId, clusterId, commandId}}) => `${endpointId}/${clusterId}/${commandId}`).join(", ")}`);
 
         const results = (await Promise.all(invokes.map(({path, args}) => this.device.invoke(exchange.session, path, args)))).flat();
@@ -87,11 +87,11 @@ export class InteractionProtocol implements Protocol {
 
 export class SubscriptionHandler {
 
-    static Builder = (session: Session, channel: ExchangeSocket<Buffer>, server: MatterServer, attributes: Attribute<any>[]) => (subscriptionId: number) => new SubscriptionHandler(subscriptionId, session, channel, server, attributes);
+    static Builder = (session: Session<MatterServer>, channel: ExchangeSocket<Buffer>, server: MatterServer, attributes: Attribute<any>[]) => (subscriptionId: number) => new SubscriptionHandler(subscriptionId, session, channel, server, attributes);
 
     constructor(
         readonly subscriptionId: number,
-        private readonly session: Session,
+        private readonly session: Session<MatterServer>,
         private readonly channel: ExchangeSocket<Buffer>,
         private readonly server: MatterServer,
         private readonly attributes: Attribute<any>[],

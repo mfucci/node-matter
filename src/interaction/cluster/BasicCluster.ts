@@ -5,6 +5,7 @@
  */
 
 import { StringT, UnsignedIntT } from "../../codec/TlvObjectCodec";
+import { MatterServer } from "../../matter/MatterServer";
 import { Cluster } from "../model/Cluster";
 
 interface BasicClusterConf {
@@ -14,7 +15,7 @@ interface BasicClusterConf {
     productId: number,
 }
 
-export class BasicCluster extends Cluster {
+export class BasicCluster extends Cluster<MatterServer> {
     static Builder = (conf: BasicClusterConf) => (endpointId: number) => new BasicCluster(endpointId, conf);
 
     constructor(endpointId: number, { vendorName, vendorId, productName, productId }: BasicClusterConf) {

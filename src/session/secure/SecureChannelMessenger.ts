@@ -5,13 +5,14 @@
  */
 
 import { MessageExchange } from "../../matter/common/MessageExchange";
+import { MatterServer } from "../../matter/MatterServer";
 import { LEBufferReader } from "../../util/LEBufferReader";
 import { LEBufferWriter } from "../../util/LEBufferWriter";
 import { GeneralStatusCode, ProtocolStatusCode, MessageType, SECURE_CHANNEL_PROTOCOL_ID } from "./SecureChannelMessages";
 
 export class SecureChannelMessenger {
     constructor(
-        protected readonly exchange: MessageExchange,
+        protected readonly exchange: MessageExchange<MatterServer>,
     ) {}
 
     sendError() {

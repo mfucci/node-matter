@@ -19,12 +19,12 @@ import { Broadcaster } from "./common/Broadcaster";
 export class MatterServer {
     private readonly broadcasters = new Array<Broadcaster>();
     private readonly netInterfaces = new Array<NetInterface>();
-    private readonly protocols = new Map<number, Protocol>();
+    private readonly protocols = new Map<number, Protocol<MatterServer>>();
     private readonly exchangeCounter = new ExchangeCounter();
     private readonly messageCounter = new MessageCounter();
-    private readonly exchanges = new Map<number, MessageExchange>();
-    private readonly sessionManager = new SessionManager(this);
+    private readonly exchanges = new Map<number, MessageExchange<MatterServer>>();
     private readonly fabricManager = new FabricManager();
+    private readonly sessionManager = new SessionManager(this);
 
     constructor(
         private readonly deviceName: string,
@@ -34,7 +34,7 @@ export class MatterServer {
         private readonly discriminator: number,
     ) {}
 
-    addBroadcaster (broadcaster: Broadcaster) {
+    addBroadcaster(broadcaster: Broadcaster) {
         broadcaster.setCommissionMode(this.deviceName, this.deviceType, this.vendorId, this.productId, this.discriminator);
         this.broadcasters.push(broadcaster);
         return this;
@@ -45,7 +45,7 @@ export class MatterServer {
         return this;
     }
 
-    addProtocol(protocol: Protocol) {
+    addProtocol(protocol: Protocol<MatterServer>) {
         this.protocols.set(protocol.getId(), protocol);
         return this;
     }
@@ -55,22 +55,27 @@ export class MatterServer {
         this.broadcasters.forEach(broadcaster => broadcaster.announce());
     }
 
+    getNextAvailableSessionId() {
+        return this.sessionManager.getNextAvailableSessionId();
+    }
+
+    createSecureSession(sessionId: number, nodeId: bigint, peerNodeId: bigint, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
+        return this.sessionManager.createSecureSession(sessionId, nodeId, peerNodeId, peerSessionId, sharedSecret, salt, false, idleRetransTimeoutMs, activeRetransTimeoutMs);
+    }
+
+    findFabricFromDestinationId(destinationId: Buffer, peerRandom: Buffer) {
+        return this.fabricManager.findFabricFromDestinationId(destinationId, peerRandom);
+    }
+
     setFabric(fabric: Fabric) {
+        this.fabricManager.addFabric(fabric);
         this.broadcasters.forEach(broadcaster => {
             broadcaster.setFabric(fabric);
             broadcaster.announce();
         });
     }
 
-    getSessionManager() {
-        return this.sessionManager;
-    }
-
-    getFabricManager() {
-        return this.fabricManager;
-    }
-
-    initiateExchange(session: Session, channel: ExchangeSocket<Buffer>, protocolId: number) {
+    initiateExchange(session: Session<MatterServer>, channel: ExchangeSocket<Buffer>, protocolId: number) {
         const exchangeId = this.exchangeCounter.getIncrementedCounter();
         const exchange = MessageExchange.initiate(session, channel, exchangeId, protocolId, this.messageCounter, () => this.exchanges.delete(exchangeId & 0x10000));
         // Ensure exchangeIds are not colliding in the Map by adding 1 in front of exchanges initiated by this device.

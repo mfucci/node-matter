@@ -6,17 +6,14 @@
 
 import { Crypto } from "../../crypto/Crypto";
 import { UNDEFINED_NODE_ID } from "../SessionManager";
-import { PaseMessenger } from "./PaseMessenger";
+import { DEFAULT_PASSCODE_ID, PaseServerMessenger, SPAKE_CONTEXT } from "./PaseMessenger";
 import { Protocol } from "../../matter/common/Protocol";
 import { MessageExchange } from "../../matter/common/MessageExchange";
 import { PbkdfParameters, Spake2p } from "../../crypto/Spake2p";
 import { SECURE_CHANNEL_PROTOCOL_ID } from "./SecureChannelMessages";
 import { MatterServer } from "../../matter/MatterServer";
 
-const DEFAULT_PASSCODE_ID = 0;
-const SPAKE_CONTEXT = Buffer.from("CHIP PAKE V1 Commissioning");
-
-export class PasePairing implements Protocol<MatterServer> {
+export class PaseServer implements Protocol<MatterServer> {
 
     constructor(
         private readonly setupPinCode: number,
@@ -28,7 +25,7 @@ export class PasePairing implements Protocol<MatterServer> {
     }
 
     async onNewExchange(exchange: MessageExchange<MatterServer>) {
-        const messenger = new PaseMessenger(exchange);
+        const messenger = new PaseServerMessenger(exchange);
         try {
             await this.handlePairingRequest(exchange.session.getContext(), messenger);
         } catch (error) {
@@ -37,8 +34,8 @@ export class PasePairing implements Protocol<MatterServer> {
         }
     }
 
-    private async handlePairingRequest(server: MatterServer, messenger: PaseMessenger) {
-        console.log(`Pase: Received pairing request from ${messenger.getChannelName()}`);
+    private async handlePairingRequest(server: MatterServer, messenger: PaseServerMessenger) {
+        console.log(`Pase server: Received pairing request from ${messenger.getChannelName()}`);
         const sessionId = server.getNextAvailableSessionId();
         const random = Crypto.getRandom();
 
@@ -61,6 +58,6 @@ export class PasePairing implements Protocol<MatterServer> {
         // All good! Creating the secure session
         await server.createSecureSession(sessionId, UNDEFINED_NODE_ID, UNDEFINED_NODE_ID, peerSessionId, Ke, Buffer.alloc(0), false, mrpParameters?.idleRetransTimeoutMs, mrpParameters?.activeRetransTimeoutMs);
         await messenger.sendSuccess();
-        console.log(`Pase: Paired succesfully with ${messenger.getChannelName()}`);
+        console.log(`Pase server: Paired succesfully with ${messenger.getChannelName()}`);
     }
 }

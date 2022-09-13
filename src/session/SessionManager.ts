@@ -5,7 +5,6 @@
  */
 
 import { Crypto } from "../crypto/Crypto";
-import { MatterServer } from "../matter/MatterServer";
 import { SecureSession } from "./SecureSession";
 import { Session } from "./Session";
 import { UnsecureSession } from "./UnsecureSession";
@@ -14,14 +13,16 @@ export const UNDEFINED_NODE_ID = BigInt(0);
 
 export const UNICAST_UNSECURE_SESSION_ID = 0x0000;
 
-export class SessionManager<T> {
-    private readonly sessions = new Map<number, Session<T>>();
+export class SessionManager<ContextT> {
+    private readonly unsecureSession: UnsecureSession<ContextT>;
+    private readonly sessions = new Map<number, Session<ContextT>>();
     private nextSessionId = Crypto.getRandomUInt16();
 
     constructor(
-        private readonly context: T,
+        private readonly context: ContextT,
     ) {
-        this.sessions.set(UNICAST_UNSECURE_SESSION_ID, new UnsecureSession(context));
+        this.unsecureSession = new UnsecureSession(context);
+        this.sessions.set(UNICAST_UNSECURE_SESSION_ID, this.unsecureSession);
     }
 
     async createSecureSession(sessionId: number, nodeId: bigint, peerNodeId: bigint, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
@@ -43,5 +44,9 @@ export class SessionManager<T> {
 
     getSession(sessionId: number) {
         return this.sessions.get(sessionId);
+    }
+
+    getUnsecureSession() {
+        return this.unsecureSession;
     }
 }

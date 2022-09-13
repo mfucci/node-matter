@@ -4,16 +4,39 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { Template, TlvObjectCodec } from "../../codec/TlvObjectCodec";
 import { MessageExchange } from "../../matter/common/MessageExchange";
-import { MatterServer } from "../../matter/MatterServer";
 import { LEBufferReader } from "../../util/LEBufferReader";
 import { LEBufferWriter } from "../../util/LEBufferWriter";
 import { GeneralStatusCode, ProtocolStatusCode, MessageType, SECURE_CHANNEL_PROTOCOL_ID } from "./SecureChannelMessages";
 
-export class SecureChannelMessenger {
+export class SecureChannelMessenger<ContextT> {
     constructor(
-        protected readonly exchange: MessageExchange<MatterServer>,
+        protected readonly exchange: MessageExchange<ContextT>,
     ) {}
+
+    async nextMessage(expectedMessageType: number) {
+        const message = await this.exchange.nextMessage();
+        const messageType = message.payloadHeader.messageType;
+        this.throwIfError(messageType, message.payload);
+        if (messageType !== expectedMessageType) throw new Error(`Received unexpected message type: ${messageType}, expected: ${expectedMessageType}`);
+        return message;
+    }
+
+    async nextMessageDecoded<T>(expectedMessageType: number, template: Template<T>) {
+        return TlvObjectCodec.decode((await this.nextMessage(expectedMessageType)).payload, template);
+    }
+
+    async waitForSuccess() {
+        // If the status is not Success, this would throw an Error.
+        await this.nextMessage(MessageType.StatusReport);
+    }
+
+    async send<T>(message: T, type: number, template: Template<T>) {
+        const payload = TlvObjectCodec.encode(message, template);
+        await this.exchange.send(type, payload);
+        return payload;
+    }
 
     sendError() {
         return this.sendStatusReport(GeneralStatusCode.Error, ProtocolStatusCode.InvalidParam);
@@ -39,6 +62,7 @@ export class SecureChannelMessenger {
         if (messageType !== MessageType.StatusReport) return;
         const buffer = new LEBufferReader(payload);
         const generalStatus = buffer.readUInt16();
+        if (generalStatus === GeneralStatusCode.Success) return;
         const protocolId = buffer.readUInt32();
         const protocolStatus = buffer.readUInt16();
         throw new Error(`Received error status: ${generalStatus} ${protocolId} ${protocolStatus}`);

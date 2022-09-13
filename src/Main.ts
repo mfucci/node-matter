@@ -9,7 +9,7 @@
 import { MatterServer } from "./matter/MatterServer";
 import { UdpInterface } from "./net/UdpInterface";
 import { SecureChannelProtocol } from "./session/secure/SecureChannelProtocol";
-import { PasePairing } from "./session/secure/PasePairing";
+import { PaseServer } from "./session/secure/PaseServer";
 import { Crypto } from "./crypto/Crypto";
 import { CasePairing } from "./session/secure/CasePairing";
 import { InteractionProtocol } from "./interaction/InteractionProtocol";
@@ -66,7 +66,7 @@ class Main {
             .addNetInterface(await UdpInterface.create(5540))
             .addBroadcaster(await MdnsBroadcaster.create())
             .addProtocol(new SecureChannelProtocol(
-                    new PasePairing(20202021, { iteration: 1000, salt: Crypto.getRandomData(32) }),
+                    new PaseServer(20202021, { iteration: 1000, salt: Crypto.getRandomData(32) }),
                     new CasePairing(),
                 ))
             .addProtocol(new InteractionProtocol(new Device([

@@ -6,7 +6,7 @@
 
 import { UdpSocket } from '../io/udp/UdpSocket';
 import { ExchangeSocket } from "../matter/common/ExchangeSocket";
-import { NetInterface } from "../matter/common/NetInterface";
+import { NetInterface } from "./NetInterface";
 
 export class UdpInterface implements NetInterface {
 
@@ -17,6 +17,10 @@ export class UdpInterface implements NetInterface {
     constructor(
         private readonly server: UdpSocket,
     ) {}
+
+    async openChannel(address: string, port: number) {
+        return Promise.resolve(new UdpConnection(this.server, address, port));
+    }
 
     onData(listener: (socket: ExchangeSocket<Buffer>, messageBytes: Buffer) => void) {
         this.server.onMessage((peerAddress, peerPort, data) => listener(new UdpConnection(this.server, peerAddress, peerPort), data));

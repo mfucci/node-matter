@@ -14,6 +14,7 @@ import { Device } from "../../src/interaction/model/Device";
 import { Endpoint } from "../../src/interaction/model/Endpoint";
 import { MessageExchange } from "../../src/matter/common/MessageExchange";
 import { DEVICE } from "../../src/Devices";
+import { MatterServer } from "../../src/matter/MatterServer";
 
 const READ_REQUEST: ReadRequest = {
     interactionModelRevision: 1,
@@ -67,7 +68,7 @@ describe("InteractionProtocol", () => {
                 ])
             ]));
 
-            const result = interactionProtocol.handleReadRequest(({channel: {getName: () => "test"}}) as MessageExchange, READ_REQUEST);
+            const result = interactionProtocol.handleReadRequest(({channel: {getName: () => "test"}}) as MessageExchange<MatterServer>, READ_REQUEST);
 
             assert.deepEqual(result, READ_RESPONSE);
         });

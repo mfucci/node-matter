@@ -21,8 +21,8 @@ import { UdpSocket } from "../src/io/udp/UdpSocket";
 import { MdnsBroadcaster } from "../src/mdns/MdnsBroadcaster";
 import { MatterServer } from "../src/matter/MatterServer";
 import { CasePairing } from "../src/session/secure/CasePairing";
-import { PasePairing } from "../src/session/secure/PasePairing";
 import { SecureChannelProtocol as SecureChannelProtocol } from "../src/session/secure/SecureChannelProtocol";
+import { PaseServer } from "../src/session/secure/PaseServer";
 
 UdpSocket.create = UdpSocketFake.create;
 
@@ -48,15 +48,17 @@ const vendorId = 0xFFF1;
 const productName = "Matter end-to-end device";
 const productId = 0X8001;
 const discriminator = 3840;
+const setupPin = 20202021;
+const matterPort = 5540;
 
 describe("Integration", () => {
     context("commission", () => {
         it("the client commissions a new device", async () => {
             (new MatterServer(deviceName, deviceType, vendorId, productId, discriminator))
-                .addNetInterface(await UdpInterface.create(5540, SERVER_IP))
+                .addNetInterface(await UdpInterface.create(matterPort, SERVER_IP))
                 .addBroadcaster(await MdnsBroadcaster.create(SERVER_IP))
                 .addProtocol(new SecureChannelProtocol(
-                        new PasePairing(20202021, { iteration: 1000, salt: Crypto.getRandomData(32) }),
+                        new PaseServer(setupPin, { iteration: 1000, salt: Crypto.getRandomData(32) }),
                         new CasePairing(),
                     ))
                 .addProtocol(new InteractionProtocol(new Device([
@@ -72,7 +74,7 @@ describe("Integration", () => {
                 .start()
 
             const client = new MatterClient(await UdpInterface.create(5540, CLIENT_IP));
-            await client.commission(SERVER_IP, discriminator);
+            await client.commission(SERVER_IP, matterPort, discriminator, setupPin);
 
             assert.ok(true);
         });

@@ -76,9 +76,7 @@ export class OperationalCredentialsCluster extends Cluster {
 
         // TODO: create ACL with caseAdminNode
 
-        const mdnsServer = session.getServer().getMdnsServer();
-        mdnsServer.addRecordsForFabric(fabric);
-        await mdnsServer.announce();
+        await session.getServer().setFabric(fabric);
 
         return {status: Status.Success};
     }

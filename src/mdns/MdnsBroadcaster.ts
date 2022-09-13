@@ -7,23 +7,24 @@
 import { ARecord, PtrRecord, SrvRecord, TxtRecord } from "../codec/DnsCodec";
 import { Crypto } from "../crypto/Crypto";
 import { Fabric } from "../fabric/Fabric";
+import { Broadcaster } from "../matter/common/Broadcaster";
 import { MdnsServer } from "./MdnsServer";
 
 const SERVICE_DISCOVERY_QNAME = "_services._dns-sd._udp.local";
 const MATTER_COMMISSION_SERVICE_QNAME = "_matterc._udp.local";
 const MATTER_SERVICE_QNAME = "_matter._tcp.local";
 
-export class MatterMdnsServer {
-    static async create() {
-        const mdnsServer = await MdnsServer.create();
-        return new MatterMdnsServer(mdnsServer);
+export class MdnsBroadcaster implements Broadcaster {
+    static async create(address?: string) {
+        const mdnsServer = await MdnsServer.create(address);
+        return new MdnsBroadcaster(mdnsServer);
     }
 
     constructor(
         private readonly mdnsServer: MdnsServer,
     ) {}
 
-    addRecordsForCommission(deviceName: string, deviceType: number, vendorId: number, productId: number, discriminator: number) {
+    setCommissionMode(deviceName: string, deviceType: number, vendorId: number, productId: number, discriminator: number) {
         const shortDiscriminator = (discriminator >> 8) & 0x0F;
         const instanceId = Crypto.getRandomData(8).toString("hex").toUpperCase();
         const vendorQname = `_V${vendorId}._sub.${MATTER_COMMISSION_SERVICE_QNAME}`;
@@ -66,7 +67,7 @@ export class MatterMdnsServer {
         });
     }
 
-    addRecordsForFabric(fabric: Fabric) {
+    setFabric(fabric: Fabric) {
         const nodeIdBuffer = Buffer.alloc(8);
         nodeIdBuffer.writeBigUInt64BE(BigInt(fabric.nodeId));
         const nodeId = nodeIdBuffer.toString("hex").toUpperCase();

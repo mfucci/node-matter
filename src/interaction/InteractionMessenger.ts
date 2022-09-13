@@ -5,7 +5,7 @@
  */
 
 import { JsType, TlvObjectCodec } from "../codec/TlvObjectCodec";
-import { MessageExchange } from "../server/MessageExchange";
+import { MessageExchange } from "../matter/common/MessageExchange";
 import { StatusResponseT } from "./cluster/OperationalCredentialsMessages";
 import { InvokeRequestT, InvokeResponseT, ReadRequestT, DataReportT, SubscribeRequestT, SubscribeResponseT } from "./InteractionMessages";
 

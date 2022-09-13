@@ -1,49 +1,12 @@
-/**
- * @license
- * Copyright 2022 Marco Fucci di Napoli (mfucci@gmail.com)
- * SPDX-License-Identifier: Apache-2.0
- */
+export interface UdpSocketOptions {
+    port: number,
+    address?: string,
+    multicastInterface?: string,
+}
 
-import dgram from "dgram";
-import { Queue } from "../../util/Queue";
-import { Stream } from "../../util/Stream";
+export abstract class UdpSocket {
+    static create: (options: UdpSocketOptions) => Promise<UdpSocket> = () => { throw new Error("No provider configured"); };
 
-export class UdpSocket implements Stream<Buffer> {
-    private readonly receivedMessages = new Queue<Buffer>();
-
-    constructor(
-        private readonly dgramSocket: dgram.Socket,
-        private readonly id: string,
-        private readonly peerAddress: string,
-        private readonly peerPort: number,
-        private readonly closeCallback: () => void
-    ) { }
-
-    onMessage(message: Buffer) {
-        this.receivedMessages.write(message);
-    }
-
-    async read(): Promise<Buffer> {
-        return this.receivedMessages.read();
-    }
-
-    async write(message: Buffer) {
-        return new Promise<void>((resolve, reject) => {
-            this.dgramSocket.send(message, this.peerPort, this.peerAddress, error => {
-                if (error !== null) {
-                    reject(error);
-                    return;
-                }
-                resolve();
-            });
-        });
-    }
-
-    close() {
-        this.closeCallback();
-    }
-
-    toString() {
-        return `udp://${this.id}`;
-    }
+    abstract onMessage(listener: (peerAddress: string, peerPort: number, data: Buffer) => void): void;
+    abstract send(address: string, port: number, data: Buffer): Promise<void>;
 }

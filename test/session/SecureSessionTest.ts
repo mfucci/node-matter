@@ -6,7 +6,7 @@
 
 import assert from "assert";
 import { Message, MessageCodec, SessionType } from "../../src/codec/MessageCodec";
-import { MatterServer } from "../../src/server/MatterServer";
+import { MatterServer } from "../../src/matter/MatterServer";
 import { SecureSession } from "../../src/session/SecureSession";
 import { UNDEFINED_NODE_ID } from "../../src/session/SessionManager";
 

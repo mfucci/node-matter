@@ -13,8 +13,8 @@ const MDNS_BROADCAST_IP = "224.0.0.251";
 const MDNS_BROADCAST_PORT = 5353;
 
 export class MdnsServer {
-    static async create() {
-        const multicastServer = await UdpMulticastServer.create(MDNS_BROADCAST_IP, MDNS_BROADCAST_PORT);
+    static async create(address?: string) {
+        const multicastServer = await UdpMulticastServer.create({address, broadcastAddress: MDNS_BROADCAST_IP, port: MDNS_BROADCAST_PORT});
         return new MdnsServer(multicastServer);
     }
 
@@ -23,7 +23,6 @@ export class MdnsServer {
     ) {
         multicastServer.onMessage((message, remoteIp) => this.handleDnsMessage(message, remoteIp));
     }
-
 
     private recordsGenerator: (ip: string, mac: string) => Record<any>[] = () => [];
     private readonly records = new Cache<Record<any>[]>((ip, mac) => this.recordsGenerator(ip, mac), 5 * 60 * 1000 /* 5mn */);

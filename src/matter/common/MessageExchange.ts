@@ -1,8 +1,9 @@
-import { Message, MessageCodec, SessionType } from "../codec/MessageCodec";
-import { Queue } from "../util/Queue";
-import { Session } from "../session/Session";
-import { ExchangeSocket, MessageCounter } from "./MatterServer";
-import { MessageType } from "../session/secure/SecureChannelMessages";
+import { Message, MessageCodec, SessionType } from "../../codec/MessageCodec";
+import { Queue } from "../../util/Queue";
+import { Session } from "../../session/Session";
+import { MessageCounter } from "../MatterServer";
+import { ExchangeSocket } from "./ExchangeSocket";
+import { MessageType } from "../../session/secure/SecureChannelMessages";
 
 class MessageChannel implements ExchangeSocket<Message> {
     constructor(

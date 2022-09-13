@@ -12,7 +12,7 @@ import { InteractionProtocol } from "../../src/interaction/InteractionProtocol";
 import { ReadRequest, ReadResponse } from "../../src/interaction/InteractionMessenger";
 import { Device } from "../../src/interaction/model/Device";
 import { Endpoint } from "../../src/interaction/model/Endpoint";
-import { MessageExchange } from "../../src/server/MessageExchange";
+import { MessageExchange } from "../../src/matter/common/MessageExchange";
 import { DEVICE } from "../../src/Devices";
 
 const READ_REQUEST: ReadRequest = {

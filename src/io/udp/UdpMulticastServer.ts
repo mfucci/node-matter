@@ -4,43 +4,37 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import dgram from "dgram";
 import { Cache } from "../../util/Cache";
-import { createDgramSocket } from "./DgramSocket";
+import { UdpSocket, UdpSocketOptions } from "./UdpSocket";
+
+export interface UdpMulticastServerOptions extends UdpSocketOptions {
+    broadcastAddress: string,
+}
 
 export class UdpMulticastServer {
-    static async create(address: string, port: number) {
-        return new UdpMulticastServer(address, port, await createDgramSocket(port, { type: "udp4", reuseAddr: true }));
+    static async create({ address, broadcastAddress, port }: UdpMulticastServerOptions) {
+        return new UdpMulticastServer(address, broadcastAddress, port, await UdpSocket.create({ address, port }));
     }
 
-    private broadcastSockets = new Cache<Promise<dgram.Socket>>(ip => this.createBroadcastSocket(ip), 5 * 60 * 1000 /* 5mn */);
+    private broadcastSockets = new Cache<Promise<UdpSocket>>(ip => this.createBroadcastSocket(ip), 5 * 60 * 1000 /* 5mn */);
 
     private constructor(
+        private readonly address: string | undefined,
         private readonly broadcastAddress: string,
         private readonly broadcastPort: number,
-        private readonly serverSocket: dgram.Socket
-    ) { }
+        private readonly serverSocket: UdpSocket,
+    ) {}
 
-    onMessage(listener: (message: Buffer, remoteIp: string) => void) {
-        this.serverSocket.on("message", (message, { address: remoteIp }) => listener(message, remoteIp));
+    onMessage(listener: (message: Buffer, peerAddress: string) => void) {
+        this.serverSocket.onMessage((peerAddress, port, message) => listener(message, peerAddress));
     }
 
-    send(interfaceIp: string, message: Buffer): Promise<void> {
-        return new Promise<void>(async (resolver, rejecter) => {
-            let broadcastSocket = await this.broadcastSockets.get(interfaceIp);
-            broadcastSocket.send(message, this.broadcastPort, this.broadcastAddress, error => {
-                if (error !== null) {
-                    rejecter(error);
-                    return;
-                }
-                resolver();
-            });
-        });
+    async send(interfaceIp: string, message: Buffer) {
+        const broadcastSocket = await this.broadcastSockets.get(interfaceIp);
+        await broadcastSocket.send(this.broadcastAddress, this.broadcastPort, message);
     }
 
-    async createBroadcastSocket(interfaceIp: string): Promise<dgram.Socket> {
-        const result = await createDgramSocket(this.broadcastPort, { type: "udp4", reuseAddr: true });
-        result.setMulticastInterface(interfaceIp);
-        return result;
+    async createBroadcastSocket(interfaceIp: string): Promise<UdpSocket> {
+        return await UdpSocket.create({address: this.address, port: this.broadcastPort, multicastInterface: interfaceIp});
     }
 }

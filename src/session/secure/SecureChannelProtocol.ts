@@ -5,18 +5,22 @@
  */
 
 import { Message } from "../../codec/MessageCodec";
-import { ProtocolHandler } from "../../server/MatterServer";
-import { MessageExchange } from "../../server/MessageExchange";
+import { Protocol } from "../../matter/common/Protocol";
+import { MessageExchange } from "../../matter/common/MessageExchange";
 import { CasePairing } from "./CasePairing";
 import { PasePairing } from "./PasePairing";
-import { MessageType } from "./SecureChannelMessages";
+import { MessageType, SECURE_CHANNEL_PROTOCOL_ID } from "./SecureChannelMessages";
 
-export class SecureChannelHandler implements ProtocolHandler {
+export class SecureChannelProtocol implements Protocol {
 
     constructor(
         private readonly paseCommissioner: PasePairing,
         private readonly caseCommissioner: CasePairing,
     ) {}
+
+    getId(): number {
+        return SECURE_CHANNEL_PROTOCOL_ID;
+    }
 
     onNewExchange(exchange: MessageExchange, message: Message) {
         const messageType = message.payloadHeader.messageType;

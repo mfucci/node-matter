@@ -7,19 +7,24 @@
 import { Crypto } from "../../crypto/Crypto";
 import { SessionManager, UNDEFINED_NODE_ID } from "../SessionManager";
 import { PaseMessenger } from "./PaseMessenger";
-import { ProtocolHandler } from "../../server/MatterServer";
-import { MessageExchange } from "../../server/MessageExchange";
+import { Protocol } from "../../matter/common/Protocol";
+import { MessageExchange } from "../../matter/common/MessageExchange";
 import { PbkdfParameters, Spake2p } from "../../crypto/Spake2p";
+import { SECURE_CHANNEL_PROTOCOL_ID } from "./SecureChannelMessages";
 
 const DEFAULT_PASSCODE_ID = 0;
 const SPAKE_CONTEXT = Buffer.from("CHIP PAKE V1 Commissioning");
 
-export class PasePairing implements ProtocolHandler {
+export class PasePairing implements Protocol {
 
     constructor(
         private readonly setupPinCode: number,
         private readonly pbkdfParameters: PbkdfParameters,
         ) {}
+
+    getId(): number {
+        return SECURE_CHANNEL_PROTOCOL_ID;
+    }
 
     async onNewExchange(exchange: MessageExchange) {
         const messenger = new PaseMessenger(exchange);

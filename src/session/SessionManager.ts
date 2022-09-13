@@ -5,7 +5,7 @@
  */
 
 import { Crypto } from "../crypto/Crypto";
-import { MatterServer } from "../server/MatterServer";
+import { MatterServer } from "../matter/MatterServer";
 import { SecureSession } from "./SecureSession";
 import { Session } from "./Session";
 import { UnsecureSession } from "./UnsecureSession";

@@ -5,17 +5,25 @@
  */
 
 import { Device } from "./model/Device";
-import { ExchangeSocket, MatterServer, Protocol, ProtocolHandler } from "../server/MatterServer";
-import { MessageExchange } from "../server/MessageExchange";
+import { MatterServer } from "../matter/MatterServer";
+import { Protocol } from "../matter/common/Protocol";
+import { ExchangeSocket } from "../matter/common/ExchangeSocket";
+import { MessageExchange } from "../matter/common/MessageExchange";
 import { InteractionMessenger, InvokeRequest, InvokeResponse, ReadRequest, DataReport, SubscribeRequest, SubscribeResponse } from "./InteractionMessenger";
 import { SecureSession } from "../session/SecureSession";
 import { Attribute, Report } from "./model/Attribute";
 import { Session } from "../session/Session";
 
-export class InteractionProtocol implements ProtocolHandler {
+export const INTERACTION_PROTOCOL_ID = 0x0001;
+
+export class InteractionProtocol implements Protocol {
     constructor(
         private readonly device: Device,
     ) {}
+
+    getId() {
+        return INTERACTION_PROTOCOL_ID;
+    }
 
     async onNewExchange(exchange: MessageExchange) {
         await new InteractionMessenger(exchange).handleRequest(
@@ -96,7 +104,7 @@ export class SubscriptionHandler {
     sendReport(report: Report) {
         // TODO: this should be sent to the last discovered address of this node instead of the one used to request the subscription
 
-        const exchange = this.server.initiateExchange(this.session, this.channel, Protocol.INTERACTION_MODEL);
+        const exchange = this.server.initiateExchange(this.session, this.channel, INTERACTION_PROTOCOL_ID);
         new InteractionMessenger(exchange).sendDataReport({
             subscriptionId: this.subscriptionId,
             isFabricFiltered: true,

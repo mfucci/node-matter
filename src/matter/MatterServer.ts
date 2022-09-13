@@ -5,67 +5,61 @@
  */
 
 import { Crypto } from "../crypto/Crypto";
-import { Message, MessageCodec, SessionType } from "../codec/MessageCodec";
+import { MessageCodec, SessionType } from "../codec/MessageCodec";
 import { SessionManager } from "../session/SessionManager";
-import { MessageExchange } from "./MessageExchange";
+import { MessageExchange } from "./common/MessageExchange";
 import { FabricManager } from "../fabric/FabricManager";
-import { MatterMdnsServer } from "../mdns/MatterMdnsServer";
 import { Session } from "../session/Session";
-
-export const enum Protocol {
-    SECURE_CHANNEL = 0x0000,
-    INTERACTION_MODEL = 0x0001,
-}
-
-export interface ExchangeSocket<T> {
-    send(data: T): Promise<void>;
-    getName():string;
-}
-
-export interface Channel {
-    bind(listener: (socket: ExchangeSocket<Buffer>, messageBytes: Buffer) => void): void;
-}
-
-export interface ProtocolHandler {
-    onNewExchange(exchange: MessageExchange, message: Message): void;
-}
+import { Fabric } from "../fabric/Fabric";
+import { NetInterface } from "./common/NetInterface";
+import { ExchangeSocket } from "./common/ExchangeSocket";
+import { Protocol } from "./common/Protocol";
+import { Broadcaster } from "./common/Broadcaster";
 
 export class MatterServer {
-    static async create(deviceName: string, deviceType: number, vendorId: number, productId: number, discriminator: number) {
-        const mdnsServer = await MatterMdnsServer.create();
-        mdnsServer.addRecordsForCommission(deviceName, deviceType, vendorId, productId, discriminator);
-        return new MatterServer(mdnsServer);
-    }
-
-    constructor(
-        private readonly mdnsServer: MatterMdnsServer,
-    ) {}
-
-    private readonly channels = new Array<Channel>();
-    private readonly protocolHandlers = new Map<Protocol, ProtocolHandler>();
+    private readonly broadcasters = new Array<Broadcaster>();
+    private readonly netInterfaces = new Array<NetInterface>();
+    private readonly protocols = new Map<number, Protocol>();
     private readonly exchangeCounter = new ExchangeCounter();
     private readonly messageCounter = new MessageCounter();
     private readonly exchanges = new Map<number, MessageExchange>();
     private readonly sessionManager = new SessionManager(this);
     private readonly fabricManager = new FabricManager();
 
-    addChannel(channel: Channel) {
-        this.channels.push(channel);
+    constructor(
+        private readonly deviceName: string,
+        private readonly deviceType: number,
+        private readonly vendorId: number,
+        private readonly productId: number,
+        private readonly discriminator: number,
+    ) {}
+
+    addBroadcaster (broadcaster: Broadcaster) {
+        broadcaster.setCommissionMode(this.deviceName, this.deviceType, this.vendorId, this.productId, this.discriminator);
+        this.broadcasters.push(broadcaster);
         return this;
     }
 
-    addProtocolHandler(protocol: Protocol, protocolHandler: ProtocolHandler) {
-        this.protocolHandlers.set(protocol, protocolHandler);
+    addNetInterface(netInterface: NetInterface) {
+        this.netInterfaces.push(netInterface);
+        return this;
+    }
+
+    addProtocol(protocol: Protocol) {
+        this.protocols.set(protocol.getId(), protocol);
         return this;
     }
 
     start() {
-        this.channels.forEach(channel => channel.bind((socket, data) => this.onMessage(socket, data)));
-        this.mdnsServer.announce();
+        this.netInterfaces.forEach(netInterface => netInterface.onData((socket, data) => this.onMessage(socket, data)));
+        this.broadcasters.forEach(broadcaster => broadcaster.announce());
     }
 
-    getMdnsServer() {
-        return this.mdnsServer;
+    setFabric(fabric: Fabric) {
+        this.broadcasters.forEach(broadcaster => {
+            broadcaster.setFabric(fabric);
+            broadcaster.announce();
+        });
     }
 
     getSessionManager() {
@@ -99,7 +93,7 @@ export class MatterServer {
         } else {
             const exchange = MessageExchange.fromInitialMessage(session, socket, this.messageCounter, message, () => this.exchanges.delete(exchangeId));
             this.exchanges.set(exchangeId, exchange);
-            const protocolHandler = this.protocolHandlers.get(message.payloadHeader.protocolId);
+            const protocolHandler = this.protocols.get(message.payloadHeader.protocolId);
             if (protocolHandler === undefined) throw new Error(`Unsupported protocol ${message.payloadHeader.protocolId}`);
             protocolHandler.onNewExchange(exchange, message);
         }

@@ -11,7 +11,7 @@ import { NoArgumentsT, NoResponseT } from "../model/Command";
 const CLUSTER_ID = 0x06;
 
 export class OnOffCluster extends Cluster {
-    static Builder = (onCallback: (() => void) | undefined, offCallback: (() => void) | undefined) => (endpointId: number) => new OnOffCluster(endpointId, onCallback, offCallback);
+    static Builder = (onCallback?: (() => void) | undefined, offCallback?: (() => void) | undefined) => (endpointId: number) => new OnOffCluster(endpointId, onCallback, offCallback);
 
     private readonly onOffAttribute;
 

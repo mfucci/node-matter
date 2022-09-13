@@ -8,7 +8,7 @@ import { Message, MessageCodec, Packet } from "../codec/MessageCodec";
 import { Crypto } from "../crypto/Crypto";
 import { Fabric } from "../fabric/Fabric";
 import { SubscriptionHandler } from "../interaction/InteractionProtocol";
-import { MatterServer } from "../server/MatterServer";
+import { MatterServer } from "../matter/MatterServer";
 import { LEBufferWriter } from "../util/LEBufferWriter";
 import { DEFAULT_ACTIVE_RETRANSMISSION_TIMEOUT_MS, DEFAULT_IDLE_RETRANSMISSION_TIMEOUT_MS, DEFAULT_RETRANSMISSION_RETRIES, Session } from "./Session";
 

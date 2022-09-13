@@ -5,20 +5,21 @@
  */
 
 import { Crypto } from "../../crypto/Crypto";
-import { MatterServer, ProtocolHandler } from "../../server/MatterServer";
-import { MessageExchange } from "../../server/MessageExchange";
+import { MatterServer } from "../../matter/MatterServer";
+import { Protocol } from "../../matter/common/Protocol";
+import { MessageExchange } from "../../matter/common/MessageExchange";
 import { CaseMessenger } from "./CaseMessenger";
 import { TlvObjectCodec } from "../../codec/TlvObjectCodec";
 import { TagBasedEcryptionDataT, TagBasedSignatureDataT } from "./CaseMessages";
-import { SessionManager } from "../SessionManager";
 import { CertificateT } from "../../fabric/TlvCertificate";
+import { SECURE_CHANNEL_PROTOCOL_ID } from "./SecureChannelMessages";
 
 const KDFSR2_INFO = Buffer.from("Sigma2");
 const KDFSR3_INFO = Buffer.from("Sigma3");
 const TBE_DATA2_NONCE = Buffer.from("NCASE_Sigma2N");
 const TBE_DATA3_NONCE = Buffer.from("NCASE_Sigma3N");
 
-export class CasePairing implements ProtocolHandler {
+export class CasePairing implements Protocol {
     async onNewExchange(exchange: MessageExchange) {
         const messenger = new CaseMessenger(exchange);
         try {
@@ -27,6 +28,10 @@ export class CasePairing implements ProtocolHandler {
             console.log("An error occured during the commissioning", error);
             await messenger.sendError();
         }
+    }
+
+    getId(): number {
+        return SECURE_CHANNEL_PROTOCOL_ID;
     }
 
     private async handleSigma1(matterServer: MatterServer, messenger: CaseMessenger) {

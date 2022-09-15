@@ -9,12 +9,13 @@
 export class Cache<T> {
     private readonly values = new Map<string, T>();
     private readonly timestamps = new Map<string, number>();
+    private readonly intervalId: NodeJS.Timeout;
 
     constructor(
         private readonly generator: (...params: string[]) => T,
         private readonly expirationMs: number,
     ) {
-        setInterval(() => this.expire(), expirationMs);
+        this.intervalId = setInterval(() => this.expire(), expirationMs);
     }
 
     get(...params: string[]) {
@@ -31,6 +32,11 @@ export class Cache<T> {
     clear() {
         this.values.clear();
         this.timestamps.clear();
+    }
+
+    close() {
+        this.clear();
+        clearInterval(this.intervalId);
     }
 
     private expire() {

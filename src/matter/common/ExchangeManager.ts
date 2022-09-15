@@ -1,6 +1,6 @@
 import { MessageCodec, SessionType } from "../../codec/MessageCodec";
 import { Crypto } from "../../crypto/Crypto";
-import { NetInterface } from "../../net/NetInterface";
+import { NetInterface, NetListener } from "../../net/NetInterface";
 import { Session } from "../../session/Session";
 import { SessionManager } from "../../session/SessionManager";
 import { ExchangeSocket } from "./ExchangeSocket";
@@ -12,13 +12,14 @@ export class ExchangeManager<ContextT> {
     private readonly messageCounter = new MessageCounter();
     private readonly exchanges = new Map<number, MessageExchange<ContextT>>();
     private readonly protocols = new Map<number, Protocol<ContextT>>();
+    private readonly netListeners = new Array<NetListener>();
 
     constructor(
         private readonly sessionManager: SessionManager<ContextT>,
     ) {}
 
     addNetInterface(netInterface: NetInterface) {
-        netInterface.onData((socket, data) => this.onMessage(socket, data));
+        this.netListeners.push(netInterface.onData((socket, data) => this.onMessage(socket, data)));
     }
 
     addProtocol(protocol: Protocol<ContextT>) {
@@ -31,6 +32,13 @@ export class ExchangeManager<ContextT> {
         // Ensure exchangeIds are not colliding in the Map by adding 1 in front of exchanges initiated by this device.
         this.exchanges.set(exchangeId & 0x10000, exchange);
         return exchange;
+    }
+
+    close() {
+        this.netListeners.forEach(netListener => netListener.close());
+        this.netListeners.length = 0;
+        [...this.exchanges.values()].forEach(exchange => exchange.close());
+        this.exchanges.clear();
     }
 
     private onMessage(socket: ExchangeSocket<Buffer>, messageBytes: Buffer) {

@@ -16,8 +16,7 @@ const MATTER_SERVICE_QNAME = "_matter._tcp.local";
 
 export class MdnsBroadcaster implements Broadcaster {
     static async create(address?: string) {
-        const mdnsServer = await MdnsServer.create(address);
-        return new MdnsBroadcaster(mdnsServer);
+        return new MdnsBroadcaster(await MdnsServer.create(address));
     }
 
     constructor(
@@ -94,5 +93,9 @@ export class MdnsBroadcaster implements Broadcaster {
 
     async announce() {
         await this.mdnsServer.announce();
+    }
+
+    close() {
+        this.mdnsServer.close();
     }
 }

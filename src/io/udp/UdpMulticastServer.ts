@@ -16,7 +16,7 @@ export class UdpMulticastServer {
         return new UdpMulticastServer(address, broadcastAddress, port, await UdpSocket.create({ address, port }));
     }
 
-    private broadcastSockets = new Cache<Promise<UdpSocket>>(ip => this.createBroadcastSocket(ip), 5 * 60 * 1000 /* 5mn */);
+    private readonly broadcastSockets = new Cache<Promise<UdpSocket>>(ip => this.createBroadcastSocket(ip), 5 * 60 * 1000 /* 5mn */);
 
     private constructor(
         private readonly address: string | undefined,
@@ -26,7 +26,7 @@ export class UdpMulticastServer {
     ) {}
 
     onMessage(listener: (message: Buffer, peerAddress: string) => void) {
-        this.serverSocket.onMessage((peerAddress, port, message) => listener(message, peerAddress));
+       this.serverSocket.onData((peerAddress, port, message) => listener(message, peerAddress));
     }
 
     async send(interfaceIp: string, message: Buffer) {
@@ -36,5 +36,10 @@ export class UdpMulticastServer {
 
     async createBroadcastSocket(interfaceIp: string): Promise<UdpSocket> {
         return await UdpSocket.create({address: this.address, port: this.broadcastPort, multicastInterface: interfaceIp});
+    }
+
+    close() {
+        this.serverSocket.close();
+        this.broadcastSockets.close();
     }
 }

@@ -31,7 +31,9 @@ export class PaseClient {
 
         // All good! Creating the secure session
         await messenger.waitForSuccess();
-        await client.createSecureSession(sessionId, UNDEFINED_NODE_ID, UNDEFINED_NODE_ID, peerSessionId, Ke, Buffer.alloc(0), true);
+        const secureSession = await client.createSecureSession(sessionId, UNDEFINED_NODE_ID, UNDEFINED_NODE_ID, peerSessionId, Ke, Buffer.alloc(0), true);
         console.log(`Pase client: Paired succesfully with ${messenger.getChannelName()}`);
+
+        return secureSession;
     }
 }

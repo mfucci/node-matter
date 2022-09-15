@@ -23,7 +23,6 @@ class MessageChannel<ContextT> implements ExchangeSocket<Message> {
 }
 
 export class MessageExchange<ContextT> {
-    private readonly messageCodec = new MessageCodec();
     readonly channel: MessageChannel<ContextT>;
     private readonly activeRetransmissionTimeoutMs: number;
     private readonly retransmissionRetries: number;
@@ -121,9 +120,9 @@ export class MessageExchange<ContextT> {
         }
         if (messageType === MessageType.StandaloneAck) {
             // This indicates the end of this message exchange
-            if (requiresAck) throw new Error("Standalone acks should but require an ack");
+            if (requiresAck) throw new Error("Standalone acks should not require an ack");
             // Wait some time before closing this exchange to handle potential retransmissions
-            setTimeout(() => this.closeExchange(), this.activeRetransmissionTimeoutMs * 3);
+            setTimeout(() => this.closeInternal(), this.activeRetransmissionTimeoutMs * 3);
             return;
         }
         if (requiresAck) {
@@ -147,7 +146,7 @@ export class MessageExchange<ContextT> {
                 protocolId: this.protocolId,
                 messageType,
                 isInitiatorMessage: this.isInitiator,
-                requiresAck: true,
+                requiresAck: messageType === MessageType.StandaloneAck ? false : true,
                 ackedMessageId: this.receivedMessageToAck?.packetHeader.messageId,
             },
             payload,
@@ -178,7 +177,15 @@ export class MessageExchange<ContextT> {
         this.retransmissionTimeoutId = setTimeout(() => this.retransmitMessage(message, retransmissionCount), this.activeRetransmissionTimeoutMs);
     }
 
-    private closeExchange() {
+    close() {
+        if (this.receivedMessageToAck !== undefined) {
+            this.send(MessageType.StandaloneAck, Buffer.alloc(0));
+        }
+        setTimeout(() => this.closeInternal(), this.activeRetransmissionTimeoutMs * 3);
+    }
+
+    private closeInternal() {
+        clearTimeout(this.retransmissionTimeoutId);
         this.messagesQueue.close();
         this.closeCallback();
     }

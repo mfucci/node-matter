@@ -5,7 +5,7 @@
  */
 
 import assert from "assert";
-import { BasicCluster } from "../../src/interaction/cluster/BasicCluster";
+import { BasicClusterServer } from "../../src/interaction/cluster/BasicCluster";
 import { TlvType } from "../../src/codec/TlvCodec";
 import { TlvTag } from "../../src/codec/TlvTag";
 import { InteractionProtocol } from "../../src/interaction/InteractionProtocol";
@@ -64,7 +64,7 @@ describe("InteractionProtocol", () => {
         it("replies with attribute values", () => {
             const interactionProtocol = new InteractionProtocol(new Device([
                 new Endpoint(0, DEVICE.ROOT, [
-                    BasicCluster.Builder({ vendorName: "vendor", vendorId: 1, productName: "product", productId: 2 }),
+                    BasicClusterServer.Builder({ vendorName: "vendor", vendorId: 1, productName: "product", productId: 2 }),
                 ])
             ]));
 

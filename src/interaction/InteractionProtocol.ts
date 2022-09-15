@@ -9,7 +9,7 @@ import { MatterServer } from "../matter/MatterServer";
 import { Protocol } from "../matter/common/Protocol";
 import { ExchangeSocket } from "../matter/common/ExchangeSocket";
 import { MessageExchange } from "../matter/common/MessageExchange";
-import { InteractionMessenger, InvokeRequest, InvokeResponse, ReadRequest, DataReport, SubscribeRequest, SubscribeResponse } from "./InteractionMessenger";
+import { InteractionServerMessenger, InvokeRequest, InvokeResponse, ReadRequest, DataReport, SubscribeRequest, SubscribeResponse } from "./InteractionMessenger";
 import { SecureSession } from "../session/SecureSession";
 import { Attribute, Report } from "./model/Attribute";
 import { Session } from "../session/Session";
@@ -26,7 +26,7 @@ export class InteractionProtocol implements Protocol<MatterServer> {
     }
 
     async onNewExchange(exchange: MessageExchange<MatterServer>) {
-        await new InteractionMessenger(exchange).handleRequest(
+        await new InteractionServerMessenger(exchange).handleRequest(
             readRequest => this.handleReadRequest(exchange, readRequest),
             subscribeRequest => this.handleSubscribeRequest(exchange, subscribeRequest),
             invokeRequest => this.handleInvokeRequest(exchange, invokeRequest),
@@ -105,7 +105,7 @@ export class SubscriptionHandler {
         // TODO: this should be sent to the last discovered address of this node instead of the one used to request the subscription
 
         const exchange = this.server.initiateExchange(this.session, this.channel, INTERACTION_PROTOCOL_ID);
-        new InteractionMessenger(exchange).sendDataReport({
+        new InteractionServerMessenger(exchange).sendDataReport({
             subscriptionId: this.subscriptionId,
             isFabricFiltered: true,
             interactionModelRevision: 1,

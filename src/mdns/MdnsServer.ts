@@ -14,8 +14,7 @@ const MDNS_BROADCAST_PORT = 5353;
 
 export class MdnsServer {
     static async create(address?: string) {
-        const multicastServer = await UdpMulticastServer.create({address, broadcastAddress: MDNS_BROADCAST_IP, port: MDNS_BROADCAST_PORT});
-        return new MdnsServer(multicastServer);
+        return new MdnsServer(await UdpMulticastServer.create({address, broadcastAddress: MDNS_BROADCAST_IP, port: MDNS_BROADCAST_PORT}));
     }
 
     constructor(
@@ -53,16 +52,21 @@ export class MdnsServer {
         }));
     }
 
+    setRecordsGenerator(generator: (ip: string, mac: string) => Record<any>[]) {
+        this.records.clear();
+        this.recordsGenerator = generator;
+    }
+
+    close() {
+        this.records.close();
+        this.multicastServer.close();
+    }
+
     private queryRecords({name, recordType}: {name: string, recordType: RecordType}, records: Record<any>[]) {
         if (recordType === RecordType.ANY) {
             return records.filter(record => record.name === name);
         } else {
             return records.filter(record => record.name === name && record.recordType === recordType);
         }
-    }
-
-    setRecordsGenerator(generator: (ip: string, mac: string) => Record<any>[]) {
-        this.records.clear();
-        this.recordsGenerator = generator;
     }
 }

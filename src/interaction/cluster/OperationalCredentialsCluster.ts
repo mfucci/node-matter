@@ -12,6 +12,7 @@ import { NoResponseT } from "../model/Command";
 import { Session } from "../../session/Session";
 import { AddNocRequestT, AddTrustedRootCertificateRequestT, AttestationResponseT, AttestationT, CertificateChainRequestT, CertificateChainResponseT, CertificateSigningRequestT, CertificateType, CsrResponseT, RequestWithNonceT, Status, StatusResponseT } from "./OperationalCredentialsMessages";
 import { MatterServer } from "../../matter/MatterServer";
+import { ClusterDef, CommandDef } from "./ClusterDef";
 
 interface OperationalCredentialsClusterConf {
     devicePrivateKey: Buffer,
@@ -20,6 +21,7 @@ interface OperationalCredentialsClusterConf {
     certificateDeclaration: Buffer,
 }
 
+// TODO: auto-generate this from OperationalCredentialsClusterDef
 export class OperationalCredentialsCluster extends Cluster<MatterServer> {
     static Builder = (conf: OperationalCredentialsClusterConf) => (endpointId: number) => new OperationalCredentialsCluster(endpointId, conf);
 
@@ -89,3 +91,16 @@ export class OperationalCredentialsCluster extends Cluster<MatterServer> {
         return Crypto.sign(this.conf.devicePrivateKey, [data, session.getAttestationChallengeKey()]);
     }
 }
+
+export const OperationalCredentialsClusterDef = ClusterDef(
+    0x3e,
+    "Operational Credentials",
+    {},
+    {
+        requestAttestation: CommandDef(0, RequestWithNonceT, 1, AttestationResponseT),
+        requestCertificateChain: CommandDef(2, CertificateChainRequestT, 3, CertificateChainResponseT),
+        requestCsr: CommandDef(4, RequestWithNonceT, 5, CsrResponseT),
+        addNoc: CommandDef(6, AddNocRequestT, 8, StatusResponseT),
+        addTrustedRootCertificate: CommandDef(11, AddTrustedRootCertificateRequestT, 11, NoResponseT),
+    },
+)

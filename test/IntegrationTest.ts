@@ -10,7 +10,7 @@ import { MatterClient } from "../src/matter/MatterClient";
 import { Crypto } from "../src/crypto/Crypto";
 import { DEVICE } from "../src/Devices";
 import { UdpSocketFake } from "../src/fakes/network/UdpSocketFake";
-import { BasicCluster } from "../src/interaction/cluster/BasicCluster";
+import { BasicClusterServer } from "../src/interaction/cluster/BasicCluster";
 import { GeneralCommissioningCluster } from "../src/interaction/cluster/GeneralCommissioningCluster";
 import { OnOffCluster } from "../src/interaction/cluster/OnOffCluster";
 import { OperationalCredentialsCluster } from "../src/interaction/cluster/OperationalCredentialsCluster";
@@ -52,28 +52,38 @@ const setupPin = 20202021;
 const matterPort = 5540;
 
 describe("Integration", () => {
+    var server: MatterServer;
+    var client: MatterClient;
+
+    beforeEach(async () => {
+        client = new MatterClient(await UdpInterface.create(5540, CLIENT_IP));
+        server = new MatterServer(deviceName, deviceType, vendorId, productId, discriminator)
+            .addNetInterface(await UdpInterface.create(matterPort, SERVER_IP))
+            .addBroadcaster(await MdnsBroadcaster.create(SERVER_IP))
+            .addProtocol(new SecureChannelProtocol(
+                    new PaseServer(setupPin, { iteration: 1000, salt: Crypto.getRandomData(32) }),
+                    new CasePairing(),
+                ))
+            .addProtocol(new InteractionProtocol(new Device([
+                new Endpoint(0x00, DEVICE.ROOT, [
+                    BasicClusterServer.Builder({ vendorName, vendorId, productName, productId }),
+                    GeneralCommissioningCluster.Builder(),
+                    OperationalCredentialsCluster.Builder({devicePrivateKey: DevicePrivateKey, deviceCertificate: DeviceCertificate, deviceIntermediateCertificate: ProductIntermediateCertificate, certificateDeclaration: CertificateDeclaration}),
+                ]),
+                new Endpoint(0x01, DEVICE.ON_OFF_LIGHT, [
+                    OnOffCluster.Builder(),
+                ]),
+            ])));
+        server.start();
+    });
+
+    afterEach(() => {
+        server.stop();
+        client.close();
+    });
+
     context("commission", () => {
         it("the client commissions a new device", async () => {
-            (new MatterServer(deviceName, deviceType, vendorId, productId, discriminator))
-                .addNetInterface(await UdpInterface.create(matterPort, SERVER_IP))
-                .addBroadcaster(await MdnsBroadcaster.create(SERVER_IP))
-                .addProtocol(new SecureChannelProtocol(
-                        new PaseServer(setupPin, { iteration: 1000, salt: Crypto.getRandomData(32) }),
-                        new CasePairing(),
-                    ))
-                .addProtocol(new InteractionProtocol(new Device([
-                    new Endpoint(0x00, DEVICE.ROOT, [
-                        BasicCluster.Builder({ vendorName, vendorId, productName, productId }),
-                        GeneralCommissioningCluster.Builder(),
-                        OperationalCredentialsCluster.Builder({devicePrivateKey: DevicePrivateKey, deviceCertificate: DeviceCertificate, deviceIntermediateCertificate: ProductIntermediateCertificate, certificateDeclaration: CertificateDeclaration}),
-                    ]),
-                    new Endpoint(0x01, DEVICE.ON_OFF_LIGHT, [
-                        OnOffCluster.Builder(),
-                    ]),
-                ])))
-                .start()
-
-            const client = new MatterClient(await UdpInterface.create(5540, CLIENT_IP));
             await client.commission(SERVER_IP, matterPort, discriminator, setupPin);
 
             assert.ok(true);

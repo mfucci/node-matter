@@ -71,4 +71,9 @@ export class MatterServer {
     initiateExchange(session: Session<MatterServer>, channel: ExchangeSocket<Buffer>, protocolId: number) {
         return this.exchangeManager.initiateExchange(session, channel, protocolId);
     }
+
+    stop() {
+        this.exchangeManager.close();
+        this.broadcasters.forEach(broadcaster => broadcaster.close());
+    }
 }

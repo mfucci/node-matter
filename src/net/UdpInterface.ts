@@ -6,11 +6,11 @@
 
 import { UdpSocket } from '../io/udp/UdpSocket';
 import { ExchangeSocket } from "../matter/common/ExchangeSocket";
-import { NetInterface } from "./NetInterface";
+import { NetInterface, NetListener } from "./NetInterface";
 
 export class UdpInterface implements NetInterface {
 
-    static async create(port: number = 5540, address?: string) {
+    static async create(port: number, address?: string) {
         return new UdpInterface(await UdpSocket.create({port, address}));
     }
 
@@ -22,9 +22,8 @@ export class UdpInterface implements NetInterface {
         return Promise.resolve(new UdpConnection(this.server, address, port));
     }
 
-    onData(listener: (socket: ExchangeSocket<Buffer>, messageBytes: Buffer) => void) {
-        this.server.onMessage((peerAddress, peerPort, data) => listener(new UdpConnection(this.server, peerAddress, peerPort), data));
-        console.log("Matter server listening");
+    onData(listener: (socket: ExchangeSocket<Buffer>, messageBytes: Buffer) => void): NetListener {
+        return this.server.onData((peerAddress, peerPort, data) => listener(new UdpConnection(this.server, peerAddress, peerPort), data));
     }
 }
 

@@ -15,7 +15,7 @@ import { CasePairing } from "./session/secure/CasePairing";
 import { InteractionProtocol } from "./interaction/InteractionProtocol";
 import { Device } from "./interaction/model/Device";
 import { Endpoint } from "./interaction/model/Endpoint";
-import { BasicCluster } from "./interaction/cluster/BasicCluster";
+import { BasicClusterServer } from "./interaction/cluster/BasicCluster";
 import { GeneralCommissioningCluster } from "./interaction/cluster/GeneralCommissioningCluster";
 import { OperationalCredentialsCluster } from "./interaction/cluster/OperationalCredentialsCluster";
 import { OnOffCluster } from "./interaction/cluster/OnOffCluster";
@@ -71,7 +71,7 @@ class Main {
                 ))
             .addProtocol(new InteractionProtocol(new Device([
                 new Endpoint(0x00, DEVICE.ROOT, [
-                    BasicCluster.Builder({ vendorName, vendorId, productName, productId }),
+                    BasicClusterServer.Builder({ vendorName, vendorId, productName, productId }),
                     GeneralCommissioningCluster.Builder(),
                     OperationalCredentialsCluster.Builder({devicePrivateKey: DevicePrivateKey, deviceCertificate: DeviceCertificate, deviceIntermediateCertificate: ProductIntermediateCertificate, certificateDeclaration: CertificateDeclaration}),
                 ]),

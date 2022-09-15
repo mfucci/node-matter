@@ -28,8 +28,15 @@ export class UdpSocketNode extends UdpSocket{
         super();
     }
 
-    onMessage(listener: (peerAddress: string, peerPort: number, data: Buffer) => void) {
-        this.socket.on("message", (data, { address, port }) => listener(address, port, data));
+    onData(listener: (peerAddress: string, peerPort: number, data: Buffer) => void) {
+        const messageListener = (data: Buffer, { address, port }: { address: string, port: number }) => listener(address, port, data);
+
+        this.socket.on("message", messageListener);
+        return {
+            close: () => {
+                this.socket.removeListener("message", messageListener);
+            }
+        };
     }
 
     async send(address: string, port: number, data: Buffer) {
@@ -42,5 +49,9 @@ export class UdpSocketNode extends UdpSocket{
                 resolve();
             });
         });
+    }
+
+    close() {
+        this.socket.close();
     }
 }

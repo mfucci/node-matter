@@ -6,9 +6,8 @@
 
 import { TlvObjectCodec } from "../codec/TlvObjectCodec";
 import { Crypto, KeyPair } from "../crypto/Crypto";
-import { X509 } from "../crypto/X509";
 import { LEBufferWriter } from "../util/LEBufferWriter";
-import { CertificateT } from "./TlvCertificate";
+import { CertificateManager, NocCertificateT, RootCertificateT } from "../crypto/CertificateManager";
 
 const COMPRESSED_FABRIC_ID_INFO = Buffer.from("CompressedFabric");
 const GROUP_SECURITY_INFO = Buffer.from("GroupKey v1.0");
@@ -47,7 +46,7 @@ export class Fabric {
         writter.writeUInt64(BigInt(this.id));
         writter.writeUInt64(BigInt(this.nodeId));
         const elements = writter.toBuffer();
-        return Crypto.hmac(this.identityProtectionKey, elements)
+        return Crypto.hmac(this.identityProtectionKey, elements);
     }
 }
 
@@ -63,17 +62,17 @@ export class FabricBuilder {
     private identityProtectionKey?: Buffer;
 
     createCertificateSigningRequest() {
-        return X509.createCertificateSigningRequest(this.keyPair);
+        return CertificateManager.createCertificateSigningRequest(this.keyPair);
     }
 
     setRootCert(certificate: Buffer) {
         this.rootCert = certificate;
-        this.rootPublicKey = TlvObjectCodec.decode(certificate, CertificateT).ellipticCurvePublicKey;
+        this.rootPublicKey = TlvObjectCodec.decode(certificate, RootCertificateT).ellipticCurvePublicKey;
     }
 
     setNewOpCert(nocCerticate: Buffer) {
         this.newOpCert = nocCerticate;
-        const {subject: {nodeId, fabricId} } = TlvObjectCodec.decode(nocCerticate, CertificateT);
+        const {subject: {nodeId, fabricId} } = TlvObjectCodec.decode(nocCerticate, NocCertificateT);
         this.fabricId = fabricId;
         this.nodeId = nodeId;
     }

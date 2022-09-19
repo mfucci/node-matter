@@ -6,8 +6,7 @@
 
 import assert from "assert";
 import { BasicClusterServer } from "../../src/interaction/cluster/BasicCluster";
-import { TlvType } from "../../src/codec/TlvCodec";
-import { TlvTag } from "../../src/codec/TlvTag";
+import { TlvTag, TlvType } from "../../src/codec/TlvCodec";
 import { InteractionProtocol } from "../../src/interaction/InteractionProtocol";
 import { ReadRequest, DataReport } from "../../src/interaction/InteractionMessenger";
 import { Device } from "../../src/interaction/model/Device";

@@ -5,10 +5,9 @@
  */
 
 import assert from "assert";
-import { TlvType } from "../../src/codec/TlvCodec";
+import { TlvTag, TlvType } from "../../src/codec/TlvCodec";
 import { BooleanT, ByteStringT, JsType, ObjectT, Field, TlvObjectCodec, UnsignedIntT, OptionalField } from "../../src/codec/TlvObjectCodec";
 import { DataReportT } from "../../src/interaction/InteractionMessages";
-import { TlvTag } from "../../src/codec/TlvTag";
 
 
 const TEST_TEMPLATE = ObjectT({

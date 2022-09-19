@@ -8,13 +8,17 @@ import { INTERACTION_PROTOCOL_ID } from "../interaction/InteractionProtocol";
 import { BasicClusterDef } from "../interaction/cluster/BasicCluster";
 import { CommissioningError, GeneralCommissioningClusterDef, RegulatoryLocationType, SuccessFailureReponse } from "../interaction/cluster/GeneralCommissioningCluster";
 import { OperationalCredentialsClusterDef } from "../interaction/cluster/OperationalCredentialsCluster";
-import { CertificateType } from "../interaction/cluster/OperationalCredentialsMessages";
-import { Crypto } from "../crypto/Crypto";
+import { CertificateSigningRequestT, CertificateType } from "../interaction/cluster/OperationalCredentialsMessages";
+import { Crypto, KeyPair } from "../crypto/Crypto";
+import { CertificateManager, jsToMatterDate, NocCertificate, NocCertificateT, RootCertificate, RootCertificateT } from "../crypto/CertificateManager";
+import { TlvObjectCodec } from "../codec/TlvObjectCodec";
+import { BYTES_KEY, DerCodec, EcdsaWithSHA256_X962, ELEMENTS_KEY, OBJECT_ID_KEY } from "../codec/DerCodec";
 
 export class MatterClient {
     private readonly sessionManager = new SessionManager(this);
     private readonly exchangeManager = new ExchangeManager<MatterClient>(this.sessionManager);
     private readonly paseClient = new PaseClient();
+    private readonly certificateManager = new RootCertificateManager();
 
     constructor(
         private readonly netInterface: NetInterface,
@@ -43,11 +47,29 @@ export class MatterClient {
         
         const operationalCredentialsClusterClient = ClusterClient(interactionClient, 0, OperationalCredentialsClusterDef);
         const { certificate: deviceAttestation } = await operationalCredentialsClusterClient.requestCertificateChain({ type: CertificateType.DeviceAttestation });
+        // TODO: extract device public key from deviceAttestation
         const { certificate: productAttestation } = await operationalCredentialsClusterClient.requestCertificateChain({ type: CertificateType.ProductAttestationIntermediate });
+        // TODO: validate deviceAttestation and productAttestation
         const { elements: attestationElements, signature: attestationSignature } = await operationalCredentialsClusterClient.requestAttestation({ nonce: Crypto.getRandomData(16) });
+        // TODO: validate attestationSignature using device public key 
         const { elements: csrElements, signature: csrSignature } = await operationalCredentialsClusterClient.requestCsr({ nonce: Crypto.getRandomData(16) });
-        // TODO await operationalCredentialsClusterClient.addTrustedRootCertificate({ certificate:  });
-        // TODO await operationalCredentialsClusterClient.addNoc({ nocCert, icaCert, ipkValue, adminVendorId, caseAdminNode });
+        // TOTO: validate csrSignature using device public key
+        const { csr } = TlvObjectCodec.decode(csrElements, CertificateSigningRequestT);
+        const operationalPublicKey = CertificateManager.getPublicKeyFromCsr(csr);
+        
+        await operationalCredentialsClusterClient.addTrustedRootCertificate({ certificate: this.certificateManager.getRootCert() });
+        const fabricId = BigInt(1);
+        const nodeId = BigInt(0);
+        const peerNodeId = BigInt(1);
+        const ipkValue = Crypto.getRandomData(16);
+        const adminVendorId = 752;
+        await operationalCredentialsClusterClient.addNoc({
+            nocCert: this.certificateManager.generateNoc(operationalPublicKey, fabricId, peerNodeId),
+            icaCert: Buffer.alloc(0),
+            ipkValue,
+            adminVendorId,
+            caseAdminNode: nodeId,
+        });
     }
 
     private ensureSuccess({ errorCode, debugText }: SuccessFailureReponse) {
@@ -65,5 +87,63 @@ export class MatterClient {
 
     close() {
         this.exchangeManager.close();
+    }
+}
+
+class RootCertificateManager {
+    private readonly rootCertId = 0;
+    private readonly rootKeyPair = Crypto.createKeyPair();
+    private readonly rootKeyIdentifier = Crypto.hash(this.rootKeyPair.publicKey);
+    private readonly rootCertBytes = this.generateRootCert();
+    private nextCertificateId = 1;
+
+    getRootCert() {
+        return this.rootCertBytes;
+    }
+
+    private generateRootCert(): Buffer {
+        const unsignedCertificate = {
+            serialNumber: Buffer.alloc(1, this.rootCertId),
+            signatureAlgorithm: 1 /* EcdsaWithSHA256 */ ,
+            publicKeyAlgorithm: 1 /* EC */,
+            ellipticCurveIdentifier: 1 /* P256v1 */,
+            issuer: { rcacId: this.rootCertId },
+            notBefore: jsToMatterDate(new Date(), -1),
+            notAfter: jsToMatterDate(new Date(), 10),
+            subject: { rcacId: this.rootCertId },
+            ellipticCurvePublicKey: this.rootKeyPair.publicKey,
+            extensions: {
+                basicConstraints: { isCa: true },
+                keyUsage: 96,
+                subjectKeyIdentifier: this.rootKeyIdentifier,
+                authorityKeyIdentifier: this.rootKeyIdentifier,
+            },
+        };
+        const signature = Crypto.sign(this.rootKeyPair.privateKey, CertificateManager.rootCertToAsn1(unsignedCertificate));
+        return TlvObjectCodec.encode({ ...unsignedCertificate, signature }, RootCertificateT);
+    }
+    
+    generateNoc(publicKey: Buffer, fabricId: bigint, nodeId: bigint): Buffer {
+        const certId = this.nextCertificateId++;
+        const unsignedCertificate = {
+            serialNumber: Buffer.alloc(1, certId), // TODO: figure out what should happen if certId > 255
+            signatureAlgorithm: 1 /* EcdsaWithSHA256 */ ,
+            publicKeyAlgorithm: 1 /* EC */,
+            ellipticCurveIdentifier: 1 /* P256v1 */,
+            issuer: { rcacId: this.rootCertId },
+            notBefore: jsToMatterDate(new Date(), -1),
+            notAfter: jsToMatterDate(new Date(), 10),
+            subject: { fabricId, nodeId },
+            ellipticCurvePublicKey: publicKey,
+            extensions: {
+                basicConstraints: { isCa: false },
+                keyUsage: 1,
+                extendedKeyUsage: [ 2, 1 ],
+                subjectKeyIdentifier: Crypto.hash(publicKey),
+                authorityKeyIdentifier: this.rootKeyIdentifier,
+            },
+        };
+        const signature = Crypto.sign(this.rootKeyPair.privateKey, CertificateManager.nocCertToAsn1(unsignedCertificate));
+        return TlvObjectCodec.encode({ ...unsignedCertificate, signature }, NocCertificateT);
     }
 }

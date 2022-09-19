@@ -5,7 +5,7 @@
  */
 
 import assert from "assert";
-import { DerCodec, END_MARKER } from "../../src/codec/DerCodec";
+import { ContextTagged, DerCodec } from "../../src/codec/DerCodec";
 
 const DECODED = {
     request: {
@@ -23,7 +23,7 @@ const DECODED = {
             },
             bytes: Buffer.from("00044BD687ABD29B59D8B12E8C6614BD1664ADB2D402455B6CA3EF4E581E3BE344B83212E614F27EA4EEC8F31C75747438739B1D451A7EAB3A30542A0A7D1882A459", "hex"),
         },
-        endSignedBytes: END_MARKER,
+        endSignedBytes: ContextTagged(0),
     },
     signAlgorithm: {
         algorithm: {_objectId: Buffer.from("2A8648CE3D040302", "hex")}

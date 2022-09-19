@@ -11,7 +11,7 @@ import { MessageExchange } from "../../matter/common/MessageExchange";
 import { CaseMessenger } from "./CaseMessenger";
 import { TlvObjectCodec } from "../../codec/TlvObjectCodec";
 import { TagBasedEcryptionDataT, TagBasedSignatureDataT } from "./CaseMessages";
-import { CertificateT } from "../../fabric/TlvCertificate";
+import { NocCertificateT, RootCertificateT } from "../../crypto/CertificateManager";
 import { SECURE_CHANNEL_PROTOCOL_ID } from "./SecureChannelMessages";
 
 const KDFSR2_INFO = Buffer.from("Sigma2");
@@ -66,8 +66,7 @@ export class CasePairing implements Protocol<MatterServer> {
         const { newOpCert: peerNewOpCert, intermediateCACert: peerIntermediateCACert, signature: peerSignature } = TlvObjectCodec.decode(peerEncryptedData, TagBasedEcryptionDataT);
         fabric.verifyCredentials(peerNewOpCert, peerIntermediateCACert);
         const peerSignatureData = TlvObjectCodec.encode({ newOpCert: peerNewOpCert, intermediateCACert: peerIntermediateCACert, ecdhPublicKey: peerEcdhPublicKey, peerEcdhPublicKey: ecdhPublicKey }, TagBasedSignatureDataT);
-        const { ellipticCurvePublicKey: peerPublicKey, subject: { nodeId: peerNodeId } } = TlvObjectCodec.decode(peerNewOpCert, CertificateT);
-        if (peerNodeId === undefined) throw new Error("Missing nodeId in peer noc certificate"); 
+        const { ellipticCurvePublicKey: peerPublicKey, subject: { nodeId: peerNodeId } } = TlvObjectCodec.decode(peerNewOpCert, NocCertificateT);
         Crypto.verify(peerPublicKey, peerSignatureData, peerSignature);
 
         // All good! Create secure session

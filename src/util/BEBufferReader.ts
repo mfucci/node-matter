@@ -65,6 +65,10 @@ export class BEBufferReader {
         return this.buffer.subarray(this.offset);
     }
 
+    getRemainingBytesCount() {
+        return this.buffer.length - this.offset;
+    }
+
     getReadBytes() {
         return this.buffer.subarray(0, this.offset);
     }

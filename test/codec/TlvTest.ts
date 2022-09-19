@@ -5,8 +5,7 @@
  */
 
 import assert from "assert";
-import { TlvType, TlvCodec } from "../../src/codec/TlvCodec";
-import { TlvTag } from "../../src/codec/TlvTag";
+import { TlvType, TlvCodec, TlvTag } from "../../src/codec/TlvCodec";
 
 const { Structure, ByteString, UnsignedInt, Boolean, List, Array } = TlvType;
 

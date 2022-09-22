@@ -39,12 +39,12 @@ export class Fabric {
         return;
     }
 
-    getDestinationId(random: Buffer) {
+    getDestinationId(nodeId: bigint, random: Buffer) {
         const writter = new LEBufferWriter();
         writter.writeBytes(random);
         writter.writeBytes(this.rootPublicKey);
-        writter.writeUInt64(BigInt(this.id));
-        writter.writeUInt64(BigInt(this.nodeId));
+        writter.writeUInt64(this.id);
+        writter.writeUInt64(nodeId);
         const elements = writter.toBuffer();
         return Crypto.hmac(this.identityProtectionKey, elements);
     }
@@ -61,6 +61,10 @@ export class FabricBuilder {
     private rootPublicKey?: Buffer;
     private identityProtectionKey?: Buffer;
 
+    getPublicKey() {
+        return this.keyPair.publicKey;
+    }
+
     createCertificateSigningRequest() {
         return CertificateManager.createCertificateSigningRequest(this.keyPair);
     }
@@ -68,6 +72,7 @@ export class FabricBuilder {
     setRootCert(certificate: Buffer) {
         this.rootCert = certificate;
         this.rootPublicKey = TlvObjectCodec.decode(certificate, RootCertificateT).ellipticCurvePublicKey;
+        return this;
     }
 
     setNewOpCert(nocCerticate: Buffer) {
@@ -75,18 +80,22 @@ export class FabricBuilder {
         const {subject: {nodeId, fabricId} } = TlvObjectCodec.decode(nocCerticate, NocCertificateT);
         this.fabricId = fabricId;
         this.nodeId = nodeId;
+        return this;
     }
 
     setIntermediateCACert(certificate: Buffer) {
         this.intermediateCACert = certificate;
+        return this;
     }
 
     setVendorId(vendorId: number) {
         this.vendorId = vendorId;
+        return this;
     }
 
     setIdentityProtectionKey(key: Buffer) {
         this.identityProtectionKey = key;
+        return this;
     }
 
     async build() {

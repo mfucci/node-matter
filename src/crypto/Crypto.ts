@@ -68,10 +68,20 @@ export class Crypto {
         }
     }
 
-    static ecdh(publicKey: Buffer) {
+    static ecdhGeneratePublicKey() {
         const ecdh = crypto.createECDH(EC_CURVE);
         ecdh.generateKeys();
-        return {publicKey: ecdh.getPublicKey(), sharedSecret: ecdh.computeSecret(publicKey)};
+        return {publicKey: ecdh.getPublicKey(), ecdh: ecdh};
+    }
+
+    static ecdhGeneratePublicKeyAndSecret(peerPublicKey: Buffer) {
+        const ecdh = crypto.createECDH(EC_CURVE);
+        ecdh.generateKeys();
+        return {publicKey: ecdh.getPublicKey(), sharedSecret: ecdh.computeSecret(peerPublicKey)};
+    }
+
+    static ecdhGenerateSecret(peerPublicKey: Buffer, ecdh: crypto.ECDH) {
+        return ecdh.computeSecret(peerPublicKey);
     }
 
     static hash(data: Buffer | Buffer[]) {

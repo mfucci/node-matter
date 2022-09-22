@@ -58,7 +58,7 @@ export const enum RecordType {
     ANY = 0xFF,
 }
 
-const enum RecordClass {
+export const enum RecordClass {
     IN = 0x01,
 }
 
@@ -201,7 +201,7 @@ export class DnsCodec {
         const buffer = new BEBufferWriter();
         buffer.writeUInt16(transactionId);
         buffer.writeUInt16(queries.length > 0 ? MessageType.Query : MessageType.Response);
-        buffer.writeUInt16(0); // No queries
+        buffer.writeUInt16(queries.length);
         buffer.writeUInt16(answers.length);
         buffer.writeUInt16(0); // No authority answers
         buffer.writeUInt16(additionalRecords.length);

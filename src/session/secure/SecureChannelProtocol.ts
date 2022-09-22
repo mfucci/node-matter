@@ -7,7 +7,7 @@
 import { Message } from "../../codec/MessageCodec";
 import { Protocol } from "../../matter/common/Protocol";
 import { MessageExchange } from "../../matter/common/MessageExchange";
-import { CasePairing } from "./CasePairing";
+import { CaseServer } from "./CaseServer";
 import { PaseServer } from "./PaseServer";
 import { MessageType, SECURE_CHANNEL_PROTOCOL_ID } from "./SecureChannelMessages";
 import { MatterServer } from "../../matter/MatterServer";
@@ -16,7 +16,7 @@ export class SecureChannelProtocol implements Protocol<MatterServer> {
 
     constructor(
         private readonly paseCommissioner: PaseServer,
-        private readonly caseCommissioner: CasePairing,
+        private readonly caseCommissioner: CaseServer,
     ) {}
 
     getId(): number {

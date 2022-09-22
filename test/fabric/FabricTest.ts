@@ -64,7 +64,7 @@ describe("Fabric", () => {
         it("generates the correct destination ID", async () => {
             const fabric = new Fabric(TEST_FABRIC_ID, TEST_NODE_ID, Buffer.alloc(0), TEST_ROOT_PUBLIC_KEY, Crypto.createKeyPair(), 0, Buffer.alloc(0), TEST_IDENTITY_PROTECTION_KEY, undefined, Buffer.alloc(0)); 
 
-            const result = fabric.getDestinationId(TEST_RANDOM);
+            const result = fabric.getDestinationId(TEST_NODE_ID, TEST_RANDOM);
 
             assert.equal(result.toString("hex"), EXPECTED_DESTINATION_ID.toString("hex"));
         });
@@ -77,7 +77,7 @@ describe("Fabric", () => {
             builder.setIdentityProtectionKey(IPK_KEY);
             const fabric = await builder.build();
 
-            const result = fabric.getDestinationId(TEST_RANDOM_2);
+            const result = fabric.getDestinationId(TEST_NODE_ID, TEST_RANDOM_2);
 
             assert.equal(result.toString("hex"), EXPECTED_DESTINATION_ID_2.toString("hex"));
         });
@@ -85,7 +85,7 @@ describe("Fabric", () => {
         it("generates the correct destination ID 3", async () => {
             const fabric = new Fabric(TEST_FABRIC_ID_3, TEST_NODE_ID_3, Buffer.alloc(0), TEST_ROOT_PUBLIC_KEY_3, Crypto.createKeyPair(), 0, Buffer.alloc(0), TEST_IDENTITY_PROTECTION_KEY_3, undefined, Buffer.alloc(0)); 
 
-            const result = fabric.getDestinationId(TEST_RANDOM_3);
+            const result = fabric.getDestinationId(TEST_NODE_ID, TEST_RANDOM_3);
 
             assert.equal(result.toString("hex"), EXPECTED_DESTINATION_ID_3.toString("hex"));
         });

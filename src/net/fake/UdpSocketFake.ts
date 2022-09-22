@@ -1,17 +1,17 @@
-import { UdpSocket, UdpSocketOptions } from "../../io/udp/UdpSocket";
-import { NetListener } from "../../net/NetInterface";
-import { FakeNetwork } from "./FakeNetwork";
+import { UdpSocket, UdpSocketOptions } from "../UdpSocket";
+import { NetListener } from "../NetInterface";
+import { SimulatedNetwork } from "./SimulatedNetwork";
 
 export class UdpSocketFake implements UdpSocket {
-    static async create({address, port, multicastInterface}: UdpSocketOptions) {
+    static async create({listeningAddress: address, listeningPort: port, multicastInterface}: UdpSocketOptions) {
         if (address === undefined) throw new Error("Device IP address should be specified for fake UdpSocket");
-        return new UdpSocketFake(FakeNetwork.get(), address, port, multicastInterface);
+        return new UdpSocketFake(SimulatedNetwork.get(), address, port, multicastInterface);
     }
 
     private readonly netListeners = new Array<NetListener>();
 
     constructor(
-        private readonly network: FakeNetwork,
+        private readonly network: SimulatedNetwork,
         private readonly address: string,
         private readonly port: number,
         private readonly multicastInterface?: string) {
@@ -24,7 +24,8 @@ export class UdpSocketFake implements UdpSocket {
     }
 
     async send(address: string, port: number, data: Buffer) {
-        this.network.sendUdp(this.address, this.port, address, port, data);
+        if (this.multicastInterface === undefined) throw new Error("Device interface should be specified to send data with a fake UdpSocket");
+        this.network.sendUdp(this.multicastInterface, this.port, address, port, data);
     }
 
     close() {

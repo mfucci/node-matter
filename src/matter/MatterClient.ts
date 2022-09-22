@@ -9,31 +9,35 @@ import { BasicClusterDef } from "../interaction/cluster/BasicCluster";
 import { CommissioningError, GeneralCommissioningClusterDef, RegulatoryLocationType, SuccessFailureReponse } from "../interaction/cluster/GeneralCommissioningCluster";
 import { OperationalCredentialsClusterDef } from "../interaction/cluster/OperationalCredentialsCluster";
 import { CertificateSigningRequestT, CertificateType } from "../interaction/cluster/OperationalCredentialsMessages";
-import { Crypto, KeyPair } from "../crypto/Crypto";
-import { CertificateManager, jsToMatterDate, NocCertificate, NocCertificateT, RootCertificate, RootCertificateT } from "../crypto/CertificateManager";
+import { Crypto } from "../crypto/Crypto";
+import { CertificateManager, jsToMatterDate, NocCertificateT, RootCertificateT } from "../crypto/CertificateManager";
 import { TlvObjectCodec } from "../codec/TlvObjectCodec";
-import { BYTES_KEY, DerCodec, EcdsaWithSHA256_X962, ELEMENTS_KEY, OBJECT_ID_KEY } from "../codec/DerCodec";
+import { Scanner } from "./common/Scanner";
+import { FabricBuilder } from "../fabric/Fabric";
+import { CaseClient } from "../session/secure/CaseClient";
 
 export class MatterClient {
     private readonly sessionManager = new SessionManager(this);
     private readonly exchangeManager = new ExchangeManager<MatterClient>(this.sessionManager);
     private readonly paseClient = new PaseClient();
+    private readonly caseClient = new CaseClient();
     private readonly certificateManager = new RootCertificateManager();
 
     constructor(
+        private readonly scanner: Scanner,
         private readonly netInterface: NetInterface,
     ) {
         this.exchangeManager.addNetInterface(netInterface);
     }
 
-    async commission(address: string, port: number, discriminator: number, setupPin: number) {
-        const channel = await this.netInterface.openChannel(address, port);
+    async commission(commissionAddress: string, commissionPort: number, discriminator: number, setupPin: number) {
+        const paseChannel = await this.netInterface.openChannel(commissionAddress, commissionPort);
 
         // Do PASE paring
-        const paseSecureSession = await this.paseClient.pair(this, this.exchangeManager.initiateExchange(this.sessionManager.getUnsecureSession(), channel, SECURE_CHANNEL_PROTOCOL_ID), setupPin);
+        const paseSecureSession = await this.paseClient.pair(this, this.exchangeManager.initiateExchange(this.sessionManager.getUnsecureSession(), paseChannel, SECURE_CHANNEL_PROTOCOL_ID), setupPin);
 
         // Use the created secure session to do the commissioning
-        const interactionClient = new InteractionClient(() => this.exchangeManager.initiateExchange(paseSecureSession, channel, INTERACTION_PROTOCOL_ID));
+        let interactionClient = new InteractionClient(() => this.exchangeManager.initiateExchange(paseSecureSession, paseChannel, INTERACTION_PROTOCOL_ID));
         
         // Get and display the product name (just for debugging)
         const basicClusterClient = ClusterClient(interactionClient, 0, BasicClusterDef);
@@ -41,7 +45,7 @@ export class MatterClient {
         console.log(`Paired with device: ${productName}`);
 
         // Do the commissioning
-        const generalCommissioningClusterClient = ClusterClient(interactionClient, 0, GeneralCommissioningClusterDef);
+        let generalCommissioningClusterClient = ClusterClient(interactionClient, 0, GeneralCommissioningClusterDef);
         this.ensureSuccess(await generalCommissioningClusterClient.armFailSafe({ breadcrumb: 1, expiryLengthSeconds: 60 }));
         this.ensureSuccess(await generalCommissioningClusterClient.updateRegulatoryConfig({ breadcrumb: 2, config: RegulatoryLocationType.IndoorOutdoor, countryCode: "US"}));
         
@@ -63,13 +67,40 @@ export class MatterClient {
         const peerNodeId = BigInt(1);
         const ipkValue = Crypto.getRandomData(16);
         const adminVendorId = 752;
+        const peerOperationalCert = this.certificateManager.generateNoc(operationalPublicKey, fabricId, peerNodeId);
         await operationalCredentialsClusterClient.addNoc({
-            nocCert: this.certificateManager.generateNoc(operationalPublicKey, fabricId, peerNodeId),
+            nocCert: peerOperationalCert,
             icaCert: Buffer.alloc(0),
             ipkValue,
             adminVendorId,
             caseAdminNode: nodeId,
         });
+        const peerDeviceFabric = await new FabricBuilder()
+            .setRootCert(this.certificateManager.getRootCert())
+            .setNewOpCert(peerOperationalCert)
+            .setIdentityProtectionKey(ipkValue)
+            .setVendorId(adminVendorId)
+            .build();
+        const fabricBuilder = new FabricBuilder()
+            .setRootCert(this.certificateManager.getRootCert())
+            .setIdentityProtectionKey(ipkValue)
+            .setVendorId(adminVendorId);
+        fabricBuilder.setNewOpCert(this.certificateManager.generateNoc(fabricBuilder.getPublicKey(), fabricId, nodeId))
+        const fabric = await fabricBuilder.build();
+
+        // Look for the device broadcast over MDNS
+        const scanResult = await this.scanner.lookForDevice(peerDeviceFabric.operationalId, peerDeviceFabric.nodeId);
+        if (scanResult === undefined) throw new Error("The device being commmissioned cannot be found on the network");
+        const { ip: operationalIp, port: operationalPort } = scanResult;
+
+        // Do CASE pairing
+        const operationalChannel = await this.netInterface.openChannel(operationalIp, operationalPort);
+        const operationalSecureSession = await this.caseClient.pair(this, this.exchangeManager.initiateExchange(this.sessionManager.getUnsecureSession(), operationalChannel, SECURE_CHANNEL_PROTOCOL_ID), fabric, peerNodeId);
+        interactionClient = new InteractionClient(() => this.exchangeManager.initiateExchange(operationalSecureSession, operationalChannel, INTERACTION_PROTOCOL_ID));
+
+        // Complete the commission
+        generalCommissioningClusterClient = ClusterClient(interactionClient, 0, GeneralCommissioningClusterDef);
+        this.ensureSuccess(await generalCommissioningClusterClient.commissioningComplete({}));
     }
 
     private ensureSuccess({ errorCode, debugText }: SuccessFailureReponse) {
@@ -86,6 +117,7 @@ export class MatterClient {
     }
 
     close() {
+        this.scanner.close();
         this.exchangeManager.close();
     }
 }

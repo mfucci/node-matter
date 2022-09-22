@@ -6,6 +6,11 @@
 
 import { ByteStringT, Field, ObjectT, OptionalField, UnsignedIntT } from "../../codec/TlvObjectCodec";
 
+export const KDFSR2_INFO = Buffer.from("Sigma2");
+export const KDFSR3_INFO = Buffer.from("Sigma3");
+export const TBE_DATA2_NONCE = Buffer.from("NCASE_Sigma2N");
+export const TBE_DATA3_NONCE = Buffer.from("NCASE_Sigma3N");
+
 export const CaseSigma1T = ObjectT({
     random: Field(1, ByteStringT),
     sessionId: Field(2, UnsignedIntT),

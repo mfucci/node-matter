@@ -4,14 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { UdpSocket } from '../io/udp/UdpSocket';
+import { UdpSocket } from './UdpSocket';
 import { ExchangeSocket } from "../matter/common/ExchangeSocket";
 import { NetInterface, NetListener } from "./NetInterface";
+import { Network } from './Network';
 
 export class UdpInterface implements NetInterface {
 
     static async create(port: number, address?: string) {
-        return new UdpInterface(await UdpSocket.create({port, address}));
+        return new UdpInterface(await Network.get().createUdpSocket({listeningPort: port, multicastInterface: address, listeningAddress: address}));
     }
 
     constructor(

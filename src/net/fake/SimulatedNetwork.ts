@@ -1,10 +1,10 @@
-import { NetListener } from "../../net/NetInterface";
+import { NetListener } from "../NetInterface";
 import { singleton } from "../../util/Singleton";
 
 export type Listener = (peerAddress: string, peerPort: number, data: Buffer) => void;
 
-export class FakeNetwork {
-    static get = singleton(() => new FakeNetwork());
+export class SimulatedNetwork {
+    static get = singleton(() => new SimulatedNetwork());
 
     private readonly listenersMap = new Map<string, Array<Listener>>();
 
@@ -35,6 +35,12 @@ export class FakeNetwork {
 
     async sendUdp(localAddress: string, localPort: number, remoteAddress: string, remotePort: number, data: Buffer) {
         const ipPort = `${remoteAddress}:${remotePort}`;
-        this.listenersMap.get(ipPort)?.forEach(listener => listener(localAddress, localPort, data));
+        this.listenersMap.get(ipPort)?.forEach(listener => {
+            try {
+                listener(localAddress, localPort, data);
+            } catch (error) {
+                console.error(error);
+            }
+        });
     }
 }

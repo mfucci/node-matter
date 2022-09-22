@@ -1,5 +1,5 @@
 import dgram from "dgram";
-import { UdpSocket, UdpSocketOptions } from "./UdpSocket";
+import { UdpSocket, UdpSocketOptions } from "../UdpSocket";
 
 function createUdpSocket(address: string | undefined, port: number, options: dgram.SocketOptions) {
     const socket = dgram.createSocket(options);
@@ -17,16 +17,14 @@ function createUdpSocket(address: string | undefined, port: number, options: dgr
     });
 }
 
-export class UdpSocketNode extends UdpSocket{
-    static async create({port, address, multicastInterface}: UdpSocketOptions) {
+export class UdpSocketNode implements UdpSocket {
+    static async create({listeningPort: port, listeningAddress: address, multicastInterface}: UdpSocketOptions) {
         const socket = await createUdpSocket(address, port, { type: "udp4", reuseAddr: true });
         if (multicastInterface !== undefined) socket.setMulticastInterface(multicastInterface);
         return new UdpSocketNode(socket);
     }
 
-    constructor(private readonly socket: dgram.Socket) {
-        super();
-    }
+    constructor(private readonly socket: dgram.Socket) {}
 
     onData(listener: (peerAddress: string, peerPort: number, data: Buffer) => void) {
         const messageListener = (data: Buffer, { address, port }: { address: string, port: number }) => listener(address, port, data);

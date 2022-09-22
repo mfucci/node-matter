@@ -5,11 +5,10 @@
  */
 
 import assert from "assert";
-import { UdpInterface } from "../src/net/UdpInterface";
+import { UdpInterface } from "../src/net/MatterUdpInterface";
 import { MatterClient } from "../src/matter/MatterClient";
 import { Crypto } from "../src/crypto/Crypto";
 import { DEVICE } from "../src/Devices";
-import { UdpSocketFake } from "../src/fakes/network/UdpSocketFake";
 import { BasicClusterServer } from "../src/interaction/cluster/BasicCluster";
 import { GeneralCommissioningCluster } from "../src/interaction/cluster/GeneralCommissioningCluster";
 import { OnOffCluster } from "../src/interaction/cluster/OnOffCluster";
@@ -17,17 +16,22 @@ import { OperationalCredentialsCluster } from "../src/interaction/cluster/Operat
 import { InteractionProtocol } from "../src/interaction/InteractionProtocol";
 import { Device } from "../src/interaction/model/Device";
 import { Endpoint } from "../src/interaction/model/Endpoint";
-import { UdpSocket } from "../src/io/udp/UdpSocket";
-import { MdnsBroadcaster } from "../src/mdns/MdnsBroadcaster";
+import { MdnsMatterBroadcaster } from "../src/mdns/MdnsMatterBroadcaster";
 import { MatterServer } from "../src/matter/MatterServer";
-import { CasePairing } from "../src/session/secure/CasePairing";
+import { CaseServer } from "../src/session/secure/CaseServer";
 import { SecureChannelProtocol as SecureChannelProtocol } from "../src/session/secure/SecureChannelProtocol";
 import { PaseServer } from "../src/session/secure/PaseServer";
-
-UdpSocket.create = UdpSocketFake.create;
+import { NetworkFake } from "../src/net/fake/NetworkFake";
+import { Network } from "../src/net/Network";
+import { MdnsMatterScanner } from "../src/mdns/MdnsMatterScanner";
 
 const SERVER_IP = "192.168.200.1";
+const SERVER_MAC = "00:B0:D0:63:C2:26";
 const CLIENT_IP = "192.168.200.2";
+const CLIENT_MAC = "CA:FE:00:00:BE:EF";
+
+const serverNetwork = new NetworkFake([ {ip: SERVER_IP, mac: SERVER_MAC} ]);
+const clientNetwork = new NetworkFake([ {ip: CLIENT_IP, mac: CLIENT_MAC} ]);
 
 // From Chip-Test-DAC-FFF1-8000-0007-Key.der
 const DevicePrivateKey = Buffer.from("727F1005CBA47ED7822A9D930943621617CFD3B79D9AF528B801ECF9F1992204", "hex");
@@ -56,13 +60,19 @@ describe("Integration", () => {
     var client: MatterClient;
 
     beforeEach(async () => {
-        client = new MatterClient(await UdpInterface.create(5540, CLIENT_IP));
+        Network.get = () => clientNetwork;
+        client = new MatterClient(
+            await MdnsMatterScanner.create(CLIENT_IP),
+            await UdpInterface.create(5540, CLIENT_IP),
+        );
+
+        Network.get = () => serverNetwork;
         server = new MatterServer(deviceName, deviceType, vendorId, productId, discriminator)
             .addNetInterface(await UdpInterface.create(matterPort, SERVER_IP))
-            .addBroadcaster(await MdnsBroadcaster.create(SERVER_IP))
+            .addBroadcaster(await MdnsMatterBroadcaster.create(SERVER_IP))
             .addProtocol(new SecureChannelProtocol(
                     new PaseServer(setupPin, { iteration: 1000, salt: Crypto.getRandomData(32) }),
-                    new CasePairing(),
+                    new CaseServer(),
                 ))
             .addProtocol(new InteractionProtocol(new Device([
                 new Endpoint(0x00, DEVICE.ROOT, [
@@ -75,6 +85,8 @@ describe("Integration", () => {
                 ]),
             ])));
         server.start();
+
+        Network.get = () => { throw new Error("Network should not be requested post creation") };
     });
 
     afterEach(() => {

@@ -8,20 +8,15 @@ import { Crypto } from "../../crypto/Crypto";
 import { MatterServer } from "../../matter/MatterServer";
 import { Protocol } from "../../matter/common/Protocol";
 import { MessageExchange } from "../../matter/common/MessageExchange";
-import { CaseMessenger } from "./CaseMessenger";
+import { CaseServerMessenger } from "./CaseMessenger";
 import { TlvObjectCodec } from "../../codec/TlvObjectCodec";
-import { TagBasedEcryptionDataT, TagBasedSignatureDataT } from "./CaseMessages";
-import { NocCertificateT, RootCertificateT } from "../../crypto/CertificateManager";
+import { KDFSR2_INFO, KDFSR3_INFO, TagBasedEcryptionDataT, TagBasedSignatureDataT, TBE_DATA2_NONCE, TBE_DATA3_NONCE } from "./CaseMessages";
+import { NocCertificateT } from "../../crypto/CertificateManager";
 import { SECURE_CHANNEL_PROTOCOL_ID } from "./SecureChannelMessages";
 
-const KDFSR2_INFO = Buffer.from("Sigma2");
-const KDFSR3_INFO = Buffer.from("Sigma3");
-const TBE_DATA2_NONCE = Buffer.from("NCASE_Sigma2N");
-const TBE_DATA3_NONCE = Buffer.from("NCASE_Sigma3N");
-
-export class CasePairing implements Protocol<MatterServer> {
+export class CaseServer implements Protocol<MatterServer> {
     async onNewExchange(exchange: MessageExchange<MatterServer>) {
-        const messenger = new CaseMessenger(exchange);
+        const messenger = new CaseServerMessenger(exchange);
         try {
             await this.handleSigma1(exchange.session.getContext(), messenger);
         } catch (error) {
@@ -34,8 +29,8 @@ export class CasePairing implements Protocol<MatterServer> {
         return SECURE_CHANNEL_PROTOCOL_ID;
     }
 
-    private async handleSigma1(server: MatterServer, messenger: CaseMessenger) {
-        console.log(`Case: Received pairing request from ${messenger.getChannelName()}`);
+    private async handleSigma1(server: MatterServer, messenger: CaseServerMessenger) {
+        console.log(`Case server: Received pairing request from ${messenger.getChannelName()}`);
         // Generate pairing info
         const sessionId = server.getNextAvailableSessionId();
         const random = Crypto.getRandom();
@@ -46,7 +41,7 @@ export class CasePairing implements Protocol<MatterServer> {
         if (peerResumptionId !== undefined) throw new Error("CASE session resume not supported");
         const fabric = server.findFabricFromDestinationId(destinationId, peerRandom);
         const { nodeId, newOpCert, intermediateCACert, identityProtectionKey } = fabric;
-        const { publicKey: ecdhPublicKey, sharedSecret } = Crypto.ecdh(peerEcdhPublicKey);
+        const { publicKey: ecdhPublicKey, sharedSecret } = Crypto.ecdhGeneratePublicKeyAndSecret(peerEcdhPublicKey);
 
         // Generate sigma 2
         const sigma2Salt = Buffer.concat([ identityProtectionKey, random, ecdhPublicKey, Crypto.hash(sigma1Bytes) ]);
@@ -73,6 +68,6 @@ export class CasePairing implements Protocol<MatterServer> {
         const secureSessionSalt = Buffer.concat([identityProtectionKey, Crypto.hash([ sigma1Bytes, sigma2Bytes, sigma3Bytes ])]);
         await server.createSecureSession(sessionId, nodeId, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, false, mrpParams?.idleRetransTimeoutMs, mrpParams?.activeRetransTimeoutMs);
         await messenger.sendSuccess();
-        console.log(`Case: Paired succesfully with ${messenger.getChannelName()}`);
+        console.log(`Case server: Paired succesfully with ${messenger.getChannelName()}`);
     }
 }

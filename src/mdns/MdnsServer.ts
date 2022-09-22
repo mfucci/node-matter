@@ -5,29 +5,31 @@
  */
 
 import { DnsCodec, MessageType, Record, RecordType } from "../codec/DnsCodec";
-import { getIpMacAddresses, getIpMacOnInterface } from "../util/Network";
-import { UdpMulticastServer } from "../io/udp/UdpMulticastServer";
+import { Network } from "../net/Network";
+import { UdpMulticastServer } from "../net/UdpMulticastServer";
 import { Cache } from "../util/Cache";
 
-const MDNS_BROADCAST_IP = "224.0.0.251";
-const MDNS_BROADCAST_PORT = 5353;
+export const MDNS_BROADCAST_IP = "224.0.0.251";
+export const MDNS_BROADCAST_PORT = 5353;
 
 export class MdnsServer {
-    static async create(address?: string) {
-        return new MdnsServer(await UdpMulticastServer.create({address, broadcastAddress: MDNS_BROADCAST_IP, port: MDNS_BROADCAST_PORT}));
+    static async create(multicastInterface?: string) {
+        return new MdnsServer(multicastInterface, await UdpMulticastServer.create({multicastInterface, broadcastAddress: MDNS_BROADCAST_IP, listeningPort: MDNS_BROADCAST_PORT}));
     }
 
+    private readonly network = Network.get();
+    private recordsGenerator: (ip: string, mac: string) => Record<any>[] = () => [];
+    private readonly records = new Cache<Record<any>[]>((ip, mac) => this.recordsGenerator(ip, mac), 5 * 60 * 1000 /* 5mn */);
+
     constructor(
+        private readonly multicastInterface: string | undefined,
         private readonly multicastServer: UdpMulticastServer,
     ) {
         multicastServer.onMessage((message, remoteIp) => this.handleDnsMessage(message, remoteIp));
     }
 
-    private recordsGenerator: (ip: string, mac: string) => Record<any>[] = () => [];
-    private readonly records = new Cache<Record<any>[]>((ip, mac) => this.recordsGenerator(ip, mac), 5 * 60 * 1000 /* 5mn */);
-
     private handleDnsMessage(messageBytes: Buffer, remoteIp: string) {
-        const {ip, mac} = getIpMacOnInterface(remoteIp);
+        const {ip, mac} = this.network.getIpMacOnInterface(remoteIp);
         const records = this.records.get(ip, mac);
 
         // No need to process the DNS message if there are no records to serve
@@ -40,15 +42,16 @@ export class MdnsServer {
         if (answers.length === 0) return;
 
         const additionalRecords = records.filter(record => !answers.includes(record));
-        this.multicastServer.send(ip, DnsCodec.encode({ answers, additionalRecords }));
+        this.multicastServer.send(DnsCodec.encode({ answers, additionalRecords }), ip);
     }
 
     async announce() {
-        await Promise.all(getIpMacAddresses().map(({ip, mac}) => {
+        const ipMacs = this.multicastInterface !== undefined ? [this.network.getIpMacOnInterface(this.multicastInterface)] : this.network.getIpMacAddresses();
+        await Promise.all(ipMacs.map(({ip, mac}) => {
             const records = this.records.get(ip, mac);
             const answers = records.filter(({recordType}) => recordType === RecordType.PTR);
             const additionalRecords = records.filter(({recordType}) => recordType !== RecordType.PTR);
-            return this.multicastServer.send(ip, DnsCodec.encode({ answers, additionalRecords }));
+            return this.multicastServer.send(DnsCodec.encode({ answers, additionalRecords }), ip);
         }));
     }
 

@@ -63,7 +63,7 @@ export class MatterServer {
     setFabric(fabric: Fabric) {
         this.fabricManager.addFabric(fabric);
         this.broadcasters.forEach(broadcaster => {
-            broadcaster.setFabric(fabric);
+            broadcaster.setFabric(fabric.operationalId, fabric.nodeId);
             broadcaster.announce();
         });
     }

@@ -8,15 +8,13 @@ import { ARecord, PtrRecord, SrvRecord, TxtRecord } from "../codec/DnsCodec";
 import { Crypto } from "../crypto/Crypto";
 import { Fabric } from "../fabric/Fabric";
 import { Broadcaster } from "../matter/common/Broadcaster";
+import { bigintToBuffer } from "../util/BigInt";
+import { getDeviceMatterQname, getFabricQname, MATTER_COMMISSION_SERVICE_QNAME, MATTER_SERVICE_QNAME, SERVICE_DISCOVERY_QNAME } from "./MdnsMatterConst";
 import { MdnsServer } from "./MdnsServer";
 
-const SERVICE_DISCOVERY_QNAME = "_services._dns-sd._udp.local";
-const MATTER_COMMISSION_SERVICE_QNAME = "_matterc._udp.local";
-const MATTER_SERVICE_QNAME = "_matter._tcp.local";
-
-export class MdnsBroadcaster implements Broadcaster {
-    static async create(address?: string) {
-        return new MdnsBroadcaster(await MdnsServer.create(address));
+export class MdnsMatterBroadcaster implements Broadcaster {
+    static async create(multicastInterface?: string) {
+        return new MdnsMatterBroadcaster(await MdnsServer.create(multicastInterface));
     }
 
     constructor(
@@ -66,13 +64,11 @@ export class MdnsBroadcaster implements Broadcaster {
         });
     }
 
-    setFabric(fabric: Fabric) {
-        const nodeIdBuffer = Buffer.alloc(8);
-        nodeIdBuffer.writeBigUInt64BE(BigInt(fabric.nodeId));
-        const nodeId = nodeIdBuffer.toString("hex").toUpperCase();
-        const fabricId = fabric.operationalId.toString("hex").toUpperCase();
-        const fabricQname = `_I${fabricId}._sub.${MATTER_SERVICE_QNAME}`;
-        const deviceMatterQname = `${fabricId}-${nodeId}.${MATTER_SERVICE_QNAME}`;
+    setFabric(operationalId: Buffer, nodeId: bigint) {
+        const nodeIdString = bigintToBuffer(nodeId).toString("hex").toUpperCase();
+        const operationalIdString = operationalId.toString("hex").toUpperCase();
+        const fabricQname = getFabricQname(operationalIdString);
+        const deviceMatterQname = getDeviceMatterQname(operationalIdString, nodeIdString);
 
         this.mdnsServer.setRecordsGenerator((ip, mac) => {
             const hostname = mac.replace(/:/g, "").toUpperCase() + "0000.local";

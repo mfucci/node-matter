@@ -8,15 +8,6 @@ import { UdpSocketOptions, UdpSocket } from "../UdpSocket";
 import { Network } from "../Network";
 import { UdpSocketFake } from "./UdpSocketFake";
 
-function ipToNumber(ip: string) {
-    const buffer = Buffer.alloc(4);
-    const ipParts = ip.split(".");
-    for (var i = 0; i < 4; i++) {
-        buffer.writeUInt8(parseInt(ipParts[i]), i);
-    }
-    return buffer.readUInt32BE();
-}
-
 export class NetworkFake extends Network {
     constructor(
         private readonly ipMacs: {ip: string, mac: string}[],

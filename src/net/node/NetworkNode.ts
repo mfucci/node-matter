@@ -24,7 +24,6 @@ export class NetworkNode extends Network {
     }
 
     getIpMacAddresses(): {ip: string, mac: string}[] {
-        console.log("getIpMacAddresses");
         const result = new Array<{ip: string, mac: string}>();
         const interfaces = networkInterfaces();
         for (const name in interfaces) {

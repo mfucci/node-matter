@@ -46,6 +46,7 @@
   "main": "build/Main.js",
   "types": "build/Main.d.ts",
   "bin": {
-    "matter": "./build/Main.js"
+    "matter": "./build/Main.js",
+    "controller": "./build/Controller.js"
   }
 }

@@ -1,3 +1,9 @@
+/**
+ * @license
+ * Copyright 2022 Marco Fucci di Napoli (mfucci@gmail.com)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { Crypto } from "../../crypto/Crypto";
 import { Spake2p } from "../../crypto/Spake2p";
 import { MessageExchange } from "../../matter/common/MessageExchange";

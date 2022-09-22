@@ -1,3 +1,9 @@
+/**
+ * @license
+ * Copyright 2022 Marco Fucci di Napoli (mfucci@gmail.com)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { Template, TlvObjectCodec } from "../codec/TlvObjectCodec";
 import { MessageExchange } from "../matter/common/MessageExchange";
 import { MatterClient } from "../matter/MatterClient";

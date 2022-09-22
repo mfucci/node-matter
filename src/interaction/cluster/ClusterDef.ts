@@ -1,3 +1,9 @@
+/**
+ * @license
+ * Copyright 2022 Marco Fucci di Napoli (mfucci@gmail.com)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { Template } from "../../codec/TlvObjectCodec";
 
 export interface AttributeDef<ValueT> { id: number, template: Template<ValueT> }

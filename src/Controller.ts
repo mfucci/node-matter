@@ -1,3 +1,11 @@
+#!/usr/bin/env node
+
+/**
+ * @license
+ * Copyright 2022 Marco Fucci di Napoli (mfucci@gmail.com)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { MatterClient } from "./matter/MatterClient";
 import { MdnsMatterScanner } from "./mdns/MdnsMatterScanner";
 import { UdpInterface } from "./net/MatterUdpInterface";

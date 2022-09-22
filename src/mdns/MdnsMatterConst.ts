@@ -1,3 +1,9 @@
+/**
+ * @license
+ * Copyright 2022 Marco Fucci di Napoli (mfucci@gmail.com)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 export const SERVICE_DISCOVERY_QNAME = "_services._dns-sd._udp.local";
 export const MATTER_COMMISSION_SERVICE_QNAME = "_matterc._udp.local";
 export const MATTER_SERVICE_QNAME = "_matter._tcp.local";

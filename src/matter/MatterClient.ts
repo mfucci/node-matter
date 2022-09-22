@@ -1,3 +1,9 @@
+/**
+ * @license
+ * Copyright 2022 Marco Fucci di Napoli (mfucci@gmail.com)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { SECURE_CHANNEL_PROTOCOL_ID } from "../session/secure/SecureChannelMessages";
 import { SessionManager } from "../session/SessionManager";
 import { NetInterface } from "../net/NetInterface";

@@ -1,15 +1,17 @@
+/**
+ * @license
+ * Copyright 2022 Marco Fucci di Napoli (mfucci@gmail.com)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { TlvObjectCodec } from "../../codec/TlvObjectCodec";
 import { NocCertificateT } from "../../crypto/CertificateManager";
 import { Crypto } from "../../crypto/Crypto";
-import { Spake2p } from "../../crypto/Spake2p";
 import { Fabric } from "../../fabric/Fabric";
 import { MessageExchange } from "../../matter/common/MessageExchange";
 import { MatterClient } from "../../matter/MatterClient";
-import { MatterServer } from "../../matter/MatterServer";
-import { UNDEFINED_NODE_ID } from "../SessionManager";
 import { KDFSR2_INFO, KDFSR3_INFO, TagBasedEcryptionDataT, TagBasedSignatureDataT, TBE_DATA2_NONCE, TBE_DATA3_NONCE } from "./CaseMessages";
 import { CaseClientMessenger } from "./CaseMessenger";
-import { DEFAULT_PASSCODE_ID, PaseClientMessenger, SPAKE_CONTEXT } from "./PaseMessenger";
 
 export class CaseClient {
     constructor() {}

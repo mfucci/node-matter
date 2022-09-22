@@ -1,3 +1,9 @@
+/**
+ * @license
+ * Copyright 2022 Marco Fucci di Napoli (mfucci@gmail.com)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import assert from "assert";
 import { DerCodec, EcdsaWithSHA256_X962, ELEMENTS_KEY, DerNode, BYTES_KEY } from "../../src/codec/DerCodec";
 import { TlvObjectCodec } from "../../src/codec/TlvObjectCodec";

@@ -1,3 +1,9 @@
+/**
+ * @license
+ * Copyright 2022 Marco Fucci di Napoli (mfucci@gmail.com)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { Message, MessageCodec, SessionType } from "../../codec/MessageCodec";
 import { Queue } from "../../util/Queue";
 import { Session } from "../../session/Session";

@@ -61,7 +61,7 @@ export const NocCertificateT = ObjectT({
     serialNumber: Field(1, ByteStringT),
     signatureAlgorithm: Field(2, UnsignedIntT),
     issuer: Field(3, ObjectT({
-        issuerRcacId: Field(20, UnsignedIntT),
+        issuerRcacId: OptionalField(20, UnsignedIntT),
     }, TlvType.List)),
     notBefore: Field(4, UnsignedIntT),
     notAfter: Field(5, UnsignedIntT),
@@ -122,7 +122,7 @@ export class CertificateManager {
             serialNumber: serialNumber.readUInt8(),
             signatureAlgorithm: EcdsaWithSHA256_X962,
             issuer: {
-                issuerRcacId: RcacId_Matter(issuerRcacId),
+                issuerRcacId: issuerRcacId === undefined ? undefined : RcacId_Matter(issuerRcacId),
             },
             validity: {
                 notBefore: matterToJsDate(notBefore),

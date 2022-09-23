@@ -33,7 +33,7 @@ export const RootCertificateT = ObjectT({
     serialNumber: Field(1, ByteStringT),
     signatureAlgorithm: Field(2, UnsignedIntT),
     issuer: Field(3, ObjectT({
-        rcacId: Field(20, UnsignedIntT),
+        issuerRcacId: OptionalField(20, UnsignedIntT),
     }, TlvType.List)),
     notBefore: Field(4, UnsignedIntT),
     notAfter: Field(5, UnsignedIntT),
@@ -61,7 +61,7 @@ export const NocCertificateT = ObjectT({
     serialNumber: Field(1, ByteStringT),
     signatureAlgorithm: Field(2, UnsignedIntT),
     issuer: Field(3, ObjectT({
-        rcacId: Field(20, UnsignedIntT),
+        issuerRcacId: Field(20, UnsignedIntT),
     }, TlvType.List)),
     notBefore: Field(4, UnsignedIntT),
     notAfter: Field(5, UnsignedIntT),
@@ -91,54 +91,54 @@ export type NocCertificate = JsType<typeof NocCertificateT>;
 type Unsigned<Type> = { [Property in keyof Type as Exclude<Property, "signature">]: Type[Property] };
 
 export class CertificateManager {
-    static rootCertToAsn1(rootCert: Unsigned<RootCertificate>) {
+    static rootCertToAsn1({ serialNumber, notBefore, notAfter, issuer: { issuerRcacId }, subject: { rcacId }, ellipticCurvePublicKey, extensions: { subjectKeyIdentifier, authorityKeyIdentifier } }: Unsigned<RootCertificate>) {
         return DerCodec.encode({
             version: ContextTagged(0, 2),
-            serialNumber: rootCert.serialNumber.readUInt8(),
+            serialNumber: serialNumber.readUInt8(),
             signatureAlgorithm: EcdsaWithSHA256_X962,
             issuer: {
-                rcacId: RcacId_Matter(rootCert.issuer.rcacId),
+                issuerRcacId: issuerRcacId === undefined ? undefined : RcacId_Matter(issuerRcacId),
             },
             validity: {
-                notBefore: matterToJsDate(rootCert.notBefore),
-                notAfter: matterToJsDate(rootCert.notAfter),
+                notBefore: matterToJsDate(notBefore),
+                notAfter: matterToJsDate(notAfter),
             },
             subject: {
-                rcacId: RcacId_Matter(rootCert.issuer.rcacId),
+                rcacId: RcacId_Matter(rcacId),
             },
-            publicKey: PublicKeyEcPrime256v1_X962(rootCert.ellipticCurvePublicKey),
+            publicKey: PublicKeyEcPrime256v1_X962(ellipticCurvePublicKey),
             extensions: ContextTagged(3, {
                 basicConstraints: BasicConstraints_X509({ isCa: true }),
                 keyUsage: KeyUsage_Signature_ContentCommited_X509,
-                subjectKeyIdentifier: SubjectKeyIdentifier_X509(rootCert.extensions.subjectKeyIdentifier),
-                authorityKeyIdentifier: AuthorityKeyIdentifier_X509(rootCert.extensions.authorityKeyIdentifier),
+                subjectKeyIdentifier: SubjectKeyIdentifier_X509(subjectKeyIdentifier),
+                authorityKeyIdentifier: AuthorityKeyIdentifier_X509(authorityKeyIdentifier),
             }),
         });
     }
 
-    static nocCertToAsn1(nocCert: Unsigned<NocCertificate>) {
+    static nocCertToAsn1({ serialNumber, notBefore, notAfter, issuer: { issuerRcacId }, subject: { fabricId, nodeId }, ellipticCurvePublicKey, extensions: { subjectKeyIdentifier, authorityKeyIdentifier } }: Unsigned<NocCertificate>) {
         return DerCodec.encode({
             version: ContextTagged(0, 2),
-            serialNumber: nocCert.serialNumber.readUInt8(),
+            serialNumber: serialNumber.readUInt8(),
             signatureAlgorithm: EcdsaWithSHA256_X962,
             issuer: {
-                rcacId: RcacId_Matter(nocCert.issuer.rcacId),
+                issuerRcacId: RcacId_Matter(issuerRcacId),
             },
             validity: {
-                notBefore: matterToJsDate(nocCert.notBefore),
-                notAfter: matterToJsDate(nocCert.notAfter),
+                notBefore: matterToJsDate(notBefore),
+                notAfter: matterToJsDate(notAfter),
             },
             subject: {
-                fabricId: FabricId_Matter(nocCert.subject.fabricId),
-                nodeId: NodeId_Matter(nocCert.subject.nodeId),
+                fabricId: FabricId_Matter(fabricId),
+                nodeId: NodeId_Matter(nodeId),
             },
-            publicKey: PublicKeyEcPrime256v1_X962(nocCert.ellipticCurvePublicKey),
+            publicKey: PublicKeyEcPrime256v1_X962(ellipticCurvePublicKey),
             extensions: ContextTagged(3, {
                 basicConstraints: BasicConstraints_X509({}),
                 keyUsage: KeyUsage_Signature_X509,
                 extendedKeyUsage: ExtendedKeyUsage_X509({ serverAuth: true, clientAuth: true }),
-                subjectKeyIdentifier: SubjectKeyIdentifier_X509(nocCert.extensions.subjectKeyIdentifier),
-                authorityKeyIdentifier: AuthorityKeyIdentifier_X509(nocCert.extensions.authorityKeyIdentifier),
+                subjectKeyIdentifier: SubjectKeyIdentifier_X509(subjectKeyIdentifier),
+                authorityKeyIdentifier: AuthorityKeyIdentifier_X509(authorityKeyIdentifier),
             }),
         });
     }

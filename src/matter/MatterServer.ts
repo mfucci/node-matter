@@ -13,6 +13,9 @@ import { ExchangeSocket } from "./common/ExchangeSocket";
 import { Protocol } from "./common/Protocol";
 import { Broadcaster } from "./common/Broadcaster";
 import { ExchangeManager } from "./common/ExchangeManager";
+import { requireMinNodeVersion } from "../util/Node";
+
+requireMinNodeVersion(16);
 
 export class MatterServer {
     private readonly broadcasters = new Array<Broadcaster>();

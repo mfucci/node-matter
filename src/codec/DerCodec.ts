@@ -64,6 +64,8 @@ export class DerCodec {
             return this.encodeUnsignedInt(value);
         } else if (typeof value === "boolean") {
             return this.encodeBoolean(value);
+        } else if (value === undefined) {
+            return Buffer.alloc(0);
         } else {
             throw new Error(`Unsupported type ${typeof value}`);
         }

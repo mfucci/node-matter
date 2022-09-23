@@ -21,6 +21,9 @@ import { TlvObjectCodec } from "../codec/TlvObjectCodec";
 import { Scanner } from "./common/Scanner";
 import { FabricBuilder } from "../fabric/Fabric";
 import { CaseClient } from "../session/secure/CaseClient";
+import { requireMinNodeVersion } from "../util/Node";
+
+requireMinNodeVersion(16);
 
 export class MatterClient {
     private readonly sessionManager = new SessionManager(this);
@@ -145,7 +148,7 @@ class RootCertificateManager {
             signatureAlgorithm: 1 /* EcdsaWithSHA256 */ ,
             publicKeyAlgorithm: 1 /* EC */,
             ellipticCurveIdentifier: 1 /* P256v1 */,
-            issuer: { rcacId: this.rootCertId },
+            issuer: { },
             notBefore: jsToMatterDate(new Date(), -1),
             notAfter: jsToMatterDate(new Date(), 10),
             subject: { rcacId: this.rootCertId },
@@ -168,7 +171,7 @@ class RootCertificateManager {
             signatureAlgorithm: 1 /* EcdsaWithSHA256 */ ,
             publicKeyAlgorithm: 1 /* EC */,
             ellipticCurveIdentifier: 1 /* P256v1 */,
-            issuer: { rcacId: this.rootCertId },
+            issuer: { issuerRcacId: this.rootCertId },
             notBefore: jsToMatterDate(new Date(), -1),
             notAfter: jsToMatterDate(new Date(), 10),
             subject: { fabricId, nodeId },

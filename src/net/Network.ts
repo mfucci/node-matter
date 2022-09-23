@@ -11,5 +11,5 @@ export abstract class Network {
 
     abstract createUdpSocket(options: UdpSocketOptions): Promise<UdpSocket>;
     abstract getIpMacAddresses(): {ip: string, mac: string}[];
-    abstract getIpMacOnInterface(remoteAddress: string): {ip: string, mac: string};
+    abstract getIpMacOnInterface(remoteAddress: string): {ip: string, mac: string} | undefined;
 }

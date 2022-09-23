@@ -77,6 +77,14 @@ describe("MDNS", () => {
                 ]
             });
         });
+
+        it("it should ignore MDNS messages on unsupported interfaces", async () => {
+            const socketOnAnotherSubnet = await UdpSocketFake.create({ listeningPort: 5353, listeningAddress: "224.0.0.251", multicastInterface: "1.1.1.23" });
+
+            await socketOnAnotherSubnet.send("224.0.0.251", 5353, Buffer.alloc(1, 0));
+
+            socketOnAnotherSubnet.close();
+        });
     });
 
     context("integration", () => {

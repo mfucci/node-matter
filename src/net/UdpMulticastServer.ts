@@ -16,7 +16,7 @@ export interface UdpMulticastServerOptions extends UdpSocketOptions {
 export class UdpMulticastServer {
     static async create({ restrictToInterfaceIp, broadcastAddress, listeningPort }: UdpMulticastServerOptions) {
         const network = Network.get();
-        return new UdpMulticastServer(network, broadcastAddress, listeningPort, await network.createUdpSocket({ listeningAddress: broadcastAddress, listeningPort }), restrictToInterfaceIp !== undefined ? network.getIpMacOnInterface(restrictToInterfaceIp).ip : undefined);
+        return new UdpMulticastServer(network, broadcastAddress, listeningPort, await network.createUdpSocket({ listeningAddress: broadcastAddress, listeningPort }), restrictToInterfaceIp);
     }
 
     private readonly broadcastSockets = new Cache<Promise<UdpSocket>>(ip => this.createBroadcastSocket(ip), 5 * 60 * 1000 /* 5mn */);

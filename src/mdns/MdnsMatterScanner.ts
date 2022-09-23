@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { DnsCodec, MessageType, Record, RecordClass, RecordType, SrvRecordValue } from "../codec/DnsCodec";
+import { DnsCodec, DnsMessage, MessageType, Record, RecordClass, RecordType, SrvRecordValue } from "../codec/DnsCodec";
 import { UdpMulticastServer } from "../net/UdpMulticastServer";
 import { MDNS_BROADCAST_IP, MDNS_BROADCAST_PORT } from "./MdnsServer";
 import { getDeviceMatterQname, MATTER_SERVICE_QNAME } from "./MdnsMatterConst";
@@ -59,11 +59,9 @@ export class MdnsMatterScanner implements Scanner {
     }
 
     private handleDnsMessage(messageBytes: Buffer, remoteIp: string) {
-        const { ip } = this.network.getIpMacOnInterface(remoteIp);
-
         const message = DnsCodec.decode(messageBytes);
+        if (message === undefined) return; // The message cannot be parsed
         if (message.messageType !== MessageType.Response) return;
-
 
         const answers = [...message.answers, ...message.additionalRecords];
         const srvRecord = answers.find(({ name, recordType }) => recordType === RecordType.SRV && name.endsWith(MATTER_SERVICE_QNAME));

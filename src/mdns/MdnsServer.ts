@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { DnsCodec, MessageType, Record, RecordType } from "../codec/DnsCodec";
+import { DnsCodec, DnsMessage, MessageType, Record, RecordType } from "../codec/DnsCodec";
 import { Network } from "../net/Network";
 import { UdpMulticastServer } from "../net/UdpMulticastServer";
 import { Cache } from "../util/Cache";
@@ -29,13 +29,18 @@ export class MdnsServer {
     }
 
     private handleDnsMessage(messageBytes: Buffer, remoteIp: string) {
-        const {ip, mac} = this.network.getIpMacOnInterface(remoteIp);
+        const ipMac = this.network.getIpMacOnInterface(remoteIp);
+        // This message was on a subnet not supported by this device
+        if (ipMac === undefined) return;
+
+        const { ip, mac } = ipMac;
         const records = this.records.get(ip, mac);
 
         // No need to process the DNS message if there are no records to serve
         if (records.length === 0) return;
 
         const message = DnsCodec.decode(messageBytes);
+        if (message === undefined) return; // The message cannot be parsed
         if (message.messageType !== MessageType.Query) return;
         
         const answers = message.queries.flatMap(query => this.queryRecords(query, records));
@@ -46,8 +51,7 @@ export class MdnsServer {
     }
 
     async announce() {
-        const ipMacs = this.multicastInterface !== undefined ? [this.network.getIpMacOnInterface(this.multicastInterface)] : this.network.getIpMacAddresses();
-        await Promise.all(ipMacs.map(({ip, mac}) => {
+        await Promise.all(this.getIpMacsForAnnounce().map(({ip, mac}) => {
             const records = this.records.get(ip, mac);
             const answers = records.filter(({recordType}) => recordType === RecordType.PTR);
             const additionalRecords = records.filter(({recordType}) => recordType !== RecordType.PTR);
@@ -63,6 +67,13 @@ export class MdnsServer {
     close() {
         this.records.close();
         this.multicastServer.close();
+    }
+
+    private getIpMacsForAnnounce() {
+        if (this.multicastInterface === undefined) return this.network.getIpMacAddresses();
+        const ipMac = this.network.getIpMacOnInterface(this.multicastInterface);
+        if (ipMac === undefined) return [];
+        return [ipMac];
     }
 
     private queryRecords({name, recordType}: {name: string, recordType: RecordType}, records: Record<any>[]) {

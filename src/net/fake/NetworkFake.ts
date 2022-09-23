@@ -23,10 +23,8 @@ export class NetworkFake extends Network {
         return this.ipMacs;
     }
 
-    getIpMacOnInterface(remoteAddress: string): {ip: string, mac: string} {
+    getIpMacOnInterface(remoteAddress: string): {ip: string, mac: string} | undefined {
         const remoteAddressPrefix = remoteAddress.slice(0, 6);
-        const ipMac = this.ipMacs.find(({ ip, mac }) => ip.slice(0, 6) === remoteAddressPrefix);
-        if (ipMac === undefined) throw new Error(`Cannot find the device IP on the subnet containing ${remoteAddress}`);
-        return ipMac;
+        return this.ipMacs.find(({ ip, mac }) => ip.slice(0, 6) === remoteAddressPrefix);
     }
 }

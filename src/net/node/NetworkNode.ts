@@ -36,7 +36,7 @@ export class NetworkNode extends Network {
         return result;
     }
 
-    getIpMacOnInterface(remoteAddress: string): {ip: string, mac: string} {
+    getIpMacOnInterface(remoteAddress: string): {ip: string, mac: string} | undefined {
         const remoteAddressNumber = ipToNumber(remoteAddress);
         const interfaces = networkInterfaces();
         for (const name in interfaces) {

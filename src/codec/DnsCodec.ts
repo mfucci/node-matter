@@ -63,31 +63,35 @@ export const enum RecordClass {
 }
 
 export class DnsCodec {
-    static decode(message: Buffer): DnsMessage {
-        const reader = new BEBufferReader(message);
-        const transactionId = reader.readUInt16();
-        const messageType = reader.readUInt16();
-        const queriesCount = reader.readUInt16();
-        const answersCount = reader.readUInt16();
-        const authoritiesCount = reader.readUInt16();
-        const additionalRecordsCount = reader.readUInt16();
-        const queries = new Array<Query>();
-        for (var i = 0; i < queriesCount; i++) {
-            queries.push(this.decodeQuery(reader, message));
+    static decode(message: Buffer): DnsMessage | undefined {
+        try {
+            const reader = new BEBufferReader(message);
+            const transactionId = reader.readUInt16();
+            const messageType = reader.readUInt16();
+            const queriesCount = reader.readUInt16();
+            const answersCount = reader.readUInt16();
+            const authoritiesCount = reader.readUInt16();
+            const additionalRecordsCount = reader.readUInt16();
+            const queries = new Array<Query>();
+            for (var i = 0; i < queriesCount; i++) {
+                queries.push(this.decodeQuery(reader, message));
+            }
+            const answers = new Array<Record<any>>();
+            for (var i = 0; i < answersCount; i++) {
+                answers.push(this.decodeRecord(reader, message));
+            }
+            const authorities = new Array<Record<any>>();
+            for (var i = 0; i < authoritiesCount; i++) {
+                authorities.push(this.decodeRecord(reader, message));
+            }
+            const additionalRecords = new Array<Record<any>>();
+            for (var i = 0; i < additionalRecordsCount; i++) {
+                additionalRecords.push(this.decodeRecord(reader, message));
+            }
+            return { transactionId, messageType, queries, answers, authorities, additionalRecords };
+        } catch (error) {
+            return undefined;
         }
-        const answers = new Array<Record<any>>();
-        for (var i = 0; i < answersCount; i++) {
-            answers.push(this.decodeRecord(reader, message));
-        }
-        const authorities = new Array<Record<any>>();
-        for (var i = 0; i < authoritiesCount; i++) {
-            authorities.push(this.decodeRecord(reader, message));
-        }
-        const additionalRecords = new Array<Record<any>>();
-        for (var i = 0; i < additionalRecordsCount; i++) {
-            additionalRecords.push(this.decodeRecord(reader, message));
-        }
-        return { transactionId, messageType, queries, answers, authorities, additionalRecords };
     }
 
     private static decodeQuery(reader: BEBufferReader, message: Buffer) {

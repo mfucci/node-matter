@@ -54,6 +54,7 @@ export class CaseClient {
         // All good! Create secure session
         const secureSessionSalt = Buffer.concat([identityProtectionKey, Crypto.hash([ sigma1Bytes, sigma2Bytes, sigma3Bytes ])]);
         const secureSession = await client.createSecureSession(sessionId, nodeId, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, true);
+        secureSession.setFabric(fabric);
         console.log(`Case client: Paired succesfully with ${messenger.getChannelName()}`);
         return secureSession;
     }

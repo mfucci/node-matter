@@ -10,6 +10,8 @@ import { NoArgumentsT } from "../model/Command";
 import { MatterServer } from "../../matter/MatterServer";
 import { AttributeDef, ClusterDef, CommandDef } from "./ClusterDef";
 import { TlvType } from "../../codec/TlvCodec";
+import { Session } from "../../session/Session";
+import { SecureSession } from "../../session/SecureSession";
 
 export const enum RegulatoryLocationType {
     Indoor = 0,
@@ -68,7 +70,7 @@ export class GeneralCommissioningCluster extends Cluster<MatterServer> {
 
         this.addCommand(0, 1, "ArmFailSafe", ArmFailSafeRequestT, SuccessFailureReponseT, request => this.handleArmFailSafeRequest(request));
         this.addCommand(2, 3, "SetRegulatoryConfig", SetRegulatoryConfigRequestT, SuccessFailureReponseT, request => this.setRegulatoryConfig(request));
-        this.addCommand(4, 5, "CommissioningComplete", NoArgumentsT, SuccessFailureReponseT, () => this.handleCommissioningComplete());
+        this.addCommand(4, 5, "CommissioningComplete", NoArgumentsT, SuccessFailureReponseT, (request, session) => this.handleCommissioningComplete(session));
 
         this.attributes = {
             breadcrumb: this.addAttribute(0, "Breadcrumb", UnsignedIntT, 0),
@@ -89,7 +91,11 @@ export class GeneralCommissioningCluster extends Cluster<MatterServer> {
         return SuccessResponse;
     }
 
-    private handleCommissioningComplete(): SuccessFailureReponse {
+    private handleCommissioningComplete(session: Session<MatterServer>): SuccessFailureReponse {
+        if (!session.isSecure()) throw new Error("commissioningComplete can only be called on a secure session");
+        const fabric = (session as SecureSession<MatterServer>).getFabric();
+        if (fabric === undefined) throw new Error("commissioningComplete is called but the fabric has not been defined yet");
+        console.log(`Commissioning completed on fabric #${fabric.id} as node #${fabric.nodeId}.`)
         return SuccessResponse;
     }
 }

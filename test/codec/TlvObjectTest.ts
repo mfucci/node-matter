@@ -7,7 +7,7 @@
 import assert from "assert";
 import { TlvType } from "../../src/codec/TlvCodec";
 import { BooleanT, ByteStringT, JsType, ObjectT, Field, TlvObjectCodec, UnsignedIntT, OptionalField } from "../../src/codec/TlvObjectCodec";
-import { ReadResponseT } from "../../src/interaction/InteractionMessages";
+import { DataReportT } from "../../src/interaction/InteractionMessages";
 import { TlvTag } from "../../src/codec/TlvTag";
 
 
@@ -82,7 +82,7 @@ describe("TlvObjectCodec", () => {
         });
 
         it("decodes a structure with lists and variable types", () => {
-            const result = TlvObjectCodec.decode(ENCODED_ARRAY_VARIABLE, ReadResponseT);
+            const result = TlvObjectCodec.decode(ENCODED_ARRAY_VARIABLE, DataReportT);
 
             assert.deepEqual(result, DECODED_ARRAY_VARIABLE);
         });
@@ -102,7 +102,7 @@ describe("TlvObjectCodec", () => {
         });
 
         it("encodes a structure with lists and variable types", () => {
-            const result = TlvObjectCodec.encode(DECODED_ARRAY_VARIABLE, ReadResponseT);
+            const result = TlvObjectCodec.encode(DECODED_ARRAY_VARIABLE, DataReportT);
 
             assert.deepEqual(result.toString("hex"), ENCODED_ARRAY_VARIABLE.toString("hex"));
         });

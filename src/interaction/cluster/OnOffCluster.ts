@@ -5,29 +5,32 @@
  */
 
 import { Cluster } from "../model/Cluster";
-import { Attribute } from "../model/Attribute";
 import { BooleanT } from "../../codec/TlvObjectCodec";
-import { Command, NoArgumentsT, NoResponseT } from "../model/Command";
+import { NoArgumentsT, NoResponseT } from "../model/Command";
+
+const CLUSTER_ID = 0x06;
 
 export class OnOffCluster extends Cluster {
-    private onOffAttribute = new Attribute(0, "OnOff", BooleanT, false);
+    static Builder = (onCallback: (() => void) | undefined, offCallback: (() => void) | undefined) => (endpointId: number) => new OnOffCluster(endpointId, onCallback, offCallback);
+
+    private readonly onOffAttribute;
 
     constructor(
-        private readonly onCallback: (() => void) | undefined = undefined,
-        private readonly offCallback: (() => void) | undefined = undefined,
+        endpointId: number,
+        private readonly onCallback: (() => void) | undefined,
+        private readonly offCallback: (() => void) | undefined,
     ) {
         super(
+            endpointId,
             0x06,
             "On/Off",
-            [
-                new Command(0, 0, "Off", NoArgumentsT, NoResponseT, () => this.setOnOff(false)),
-                new Command(1, 1, "On", NoArgumentsT, NoResponseT, () => this.setOnOff(true)),
-                new Command(2, 2, "Toggle", NoArgumentsT, NoResponseT, () => this.setOnOff(!this.onOffAttribute.get())),
-            ],
         );
-        this.addAttributes([
-            this.onOffAttribute,
-        ]);
+
+        this.addCommand(0, 0, "Off", NoArgumentsT, NoResponseT, () => this.setOnOff(false)),
+        this.addCommand(1, 1, "On", NoArgumentsT, NoResponseT, () => this.setOnOff(true)),
+        this.addCommand(2, 2, "Toggle", NoArgumentsT, NoResponseT, () => this.setOnOff(!this.onOffAttribute.get())),
+
+        this.onOffAttribute = this.addAttribute(0, "OnOff", BooleanT, false);
     }
 
     private setOnOff(value: boolean) {

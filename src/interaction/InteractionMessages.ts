@@ -7,6 +7,10 @@
 import { TlvType } from "../codec/TlvCodec";
 import { AnyT, ArrayT, BooleanT, Field, ObjectT, OptionalField, UnsignedIntT, UnsignedLongT } from "../codec/TlvObjectCodec";
 
+export const StatusReport = ObjectT({
+    status: OptionalField(0, UnsignedIntT),
+});
+
 const AttributePathT = ObjectT({
     endpointId: OptionalField(2, UnsignedIntT),
     clusterId: OptionalField(3, UnsignedIntT),
@@ -19,7 +23,8 @@ export const ReadRequestT = ObjectT({
     interactionModelRevision: Field(0xFF, UnsignedIntT),
 });
 
-export const ReadResponseT = ObjectT({
+export const DataReportT = ObjectT({
+    subscriptionId: OptionalField(0, UnsignedIntT),
     values: Field(1, ArrayT(ObjectT({
         value: Field(1, ObjectT({
             version: Field(0, UnsignedIntT),
@@ -64,7 +69,7 @@ export const SubscribeRequestT = ObjectT({
 
 export const SubscribeResponseT = ObjectT({
     subscriptionId: Field(0, UnsignedIntT),
-    minIntervalFloorSeconds: Field(1, UnsignedIntT),
+    minIntervalFloorSeconds: OptionalField(1, UnsignedIntT),
     maxIntervalCeilingSeconds: Field(2, UnsignedIntT),
 });
 

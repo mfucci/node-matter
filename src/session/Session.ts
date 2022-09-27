@@ -13,6 +13,7 @@ interface MrpParameters {
 }
 
 export interface Session {
+    isSecure(): boolean;
     getName(): string;
     decode(packet: Packet): Message;
     encode(message: Message): Packet;
@@ -20,4 +21,8 @@ export interface Session {
     setFabric(fabric: Fabric): void;
     getMrpParameters(): MrpParameters;
     getServer(): MatterServer;
+    getId(): number;
+    getPeerSessionId(): number;
+    getNodeId(): bigint | undefined;
+    getPeerNodeId(): bigint | undefined;
 }

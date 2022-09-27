@@ -65,12 +65,12 @@ class Main {
                 ))
             .addProtocolHandler(Protocol.INTERACTION_MODEL, new InteractionProtocol(new Device([
                 new Endpoint(0x00, DEVICE.ROOT, [
-                    new BasicCluster({ vendorName, vendorId, productName, productId }),
-                    new GeneralCommissioningCluster(),
-                    new OperationalCredentialsCluster({devicePrivateKey: DevicePrivateKey, deviceCertificate: DeviceCertificate, deviceIntermediateCertificate: ProductIntermediateCertificate, certificateDeclaration: CertificateDeclaration}),
+                    BasicCluster.Builder({ vendorName, vendorId, productName, productId }),
+                    GeneralCommissioningCluster.Builder(),
+                    OperationalCredentialsCluster.Builder({devicePrivateKey: DevicePrivateKey, deviceCertificate: DeviceCertificate, deviceIntermediateCertificate: ProductIntermediateCertificate, certificateDeclaration: CertificateDeclaration}),
                 ]),
                 new Endpoint(0x01, DEVICE.ON_OFF_LIGHT, [
-                    new OnOffCluster(commandExecutor("on"), commandExecutor("off")),
+                    OnOffCluster.Builder(commandExecutor("on"), commandExecutor("off")),
                 ]),
             ])))
             .start()

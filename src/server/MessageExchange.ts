@@ -1,4 +1,4 @@
-import { Message, MessageCodec } from "../codec/MessageCodec";
+import { Message, MessageCodec, SessionType } from "../codec/MessageCodec";
 import { Queue } from "../util/Queue";
 import { Session } from "../session/Session";
 import { ExchangeSocket, MessageCounter } from "./MatterServer";
@@ -24,27 +24,12 @@ class MessageChannel implements ExchangeSocket<Message> {
 export class MessageExchange {
     private readonly messageCodec = new MessageCodec();
     readonly channel: MessageChannel;
+    private readonly activeRetransmissionTimeoutMs: number;
+    private readonly retransmissionRetries: number;
+    private readonly messagesQueue = new Queue<Message>();
+    private receivedMessageToAck: Message | undefined;
     private sentMessageToAck: Message | undefined;
     private retransmissionTimeoutId:  NodeJS.Timeout | undefined;
-    private activeRetransmissionTimeoutMs: number;
-    private retransmissionRetries: number;
-    private receivedMessageToAck: Message | undefined;
-    private messagesQueue = new Queue<Message>();
-
-    constructor(
-        readonly session: Session,
-        channel: ExchangeSocket<Buffer>,
-        private readonly messageCounter: MessageCounter,
-        private readonly initialMessage: Message,
-        private readonly closeCallback: () => void,
-    ) {
-        this.channel = new MessageChannel(channel, session);
-        this.receivedMessageToAck = initialMessage.payloadHeader.requiresAck ? initialMessage : undefined;
-        this.messagesQueue.write(initialMessage);
-        const {activeRetransmissionTimeoutMs: activeRetransmissionTimeoutMs, retransmissionRetries} = session.getMrpParameters();
-        this.activeRetransmissionTimeoutMs = activeRetransmissionTimeoutMs;
-        this.retransmissionRetries = retransmissionRetries;
-    }
 
     static fromInitialMessage(
         session: Session,
@@ -53,13 +38,60 @@ export class MessageExchange {
         initialMessage: Message,
         closeCallback: () => void,
     ) {
+        const exchange = new MessageExchange(
+            session,
+            channel,
+            messageCounter,
+            false,
+            session.getId(),
+            initialMessage.packetHeader.destNodeId,
+            initialMessage.packetHeader.sourceNodeId,
+            initialMessage.payloadHeader.exchangeId,
+            initialMessage.payloadHeader.protocolId,
+            closeCallback,
+        )
+        exchange.onMessageReceived(initialMessage);
+        return exchange;
+    }
+
+    static initiate(
+        session: Session,
+        channel: ExchangeSocket<Buffer>,
+        exchangeId: number,
+        protocolId: number,
+        messageCounter: MessageCounter,
+        closeCallback: () => void,
+    ) {
         return new MessageExchange(
             session,
             channel,
             messageCounter,
-            initialMessage,
+            true,
+            session.getPeerSessionId(),
+            session.getNodeId(),
+            session.getPeerNodeId(),
+            exchangeId,
+            protocolId,
             closeCallback,
         );
+    }
+
+    constructor(
+        readonly session: Session,
+        channel: ExchangeSocket<Buffer>,
+        private readonly messageCounter: MessageCounter,
+        private readonly isInitiator: boolean,
+        private readonly sessionId: number,
+        private readonly nodeId: bigint | undefined,
+        private readonly peerNodeId: bigint | undefined,
+        private readonly exchangeId: number,
+        private readonly protocolId: number,
+        private readonly closeCallback: () => void,
+    ) {
+        this.channel = new MessageChannel(channel, session);
+        const {activeRetransmissionTimeoutMs: activeRetransmissionTimeoutMs, retransmissionRetries} = session.getMrpParameters();
+        this.activeRetransmissionTimeoutMs = activeRetransmissionTimeoutMs;
+        this.retransmissionRetries = retransmissionRetries;
     }
 
     onMessageReceived(message: Message) {
@@ -101,20 +133,19 @@ export class MessageExchange {
 
     send(messageType: number, payload: Buffer) {
         if (this.sentMessageToAck !== undefined) throw new Error("The previous message has not been acked yet, cannot send a new message");
-        const { packetHeader: { sessionId, sessionType, destNodeId, sourceNodeId }, payloadHeader: { exchangeId, protocolId } } = this.initialMessage;
         const message = {
             packetHeader: {
-                sessionId,
-                sessionType,
+                sessionId: this.sessionId,
+                sessionType: SessionType.Unicast, // TODO: support multicast
                 messageId: this.messageCounter.getIncrementedCounter(),
-                destNodeId: sourceNodeId,
-                sourceNodeId: destNodeId,
+                destNodeId: this.peerNodeId,
+                sourceNodeId: this.nodeId,
             },
             payloadHeader: {
-                exchangeId,
-                protocolId,
+                exchangeId: this.exchangeId,
+                protocolId: this.protocolId,
                 messageType,
-                isInitiatorMessage: false,
+                isInitiatorMessage: this.isInitiator,
                 requiresAck: true,
                 ackedMessageId: this.receivedMessageToAck?.packetHeader.messageId,
             },
@@ -129,10 +160,6 @@ export class MessageExchange {
 
     nextMessage() {
         return this.messagesQueue.read();
-    }
-
-    getInitialMessageType() {
-        return this.initialMessage.payloadHeader.messageType;
     }
 
     async waitFor(messageType: number) {

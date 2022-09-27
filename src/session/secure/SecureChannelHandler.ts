@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { Message } from "../../codec/MessageCodec";
 import { ProtocolHandler } from "../../server/MatterServer";
 import { MessageExchange } from "../../server/MessageExchange";
 import { CasePairing } from "./CasePairing";
@@ -17,14 +18,16 @@ export class SecureChannelHandler implements ProtocolHandler {
         private readonly caseCommissioner: CasePairing,
     ) {}
 
-    onNewExchange(exchange: MessageExchange) {
-        const messageType = exchange.getInitialMessageType();
+    onNewExchange(exchange: MessageExchange, message: Message) {
+        const messageType = message.payloadHeader.messageType;
 
         switch (messageType) {
             case MessageType.PbkdfParamRequest:
-                return this.paseCommissioner.onNewExchange(exchange);
+                this.paseCommissioner.onNewExchange(exchange);
+                break;
             case MessageType.Sigma1:
-                return this.caseCommissioner.onNewExchange(exchange);
+                this.caseCommissioner.onNewExchange(exchange);
+                break;
             default:
                 throw new Error(`Unexpected initial message on secure channel protocol: ${messageType.toString(16)}`);
         }

@@ -7,6 +7,7 @@
 import { Element } from "../../codec/TlvCodec";
 import { Session } from "../../session/Session";
 import { DescriptorCluster } from "../cluster/DescriptorCluster";
+import { Attribute } from "./Attribute";
 import { Cluster } from "./Cluster";
 
 export class Endpoint {
@@ -15,25 +16,28 @@ export class Endpoint {
     constructor(
         readonly id: number,
         readonly device: {name: string, code: number},
-        clusters: Cluster[],
+        clusterBuilders: ((endpointId: number) => Cluster)[],
     ) {
-        clusters.forEach(cluster => this.clustersMap.set(cluster.id, cluster));
+        clusterBuilders.forEach(clusterBuilder => {
+            const cluster = clusterBuilder(id);
+            this.clustersMap.set(cluster.id, cluster);
+        });
     }
 
     addDescriptorCluster(endpoints: Endpoint[]) {
-        const descriptorCluster = new DescriptorCluster(this, endpoints);
+        const descriptorCluster = DescriptorCluster.Builder(endpoints)(this.id);
         this.clustersMap.set(descriptorCluster.id, descriptorCluster);
     }
 
-    getAttributeValue(clusterId?: number, attributeId?: number) {
-        // If clusterId is not provided, iterate over all clusters
-        var clusterIds = (clusterId === undefined) ? [...this.clustersMap.keys()] : [ clusterId ];
-
-        return clusterIds.flatMap(clusterId => {
-            const values = this.clustersMap.get(clusterId)?.getAttributeValue(attributeId);
-            if (values === undefined) return [];
-            return values.map(value => ({clusterId, ...value}));
-        })
+    getAttributes(clusterId?: number, attributeId?: number): Attribute<any>[] {
+        if (clusterId === undefined) {
+            // If the clusterId is not provided, iterate over all clusters
+            return [...this.clustersMap.values()].flatMap(cluster => cluster.getAttributes(attributeId));
+        }
+        
+        const cluster = this.clustersMap.get(clusterId);
+        if (cluster === undefined) return [];
+        return cluster.getAttributes(attributeId);
     }
 
     getClusterIds() {

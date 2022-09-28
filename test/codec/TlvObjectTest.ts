@@ -7,7 +7,7 @@
 import assert from "assert";
 import { TlvTag, TlvType } from "../../src/codec/TlvCodec";
 import { BooleanT, ByteStringT, JsType, ObjectT, Field, TlvObjectCodec, UnsignedIntT, OptionalField } from "../../src/codec/TlvObjectCodec";
-import { DataReportT } from "../../src/interaction/InteractionMessages";
+import { DataReportT } from "../../src/matter/interaction/InteractionMessages";
 
 
 const TEST_TEMPLATE = ObjectT({

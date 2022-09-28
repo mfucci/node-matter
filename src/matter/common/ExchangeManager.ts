@@ -7,8 +7,8 @@
 import { MessageCodec, SessionType } from "../../codec/MessageCodec";
 import { Crypto } from "../../crypto/Crypto";
 import { NetInterface, NetListener } from "../../net/NetInterface";
-import { Session } from "../../session/Session";
-import { SessionManager } from "../../session/SessionManager";
+import { Session } from "../session/Session";
+import { SessionManager } from "../session/SessionManager";
 import { ExchangeSocket } from "./ExchangeSocket";
 import { MessageExchange } from "./MessageExchange";
 import { Protocol } from "./Protocol";

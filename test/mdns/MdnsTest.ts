@@ -6,7 +6,6 @@
 
 import assert from "assert";
 import { DnsCodec } from "../../src/codec/DnsCodec";
-import { Fabric } from "../../src/fabric/Fabric";
 import { UdpSocketFake } from "../../src/net/fake/UdpSocketFake";
 import { UdpSocket } from "../../src/net/UdpSocket";
 import { MdnsMatterBroadcaster } from "../../src/mdns/MdnsMatterBroadcaster";

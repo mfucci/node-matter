@@ -6,9 +6,9 @@
 
 import { Message, MessageCodec, SessionType } from "../../codec/MessageCodec";
 import { Queue } from "../../util/Queue";
-import { Session } from "../../session/Session";
+import { Session } from "../session/Session";
 import { ExchangeSocket } from "./ExchangeSocket";
-import { MessageType } from "../../session/secure/SecureChannelMessages";
+import { MessageType } from "../session/secure/SecureChannelMessages";
 import { MessageCounter } from "./ExchangeManager";
 
 class MessageChannel<ContextT> implements ExchangeSocket<Message> {

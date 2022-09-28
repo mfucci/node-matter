@@ -4,23 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { SECURE_CHANNEL_PROTOCOL_ID } from "../session/secure/SecureChannelMessages";
-import { ResumptionRecord, SessionManager } from "../session/SessionManager";
+import { SECURE_CHANNEL_PROTOCOL_ID } from "./session/secure/SecureChannelMessages";
+import { ResumptionRecord, SessionManager } from "./session/SessionManager";
 import { NetInterface } from "../net/NetInterface";
 import { ExchangeManager } from "./common/ExchangeManager";
-import { PaseClient } from "../session/secure/PaseClient";
-import { ClusterClient, InteractionClient } from "../interaction/InteractionClient";
-import { INTERACTION_PROTOCOL_ID } from "../interaction/InteractionProtocol";
-import { BasicClusterDef } from "../interaction/cluster/BasicCluster";
-import { CommissioningError, GeneralCommissioningClusterDef, RegulatoryLocationType, SuccessFailureReponse } from "../interaction/cluster/GeneralCommissioningCluster";
-import { OperationalCredentialsClusterDef } from "../interaction/cluster/OperationalCredentialsCluster";
-import { CertificateSigningRequestT, CertificateType } from "../interaction/cluster/OperationalCredentialsMessages";
+import { PaseClient } from "./session/secure/PaseClient";
+import { ClusterClient, InteractionClient } from "./interaction/InteractionClient";
+import { INTERACTION_PROTOCOL_ID } from "./interaction/InteractionProtocol";
+import { BasicClusterDef } from "./interaction/cluster/BasicCluster";
+import { CommissioningError, GeneralCommissioningClusterDef, RegulatoryLocationType, SuccessFailureReponse } from "./interaction/cluster/GeneralCommissioningCluster";
+import { OperationalCredentialsClusterDef } from "./interaction/cluster/OperationalCredentialsCluster";
+import { CertificateSigningRequestT, CertificateType } from "./interaction/cluster/OperationalCredentialsMessages";
 import { Crypto } from "../crypto/Crypto";
-import { CertificateManager, jsToMatterDate, NocCertificateT, RootCertificateT } from "../crypto/CertificateManager";
+import { CertificateManager, jsToMatterDate, NocCertificateT, RootCertificateT } from "./common/CertificateManager";
 import { TlvObjectCodec } from "../codec/TlvObjectCodec";
 import { Scanner } from "./common/Scanner";
-import { Fabric, FabricBuilder } from "../fabric/Fabric";
-import { CaseClient } from "../session/secure/CaseClient";
+import { Fabric, FabricBuilder } from "./fabric/Fabric";
+import { CaseClient } from "./session/secure/CaseClient";
 import { requireMinNodeVersion } from "../util/Node";
 
 requireMinNodeVersion(16);

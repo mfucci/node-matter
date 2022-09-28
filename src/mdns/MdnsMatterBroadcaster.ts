@@ -6,7 +6,6 @@
 
 import { ARecord, PtrRecord, SrvRecord, TxtRecord } from "../codec/DnsCodec";
 import { Crypto } from "../crypto/Crypto";
-import { Fabric } from "../fabric/Fabric";
 import { Broadcaster } from "../matter/common/Broadcaster";
 import { bigintToBuffer } from "../util/BigInt";
 import { getDeviceMatterQname, getFabricQname, MATTER_COMMISSION_SERVICE_QNAME, MATTER_SERVICE_QNAME, SERVICE_DISCOVERY_QNAME } from "./MdnsMatterConst";

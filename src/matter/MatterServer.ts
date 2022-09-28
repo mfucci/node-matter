@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ResumptionRecord, SessionManager } from "../session/SessionManager";
-import { FabricManager } from "../fabric/FabricManager";
-import { Session } from "../session/Session";
-import { Fabric } from "../fabric/Fabric";
+import { ResumptionRecord, SessionManager } from "./session/SessionManager";
+import { FabricManager } from "./fabric/FabricManager";
+import { Session } from "./session/Session";
+import { Fabric } from "./fabric/Fabric";
 import { NetInterface } from "../net/NetInterface";
 import { ExchangeSocket } from "./common/ExchangeSocket";
 import { Protocol } from "./common/Protocol";

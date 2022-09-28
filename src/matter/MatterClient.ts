@@ -5,7 +5,7 @@
  */
 
 import { SECURE_CHANNEL_PROTOCOL_ID } from "../session/secure/SecureChannelMessages";
-import { SessionManager } from "../session/SessionManager";
+import { ResumptionRecord, SessionManager } from "../session/SessionManager";
 import { NetInterface } from "../net/NetInterface";
 import { ExchangeManager } from "./common/ExchangeManager";
 import { PaseClient } from "../session/secure/PaseClient";
@@ -19,22 +19,39 @@ import { Crypto } from "../crypto/Crypto";
 import { CertificateManager, jsToMatterDate, NocCertificateT, RootCertificateT } from "../crypto/CertificateManager";
 import { TlvObjectCodec } from "../codec/TlvObjectCodec";
 import { Scanner } from "./common/Scanner";
-import { FabricBuilder } from "../fabric/Fabric";
+import { Fabric, FabricBuilder } from "../fabric/Fabric";
 import { CaseClient } from "../session/secure/CaseClient";
 import { requireMinNodeVersion } from "../util/Node";
 
 requireMinNodeVersion(16);
 
+const FABRIC_ID = BigInt(1);
+const CONTROLLER_NODE_ID = BigInt(0);
+const ADMIN_VENDOR_ID = 752;
+
 export class MatterClient {
+    public static async create(scanner: Scanner, netInterface: NetInterface) {
+        const certificateManager = new RootCertificateManager();
+        const ipkValue = Crypto.getRandomData(16);
+        const fabricBuilder = new FabricBuilder()
+            .setRootCert(certificateManager.getRootCert())
+            .setIdentityProtectionKey(ipkValue)
+            .setVendorId(ADMIN_VENDOR_ID);
+        fabricBuilder.setNewOpCert(certificateManager.generateNoc(fabricBuilder.getPublicKey(), FABRIC_ID, CONTROLLER_NODE_ID));
+        const fabric = await fabricBuilder.build();
+        return new MatterClient(scanner, netInterface, certificateManager, fabric);
+    }
+
     private readonly sessionManager = new SessionManager(this);
     private readonly exchangeManager = new ExchangeManager<MatterClient>(this.sessionManager);
     private readonly paseClient = new PaseClient();
     private readonly caseClient = new CaseClient();
-    private readonly certificateManager = new RootCertificateManager();
 
     constructor(
         private readonly scanner: Scanner,
         private readonly netInterface: NetInterface,
+        private readonly certificateManager: RootCertificateManager,
+        private readonly fabric: Fabric,
     ) {
         this.exchangeManager.addNetInterface(netInterface);
     }
@@ -71,45 +88,40 @@ export class MatterClient {
         const operationalPublicKey = CertificateManager.getPublicKeyFromCsr(csr);
         
         await operationalCredentialsClusterClient.addTrustedRootCertificate({ certificate: this.certificateManager.getRootCert() });
-        const fabricId = BigInt(1);
-        const nodeId = BigInt(0);
         const peerNodeId = BigInt(1);
-        const ipkValue = Crypto.getRandomData(16);
-        const adminVendorId = 752;
-        const peerOperationalCert = this.certificateManager.generateNoc(operationalPublicKey, fabricId, peerNodeId);
+        const peerOperationalCert = this.certificateManager.generateNoc(operationalPublicKey, FABRIC_ID, peerNodeId);
         await operationalCredentialsClusterClient.addNoc({
             nocCert: peerOperationalCert,
             icaCert: Buffer.alloc(0),
-            ipkValue,
-            adminVendorId,
-            caseAdminNode: nodeId,
+            ipkValue: this.fabric.identityProtectionKey,
+            adminVendorId: ADMIN_VENDOR_ID,
+            caseAdminNode: CONTROLLER_NODE_ID,
         });
-        const peerDeviceFabric = await new FabricBuilder()
-            .setRootCert(this.certificateManager.getRootCert())
-            .setNewOpCert(peerOperationalCert)
-            .setIdentityProtectionKey(ipkValue)
-            .setVendorId(adminVendorId)
-            .build();
-        const fabricBuilder = new FabricBuilder()
-            .setRootCert(this.certificateManager.getRootCert())
-            .setIdentityProtectionKey(ipkValue)
-            .setVendorId(adminVendorId);
-        fabricBuilder.setNewOpCert(this.certificateManager.generateNoc(fabricBuilder.getPublicKey(), fabricId, nodeId))
-        const fabric = await fabricBuilder.build();
 
         // Look for the device broadcast over MDNS
-        const scanResult = await this.scanner.lookForDevice(peerDeviceFabric.operationalId, peerDeviceFabric.nodeId);
+        const scanResult = await this.scanner.lookForDevice(this.fabric.operationalId, peerNodeId);
         if (scanResult === undefined) throw new Error("The device being commmissioned cannot be found on the network");
         const { ip: operationalIp, port: operationalPort } = scanResult;
 
         // Do CASE pairing
         const operationalChannel = await this.netInterface.openChannel(operationalIp, operationalPort);
-        const operationalSecureSession = await this.caseClient.pair(this, this.exchangeManager.initiateExchange(this.sessionManager.getUnsecureSession(), operationalChannel, SECURE_CHANNEL_PROTOCOL_ID), fabric, peerNodeId);
+        const operationalSecureSession = await this.caseClient.pair(this, this.exchangeManager.initiateExchange(this.sessionManager.getUnsecureSession(), operationalChannel, SECURE_CHANNEL_PROTOCOL_ID), this.fabric, peerNodeId);
         interactionClient = new InteractionClient(() => this.exchangeManager.initiateExchange(operationalSecureSession, operationalChannel, INTERACTION_PROTOCOL_ID));
 
         // Complete the commission
         generalCommissioningClusterClient = ClusterClient(interactionClient, 0, GeneralCommissioningClusterDef);
         this.ensureSuccess(await generalCommissioningClusterClient.commissioningComplete({}));
+    }
+
+    async connect(nodeId: bigint) {
+        const scanResult = await this.scanner.lookForDevice(this.fabric.operationalId, nodeId);
+        if (scanResult === undefined) throw new Error("The device being commmissioned cannot be found on the network");
+        const { ip: operationalIp, port: operationalPort } = scanResult;
+
+        // Do CASE pairing
+        const operationalChannel = await this.netInterface.openChannel(operationalIp, operationalPort);
+        const operationalSecureSession = await this.caseClient.pair(this, this.exchangeManager.initiateExchange(this.sessionManager.getUnsecureSession(), operationalChannel, SECURE_CHANNEL_PROTOCOL_ID), this.fabric, nodeId);
+        return new InteractionClient(() => this.exchangeManager.initiateExchange(operationalSecureSession, operationalChannel, INTERACTION_PROTOCOL_ID));
     }
 
     private ensureSuccess({ errorCode, debugText }: SuccessFailureReponse) {
@@ -123,6 +135,18 @@ export class MatterClient {
 
     createSecureSession(sessionId: number, nodeId: bigint, peerNodeId: bigint, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
         return this.sessionManager.createSecureSession(sessionId, nodeId, peerNodeId, peerSessionId, sharedSecret, salt, isInitiator, idleRetransTimeoutMs, activeRetransTimeoutMs);
+    }
+
+    getResumptionRecord(resumptionId: Buffer) {
+        return this.sessionManager.findResumptionRecordById(resumptionId);
+    }
+
+    findResumptionRecordByNodeId(nodeId: bigint) {
+        return this.sessionManager.findResumptionRecordByNodeId(nodeId);
+    }
+
+    saveResumptionRecord(resumptionRecord: ResumptionRecord) {
+        return this.sessionManager.saveResumptionRecord(resumptionRecord);
     }
 
     close() {

@@ -15,11 +15,11 @@ export class SecureChannelMessenger<ContextT> {
         protected readonly exchange: MessageExchange<ContextT>,
     ) {}
 
-    async nextMessage(expectedMessageType: number) {
+    async nextMessage(expectedMessageType?: number) {
         const message = await this.exchange.nextMessage();
         const messageType = message.payloadHeader.messageType;
         this.throwIfError(messageType, message.payload);
-        if (messageType !== expectedMessageType) throw new Error(`Received unexpected message type: ${messageType}, expected: ${expectedMessageType}`);
+        if (expectedMessageType !== undefined && messageType !== expectedMessageType) throw new Error(`Received unexpected message type: ${messageType}, expected: ${expectedMessageType}`);
         return message;
     }
 

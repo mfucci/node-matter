@@ -23,7 +23,7 @@ class Main {
         const port = getIntParameter("port") ?? 5540;
         const discriminator = getIntParameter("discriminator") ?? 3840;
         const setupPin = getIntParameter("pin") ?? 20202021;
-        const client = new MatterClient(await MdnsMatterScanner.create(), await UdpInterface.create(5540));
+        const client = await MatterClient.create(await MdnsMatterScanner.create(), await UdpInterface.create(5540));
         try {
             await client.commission(ip, port, discriminator, setupPin);
         } finally {

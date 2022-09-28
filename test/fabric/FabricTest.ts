@@ -62,7 +62,7 @@ describe("Fabric", () => {
 
     context("getDestinationId", () => {
         it("generates the correct destination ID", async () => {
-            const fabric = new Fabric(TEST_FABRIC_ID, TEST_NODE_ID, Buffer.alloc(0), TEST_ROOT_PUBLIC_KEY, Crypto.createKeyPair(), 0, Buffer.alloc(0), TEST_IDENTITY_PROTECTION_KEY, undefined, Buffer.alloc(0)); 
+            const fabric = new Fabric(TEST_FABRIC_ID, TEST_NODE_ID, Buffer.alloc(0), TEST_ROOT_PUBLIC_KEY, Crypto.createKeyPair(), 0, Buffer.alloc(0), Buffer.alloc(0), TEST_IDENTITY_PROTECTION_KEY, undefined, Buffer.alloc(0)); 
 
             const result = fabric.getDestinationId(TEST_NODE_ID, TEST_RANDOM);
 
@@ -83,7 +83,7 @@ describe("Fabric", () => {
         });
 
         it("generates the correct destination ID 3", async () => {
-            const fabric = new Fabric(TEST_FABRIC_ID_3, TEST_NODE_ID_3, Buffer.alloc(0), TEST_ROOT_PUBLIC_KEY_3, Crypto.createKeyPair(), 0, Buffer.alloc(0), TEST_IDENTITY_PROTECTION_KEY_3, undefined, Buffer.alloc(0)); 
+            const fabric = new Fabric(TEST_FABRIC_ID_3, TEST_NODE_ID_3, Buffer.alloc(0), TEST_ROOT_PUBLIC_KEY_3, Crypto.createKeyPair(), 0, Buffer.alloc(0), Buffer.alloc(0), TEST_IDENTITY_PROTECTION_KEY_3, undefined, Buffer.alloc(0)); 
 
             const result = fabric.getDestinationId(TEST_NODE_ID, TEST_RANDOM_3);
 

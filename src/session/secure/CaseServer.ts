@@ -10,7 +10,7 @@ import { Protocol } from "../../matter/common/Protocol";
 import { MessageExchange } from "../../matter/common/MessageExchange";
 import { CaseServerMessenger } from "./CaseMessenger";
 import { TlvObjectCodec } from "../../codec/TlvObjectCodec";
-import { KDFSR2_INFO, KDFSR3_INFO, TagBasedEcryptionDataT, TagBasedSignatureDataT, TBE_DATA2_NONCE, TBE_DATA3_NONCE } from "./CaseMessages";
+import { KDFSR1_KEY_INFO, KDFSR2_INFO, KDFSR2_KEY_INFO, KDFSR3_INFO, RESUME1_MIC_NONCE, RESUME2_MIC_NONCE, EncryptedDataSigma2T, SignedDataT, TBE_DATA2_NONCE, TBE_DATA3_NONCE, EncryptedDataSigma3T } from "./CaseMessages";
 import { NocCertificateT } from "../../crypto/CertificateManager";
 import { SECURE_CHANNEL_PROTOCOL_ID } from "./SecureChannelMessages";
 
@@ -37,36 +37,63 @@ export class CaseServer implements Protocol<MatterServer> {
 
         // Read and process sigma 1
         const { sigma1Bytes, sigma1 } = await messenger.readSigma1();
-        const { sessionId: peerSessionId, resumptionId: peerResumptionId, destinationId, random: peerRandom, ecdhPublicKey: peerEcdhPublicKey, mrpParams } = sigma1;
-        if (peerResumptionId !== undefined) throw new Error("CASE session resume not supported");
-        const fabric = server.findFabricFromDestinationId(destinationId, peerRandom);
-        const { nodeId, newOpCert, intermediateCACert, identityProtectionKey } = fabric;
-        const { publicKey: ecdhPublicKey, sharedSecret } = Crypto.ecdhGeneratePublicKeyAndSecret(peerEcdhPublicKey);
-
-        // Generate sigma 2
-        const sigma2Salt = Buffer.concat([ identityProtectionKey, random, ecdhPublicKey, Crypto.hash(sigma1Bytes) ]);
-        const sigma2Key = await Crypto.hkdf(sharedSecret, sigma2Salt, KDFSR2_INFO);
-        const signatureData = TlvObjectCodec.encode({ newOpCert, intermediateCACert, ecdhPublicKey, peerEcdhPublicKey }, TagBasedSignatureDataT);
-        const signature = fabric.sign(signatureData);
+        const { sessionId: peerSessionId, resumptionId: peerResumptionId, resumeMic: peerResumeMic, destinationId, random: peerRandom, ecdhPublicKey: peerEcdhPublicKey, mrpParams } = sigma1;
+  
+        // Try to resume a previous session
         const resumptionId = Crypto.getRandomData(16);
-        const encryptedData = TlvObjectCodec.encode({ newOpCert, intermediateCACert, signature, resumptionId }, TagBasedEcryptionDataT);
-        const encrypted = Crypto.encrypt(sigma2Key, encryptedData, TBE_DATA2_NONCE);
-        const sigma2Bytes = await messenger.sendSigma2({ random, sessionId, ecdhPublicKey, encrypted, mrpParams });
+        let resumptionRecord;
+        if (peerResumptionId !== undefined && peerResumeMic !== undefined && (resumptionRecord = server.findResumptionRecordById(peerResumptionId)) !== undefined) {
+            const { sharedSecret, fabric, peerNodeId } = resumptionRecord;
+            const peerResumeKey = await Crypto.hkdf(sharedSecret, Buffer.concat([peerRandom, peerResumptionId]), KDFSR1_KEY_INFO);
+            Crypto.decrypt(peerResumeKey, peerResumeMic, RESUME1_MIC_NONCE);
 
-        // Read and process sigma 3
-        const { sigma3Bytes, sigma3: {encrypted: peerEncrypted} } = await messenger.readSigma3();
-        const sigma3Salt = Buffer.concat([ identityProtectionKey, Crypto.hash([ sigma1Bytes, sigma2Bytes ]) ]);
-        const sigma3Key = await Crypto.hkdf(sharedSecret, sigma3Salt, KDFSR3_INFO);
-        const peerEncryptedData = Crypto.decrypt(sigma3Key, peerEncrypted, TBE_DATA3_NONCE);
-        const { newOpCert: peerNewOpCert, intermediateCACert: peerIntermediateCACert, signature: peerSignature } = TlvObjectCodec.decode(peerEncryptedData, TagBasedEcryptionDataT);
-        fabric.verifyCredentials(peerNewOpCert, peerIntermediateCACert);
-        const peerSignatureData = TlvObjectCodec.encode({ newOpCert: peerNewOpCert, intermediateCACert: peerIntermediateCACert, ecdhPublicKey: peerEcdhPublicKey, peerEcdhPublicKey: ecdhPublicKey }, TagBasedSignatureDataT);
-        const { ellipticCurvePublicKey: peerPublicKey, subject: { nodeId: peerNodeId } } = TlvObjectCodec.decode(peerNewOpCert, NocCertificateT);
-        Crypto.verify(peerPublicKey, peerSignatureData, peerSignature);
+            // Generate sigma 2 resume
+            const secureSessionSalt = Buffer.concat([peerRandom, resumptionId]);
+            const resumeKey = await Crypto.hkdf(sharedSecret, secureSessionSalt, KDFSR2_KEY_INFO);
+            const resumeMic = Crypto.encrypt(resumeKey, Buffer.alloc(0), RESUME2_MIC_NONCE);
+            await messenger.sendSigma2Resume({ resumptionId, resumeMic, sessionId });
+
+            // All good! Create secure session
+            const secureSession = await server.createSecureSession(sessionId, fabric.nodeId, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, false, mrpParams?.idleRetransTimeoutMs, mrpParams?.activeRetransTimeoutMs);
+            secureSession.setFabric(fabric);
+            console.log(`Case server: session resumed with ${messenger.getChannelName()}`);
+
+            resumptionRecord.resumptionId = resumptionId; /* Update the ID */
+        } else {
+            // Generate sigma 2
+            const fabric = server.findFabricFromDestinationId(destinationId, peerRandom);
+            const { nodeId, newOpCert, intermediateCACert, identityProtectionKey } = fabric;
+            const { publicKey: ecdhPublicKey, sharedSecret } = Crypto.ecdhGeneratePublicKeyAndSecret(peerEcdhPublicKey);
+            const sigma2Salt = Buffer.concat([ identityProtectionKey, random, ecdhPublicKey, Crypto.hash(sigma1Bytes) ]);
+            const sigma2Key = await Crypto.hkdf(sharedSecret, sigma2Salt, KDFSR2_INFO);
+            const signatureData = TlvObjectCodec.encode({ newOpCert, intermediateCACert, ecdhPublicKey, peerEcdhPublicKey }, SignedDataT);
+            const signature = fabric.sign(signatureData);
+            const encryptedData = TlvObjectCodec.encode({ newOpCert, intermediateCACert, signature, resumptionId }, EncryptedDataSigma2T);
+            const encrypted = Crypto.encrypt(sigma2Key, encryptedData, TBE_DATA2_NONCE);
+            const sigma2Bytes = await messenger.sendSigma2({ random, sessionId, ecdhPublicKey, encrypted, mrpParams });
+
+            // Read and process sigma 3
+            const { sigma3Bytes, sigma3: {encrypted: peerEncrypted} } = await messenger.readSigma3();
+            const sigma3Salt = Buffer.concat([ identityProtectionKey, Crypto.hash([ sigma1Bytes, sigma2Bytes ]) ]);
+            const sigma3Key = await Crypto.hkdf(sharedSecret, sigma3Salt, KDFSR3_INFO);
+            const peerEncryptedData = Crypto.decrypt(sigma3Key, peerEncrypted, TBE_DATA3_NONCE);
+            const { newOpCert: peerNewOpCert, intermediateCACert: peerIntermediateCACert, signature: peerSignature } = TlvObjectCodec.decode(peerEncryptedData, EncryptedDataSigma3T);
+            fabric.verifyCredentials(peerNewOpCert, peerIntermediateCACert);
+            const peerSignatureData = TlvObjectCodec.encode({ newOpCert: peerNewOpCert, intermediateCACert: peerIntermediateCACert, ecdhPublicKey: peerEcdhPublicKey, peerEcdhPublicKey: ecdhPublicKey }, SignedDataT);
+            const { ellipticCurvePublicKey: peerPublicKey, subject: { nodeId: peerNodeId } } = TlvObjectCodec.decode(peerNewOpCert, NocCertificateT);
+            Crypto.verify(peerPublicKey, peerSignatureData, peerSignature);
+
+            // All good! Create secure session
+            const secureSessionSalt = Buffer.concat([identityProtectionKey, Crypto.hash([ sigma1Bytes, sigma2Bytes, sigma3Bytes ])]);
+            const secureSession = await server.createSecureSession(sessionId, nodeId, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, false, mrpParams?.idleRetransTimeoutMs, mrpParams?.activeRetransTimeoutMs);
+            secureSession.setFabric(fabric);
+            console.log(`Case server: Paired succesfully with ${messenger.getChannelName()}`);
+            await messenger.sendSuccess();
+
+            resumptionRecord = { peerNodeId, fabric, sharedSecret, resumptionId };
+        }
 
         // All good! Create secure session
-        const secureSessionSalt = Buffer.concat([identityProtectionKey, Crypto.hash([ sigma1Bytes, sigma2Bytes, sigma3Bytes ])]);
-        await server.createSecureSession(sessionId, nodeId, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, false, mrpParams?.idleRetransTimeoutMs, mrpParams?.activeRetransTimeoutMs);
         await messenger.sendSuccess();
         console.log(`Case server: Paired succesfully with ${messenger.getChannelName()}`);
     }

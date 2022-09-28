@@ -59,9 +59,9 @@ describe("Integration", () => {
     var server: MatterServer;
     var client: MatterClient;
 
-    beforeEach(async () => {
+    before(async () => {
         Network.get = () => clientNetwork;
-        client = new MatterClient(
+        client = await MatterClient.create(
             await MdnsMatterScanner.create(CLIENT_IP),
             await UdpInterface.create(5540, CLIENT_IP),
         );
@@ -89,16 +89,22 @@ describe("Integration", () => {
         Network.get = () => { throw new Error("Network should not be requested post creation") };
     });
 
-    afterEach(() => {
-        server.stop();
-        client.close();
-    });
-
     context("commission", () => {
         it("the client commissions a new device", async () => {
             await client.commission(SERVER_IP, matterPort, discriminator, setupPin);
 
             assert.ok(true);
         });
+
+        it("the session is resume if it has been established previously", async () => {
+            await client.connect(BigInt(1));
+
+            assert.ok(true);
+        });
+    });
+
+    after(() => {
+        server.stop();
+        client.close();
     });
 });

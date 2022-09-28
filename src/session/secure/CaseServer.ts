@@ -93,8 +93,6 @@ export class CaseServer implements Protocol<MatterServer> {
             resumptionRecord = { peerNodeId, fabric, sharedSecret, resumptionId };
         }
 
-        // All good! Create secure session
-        await messenger.sendSuccess();
-        console.log(`Case server: Paired succesfully with ${messenger.getChannelName()}`);
+        server.saveResumptionRecord(resumptionRecord);
     }
 }

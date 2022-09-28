@@ -22,7 +22,7 @@ export class CaseClient {
         // Generate pairing info
         const random = Crypto.getRandom();
         const sessionId = client.getNextAvailableSessionId();
-        const { identityProtectionKey, newOpCert, intermediateCACert, nodeId } = fabric;
+        const { operationalIdentityProtectionKey, newOpCert, intermediateCACert, nodeId } = fabric;
         const { publicKey: ecdhPublicKey, ecdh } = Crypto.ecdhGeneratePublicKey();
 
         // Send sigma1
@@ -58,7 +58,7 @@ export class CaseClient {
             // Process sigma2
             const { ecdhPublicKey: peerEcdhPublicKey, encrypted: peerEncrypted, random: peerRandom, sessionId: peerSessionId } = sigma2;
             const sharedSecret = Crypto.ecdhGenerateSecret(peerEcdhPublicKey, ecdh);
-            const sigma2Salt = Buffer.concat([ identityProtectionKey, peerRandom, peerEcdhPublicKey, Crypto.hash(sigma1Bytes) ]);
+            const sigma2Salt = Buffer.concat([ operationalIdentityProtectionKey, peerRandom, peerEcdhPublicKey, Crypto.hash(sigma1Bytes) ]);
             const sigma2Key = await Crypto.hkdf(sharedSecret, sigma2Salt, KDFSR2_INFO);
             const peerEncryptedData = Crypto.decrypt(sigma2Key, peerEncrypted, TBE_DATA2_NONCE);
             const { newOpCert: peerNewOpCert, intermediateCACert: peerIntermediateCACert, signature: peerSignature, resumptionId: peerResumptionId } = TlvObjectCodec.decode(peerEncryptedData, EncryptedDataSigma2T);
@@ -68,7 +68,7 @@ export class CaseClient {
             Crypto.verify(peerPublicKey, peerSignatureData, peerSignature);
     
             // Generate and send sigma3
-            const sigma3Salt = Buffer.concat([ identityProtectionKey, Crypto.hash([ sigma1Bytes, sigma2Bytes ]) ]);
+            const sigma3Salt = Buffer.concat([ operationalIdentityProtectionKey, Crypto.hash([ sigma1Bytes, sigma2Bytes ]) ]);
             const sigma3Key = await Crypto.hkdf(sharedSecret, sigma3Salt, KDFSR3_INFO);
             const signatureData = TlvObjectCodec.encode({ newOpCert, intermediateCACert, ecdhPublicKey, peerEcdhPublicKey }, SignedDataT);
             const signature = fabric.sign(signatureData);
@@ -78,7 +78,7 @@ export class CaseClient {
             await messenger.waitForSuccess();
      
             // All good! Create secure session
-            const secureSessionSalt = Buffer.concat([identityProtectionKey, Crypto.hash([ sigma1Bytes, sigma2Bytes, sigma3Bytes ])]);
+            const secureSessionSalt = Buffer.concat([operationalIdentityProtectionKey, Crypto.hash([ sigma1Bytes, sigma2Bytes, sigma3Bytes ])]);
             secureSession = await client.createSecureSession(sessionId, nodeId, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, true);
             secureSession.setFabric(fabric);
             console.log(`Case client: Paired succesfully with ${messenger.getChannelName()}`);

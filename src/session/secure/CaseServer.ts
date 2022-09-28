@@ -62,9 +62,9 @@ export class CaseServer implements Protocol<MatterServer> {
         } else {
             // Generate sigma 2
             const fabric = server.findFabricFromDestinationId(destinationId, peerRandom);
-            const { nodeId, newOpCert, intermediateCACert, identityProtectionKey } = fabric;
+            const { nodeId, newOpCert, intermediateCACert, operationalIdentityProtectionKey } = fabric;
             const { publicKey: ecdhPublicKey, sharedSecret } = Crypto.ecdhGeneratePublicKeyAndSecret(peerEcdhPublicKey);
-            const sigma2Salt = Buffer.concat([ identityProtectionKey, random, ecdhPublicKey, Crypto.hash(sigma1Bytes) ]);
+            const sigma2Salt = Buffer.concat([ operationalIdentityProtectionKey, random, ecdhPublicKey, Crypto.hash(sigma1Bytes) ]);
             const sigma2Key = await Crypto.hkdf(sharedSecret, sigma2Salt, KDFSR2_INFO);
             const signatureData = TlvObjectCodec.encode({ newOpCert, intermediateCACert, ecdhPublicKey, peerEcdhPublicKey }, SignedDataT);
             const signature = fabric.sign(signatureData);
@@ -74,7 +74,7 @@ export class CaseServer implements Protocol<MatterServer> {
 
             // Read and process sigma 3
             const { sigma3Bytes, sigma3: {encrypted: peerEncrypted} } = await messenger.readSigma3();
-            const sigma3Salt = Buffer.concat([ identityProtectionKey, Crypto.hash([ sigma1Bytes, sigma2Bytes ]) ]);
+            const sigma3Salt = Buffer.concat([ operationalIdentityProtectionKey, Crypto.hash([ sigma1Bytes, sigma2Bytes ]) ]);
             const sigma3Key = await Crypto.hkdf(sharedSecret, sigma3Salt, KDFSR3_INFO);
             const peerEncryptedData = Crypto.decrypt(sigma3Key, peerEncrypted, TBE_DATA3_NONCE);
             const { newOpCert: peerNewOpCert, intermediateCACert: peerIntermediateCACert, signature: peerSignature } = TlvObjectCodec.decode(peerEncryptedData, EncryptedDataSigma3T);
@@ -84,7 +84,7 @@ export class CaseServer implements Protocol<MatterServer> {
             Crypto.verify(peerPublicKey, peerSignatureData, peerSignature);
 
             // All good! Create secure session
-            const secureSessionSalt = Buffer.concat([identityProtectionKey, Crypto.hash([ sigma1Bytes, sigma2Bytes, sigma3Bytes ])]);
+            const secureSessionSalt = Buffer.concat([operationalIdentityProtectionKey, Crypto.hash([ sigma1Bytes, sigma2Bytes, sigma3Bytes ])]);
             const secureSession = await server.createSecureSession(sessionId, nodeId, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, false, mrpParams?.idleRetransTimeoutMs, mrpParams?.activeRetransTimeoutMs);
             secureSession.setFabric(fabric);
             console.log(`Case server: Paired succesfully with ${messenger.getChannelName()}`);

@@ -23,7 +23,7 @@ export class Fabric {
         private readonly vendorId: number,
         private readonly rootCert: Buffer,
         readonly identityProtectionKey: Buffer,
-        private readonly operationalIdentityProtectionKey: Buffer,
+        readonly operationalIdentityProtectionKey: Buffer,
         readonly intermediateCACert: Buffer | undefined,
         readonly newOpCert: Buffer,
     ) {}

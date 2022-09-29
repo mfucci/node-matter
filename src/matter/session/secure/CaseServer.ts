@@ -5,17 +5,17 @@
  */
 
 import { Crypto } from "../../../crypto/Crypto";
-import { MatterServer } from "../../MatterServer";
-import { Protocol } from "../../common/Protocol";
+import { MatterDevice } from "../../MatterDevice";
+import { ProtocolHandler } from "../../common/ProtocolHandler";
 import { MessageExchange } from "../../common/MessageExchange";
 import { CaseServerMessenger } from "./CaseMessenger";
 import { TlvObjectCodec } from "../../../codec/TlvObjectCodec";
 import { KDFSR1_KEY_INFO, KDFSR2_INFO, KDFSR2_KEY_INFO, KDFSR3_INFO, RESUME1_MIC_NONCE, RESUME2_MIC_NONCE, EncryptedDataSigma2T, SignedDataT, TBE_DATA2_NONCE, TBE_DATA3_NONCE, EncryptedDataSigma3T } from "./CaseMessages";
-import { NocCertificateT } from "../../common/CertificateManager";
+import { OperationalCertificateT } from "../../certificate/CertificateManager";
 import { SECURE_CHANNEL_PROTOCOL_ID } from "./SecureChannelMessages";
 
-export class CaseServer implements Protocol<MatterServer> {
-    async onNewExchange(exchange: MessageExchange<MatterServer>) {
+export class CaseServer implements ProtocolHandler<MatterDevice> {
+    async onNewExchange(exchange: MessageExchange<MatterDevice>) {
         const messenger = new CaseServerMessenger(exchange);
         try {
             await this.handleSigma1(exchange.session.getContext(), messenger);
@@ -29,7 +29,7 @@ export class CaseServer implements Protocol<MatterServer> {
         return SECURE_CHANNEL_PROTOCOL_ID;
     }
 
-    private async handleSigma1(server: MatterServer, messenger: CaseServerMessenger) {
+    private async handleSigma1(server: MatterDevice, messenger: CaseServerMessenger) {
         console.log(`Case server: Received pairing request from ${messenger.getChannelName()}`);
         // Generate pairing info
         const sessionId = server.getNextAvailableSessionId();
@@ -62,7 +62,7 @@ export class CaseServer implements Protocol<MatterServer> {
         } else {
             // Generate sigma 2
             const fabric = server.findFabricFromDestinationId(destinationId, peerRandom);
-            const { nodeId, newOpCert, intermediateCACert, operationalIdentityProtectionKey } = fabric;
+            const { nodeId, operationalCert: newOpCert, intermediateCACert, operationalIdentityProtectionKey } = fabric;
             const { publicKey: ecdhPublicKey, sharedSecret } = Crypto.ecdhGeneratePublicKeyAndSecret(peerEcdhPublicKey);
             const sigma2Salt = Buffer.concat([ operationalIdentityProtectionKey, random, ecdhPublicKey, Crypto.hash(sigma1Bytes) ]);
             const sigma2Key = await Crypto.hkdf(sharedSecret, sigma2Salt, KDFSR2_INFO);
@@ -80,7 +80,7 @@ export class CaseServer implements Protocol<MatterServer> {
             const { newOpCert: peerNewOpCert, intermediateCACert: peerIntermediateCACert, signature: peerSignature } = TlvObjectCodec.decode(peerEncryptedData, EncryptedDataSigma3T);
             fabric.verifyCredentials(peerNewOpCert, peerIntermediateCACert);
             const peerSignatureData = TlvObjectCodec.encode({ newOpCert: peerNewOpCert, intermediateCACert: peerIntermediateCACert, ecdhPublicKey: peerEcdhPublicKey, peerEcdhPublicKey: ecdhPublicKey }, SignedDataT);
-            const { ellipticCurvePublicKey: peerPublicKey, subject: { nodeId: peerNodeId } } = TlvObjectCodec.decode(peerNewOpCert, NocCertificateT);
+            const { ellipticCurvePublicKey: peerPublicKey, subject: { nodeId: peerNodeId } } = TlvObjectCodec.decode(peerNewOpCert, OperationalCertificateT);
             Crypto.verify(peerPublicKey, peerSignatureData, peerSignature);
 
             // All good! Create secure session

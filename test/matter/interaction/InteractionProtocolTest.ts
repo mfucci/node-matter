@@ -5,15 +5,15 @@
  */
 
 import assert from "assert";
-import { BasicClusterServer } from "../../../src/matter/interaction/cluster/BasicCluster";
+import { BasicClusterServer } from "../../../src/matter/cluster/BasicCluster";
 import { TlvTag, TlvType } from "../../../src/codec/TlvCodec";
 import { InteractionProtocol } from "../../../src/matter/interaction/InteractionProtocol";
 import { ReadRequest, DataReport } from "../../../src/matter/interaction/InteractionMessenger";
-import { Device } from "../../../src/matter/interaction/model/Device";
-import { Endpoint } from "../../../src/matter/interaction/model/Endpoint";
+import { Device } from "../../../src/matter/cluster/Device";
+import { Endpoint } from "../../../src/matter/cluster/Endpoint";
 import { MessageExchange } from "../../../src/matter/common/MessageExchange";
-import { DEVICE } from "../../../src/matter/Devices";
-import { MatterServer } from "../../../src/matter/MatterServer";
+import { DEVICE } from "../../../src/matter/common/DeviceTypes";
+import { MatterDevice } from "../../../src/matter/MatterDevice";
 
 const READ_REQUEST: ReadRequest = {
     interactionModelRevision: 1,
@@ -67,7 +67,7 @@ describe("InteractionProtocol", () => {
                 ])
             ]));
 
-            const result = interactionProtocol.handleReadRequest(({channel: {getName: () => "test"}}) as MessageExchange<MatterServer>, READ_REQUEST);
+            const result = interactionProtocol.handleReadRequest(({channel: {getName: () => "test"}}) as MessageExchange<MatterDevice>, READ_REQUEST);
 
             assert.deepEqual(result, READ_RESPONSE);
         });

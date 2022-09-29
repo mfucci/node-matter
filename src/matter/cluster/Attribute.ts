@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Element } from "../../../codec/TlvCodec";
-import { Template, TlvObjectCodec } from "../../../codec/TlvObjectCodec";
-import { SubscriptionHandler } from "../InteractionProtocol";
+import { Element } from "../../codec/TlvCodec";
+import { Template, TlvObjectCodec } from "../../codec/TlvObjectCodec";
+import { SubscriptionHandler } from "../interaction/InteractionProtocol";
 
 export interface Report {
     path: {

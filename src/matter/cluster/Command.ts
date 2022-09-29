@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Element } from "../../../codec/TlvCodec";
-import { ObjectT, Template, TlvObjectCodec } from "../../../codec/TlvObjectCodec";
-import { Session } from "../../session/Session";
+import { Element } from "../../codec/TlvCodec";
+import { ObjectT, Template, TlvObjectCodec } from "../../codec/TlvObjectCodec";
+import { Session } from "../session/Session";
 
 export const enum ResultCode {
     Success = 0x00,

@@ -5,13 +5,13 @@
  */
 
 import { JsType, TlvObjectCodec } from "../../../codec/TlvObjectCodec";
-import { MatterClient } from "../../MatterClient";
-import { MatterServer } from "../../MatterServer";
+import { MatterController } from "../../MatterController";
+import { MatterDevice } from "../../MatterDevice";
 import { CaseSigma1T, CaseSigma2ResumeT, CaseSigma2T, CaseSigma3T } from "./CaseMessages";
 import { MessageType } from "./SecureChannelMessages";
 import { SecureChannelMessenger } from "./SecureChannelMessenger";
 
-export class CaseServerMessenger extends SecureChannelMessenger<MatterServer> {
+export class CaseServerMessenger extends SecureChannelMessenger<MatterDevice> {
     async readSigma1() {
         const { payload } = await this.nextMessage(MessageType.Sigma1);
         return { sigma1Bytes: payload, sigma1: TlvObjectCodec.decode(payload, CaseSigma1T) } ;
@@ -31,7 +31,7 @@ export class CaseServerMessenger extends SecureChannelMessenger<MatterServer> {
     }
 }
 
-export class CaseClientMessenger extends SecureChannelMessenger<MatterClient> {
+export class CaseClientMessenger extends SecureChannelMessenger<MatterController> {
 
     sendSigma1(sigma1: JsType<typeof CaseSigma1T>) {
         return this.send(sigma1, MessageType.Sigma1, CaseSigma1T);

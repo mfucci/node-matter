@@ -5,8 +5,8 @@
  */
 
 import { networkInterfaces, NetworkInterfaceInfo } from "os";
-import { UdpSocketOptions, UdpSocket } from "../UdpSocket";
-import { UdpSocketNode } from "./UdpSocketNode";
+import { UdpChannelOptions, UdpChannel } from "../UdpChannel";
+import { UdpChannelNode } from "./UdpChannelNode";
 import { Network } from "../Network";
 
 function ipToNumber(ip: string) {
@@ -19,8 +19,8 @@ function ipToNumber(ip: string) {
 }
 
 export class NetworkNode extends Network {
-    createUdpSocket(options: UdpSocketOptions): Promise<UdpSocket> {
-        return UdpSocketNode.create(options);
+    createUdpChannel(options: UdpChannelOptions): Promise<UdpChannel> {
+        return UdpChannelNode.create(options);
     }
 
     getIpMacAddresses(): {ip: string, mac: string}[] {

@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Device } from "../cluster/Device";
-import { MatterDevice } from "../MatterDevice";
-import { ProtocolHandler } from "../common/ProtocolHandler";
-import { Channel } from "../../net/Channel";
-import { MessageExchange } from "../common/MessageExchange";
+import { Device } from "./model/Device";
+import { MatterDevice } from "../matter/MatterDevice";
+import { ProtocolHandler } from "../matter/common/ProtocolHandler";
+import { Channel } from "../net/Channel";
+import { MessageExchange } from "../matter/common/MessageExchange";
 import { InteractionServerMessenger, InvokeRequest, InvokeResponse, ReadRequest, DataReport, SubscribeRequest, SubscribeResponse } from "./InteractionMessenger";
 import { SecureSession } from "../session/SecureSession";
-import { Attribute, Report } from "../cluster/Attribute";
+import { Attribute, Report } from "./model/Attribute";
 import { Session } from "../session/Session";
 
 export const INTERACTION_PROTOCOL_ID = 0x0001;

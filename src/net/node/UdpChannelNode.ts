@@ -5,9 +5,9 @@
  */
 
 import dgram from "dgram";
-import { UdpSocket, UdpSocketOptions } from "../UdpSocket";
+import { UdpChannel, UdpChannelOptions } from "../UdpChannel";
 
-function createUdpSocket(address: string | undefined, port: number, options: dgram.SocketOptions) {
+function createDgramSocket(address: string | undefined, port: number, options: dgram.SocketOptions) {
     const socket = dgram.createSocket(options);
     return new Promise<dgram.Socket>((resolve, reject) => {
         const handleBindError = (error: Error) => {
@@ -23,11 +23,11 @@ function createUdpSocket(address: string | undefined, port: number, options: dgr
     });
 }
 
-export class UdpSocketNode implements UdpSocket {
-    static async create({listeningPort: port, listeningAddress: address, multicastInterface}: UdpSocketOptions) {
-        const socket = await createUdpSocket(address, port, { type: "udp4", reuseAddr: true });
+export class UdpChannelNode implements UdpChannel {
+    static async create({listeningPort: port, listeningAddress: address, multicastInterface}: UdpChannelOptions) {
+        const socket = await createDgramSocket(address, port, { type: "udp4", reuseAddr: true });
         if (multicastInterface !== undefined) socket.setMulticastInterface(multicastInterface);
-        return new UdpSocketNode(socket);
+        return new UdpChannelNode(socket);
     }
 
     constructor(private readonly socket: dgram.Socket) {}

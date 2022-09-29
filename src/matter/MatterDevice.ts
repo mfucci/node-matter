@@ -9,19 +9,19 @@ import { FabricManager } from "./fabric/FabricManager";
 import { Session } from "./session/Session";
 import { Fabric } from "./fabric/Fabric";
 import { NetInterface } from "../net/NetInterface";
-import { ExchangeSocket } from "./common/ExchangeSocket";
-import { Protocol } from "./common/Protocol";
+import { Channel } from "../net/Channel";
+import { ProtocolHandler } from "./common/ProtocolHandler";
 import { Broadcaster } from "./common/Broadcaster";
 import { ExchangeManager } from "./common/ExchangeManager";
 import { requireMinNodeVersion } from "../util/Node";
 
 requireMinNodeVersion(16);
 
-export class MatterServer {
+export class MatterDevice {
     private readonly broadcasters = new Array<Broadcaster>();
     private readonly fabricManager = new FabricManager();
     private readonly sessionManager = new SessionManager(this);
-    private readonly exchangeManager = new ExchangeManager<MatterServer>(this.sessionManager);
+    private readonly exchangeManager = new ExchangeManager<MatterDevice>(this.sessionManager);
 
     constructor(
         private readonly deviceName: string,
@@ -42,7 +42,7 @@ export class MatterServer {
         return this;
     }
 
-    addProtocol(protocol: Protocol<MatterServer>) {
+    addProtocol(protocol: ProtocolHandler<MatterDevice>) {
         this.exchangeManager.addProtocol(protocol);
         return this;
     }
@@ -71,7 +71,7 @@ export class MatterServer {
         });
     }
 
-    initiateExchange(session: Session<MatterServer>, channel: ExchangeSocket<Buffer>, protocolId: number) {
+    initiateExchange(session: Session<MatterDevice>, channel: Channel<Buffer>, protocolId: number) {
         return this.exchangeManager.initiateExchange(session, channel, protocolId);
     }
 

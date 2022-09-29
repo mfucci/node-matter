@@ -6,11 +6,11 @@
 
 import { Template, TlvObjectCodec } from "../../codec/TlvObjectCodec";
 import { MessageExchange } from "../common/MessageExchange";
-import { MatterClient } from "../MatterClient";
+import { MatterController } from "../MatterController";
 import { capitalize } from "../../util/String";
-import { AttributeDefs, ClusterClient, ClusterDef, CommandDefs } from "./cluster/ClusterDef";
+import { AttributeDefs, ClusterClient, ClusterDef, CommandDefs } from "../cluster/ClusterDef";
 import { InteractionClientMessenger } from "./InteractionMessenger";
-import { NoResponseT, ResultCode } from "./model/Command";
+import { NoResponseT, ResultCode } from "../cluster/Command";
 
 export function ClusterClient<CommandT extends CommandDefs, AttributeT extends AttributeDefs>(interactionClient: InteractionClient, endpointId: number, clusterDef: ClusterDef<CommandT, AttributeT>): ClusterClient<ClusterDef<CommandT, AttributeT>> {
     const result: any = {};
@@ -36,7 +36,7 @@ export function ClusterClient<CommandT extends CommandDefs, AttributeT extends A
 
 export class InteractionClient {
     constructor(
-        private readonly exchangeProvider: () => MessageExchange<MatterClient>,
+        private readonly exchangeProvider: () => MessageExchange<MatterController>,
     ) {}
 
     async get<T>(endpointId: number, clusterId: number, attributeId: number, template: Template<T>): Promise<T> {

@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { UdpSocket, UdpSocketOptions } from "../UdpSocket";
+import { UdpChannel, UdpChannelOptions } from "../UdpChannel";
 import { NetListener } from "../NetInterface";
 import { SimulatedNetwork } from "./SimulatedNetwork";
 
-export class UdpSocketFake implements UdpSocket {
-    static async create({listeningAddress: address, listeningPort: port, multicastInterface}: UdpSocketOptions) {
+export class UdpChannelFake implements UdpChannel {
+    static async create({listeningAddress: address, listeningPort: port, multicastInterface}: UdpChannelOptions) {
         if (address === undefined) throw new Error("Device IP address should be specified for fake UdpSocket");
-        return new UdpSocketFake(SimulatedNetwork.get(), address, port, multicastInterface);
+        return new UdpChannelFake(SimulatedNetwork.get(), address, port, multicastInterface);
     }
 
     private readonly netListeners = new Array<NetListener>();

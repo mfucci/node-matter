@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Cluster } from "../model/Cluster";
-import { BooleanT } from "../../../codec/TlvObjectCodec";
-import { NoArgumentsT, NoResponseT } from "../model/Command";
-import { MatterServer } from "../../MatterServer";
+import { Cluster } from "./Cluster";
+import { BooleanT } from "../../codec/TlvObjectCodec";
+import { NoArgumentsT, NoResponseT } from "./Command";
+import { MatterDevice } from "../MatterDevice";
 
 const CLUSTER_ID = 0x06;
 
-export class OnOffCluster extends Cluster<MatterServer> {
+export class OnOffCluster extends Cluster<MatterDevice> {
     static Builder = (onCallback?: (() => void) | undefined, offCallback?: (() => void) | undefined) => (endpointId: number) => new OnOffCluster(endpointId, onCallback, offCallback);
 
     private readonly onOffAttribute;

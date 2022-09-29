@@ -7,14 +7,14 @@
 import { Crypto } from "../../../crypto/Crypto";
 import { Spake2p } from "../../../crypto/Spake2p";
 import { MessageExchange } from "../../common/MessageExchange";
-import { MatterClient } from "../../MatterClient";
+import { MatterController } from "../../MatterController";
 import { UNDEFINED_NODE_ID } from "../SessionManager";
 import { DEFAULT_PASSCODE_ID, PaseClientMessenger, SPAKE_CONTEXT } from "./PaseMessenger";
 
 export class PaseClient {
     constructor() {}
 
-    async pair(client: MatterClient, exchange: MessageExchange<MatterClient>, setupPin: number) {
+    async pair(client: MatterController, exchange: MessageExchange<MatterController>, setupPin: number) {
         const messenger = new PaseClientMessenger(exchange);
         const random = Crypto.getRandom();
         const sessionId = client.getNextAvailableSessionId();

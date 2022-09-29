@@ -4,25 +4,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { DnsCodec, DnsMessage, MessageType, Record, RecordClass, RecordType, SrvRecordValue } from "../codec/DnsCodec";
-import { UdpMulticastServer } from "../net/UdpMulticastServer";
-import { MDNS_BROADCAST_IP, MDNS_BROADCAST_PORT } from "./MdnsServer";
-import { getDeviceMatterQname, MATTER_SERVICE_QNAME } from "./MdnsMatterConst";
-import { getPromiseResolver } from "../util/Promises";
-import { Network } from "../net/Network";
-import { bigintToBuffer } from "../util/BigInt";
-import { MatterDevice, Scanner } from "../matter/common/Scanner";
+import { DnsCodec, MessageType, Record, RecordClass, RecordType, SrvRecordValue } from "../../codec/DnsCodec";
+import { UdpMulticastServer } from "../../net/UdpMulticastServer";
+import { MDNS_BROADCAST_IP, MDNS_BROADCAST_PORT } from "../../net/MdnsServer";
+import { getDeviceMatterQname, MATTER_SERVICE_QNAME } from "./MdnsConsts";
+import { getPromiseResolver } from "../../util/Promises";
+import { Network } from "../../net/Network";
+import { bigintToBuffer } from "../../util/BigInt";
+import { MatterServer, Scanner } from "../common/Scanner";
 
-type MatterDeviceRecordWithExpire = MatterDevice & { expires: number };
+type MatterServerRecordWithExpire = MatterServer & { expires: number };
 
-export class MdnsMatterScanner implements Scanner {
+export class MdnsScanner implements Scanner {
     static async create(address?: string) {
-        return new MdnsMatterScanner(await UdpMulticastServer.create({listeningAddress: address, broadcastAddress: MDNS_BROADCAST_IP, listeningPort: MDNS_BROADCAST_PORT}));
+        return new MdnsScanner(await UdpMulticastServer.create({listeningAddress: address, broadcastAddress: MDNS_BROADCAST_IP, listeningPort: MDNS_BROADCAST_PORT}));
     }
 
     private readonly network = Network.get();
-    private readonly matterDeviceRecords = new Map<string, MatterDeviceRecordWithExpire>();
-    private readonly recordWaiters = new Map<string, (record: MatterDevice | undefined) => void>();
+    private readonly matterDeviceRecords = new Map<string, MatterServerRecordWithExpire>();
+    private readonly recordWaiters = new Map<string, (record: MatterServer | undefined) => void>();
     private readonly intervalId: NodeJS.Timeout;
 
     constructor(
@@ -32,7 +32,7 @@ export class MdnsMatterScanner implements Scanner {
         this.intervalId = setInterval(() => this.expire(), 60 * 1000 /* 1 mn */);
     }
 
-    async lookForDevice(operationalId: Buffer, nodeId: bigint): Promise<MatterDevice | undefined> {
+    async lookForDevice(operationalId: Buffer, nodeId: bigint): Promise<MatterServer | undefined> {
         const nodeIdString = bigintToBuffer(nodeId).toString("hex").toUpperCase();
         const operationalIdString = operationalId.toString("hex").toUpperCase();
         const deviceMatterQname = getDeviceMatterQname(operationalIdString, nodeIdString);
@@ -40,7 +40,7 @@ export class MdnsMatterScanner implements Scanner {
         const record = this.matterDeviceRecords.get(deviceMatterQname);
         if (record !== undefined) return { ip: record.ip, port: record.port };
 
-        const { promise, resolver } = await getPromiseResolver<MatterDevice | undefined>();
+        const { promise, resolver } = await getPromiseResolver<MatterServer | undefined>();
         const timeoutId = setTimeout(() => {
             this.recordWaiters.delete(deviceMatterQname);
             resolver(undefined);

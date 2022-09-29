@@ -6,9 +6,9 @@
 
 import { JsType, Template, TlvObjectCodec } from "../../codec/TlvObjectCodec";
 import { MessageExchange } from "../common/MessageExchange";
-import { MatterClient } from "../MatterClient";
-import { MatterServer } from "../MatterServer";
-import { StatusResponseT } from "./cluster/OperationalCredentialsMessages";
+import { MatterController } from "../MatterController";
+import { MatterDevice } from "../MatterDevice";
+import { StatusResponseT } from "../cluster/OperationalCredentialsMessages";
 import { InvokeRequestT, InvokeResponseT, ReadRequestT, DataReportT, SubscribeRequestT, SubscribeResponseT } from "./InteractionMessages";
 
 export const enum Status {
@@ -39,7 +39,7 @@ export type InvokeResponse = JsType<typeof InvokeResponseT>;
 export class InteractionServerMessenger {
 
     constructor(
-        private readonly exchange: MessageExchange<MatterServer>,
+        private readonly exchange: MessageExchange<MatterDevice>,
     ) {}
 
     async handleRequest(
@@ -88,7 +88,7 @@ export class InteractionServerMessenger {
 
 export class InteractionClientMessenger {
     constructor(
-        private readonly exchange: MessageExchange<MatterClient>,
+        private readonly exchange: MessageExchange<MatterController>,
     ) {}
 
     sendReadRequest(readRequest: ReadRequest) {

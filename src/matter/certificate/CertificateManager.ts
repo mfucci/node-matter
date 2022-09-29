@@ -28,7 +28,6 @@ export const FabricId_Matter = (id: bigint) => [ DerObject("2b0601040182a27c0105
 export const NodeId_Matter = (id: bigint) => [ DerObject("2b0601040182a27c0101", {value: intTo16Chars(id)}) ];
 export const RcacId_Matter = (id: number) => [ DerObject("2b0601040182a27c0104", {value: intTo16Chars(id)}) ];
 
-
 export const RootCertificateT = ObjectT({
     serialNumber: Field(1, ByteStringT),
     signatureAlgorithm: Field(2, UnsignedIntT),
@@ -57,7 +56,7 @@ export const RootCertificateT = ObjectT({
     signature: Field(11, ByteStringT),
 });
 
-export const NocCertificateT = ObjectT({
+export const OperationalCertificateT = ObjectT({
     serialNumber: Field(1, ByteStringT),
     signatureAlgorithm: Field(2, UnsignedIntT),
     issuer: Field(3, ObjectT({
@@ -87,7 +86,7 @@ export const NocCertificateT = ObjectT({
 });
 
 export type RootCertificate = JsType<typeof RootCertificateT>;
-export type NocCertificate = JsType<typeof NocCertificateT>;
+export type OperationalCertificate = JsType<typeof OperationalCertificateT>;
 type Unsigned<Type> = { [Property in keyof Type as Exclude<Property, "signature">]: Type[Property] };
 
 export class CertificateManager {
@@ -116,7 +115,7 @@ export class CertificateManager {
         });
     }
 
-    static nocCertToAsn1({ serialNumber, notBefore, notAfter, issuer: { issuerRcacId }, subject: { fabricId, nodeId }, ellipticCurvePublicKey, extensions: { subjectKeyIdentifier, authorityKeyIdentifier } }: Unsigned<NocCertificate>) {
+    static nocCertToAsn1({ serialNumber, notBefore, notAfter, issuer: { issuerRcacId }, subject: { fabricId, nodeId }, ellipticCurvePublicKey, extensions: { subjectKeyIdentifier, authorityKeyIdentifier } }: Unsigned<OperationalCertificate>) {
         return DerCodec.encode({
             version: ContextTagged(0, 2),
             serialNumber: serialNumber.readUInt8(),
@@ -147,7 +146,7 @@ export class CertificateManager {
         Crypto.verify(rootCert.ellipticCurvePublicKey, this.rootCertToAsn1(rootCert), rootCert.signature);
     }
 
-    static validateNocCertificate(rootCert: RootCertificate, nocCert: NocCertificate) {
+    static validateNocCertificate(rootCert: RootCertificate, nocCert: OperationalCertificate) {
         Crypto.verify(rootCert.ellipticCurvePublicKey, this.nocCertToAsn1(nocCert), nocCert.signature);
     }
 

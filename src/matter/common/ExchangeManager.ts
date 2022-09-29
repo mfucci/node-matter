@@ -9,15 +9,15 @@ import { Crypto } from "../../crypto/Crypto";
 import { NetInterface, NetListener } from "../../net/NetInterface";
 import { Session } from "../session/Session";
 import { SessionManager } from "../session/SessionManager";
-import { ExchangeSocket } from "./ExchangeSocket";
+import { Channel } from "../../net/Channel";
 import { MessageExchange } from "./MessageExchange";
-import { Protocol } from "./Protocol";
+import { ProtocolHandler } from "./ProtocolHandler";
 
 export class ExchangeManager<ContextT> {
     private readonly exchangeCounter = new ExchangeCounter();
     private readonly messageCounter = new MessageCounter();
     private readonly exchanges = new Map<number, MessageExchange<ContextT>>();
-    private readonly protocols = new Map<number, Protocol<ContextT>>();
+    private readonly protocols = new Map<number, ProtocolHandler<ContextT>>();
     private readonly netListeners = new Array<NetListener>();
 
     constructor(
@@ -28,11 +28,11 @@ export class ExchangeManager<ContextT> {
         this.netListeners.push(netInterface.onData((socket, data) => this.onMessage(socket, data)));
     }
 
-    addProtocol(protocol: Protocol<ContextT>) {
+    addProtocol(protocol: ProtocolHandler<ContextT>) {
         this.protocols.set(protocol.getId(), protocol);
     }
 
-    initiateExchange(session: Session<ContextT>, channel: ExchangeSocket<Buffer>, protocolId: number) {
+    initiateExchange(session: Session<ContextT>, channel: Channel<Buffer>, protocolId: number) {
         const exchangeId = this.exchangeCounter.getIncrementedCounter();
         const exchange = MessageExchange.initiate(session, channel, exchangeId, protocolId, this.messageCounter, () => this.exchanges.delete(exchangeId & 0x10000));
         // Ensure exchangeIds are not colliding in the Map by adding 1 in front of exchanges initiated by this device.
@@ -47,7 +47,7 @@ export class ExchangeManager<ContextT> {
         this.exchanges.clear();
     }
 
-    private onMessage(socket: ExchangeSocket<Buffer>, messageBytes: Buffer) {
+    private onMessage(socket: Channel<Buffer>, messageBytes: Buffer) {
         var packet = MessageCodec.decodePacket(messageBytes);
         if (packet.header.sessionType === SessionType.Group) throw new Error("Group messages are not supported");
 

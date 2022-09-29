@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Element } from "../../../codec/TlvCodec";
-import { Session } from "../../session/Session";
+import { Element } from "../../codec/TlvCodec";
+import { Session } from "../session/Session";
 import { DescriptorCluster } from "../cluster/DescriptorCluster";
 import { Attribute } from "./Attribute";
 import { Cluster } from "./Cluster";

@@ -6,9 +6,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { MatterClient } from "./matter/MatterClient";
-import { MdnsMatterScanner } from "./mdns/MdnsMatterScanner";
-import { UdpInterface } from "./net/MatterUdpInterface";
+import { MatterController } from "./matter/MatterController";
+import { MdnsMatterScanner } from "./net/mdns/MdnsMatterScanner";
+import { UdpInterface } from "./net/UdpInterface";
 import { Network } from "./net/Network";
 import { NetworkNode } from "./net/node/NetworkNode";
 import { getIntParameter, getParameter } from "./util/CommandLine";
@@ -23,7 +23,7 @@ class Main {
         const port = getIntParameter("port") ?? 5540;
         const discriminator = getIntParameter("discriminator") ?? 3840;
         const setupPin = getIntParameter("pin") ?? 20202021;
-        const client = await MatterClient.create(await MdnsMatterScanner.create(), await UdpInterface.create(5540));
+        const client = await MatterController.create(await MdnsMatterScanner.create(), await UdpInterface.create(5540));
         try {
             await client.commission(ip, port, discriminator, setupPin);
         } finally {

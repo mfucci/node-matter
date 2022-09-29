@@ -11,12 +11,12 @@ import { ExchangeManager } from "./common/ExchangeManager";
 import { PaseClient } from "./session/secure/PaseClient";
 import { ClusterClient, InteractionClient } from "./interaction/InteractionClient";
 import { INTERACTION_PROTOCOL_ID } from "./interaction/InteractionProtocol";
-import { BasicClusterDef } from "./interaction/cluster/BasicCluster";
-import { CommissioningError, GeneralCommissioningClusterDef, RegulatoryLocationType, SuccessFailureReponse } from "./interaction/cluster/GeneralCommissioningCluster";
-import { OperationalCredentialsClusterDef } from "./interaction/cluster/OperationalCredentialsCluster";
-import { CertificateSigningRequestT, CertificateType } from "./interaction/cluster/OperationalCredentialsMessages";
+import { BasicClusterDef } from "./cluster/BasicCluster";
+import { CommissioningError, GeneralCommissioningClusterDef, RegulatoryLocationType, SuccessFailureReponse } from "./cluster/GeneralCommissioningCluster";
+import { OperationalCredentialsClusterDef } from "./cluster/OperationalCredentialsCluster";
+import { CertificateSigningRequestT, CertificateType } from "./cluster/OperationalCredentialsMessages";
 import { Crypto } from "../crypto/Crypto";
-import { CertificateManager, jsToMatterDate, NocCertificateT, RootCertificateT } from "./common/CertificateManager";
+import { CertificateManager, jsToMatterDate, OperationalCertificateT, RootCertificateT } from "./certificate/CertificateManager";
 import { TlvObjectCodec } from "../codec/TlvObjectCodec";
 import { Scanner } from "./common/Scanner";
 import { Fabric, FabricBuilder } from "./fabric/Fabric";
@@ -29,7 +29,7 @@ const FABRIC_ID = BigInt(1);
 const CONTROLLER_NODE_ID = BigInt(0);
 const ADMIN_VENDOR_ID = 752;
 
-export class MatterClient {
+export class MatterController {
     public static async create(scanner: Scanner, netInterface: NetInterface) {
         const certificateManager = new RootCertificateManager();
         const ipkValue = Crypto.getRandomData(16);
@@ -37,13 +37,13 @@ export class MatterClient {
             .setRootCert(certificateManager.getRootCert())
             .setIdentityProtectionKey(ipkValue)
             .setVendorId(ADMIN_VENDOR_ID);
-        fabricBuilder.setNewOpCert(certificateManager.generateNoc(fabricBuilder.getPublicKey(), FABRIC_ID, CONTROLLER_NODE_ID));
+        fabricBuilder.setOperationalCert(certificateManager.generateNoc(fabricBuilder.getPublicKey(), FABRIC_ID, CONTROLLER_NODE_ID));
         const fabric = await fabricBuilder.build();
-        return new MatterClient(scanner, netInterface, certificateManager, fabric);
+        return new MatterController(scanner, netInterface, certificateManager, fabric);
     }
 
     private readonly sessionManager = new SessionManager(this);
-    private readonly exchangeManager = new ExchangeManager<MatterClient>(this.sessionManager);
+    private readonly exchangeManager = new ExchangeManager<MatterController>(this.sessionManager);
     private readonly paseClient = new PaseClient();
     private readonly caseClient = new CaseClient();
 
@@ -209,6 +209,6 @@ class RootCertificateManager {
             },
         };
         const signature = Crypto.sign(this.rootKeyPair.privateKey, CertificateManager.nocCertToAsn1(unsignedCertificate));
-        return TlvObjectCodec.encode({ ...unsignedCertificate, signature }, NocCertificateT);
+        return TlvObjectCodec.encode({ ...unsignedCertificate, signature }, OperationalCertificateT);
     }
 }

@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { StringT, UnsignedIntT } from "../../../codec/TlvObjectCodec";
-import { MatterServer } from "../../MatterServer";
-import { Cluster } from "../model/Cluster";
+import { StringT, UnsignedIntT } from "../../codec/TlvObjectCodec";
+import { MatterDevice } from "../MatterDevice";
+import { Cluster } from "./Cluster";
 import { AttributeDef, ClusterDef } from "./ClusterDef";
 
 interface BasicClusterConf {
@@ -17,7 +17,7 @@ interface BasicClusterConf {
 }
 
 // TODO: auto-generate this from BasicClusterDef
-export class BasicClusterServer extends Cluster<MatterServer> {
+export class BasicClusterServer extends Cluster<MatterDevice> {
     static Builder = (conf: BasicClusterConf) => (endpointId: number) => new BasicClusterServer(endpointId, conf);
 
     constructor(endpointId: number, { vendorName, vendorId, productName, productId }: BasicClusterConf) {

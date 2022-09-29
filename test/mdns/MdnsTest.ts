@@ -6,14 +6,14 @@
 
 import assert from "assert";
 import { DnsCodec } from "../../src/codec/DnsCodec";
-import { UdpSocketFake } from "../../src/net/fake/UdpSocketFake";
-import { UdpSocket } from "../../src/net/UdpSocket";
-import { MdnsMatterBroadcaster } from "../../src/mdns/MdnsMatterBroadcaster";
+import { UdpChannelFake } from "../../src/net/fake/UdpChannelFake";
+import { UdpChannel } from "../../src/net/UdpChannel";
+import { MdnsBroadcaster} from "../../src/matter/mdns/MdnsBroadcaster";
 import { bigintToBuffer } from "../../src/util/BigInt";
 import { getPromiseResolver } from "../../src/util/Promises";
 import { NetworkFake } from "../../src/net/fake/NetworkFake";
 import { Network } from "../../src/net/Network";
-import { MdnsMatterScanner } from "../../src/mdns/MdnsMatterScanner";
+import { MdnsScanner } from "../../src/matter/mdns/MdnsScanner";
 
 const SERVER_IP = "192.168.200.1";
 const SERVER_MAC = "00:B0:D0:63:C2:26";
@@ -27,31 +27,31 @@ const OPERATIONAL_ID = bigintToBuffer(BigInt(24));
 const NODE_ID = BigInt(1);
 
 describe("MDNS", () => {
-    var broadcaster: MdnsMatterBroadcaster;
-    var scanner: MdnsMatterScanner;
-    var socket: UdpSocket;
+    var broadcaster: MdnsBroadcaster;
+    var scanner: MdnsScanner;
+    var channel: UdpChannel;
 
     beforeEach(async () => {
         Network.get = () => clientNetwork;
-        scanner = await MdnsMatterScanner.create(CLIENT_IP);
+        scanner = await MdnsScanner.create(CLIENT_IP);
 
         Network.get = () => serverNetwork;
-        broadcaster = await MdnsMatterBroadcaster.create(SERVER_IP);
+        broadcaster = await MdnsBroadcaster.create(SERVER_IP);
 
         Network.get = () => { throw new Error("Network should not be requested post creation") };
-        socket = await UdpSocketFake.create({listeningPort: 5353, listeningAddress: "224.0.0.251"});
+        channel = await UdpChannelFake.create({listeningPort: 5353, listeningAddress: "224.0.0.251"});
     });
 
     afterEach(() => {
         broadcaster.close();
         scanner.close();
-        socket.close();
+        channel.close();
     });
 
     context("broadcaster", () => {
         it("it broadcasts the device fabric", async () => {
             const { promise, resolver } = await getPromiseResolver<Buffer>();
-            socket.onData((peerAddress, peerPort, data) => resolver(data));
+            channel.onData((peerAddress, peerPort, data) => resolver(data));
 
             broadcaster.setFabric(OPERATIONAL_ID, NODE_ID);
             await broadcaster.announce();
@@ -78,7 +78,7 @@ describe("MDNS", () => {
         });
 
         it("it should ignore MDNS messages on unsupported interfaces", async () => {
-            const socketOnAnotherSubnet = await UdpSocketFake.create({ listeningPort: 5353, listeningAddress: "224.0.0.251", multicastInterface: "1.1.1.23" });
+            const socketOnAnotherSubnet = await UdpChannelFake.create({ listeningPort: 5353, listeningAddress: "224.0.0.251", multicastInterface: "1.1.1.23" });
 
             await socketOnAnotherSubnet.send("224.0.0.251", 5353, Buffer.alloc(1, 0));
 

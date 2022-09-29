@@ -36,7 +36,7 @@ describe("FabricBuilder", () => {
         const builder = new FabricBuilder();
         builder.setVendorId(0);
         builder.setRootCert(ROOT_CERT);
-        builder.setNewOpCert(NEW_OP_CERT);
+        builder.setOperationalCert(NEW_OP_CERT);
         builder.setIdentityProtectionKey(IPK_KEY);
         
         it("generates the correct compressed Fabric ID", async () => {
@@ -68,7 +68,7 @@ describe("Fabric", () => {
             const builder = new FabricBuilder();
             builder.setVendorId(0);
             builder.setRootCert(ROOT_CERT);
-            builder.setNewOpCert(NEW_OP_CERT);
+            builder.setOperationalCert(NEW_OP_CERT);
             builder.setIdentityProtectionKey(IPK_KEY);
             const fabric = await builder.build();
 

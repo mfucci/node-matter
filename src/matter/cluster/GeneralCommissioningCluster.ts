@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Cluster } from "../model/Cluster";
-import { Field, JsType, ObjectT, StringT, Template, UnsignedIntT } from "../../../codec/TlvObjectCodec";
-import { NoArgumentsT } from "../model/Command";
-import { MatterServer } from "../../MatterServer";
+import { Cluster } from "./Cluster";
+import { Field, JsType, ObjectT, StringT, Template, UnsignedIntT } from "../../codec/TlvObjectCodec";
+import { NoArgumentsT } from "./Command";
+import { MatterDevice } from "../MatterDevice";
 import { AttributeDef, ClusterDef, CommandDef } from "./ClusterDef";
-import { TlvType } from "../../../codec/TlvCodec";
-import { Session } from "../../session/Session";
-import { SecureSession } from "../../session/SecureSession";
+import { TlvType } from "../../codec/TlvCodec";
+import { Session } from "../session/Session";
+import { SecureSession } from "../session/SecureSession";
 
 export const enum RegulatoryLocationType {
     Indoor = 0,
@@ -56,7 +56,7 @@ export type SuccessFailureReponse = JsType<typeof SuccessFailureReponseT>;
 const SuccessResponse = {errorCode: CommissioningError.Ok, debugText: ""};
 
 // TODO: auto-generate this from GeneralCommissioningClusterDef
-export class GeneralCommissioningCluster extends Cluster<MatterServer> {
+export class GeneralCommissioningCluster extends Cluster<MatterDevice> {
     static Builder = () => (endpointId: number) => new GeneralCommissioningCluster(endpointId);
 
     private readonly attributes;
@@ -91,9 +91,9 @@ export class GeneralCommissioningCluster extends Cluster<MatterServer> {
         return SuccessResponse;
     }
 
-    private handleCommissioningComplete(session: Session<MatterServer>): SuccessFailureReponse {
+    private handleCommissioningComplete(session: Session<MatterDevice>): SuccessFailureReponse {
         if (!session.isSecure()) throw new Error("commissioningComplete can only be called on a secure session");
-        const fabric = (session as SecureSession<MatterServer>).getFabric();
+        const fabric = (session as SecureSession<MatterDevice>).getFabric();
         if (fabric === undefined) throw new Error("commissioningComplete is called but the fabric has not been defined yet");
         console.log(`Commissioning completed on fabric #${fabric.id} as node #${fabric.nodeId}.`)
         return SuccessResponse;

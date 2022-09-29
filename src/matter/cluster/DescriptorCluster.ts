@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ArrayT, Field, ObjectT, UnsignedIntT } from "../../../codec/TlvObjectCodec";
-import { Cluster } from "../model/Cluster";
-import { Endpoint } from "../model/Endpoint";
+import { ArrayT, Field, ObjectT, UnsignedIntT } from "../../codec/TlvObjectCodec";
+import { Cluster } from "./Cluster";
+import { Endpoint } from "./Endpoint";
 
 const CLUSTER_ID = 0x1d;
 

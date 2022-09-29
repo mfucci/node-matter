@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export interface ExchangeSocket<T> {
+export interface Channel<T> {
     send(data: T): Promise<void>;
     getName(): string;
 }

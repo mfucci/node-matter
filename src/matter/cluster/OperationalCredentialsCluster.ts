@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { TlvObjectCodec } from "../../../codec/TlvObjectCodec";
-import { Crypto } from "../../../crypto/Crypto";
-import { FabricBuilder } from "../../fabric/Fabric";
-import { Cluster } from "../model/Cluster";
-import { NoResponseT } from "../model/Command";
-import { Session } from "../../session/Session";
+import { TlvObjectCodec } from "../../codec/TlvObjectCodec";
+import { Crypto } from "../../crypto/Crypto";
+import { FabricBuilder } from "../fabric/Fabric";
+import { Cluster } from "./Cluster";
+import { NoResponseT } from "./Command";
+import { Session } from "../session/Session";
 import { AddNocRequestT, AddTrustedRootCertificateRequestT, AttestationResponseT, AttestationT, CertificateChainRequestT, CertificateChainResponseT, CertificateSigningRequestT, CertificateType, CsrResponseT, RequestWithNonceT, Status, StatusResponseT } from "./OperationalCredentialsMessages";
-import { MatterServer } from "../../MatterServer";
+import { MatterDevice } from "../MatterDevice";
 import { ClusterDef, CommandDef } from "./ClusterDef";
 
 interface OperationalCredentialsClusterConf {
@@ -22,7 +22,7 @@ interface OperationalCredentialsClusterConf {
 }
 
 // TODO: auto-generate this from OperationalCredentialsClusterDef
-export class OperationalCredentialsCluster extends Cluster<MatterServer> {
+export class OperationalCredentialsCluster extends Cluster<MatterDevice> {
     static Builder = (conf: OperationalCredentialsClusterConf) => (endpointId: number) => new OperationalCredentialsCluster(endpointId, conf);
 
     private fabricBuilder?: FabricBuilder;
@@ -41,7 +41,7 @@ export class OperationalCredentialsCluster extends Cluster<MatterServer> {
         this.addCommand(11, 11, "AddTrustedRootCertificate", AddTrustedRootCertificateRequestT, NoResponseT, ({certificate}) => this.addTrustedRootCertificate(certificate));
     }
 
-    private handleAttestationRequest(nonce: Buffer, session: Session<MatterServer>) {
+    private handleAttestationRequest(nonce: Buffer, session: Session<MatterDevice>) {
         const elements = TlvObjectCodec.encode({ declaration: this.conf.certificateDeclaration, nonce, timestamp: 0 }, AttestationT);
         return {elements: elements, signature: this.signWithDeviceKey(session, elements)};
     }
@@ -57,17 +57,17 @@ export class OperationalCredentialsCluster extends Cluster<MatterServer> {
         }
     }
 
-    private handleCertificateSignRequest(nonce: Buffer, session: Session<MatterServer>) {
+    private handleCertificateSignRequest(nonce: Buffer, session: Session<MatterDevice>) {
         this.fabricBuilder = new FabricBuilder();
         const csr = this.fabricBuilder.createCertificateSigningRequest();
         const elements = TlvObjectCodec.encode({ csr, nonce }, CertificateSigningRequestT);
         return {elements, signature: this.signWithDeviceKey(session, elements)};
     }
 
-    private async addNewOperationalCertificates(nocCert: Buffer, icaCert: Buffer, ipkValue: Buffer, caseAdminNode: bigint, adminVendorId: number, session: Session<MatterServer>) {
+    private async addNewOperationalCertificates(nocCert: Buffer, icaCert: Buffer, ipkValue: Buffer, caseAdminNode: bigint, adminVendorId: number, session: Session<MatterDevice>) {
         if (this.fabricBuilder === undefined) throw new Error("CSRRequest and AddTrustedRootCertificate should be called first!")
 
-        this.fabricBuilder.setNewOpCert(nocCert);
+        this.fabricBuilder.setOperationalCert(nocCert);
         if (icaCert.length > 0) this.fabricBuilder.setIntermediateCACert(icaCert);
         this.fabricBuilder.setVendorId(adminVendorId);
         this.fabricBuilder.setIdentityProtectionKey(ipkValue);
@@ -87,7 +87,7 @@ export class OperationalCredentialsCluster extends Cluster<MatterServer> {
         this.fabricBuilder.setRootCert(certificate);
     }
 
-    private signWithDeviceKey(session: Session<MatterServer>, data: Buffer) {
+    private signWithDeviceKey(session: Session<MatterDevice>, data: Buffer) {
         return Crypto.sign(this.conf.devicePrivateKey, [data, session.getAttestationChallengeKey()]);
     }
 }

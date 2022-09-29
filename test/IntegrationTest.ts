@@ -5,25 +5,25 @@
  */
 
 import assert from "assert";
-import { UdpInterface } from "../src/net/MatterUdpInterface";
-import { MatterClient } from "../src/matter/MatterClient";
+import { UdpInterface } from "../src/net/UdpInterface";
+import { MatterController } from "../src/matter/MatterController";
 import { Crypto } from "../src/crypto/Crypto";
-import { DEVICE } from "../src/matter/Devices";
-import { BasicClusterServer } from "../src/matter/interaction/cluster/BasicCluster";
-import { GeneralCommissioningCluster } from "../src/matter/interaction/cluster/GeneralCommissioningCluster";
-import { OnOffCluster } from "../src/matter/interaction/cluster/OnOffCluster";
-import { OperationalCredentialsCluster } from "../src/matter/interaction/cluster/OperationalCredentialsCluster";
+import { DEVICE } from "../src/matter/common/DeviceTypes";
+import { BasicClusterServer } from "../src/matter/cluster/BasicCluster";
+import { GeneralCommissioningCluster } from "../src/matter/cluster/GeneralCommissioningCluster";
+import { OnOffCluster } from "../src/matter/cluster/OnOffCluster";
+import { OperationalCredentialsCluster } from "../src/matter/cluster/OperationalCredentialsCluster";
 import { InteractionProtocol } from "../src/matter/interaction/InteractionProtocol";
-import { Device } from "../src/matter/interaction/model/Device";
-import { Endpoint } from "../src/matter/interaction/model/Endpoint";
-import { MdnsMatterBroadcaster } from "../src/mdns/MdnsMatterBroadcaster";
-import { MatterServer } from "../src/matter/MatterServer";
+import { Device } from "../src/matter/cluster/Device";
+import { Endpoint } from "../src/matter/cluster/Endpoint";
+import { MdnsBroadcaster } from "../src/matter/mdns/MdnsBroadcaster";
+import { MatterDevice } from "../src/matter/MatterDevice";
 import { CaseServer } from "../src/matter/session/secure/CaseServer";
 import { SecureChannelProtocol as SecureChannelProtocol } from "../src/matter/session/secure/SecureChannelProtocol";
 import { PaseServer } from "../src/matter/session/secure/PaseServer";
 import { NetworkFake } from "../src/net/fake/NetworkFake";
 import { Network } from "../src/net/Network";
-import { MdnsMatterScanner } from "../src/mdns/MdnsMatterScanner";
+import { MdnsScanner } from "../src/matter/mdns/MdnsScanner";
 
 const SERVER_IP = "192.168.200.1";
 const SERVER_MAC = "00:B0:D0:63:C2:26";
@@ -56,20 +56,20 @@ const setupPin = 20202021;
 const matterPort = 5540;
 
 describe("Integration", () => {
-    var server: MatterServer;
-    var client: MatterClient;
+    var server: MatterDevice;
+    var client: MatterController;
 
     before(async () => {
         Network.get = () => clientNetwork;
-        client = await MatterClient.create(
-            await MdnsMatterScanner.create(CLIENT_IP),
+        client = await MatterController.create(
+            await MdnsScanner.create(CLIENT_IP),
             await UdpInterface.create(5540, CLIENT_IP),
         );
 
         Network.get = () => serverNetwork;
-        server = new MatterServer(deviceName, deviceType, vendorId, productId, discriminator)
+        server = new MatterDevice(deviceName, deviceType, vendorId, productId, discriminator)
             .addNetInterface(await UdpInterface.create(matterPort, SERVER_IP))
-            .addBroadcaster(await MdnsMatterBroadcaster.create(SERVER_IP))
+            .addBroadcaster(await MdnsBroadcaster.create(SERVER_IP))
             .addProtocol(new SecureChannelProtocol(
                     new PaseServer(setupPin, { iteration: 1000, salt: Crypto.getRandomData(32) }),
                     new CaseServer(),

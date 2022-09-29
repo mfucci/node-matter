@@ -5,8 +5,8 @@
  */
 
 import { JsType, TlvObjectCodec } from "../../../codec/TlvObjectCodec";
-import { MatterClient } from "../../MatterClient";
-import { MatterServer } from "../../MatterServer";
+import { MatterController } from "../../MatterController";
+import { MatterDevice } from "../../MatterDevice";
 import { PasePake1T, PasePake2T, PasePake3T, PbkdfParamRequestT, PbkdfParamResponseT } from "./PaseMessages";
 import { MessageType } from "./SecureChannelMessages";
 import { SecureChannelMessenger } from "./SecureChannelMessenger";
@@ -20,7 +20,7 @@ type PasePake1 = JsType<typeof PasePake1T>;
 type PasePake2 = JsType<typeof PasePake2T>;
 type PasePake3 = JsType<typeof PasePake3T>;
 
-export class PaseServerMessenger extends SecureChannelMessenger<MatterServer> {
+export class PaseServerMessenger extends SecureChannelMessenger<MatterDevice> {
     async readPbkdfParamRequest() {
         const { payload } = await this.nextMessage(MessageType.PbkdfParamRequest);
         return { requestPayload: payload, request: TlvObjectCodec.decode(payload, PbkdfParamRequestT) } ;
@@ -43,7 +43,7 @@ export class PaseServerMessenger extends SecureChannelMessenger<MatterServer> {
     }
 }
 
-export class PaseClientMessenger extends SecureChannelMessenger<MatterClient> {
+export class PaseClientMessenger extends SecureChannelMessenger<MatterController> {
     sendPbkdfParamRequest(request: PbkdfParamRequest) {
         return this.send(request, MessageType.PbkdfParamRequest, PbkdfParamRequestT);
     }

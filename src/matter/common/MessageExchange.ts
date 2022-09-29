@@ -7,13 +7,13 @@
 import { Message, MessageCodec, SessionType } from "../../codec/MessageCodec";
 import { Queue } from "../../util/Queue";
 import { Session } from "../session/Session";
-import { ExchangeSocket } from "./ExchangeSocket";
+import { Channel } from "../../net/Channel";
 import { MessageType } from "../session/secure/SecureChannelMessages";
 import { MessageCounter } from "./ExchangeManager";
 
-class MessageChannel<ContextT> implements ExchangeSocket<Message> {
+class MessageChannel<ContextT> implements Channel<Message> {
     constructor(
-        readonly channel: ExchangeSocket<Buffer>,
+        readonly channel: Channel<Buffer>,
         private readonly session: Session<ContextT>,
     ) {}
 
@@ -39,7 +39,7 @@ export class MessageExchange<ContextT> {
 
     static fromInitialMessage<ContextT>(
         session: Session<ContextT>,
-        channel: ExchangeSocket<Buffer>,
+        channel: Channel<Buffer>,
         messageCounter: MessageCounter,
         initialMessage: Message,
         closeCallback: () => void,
@@ -62,7 +62,7 @@ export class MessageExchange<ContextT> {
 
     static initiate<ContextT>(
         session: Session<ContextT>,
-        channel: ExchangeSocket<Buffer>,
+        channel: Channel<Buffer>,
         exchangeId: number,
         protocolId: number,
         messageCounter: MessageCounter,
@@ -84,7 +84,7 @@ export class MessageExchange<ContextT> {
 
     constructor(
         readonly session: Session<ContextT>,
-        channel: ExchangeSocket<Buffer>,
+        channel: Channel<Buffer>,
         private readonly messageCounter: MessageCounter,
         private readonly isInitiator: boolean,
         private readonly sessionId: number,

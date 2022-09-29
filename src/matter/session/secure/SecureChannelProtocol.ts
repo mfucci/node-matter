@@ -5,14 +5,14 @@
  */
 
 import { Message } from "../../../codec/MessageCodec";
-import { Protocol } from "../../common/Protocol";
+import { ProtocolHandler } from "../../common/ProtocolHandler";
 import { MessageExchange } from "../../common/MessageExchange";
 import { CaseServer } from "./CaseServer";
 import { PaseServer } from "./PaseServer";
 import { MessageType, SECURE_CHANNEL_PROTOCOL_ID } from "./SecureChannelMessages";
-import { MatterServer } from "../../MatterServer";
+import { MatterDevice } from "../../MatterDevice";
 
-export class SecureChannelProtocol implements Protocol<MatterServer> {
+export class SecureChannelProtocol implements ProtocolHandler<MatterDevice> {
 
     constructor(
         private readonly paseCommissioner: PaseServer,
@@ -23,7 +23,7 @@ export class SecureChannelProtocol implements Protocol<MatterServer> {
         return SECURE_CHANNEL_PROTOCOL_ID;
     }
 
-    onNewExchange(exchange: MessageExchange<MatterServer>, message: Message) {
+    onNewExchange(exchange: MessageExchange<MatterDevice>, message: Message) {
         const messageType = message.payloadHeader.messageType;
 
         switch (messageType) {

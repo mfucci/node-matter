@@ -7,7 +7,7 @@
 import { TlvObjectCodec } from "../../codec/TlvObjectCodec";
 import { Crypto, KeyPair } from "../../crypto/Crypto";
 import { LEBufferWriter } from "../../util/LEBufferWriter";
-import { CertificateManager, NocCertificateT, RootCertificateT } from "../common/CertificateManager";
+import { CertificateManager, OperationalCertificateT, RootCertificateT } from "../certificate/CertificateManager";
 
 const COMPRESSED_FABRIC_ID_INFO = Buffer.from("CompressedFabric");
 const GROUP_SECURITY_INFO = Buffer.from("GroupKey v1.0");
@@ -25,7 +25,7 @@ export class Fabric {
         readonly identityProtectionKey: Buffer,
         readonly operationalIdentityProtectionKey: Buffer,
         readonly intermediateCACert: Buffer | undefined,
-        readonly newOpCert: Buffer,
+        readonly operationalCert: Buffer,
     ) {}
 
     getPublicKey() {
@@ -36,7 +36,7 @@ export class Fabric {
         return Crypto.sign(this.keyPair.privateKey, data);
     }
 
-    verifyCredentials(initiatorNoc: Buffer, initiatorIcac: Buffer | undefined) {
+    verifyCredentials(operationalCert: Buffer, intermediateCACert: Buffer | undefined) {
         // TODO: implement verification
         return;
     }
@@ -57,7 +57,7 @@ export class FabricBuilder {
     private vendorId?: number;
     private rootCert?: Buffer;
     private intermediateCACert?: Buffer;
-    private newOpCert?: Buffer;
+    private operationalCert?: Buffer;
     private fabricId?: bigint;
     private nodeId?: bigint;
     private rootPublicKey?: Buffer;
@@ -71,15 +71,15 @@ export class FabricBuilder {
         return CertificateManager.createCertificateSigningRequest(this.keyPair);
     }
 
-    setRootCert(certificate: Buffer) {
-        this.rootCert = certificate;
-        this.rootPublicKey = TlvObjectCodec.decode(certificate, RootCertificateT).ellipticCurvePublicKey;
+    setRootCert(rootCert: Buffer) {
+        this.rootCert = rootCert;
+        this.rootPublicKey = TlvObjectCodec.decode(rootCert, RootCertificateT).ellipticCurvePublicKey;
         return this;
     }
 
-    setNewOpCert(nocCerticate: Buffer) {
-        this.newOpCert = nocCerticate;
-        const {subject: {nodeId, fabricId} } = TlvObjectCodec.decode(nocCerticate, NocCertificateT);
+    setOperationalCert(operationalCert: Buffer) {
+        this.operationalCert = operationalCert;
+        const {subject: {nodeId, fabricId} } = TlvObjectCodec.decode(operationalCert, OperationalCertificateT);
         this.fabricId = fabricId;
         this.nodeId = nodeId;
         return this;
@@ -104,7 +104,7 @@ export class FabricBuilder {
         if (this.vendorId === undefined) throw new Error("vendorId needs to be set");
         if (this.rootCert === undefined || this.rootPublicKey === undefined) throw new Error("rootCert needs to be set");
         if (this.identityProtectionKey === undefined) throw new Error("identityProtectionKey needs to be set");
-        if (this.newOpCert === undefined || this.fabricId === undefined || this.nodeId === undefined) throw new Error("nocCert needs to be set");
+        if (this.operationalCert === undefined || this.fabricId === undefined || this.nodeId === undefined) throw new Error("operationalCert needs to be set");
 
         const operationalIdSalt = Buffer.alloc(8);
         operationalIdSalt.writeBigUInt64BE(BigInt(this.fabricId));
@@ -121,7 +121,7 @@ export class FabricBuilder {
             this.identityProtectionKey,
             await Crypto.hkdf(this.identityProtectionKey, operationalId, GROUP_SECURITY_INFO, 16),
             this.intermediateCACert,
-            this.newOpCert,
+            this.operationalCert,
         );
     }
 }

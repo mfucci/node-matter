@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { DnsCodec, DnsMessage, MessageType, Record, RecordType } from "../codec/DnsCodec";
-import { Network } from "../net/Network";
-import { UdpMulticastServer } from "../net/UdpMulticastServer";
+import { DnsCodec, MessageType, Record, RecordType } from "../codec/DnsCodec";
+import { Network } from "./Network";
+import { UdpMulticastServer } from "./UdpMulticastServer";
 import { Cache } from "../util/Cache";
 
 export const MDNS_BROADCAST_IP = "224.0.0.251";

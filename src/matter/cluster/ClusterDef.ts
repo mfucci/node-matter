@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Template } from "../../../codec/TlvObjectCodec";
+import { Template } from "../../codec/TlvObjectCodec";
 
 export interface AttributeDef<ValueT> { id: number, template: Template<ValueT> }
 export const AttributeDef = <T,>(id: number, template: Template<T>): AttributeDef<T> => ({ id, template });

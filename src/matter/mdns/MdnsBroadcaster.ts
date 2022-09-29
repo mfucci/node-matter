@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ARecord, PtrRecord, SrvRecord, TxtRecord } from "../codec/DnsCodec";
-import { Crypto } from "../crypto/Crypto";
-import { Broadcaster } from "../matter/common/Broadcaster";
-import { bigintToBuffer } from "../util/BigInt";
-import { getDeviceMatterQname, getFabricQname, MATTER_COMMISSION_SERVICE_QNAME, MATTER_SERVICE_QNAME, SERVICE_DISCOVERY_QNAME } from "./MdnsMatterConst";
-import { MdnsServer } from "./MdnsServer";
+import { ARecord, PtrRecord, SrvRecord, TxtRecord } from "../../codec/DnsCodec";
+import { Crypto } from "../../crypto/Crypto";
+import { Broadcaster } from "../common/Broadcaster";
+import { bigintToBuffer } from "../../util/BigInt";
+import { getDeviceMatterQname, getFabricQname, MATTER_COMMISSION_SERVICE_QNAME, MATTER_SERVICE_QNAME, SERVICE_DISCOVERY_QNAME } from "./MdnsConsts";
+import { MdnsServer } from "../../net/MdnsServer";
 
-export class MdnsMatterBroadcaster implements Broadcaster {
+export class MdnsBroadcaster implements Broadcaster {
     static async create(multicastInterface?: string) {
-        return new MdnsMatterBroadcaster(await MdnsServer.create(multicastInterface));
+        return new MdnsBroadcaster(await MdnsServer.create(multicastInterface));
     }
 
     constructor(

@@ -6,21 +6,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { MatterServer } from "./matter/MatterServer";
-import { UdpInterface } from "./net/MatterUdpInterface";
+import { MatterDevice } from "./matter/MatterDevice";
+import { UdpInterface } from "./net/UdpInterface";
 import { SecureChannelProtocol } from "./matter/session/secure/SecureChannelProtocol";
 import { PaseServer } from "./matter/session/secure/PaseServer";
 import { Crypto } from "./crypto/Crypto";
 import { CaseServer } from "./matter/session/secure/CaseServer";
 import { InteractionProtocol } from "./matter/interaction/InteractionProtocol";
-import { Device } from "./matter/interaction/model/Device";
-import { Endpoint } from "./matter/interaction/model/Endpoint";
-import { BasicClusterServer } from "./matter/interaction/cluster/BasicCluster";
-import { GeneralCommissioningCluster } from "./matter/interaction/cluster/GeneralCommissioningCluster";
-import { OperationalCredentialsCluster } from "./matter/interaction/cluster/OperationalCredentialsCluster";
-import { OnOffCluster } from "./matter/interaction/cluster/OnOffCluster";
-import { DEVICE } from "./matter/Devices";
-import { MdnsMatterBroadcaster } from "./mdns/MdnsMatterBroadcaster";
+import { Device } from "./matter/cluster/Device";
+import { Endpoint } from "./matter/cluster/Endpoint";
+import { BasicClusterServer } from "./matter/cluster/BasicCluster";
+import { GeneralCommissioningCluster } from "./matter/cluster/GeneralCommissioningCluster";
+import { OperationalCredentialsCluster } from "./matter/cluster/OperationalCredentialsCluster";
+import { OnOffCluster } from "./matter/cluster/OnOffCluster";
+import { DEVICE } from "./matter/common/DeviceTypes";
+import { MdnsBroadcaster } from "./matter/mdns/MdnsBroadcaster";
 import { Network } from "./net/Network";
 import { NetworkNode } from "./net/node/NetworkNode";
 import { commandExecutor } from "./util/CommandLine";
@@ -49,9 +49,9 @@ class Main {
         const productName = "Matter test device";
         const productId = 0X8001;
         const discriminator = 3840;
-        (new MatterServer(deviceName, deviceType, vendorId, productId, discriminator))
+        (new MatterDevice(deviceName, deviceType, vendorId, productId, discriminator))
             .addNetInterface(await UdpInterface.create(5540))
-            .addBroadcaster(await MdnsMatterBroadcaster.create())
+            .addBroadcaster(await MdnsBroadcaster.create())
             .addProtocol(new SecureChannelProtocol(
                     new PaseServer(20202021, { iteration: 1000, salt: Crypto.getRandomData(32) }),
                     new CaseServer(),

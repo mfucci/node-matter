@@ -7,13 +7,13 @@
 import { Crypto } from "../../../crypto/Crypto";
 import { UNDEFINED_NODE_ID } from "../SessionManager";
 import { DEFAULT_PASSCODE_ID, PaseServerMessenger, SPAKE_CONTEXT } from "./PaseMessenger";
-import { Protocol } from "../../common/Protocol";
+import { ProtocolHandler } from "../../common/ProtocolHandler";
 import { MessageExchange } from "../../common/MessageExchange";
 import { PbkdfParameters, Spake2p } from "../../../crypto/Spake2p";
 import { SECURE_CHANNEL_PROTOCOL_ID } from "./SecureChannelMessages";
-import { MatterServer } from "../../MatterServer";
+import { MatterDevice } from "../../MatterDevice";
 
-export class PaseServer implements Protocol<MatterServer> {
+export class PaseServer implements ProtocolHandler<MatterDevice> {
 
     constructor(
         private readonly setupPinCode: number,
@@ -24,7 +24,7 @@ export class PaseServer implements Protocol<MatterServer> {
         return SECURE_CHANNEL_PROTOCOL_ID;
     }
 
-    async onNewExchange(exchange: MessageExchange<MatterServer>) {
+    async onNewExchange(exchange: MessageExchange<MatterDevice>) {
         const messenger = new PaseServerMessenger(exchange);
         try {
             await this.handlePairingRequest(exchange.session.getContext(), messenger);
@@ -34,7 +34,7 @@ export class PaseServer implements Protocol<MatterServer> {
         }
     }
 
-    private async handlePairingRequest(server: MatterServer, messenger: PaseServerMessenger) {
+    private async handlePairingRequest(server: MatterDevice, messenger: PaseServerMessenger) {
         console.log(`Pase server: Received pairing request from ${messenger.getChannelName()}`);
         const sessionId = server.getNextAvailableSessionId();
         const random = Crypto.getRandom();

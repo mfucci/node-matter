@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { TlvType } from "../../../codec/TlvCodec";
-import { ByteStringT, Field, ObjectT, OptionalField, Template, UnsignedIntT, UnsignedLongT } from "../../../codec/TlvObjectCodec";
+import { TlvType } from "../../codec/TlvCodec";
+import { ByteStringT, Field, ObjectT, OptionalField, Template, UnsignedIntT, UnsignedLongT } from "../../codec/TlvObjectCodec";
 
 export const enum CertificateType {
     DeviceAttestation = 1,

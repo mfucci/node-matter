@@ -32,26 +32,20 @@ const EXPECTED_DESTINATION_ID_3 = Buffer.from("f7f7009606c61927af62502067581b4b0
 
 describe("FabricBuilder", () => {
     context("build", () => {
+        const builder = new FabricBuilder();
+        builder.setVendorId(0);
+        builder.setRootCert(ROOT_CERT);
+        builder.setNewOpCert(NEW_OP_CERT);
+        builder.setIdentityProtectionKey(IPK_KEY);
+        
         it("generates the correct compressed Fabric ID", async () => {
-            const builder = new FabricBuilder();
-            builder.setVendorId(0);
-            builder.setRootCert(ROOT_CERT);
-            builder.setNewOpCert(NEW_OP_CERT);
-            builder.setIdentityProtectionKey(IPK_KEY);
-
             const result = (await builder.build()).operationalId;
 
             assert.equal(result.toString("hex"), OPERATIONAL_ID.toString("hex"));
         });
 
-        it("generates the expected identityProtectionKey", async () => {
-            const builder = new FabricBuilder();
-            builder.setVendorId(0);
-            builder.setRootCert(ROOT_CERT);
-            builder.setNewOpCert(NEW_OP_CERT);
-            builder.setIdentityProtectionKey(IPK_KEY);
-
-            const result = (await builder.build()).identityProtectionKey;
+        it("generates the expected operationalIdentityProtectionKey", async () => {
+            const result = (await builder.build()).operationalIdentityProtectionKey;
 
             assert.equal(result.toString("hex"), TEST_IDENTITY_PROTECTION_KEY_3.toString("hex"));
         });
@@ -61,7 +55,7 @@ describe("FabricBuilder", () => {
 describe("Fabric", () => {
 
     context("getDestinationId", () => {
-        it("generates the correct destination ID", async () => {
+        it("generates the correct destination ID", () => {
             const fabric = new Fabric(TEST_FABRIC_ID, TEST_NODE_ID, Buffer.alloc(0), TEST_ROOT_PUBLIC_KEY, Crypto.createKeyPair(), 0, Buffer.alloc(0), Buffer.alloc(0), TEST_IDENTITY_PROTECTION_KEY, undefined, Buffer.alloc(0)); 
 
             const result = fabric.getDestinationId(TEST_NODE_ID, TEST_RANDOM);

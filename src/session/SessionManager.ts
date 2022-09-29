@@ -5,6 +5,7 @@
  */
 
 import { Crypto } from "../crypto/Crypto";
+import { Fabric } from "../fabric/Fabric";
 import { SecureSession } from "./SecureSession";
 import { Session } from "./Session";
 import { UnsecureSession } from "./UnsecureSession";
@@ -13,10 +14,18 @@ export const UNDEFINED_NODE_ID = BigInt(0);
 
 export const UNICAST_UNSECURE_SESSION_ID = 0x0000;
 
+export interface ResumptionRecord {
+    sharedSecret: Buffer,
+    resumptionId: Buffer,
+    fabric: Fabric,
+    peerNodeId: bigint,
+}
+
 export class SessionManager<ContextT> {
     private readonly unsecureSession: UnsecureSession<ContextT>;
     private readonly sessions = new Map<number, Session<ContextT>>();
     private nextSessionId = Crypto.getRandomUInt16();
+    private resumptionRecords = new Map<bigint, ResumptionRecord>();
 
     constructor(
         private readonly context: ContextT,
@@ -48,5 +57,17 @@ export class SessionManager<ContextT> {
 
     getUnsecureSession() {
         return this.unsecureSession;
+    }
+
+    findResumptionRecordById(resumptionId: Buffer) {
+        return [...this.resumptionRecords.values()].find(record => record.resumptionId.equals(resumptionId));
+    }
+
+    findResumptionRecordByNodeId(nodeId: bigint) {
+        return this.resumptionRecords.get(nodeId);
+    }
+
+    saveResumptionRecord(resumptionRecord: ResumptionRecord) {
+        this.resumptionRecords.set(resumptionRecord.peerNodeId, resumptionRecord);
     }
 }

@@ -7,7 +7,7 @@
 import { JsType, TlvObjectCodec } from "../../codec/TlvObjectCodec";
 import { MatterClient } from "../../matter/MatterClient";
 import { MatterServer } from "../../matter/MatterServer";
-import { CaseSigma1T, CaseSigma2T, CaseSigma3T } from "./CaseMessages";
+import { CaseSigma1T, CaseSigma2ResumeT, CaseSigma2T, CaseSigma3T } from "./CaseMessages";
 import { MessageType } from "./SecureChannelMessages";
 import { SecureChannelMessenger } from "./SecureChannelMessenger";
 
@@ -19,6 +19,10 @@ export class CaseServerMessenger extends SecureChannelMessenger<MatterServer> {
 
     sendSigma2(sigma2: JsType<typeof CaseSigma2T>) {
         return this.send(sigma2, MessageType.Sigma2, CaseSigma2T);
+    }
+
+    sendSigma2Resume(sigma2Resume: JsType<typeof CaseSigma2ResumeT>) {
+        return this.send(sigma2Resume, MessageType.Sigma2Resume, CaseSigma2ResumeT);
     }
 
     async readSigma3() {
@@ -34,8 +38,15 @@ export class CaseClientMessenger extends SecureChannelMessenger<MatterClient> {
     }
 
     async readSigma2() {
-        const { payload } = await this.nextMessage(MessageType.Sigma2);
-        return { sigma2Bytes: payload, sigma2: TlvObjectCodec.decode(payload, CaseSigma2T) } ;
+        const { payload , payloadHeader: {messageType} } = await this.nextMessage();
+        switch (messageType) {
+            case MessageType.Sigma2:
+                return { sigma2Bytes: payload, sigma2: TlvObjectCodec.decode(payload, CaseSigma2T) } ;
+            case MessageType.Sigma2Resume:
+                return { sigma2Resume: TlvObjectCodec.decode(payload, CaseSigma2ResumeT) } ;
+            default:
+                throw new Error(`Received unexpected message type: ${messageType}, expected: ${MessageType.Sigma2} or ${MessageType.Sigma2Resume}`);
+        }
     }
 
     sendSigma3(sigma3: JsType<typeof CaseSigma3T>) {

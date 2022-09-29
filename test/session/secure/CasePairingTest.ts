@@ -7,7 +7,7 @@
 import assert from "assert";
 import { TlvObjectCodec } from "../../../src/codec/TlvObjectCodec";
 import { Crypto } from "../../../src/crypto/Crypto";
-import { TagBasedEcryptionDataT, TagBasedSignatureDataT } from "../../../src/session/secure/CaseMessages";
+import { EncryptedDataSigma2T, EncryptedDataSigma3T, SignedDataT } from "../../../src/session/secure/CaseMessages";
 
 const ROOT_CERT = Buffer.from("153001010024020137032414001826048012542826058015203b37062414001824070124080130094104d89eb7e3f3226d0918f4b85832457bb9981bca7aaef58c18fb5ec07525e472b2bd1617fb75ee41bd388f94ae6a6070efc896777516a5c54aff74ec0804cdde9d370a3501290118240260300414e766069362d7e35b79687161644d222bdde93a68300514e766069362d7e35b79687161644d222bdde93a6818300b404e8fb06526f0332b3e928166864a6d29cade53fb5b8918a6d134d0994bf1ae6dce6762dcba99e80e96249d2f1ccedb336b26990f935dba5a0b9e5b4c9e5d1d8f1818181824ff0118", "hex");
 
@@ -32,7 +32,7 @@ describe("CasePairing", () => {
             
             assert.equal(sigma2Key.toString("hex"), "7ed5e720195c511dc2d97535e262f935");
 
-            const signatureData = TlvObjectCodec.encode({ newOpCert: noc, ecdhPublicKey: pubKey, peerEcdhPublicKey: peerPubKey }, TagBasedSignatureDataT);
+            const signatureData = TlvObjectCodec.encode({ newOpCert: noc, ecdhPublicKey: pubKey, peerEcdhPublicKey: peerPubKey }, SignedDataT);
 
             assert.equal(signatureData.toString("hex"), "153001f1153001010124020137032414001826048012542826058015203b370624150124115a1824070124080130094104531a14e4c1b4cc7ac69aa5e403d5ccc3c5152c29fddedc29ac98ecff6c8f8695317446029cf3eb3e295ee18f0fd0ba9f06f7fa229138db0bc8d8c6f9875c9707370a3501280118240201360304020401183004149038f60c3542d5e610f29abc5f42ac09b07ee0d7300514e766069362d7e35b79687161644d222bdde93a6818300b40cbd9a06e77e9a7bcd19d02da0f2e50042f7d78201e8be26e793e995ca8f02f1094b34d0fd53b1f1458908d0d29183f2611e6132c6401d15dfff081d1021358ad1830034104e2690445cc017a388853eaeca3a1ffd2712f6898e0bb523b8b496590804a39bf1555300bbd2a159e927b428397fb07a41e26c8cdf858ec62a310d0480d94eb6430044104ae6e458cf40ad53761ee90bc458aa577e6a1acf75410524551bb0bc4c708832c6525991ee2eed47df35ce2d83dad743bff6769ebbf731395d62453cb37303e0318");
 
@@ -40,7 +40,7 @@ describe("CasePairing", () => {
 
             Crypto.verify(fabricPubKey, signatureData, signature);
 
-            const encryptedDataPlain = TlvObjectCodec.encode({ newOpCert: noc, signature, resumptionId: Buffer.from("8731f8cec507136df7558fca9360e9fc", "hex") }, TagBasedEcryptionDataT);
+            const encryptedDataPlain = TlvObjectCodec.encode({ newOpCert: noc, signature, resumptionId: Buffer.from("8731f8cec507136df7558fca9360e9fc", "hex") }, EncryptedDataSigma2T);
            
             assert.equal(encryptedDataPlain.toString("hex"), "153001f1153001010124020137032414001826048012542826058015203b370624150124115a1824070124080130094104531a14e4c1b4cc7ac69aa5e403d5ccc3c5152c29fddedc29ac98ecff6c8f8695317446029cf3eb3e295ee18f0fd0ba9f06f7fa229138db0bc8d8c6f9875c9707370a3501280118240201360304020401183004149038f60c3542d5e610f29abc5f42ac09b07ee0d7300514e766069362d7e35b79687161644d222bdde93a6818300b40cbd9a06e77e9a7bcd19d02da0f2e50042f7d78201e8be26e793e995ca8f02f1094b34d0fd53b1f1458908d0d29183f2611e6132c6401d15dfff081d1021358ad183003401736972364d84c4ae069f642f491256c6e74c86eda9f5ed4d89dfd7cadb68b67574f032afa2764fcc890e9218eaedcc484576d2d65e4df1ae22dd916f12ab59e3004108731f8cec507136df7558fca9360e9fc18");
 
@@ -79,8 +79,8 @@ describe("CasePairing", () => {
 
             assert.equal(peerEncryptedData.toString("hex"), "153001f4153001010124020137032414001826048012542826058015203b3706241501261169b6010018240701240801300941041b5c00110e57c1c9bc0619ada179f31bb8c07c8b95b5b0f94ffb21acb87c4d307678026d858be56e2a2ad146b3a895480fc8a616c9199980bd620503f4a311e7370a3501280118240201360304020401183004144cf0ce8e72e489e884550045a3bc6469b135fa3c300514e766069362d7e35b79687161644d222bdde93a6818300b40fa1b589089ed43e6ea3dc500eb18b4933d735c3cf384246e641fe13701a46cfe5d5e7b8d9e6e6e7d203d24c23c7f8b56a7849b813c0bb8709a47ce089d19a71b18300340b474e61e26d3a4bb243890632e2c12a82263a9433f31e9c0303d7b3ffc61799bce5b219679c90c820eebb9af5fb8066c7d459b69cef49e37ccbb8c66534240f218");
             
-            const { newOpCert: peerNewOpCert, intermediateCACert: peerIntermediateCACert, signature: peerSignature } = TlvObjectCodec.decode(peerEncryptedData, TagBasedEcryptionDataT);
-            const peerSignatureData = TlvObjectCodec.encode({ newOpCert: peerNewOpCert, intermediateCACert: peerIntermediateCACert, ecdhPublicKey: peerEcdhPublicKey, peerEcdhPublicKey: ecdhPublicKey }, TagBasedSignatureDataT);
+            const { newOpCert: peerNewOpCert, intermediateCACert: peerIntermediateCACert, signature: peerSignature } = TlvObjectCodec.decode(peerEncryptedData, EncryptedDataSigma3T);
+            const peerSignatureData = TlvObjectCodec.encode({ newOpCert: peerNewOpCert, intermediateCACert: peerIntermediateCACert, ecdhPublicKey: peerEcdhPublicKey, peerEcdhPublicKey: ecdhPublicKey }, SignedDataT);
 
             assert.equal(peerSignatureData.toString("hex"), "153001f4153001010124020137032414001826048012542826058015203b3706241501261169b6010018240701240801300941041b5c00110e57c1c9bc0619ada179f31bb8c07c8b95b5b0f94ffb21acb87c4d307678026d858be56e2a2ad146b3a895480fc8a616c9199980bd620503f4a311e7370a3501280118240201360304020401183004144cf0ce8e72e489e884550045a3bc6469b135fa3c300514e766069362d7e35b79687161644d222bdde93a6818300b40fa1b589089ed43e6ea3dc500eb18b4933d735c3cf384246e641fe13701a46cfe5d5e7b8d9e6e6e7d203d24c23c7f8b56a7849b813c0bb8709a47ce089d19a71b18300341041d5a2e34457dcb4184b94bf7cb6f64689ee73d69282daa5fa5ee6fa5810f80c136ec7b8806679878cb045d9b25aa28a1a411c77677f5a1cf6f98c4acfeb9793c30044104d1dbb16fd8ffda505a00f49c9af98eb5e98573708590575991aa06f09e295463f33cccf49c8df7c5b58f6d02c4f193485d4c9ae41cf4df0b89b223822adf7db518");
 

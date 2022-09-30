@@ -10,9 +10,9 @@ import { Session } from "../../session/Session";
 import { Attribute } from "./Attribute";
 import { Command } from "./Command";
 
-export class Cluster {
+export class Cluster<ContextT> {
     private readonly attributesMap = new Map<number, Attribute<any>>();
-    private readonly commandsMap = new Map<number, Command<any, any>>();
+    private readonly commandsMap = new Map<number, Command<any, any, any>>();
 
     constructor(
         readonly endpointId: number,
@@ -26,8 +26,8 @@ export class Cluster {
         return attribute;
     }
 
-    addCommand<RequestT, ResponseT>(invokeId: number, responseId: number, name: string, requestTemplate: Template<RequestT>, responseTemplate: Template<ResponseT>, handler: (request: RequestT, session: Session) => Promise<ResponseT> | ResponseT) {
-        const command = new Command(invokeId, responseId, this.name, requestTemplate, responseTemplate, handler);
+    addCommand<RequestT, ResponseT>(invokeId: number, responseId: number, name: string, requestTemplate: Template<RequestT>, responseTemplate: Template<ResponseT>, handler: (request: RequestT, session: Session<ContextT>) => Promise<ResponseT> | ResponseT) {
+        const command = new Command(invokeId, responseId, name, requestTemplate, responseTemplate, handler);
         this.commandsMap.set(invokeId, command);
         return command;
     }
@@ -43,7 +43,7 @@ export class Cluster {
         return [attribute];
     }
 
-    async invoke(session: Session, commandId: number, args: Element) {
+    async invoke(session: Session<ContextT>, commandId: number, args: Element) {
         return this.commandsMap.get(commandId)?.invoke(session, args);
     }
 }

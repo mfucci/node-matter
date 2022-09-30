@@ -8,27 +8,26 @@ import { Message, MessageCodec, Packet } from "../codec/MessageCodec";
 import { Crypto } from "../crypto/Crypto";
 import { Fabric } from "../fabric/Fabric";
 import { SubscriptionHandler } from "../interaction/InteractionProtocol";
-import { MatterServer } from "../server/MatterServer";
 import { LEBufferWriter } from "../util/LEBufferWriter";
 import { DEFAULT_ACTIVE_RETRANSMISSION_TIMEOUT_MS, DEFAULT_IDLE_RETRANSMISSION_TIMEOUT_MS, DEFAULT_RETRANSMISSION_RETRIES, Session } from "./Session";
 
 const SESSION_KEYS_INFO = Buffer.from("SessionKeys");
 
-export class SecureSession implements Session {
+export class SecureSession<T> implements Session<T> {
     private fabric?: Fabric;
     private nextSubscriptionId = 0;
     private readonly subscriptions = new Array<SubscriptionHandler>();
 
-    static async create(matterServer: MatterServer, id: number, nodeId: bigint, peerNodeId: bigint, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
+    static async create<T>(context: T, id: number, nodeId: bigint, peerNodeId: bigint, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
         const keys = await Crypto.hkdf(sharedSecret, salt, SESSION_KEYS_INFO, 16 * 3);
         const decryptKey = isInitiator ? keys.slice(16, 32) : keys.slice(0, 16);
         const encryptKey = isInitiator ? keys.slice(0, 16) : keys.slice(16, 32);
         const attestationKey = keys.slice(32, 48);
-        return new SecureSession(matterServer, id, nodeId, peerNodeId, peerSessionId, sharedSecret, decryptKey, encryptKey, attestationKey, idleRetransTimeoutMs, activeRetransTimeoutMs);
+        return new SecureSession(context, id, nodeId, peerNodeId, peerSessionId, sharedSecret, decryptKey, encryptKey, attestationKey, idleRetransTimeoutMs, activeRetransTimeoutMs);
     }
 
     constructor(
-        private readonly matterServer: MatterServer,
+        private readonly context: T,
         private readonly id: number,
         private readonly nodeId: bigint,
         private readonly peerNodeId: bigint,
@@ -70,6 +69,10 @@ export class SecureSession implements Session {
         this.fabric = fabric;
     }
 
+    getFabric() {
+        return this.fabric;
+    }
+
     getName() {
         return `secure/${this.id}`;
     }
@@ -79,8 +82,8 @@ export class SecureSession implements Session {
         return {idleRetransmissionTimeoutMs, activeRetransmissionTimeoutMs, retransmissionRetries};
     }
 
-    getServer() {
-        return this.matterServer;
+    getContext() {
+        return this.context;
     }
 
     getId() {

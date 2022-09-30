@@ -5,27 +5,35 @@
  */
 
 import { Device } from "./model/Device";
-import { ExchangeSocket, MatterServer, Protocol, ProtocolHandler } from "../server/MatterServer";
-import { MessageExchange } from "../server/MessageExchange";
-import { InteractionMessenger, InvokeRequest, InvokeResponse, ReadRequest, DataReport, SubscribeRequest, SubscribeResponse } from "./InteractionMessenger";
+import { MatterServer } from "../matter/MatterServer";
+import { Protocol } from "../matter/common/Protocol";
+import { ExchangeSocket } from "../matter/common/ExchangeSocket";
+import { MessageExchange } from "../matter/common/MessageExchange";
+import { InteractionServerMessenger, InvokeRequest, InvokeResponse, ReadRequest, DataReport, SubscribeRequest, SubscribeResponse } from "./InteractionMessenger";
 import { SecureSession } from "../session/SecureSession";
 import { Attribute, Report } from "./model/Attribute";
 import { Session } from "../session/Session";
 
-export class InteractionProtocol implements ProtocolHandler {
+export const INTERACTION_PROTOCOL_ID = 0x0001;
+
+export class InteractionProtocol implements Protocol<MatterServer> {
     constructor(
-        private readonly device: Device,
+        private readonly device: Device<MatterServer>,
     ) {}
 
-    async onNewExchange(exchange: MessageExchange) {
-        await new InteractionMessenger(exchange).handleRequest(
+    getId() {
+        return INTERACTION_PROTOCOL_ID;
+    }
+
+    async onNewExchange(exchange: MessageExchange<MatterServer>) {
+        await new InteractionServerMessenger(exchange).handleRequest(
             readRequest => this.handleReadRequest(exchange, readRequest),
             subscribeRequest => this.handleSubscribeRequest(exchange, subscribeRequest),
             invokeRequest => this.handleInvokeRequest(exchange, invokeRequest),
         );
     }
 
-    handleReadRequest(exchange: MessageExchange, {attributes: attributePaths}: ReadRequest): DataReport {
+    handleReadRequest(exchange: MessageExchange<MatterServer>, {attributes: attributePaths}: ReadRequest): DataReport {
         console.log(`Received read request from ${exchange.channel.getName()}: ${attributePaths.map(({endpointId = "*", clusterId = "*", attributeId = "*"}) => `${endpointId}/${clusterId}/${attributeId}`).join(", ")}`);
 
         return {
@@ -35,12 +43,12 @@ export class InteractionProtocol implements ProtocolHandler {
         };
     }
 
-    handleSubscribeRequest(exchange: MessageExchange, { minIntervalFloorSeconds, maxIntervalCeilingSeconds, attributeRequests, keepSubscriptions }: SubscribeRequest): SubscribeResponse | undefined {
+    handleSubscribeRequest(exchange: MessageExchange<MatterServer>, { minIntervalFloorSeconds, maxIntervalCeilingSeconds, attributeRequests, keepSubscriptions }: SubscribeRequest): SubscribeResponse | undefined {
         console.log(`Received subscribe request from ${exchange.channel.getName()}`);
 
         if (!exchange.session.isSecure()) throw new Error("Subscriptions are only implemented on secure sessions");
 
-        const session = exchange.session as SecureSession;
+        const session = exchange.session as SecureSession<MatterServer>;
 
         if (!keepSubscriptions) {
             session.clearSubscriptions();
@@ -52,14 +60,14 @@ export class InteractionProtocol implements ProtocolHandler {
             if (attributeRequests.length === 0) throw new Error("Invalid subscription request");
 
             return {
-                subscriptionId: session.addSubscription(SubscriptionHandler.Builder(session, exchange.channel.channel, session.getServer(), attributes)),
+                subscriptionId: session.addSubscription(SubscriptionHandler.Builder(session, exchange.channel.channel, session.getContext(), attributes)),
                 minIntervalFloorSeconds,
                 maxIntervalCeilingSeconds,
             };
         }
     }
 
-    async handleInvokeRequest(exchange: MessageExchange, {invokes}: InvokeRequest): Promise<InvokeResponse> {
+    async handleInvokeRequest(exchange: MessageExchange<MatterServer>, {invokes}: InvokeRequest): Promise<InvokeResponse> {
         console.log(`Received invoke request from ${exchange.channel.getName()}: ${invokes.map(({path: {endpointId, clusterId, commandId}}) => `${endpointId}/${clusterId}/${commandId}`).join(", ")}`);
 
         const results = (await Promise.all(invokes.map(({path, args}) => this.device.invoke(exchange.session, path, args)))).flat();
@@ -79,11 +87,11 @@ export class InteractionProtocol implements ProtocolHandler {
 
 export class SubscriptionHandler {
 
-    static Builder = (session: Session, channel: ExchangeSocket<Buffer>, server: MatterServer, attributes: Attribute<any>[]) => (subscriptionId: number) => new SubscriptionHandler(subscriptionId, session, channel, server, attributes);
+    static Builder = (session: Session<MatterServer>, channel: ExchangeSocket<Buffer>, server: MatterServer, attributes: Attribute<any>[]) => (subscriptionId: number) => new SubscriptionHandler(subscriptionId, session, channel, server, attributes);
 
     constructor(
         readonly subscriptionId: number,
-        private readonly session: Session,
+        private readonly session: Session<MatterServer>,
         private readonly channel: ExchangeSocket<Buffer>,
         private readonly server: MatterServer,
         private readonly attributes: Attribute<any>[],
@@ -96,8 +104,8 @@ export class SubscriptionHandler {
     sendReport(report: Report) {
         // TODO: this should be sent to the last discovered address of this node instead of the one used to request the subscription
 
-        const exchange = this.server.initiateExchange(this.session, this.channel, Protocol.INTERACTION_MODEL);
-        new InteractionMessenger(exchange).sendDataReport({
+        const exchange = this.server.initiateExchange(this.session, this.channel, INTERACTION_PROTOCOL_ID);
+        new InteractionServerMessenger(exchange).sendDataReport({
             subscriptionId: this.subscriptionId,
             isFabricFiltered: true,
             interactionModelRevision: 1,

@@ -34,6 +34,15 @@ For instance, on a Raspberry Pi, this will turn on / off the red LED:
 matter -on "echo 255 > /sys/class/leds/led1/brightness" -off "echo 0 > /sys/class/leds/led1/brightness"
 ```
 
+**Experimental**
+
+```bash
+matter-controller -ip [IP address of device to commission]
+```
+
+This will commission a Matter device (for debugging purpose only for now).
+
+
 ## Modifying the server behavior
 
 Main.ts defines the server behavior. You can add / remove clusters, change default parameters, etc...

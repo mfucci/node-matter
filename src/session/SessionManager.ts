@@ -5,7 +5,7 @@
  */
 
 import { Crypto } from "../crypto/Crypto";
-import { MatterServer } from "../server/MatterServer";
+import { Fabric } from "../fabric/Fabric";
 import { SecureSession } from "./SecureSession";
 import { Session } from "./Session";
 import { UnsecureSession } from "./UnsecureSession";
@@ -14,18 +14,28 @@ export const UNDEFINED_NODE_ID = BigInt(0);
 
 export const UNICAST_UNSECURE_SESSION_ID = 0x0000;
 
-export class SessionManager {
-    private readonly sessions = new Map<number, Session>();
+export interface ResumptionRecord {
+    sharedSecret: Buffer,
+    resumptionId: Buffer,
+    fabric: Fabric,
+    peerNodeId: bigint,
+}
+
+export class SessionManager<ContextT> {
+    private readonly unsecureSession: UnsecureSession<ContextT>;
+    private readonly sessions = new Map<number, Session<ContextT>>();
     private nextSessionId = Crypto.getRandomUInt16();
+    private resumptionRecords = new Map<bigint, ResumptionRecord>();
 
     constructor(
-        private readonly matterServer: MatterServer
+        private readonly context: ContextT,
     ) {
-        this.sessions.set(UNICAST_UNSECURE_SESSION_ID, new UnsecureSession(matterServer));
+        this.unsecureSession = new UnsecureSession(context);
+        this.sessions.set(UNICAST_UNSECURE_SESSION_ID, this.unsecureSession);
     }
 
     async createSecureSession(sessionId: number, nodeId: bigint, peerNodeId: bigint, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
-        const session = await SecureSession.create(this.matterServer, sessionId, nodeId, peerNodeId, peerSessionId, sharedSecret, salt, isInitiator, idleRetransTimeoutMs, activeRetransTimeoutMs);
+        const session = await SecureSession.create(this.context, sessionId, nodeId, peerNodeId, peerSessionId, sharedSecret, salt, isInitiator, idleRetransTimeoutMs, activeRetransTimeoutMs);
         this.sessions.set(sessionId, session);
         return session;
     }
@@ -43,5 +53,21 @@ export class SessionManager {
 
     getSession(sessionId: number) {
         return this.sessions.get(sessionId);
+    }
+
+    getUnsecureSession() {
+        return this.unsecureSession;
+    }
+
+    findResumptionRecordById(resumptionId: Buffer) {
+        return [...this.resumptionRecords.values()].find(record => record.resumptionId.equals(resumptionId));
+    }
+
+    findResumptionRecordByNodeId(nodeId: bigint) {
+        return this.resumptionRecords.get(nodeId);
+    }
+
+    saveResumptionRecord(resumptionRecord: ResumptionRecord) {
+        this.resumptionRecords.set(resumptionRecord.peerNodeId, resumptionRecord);
     }
 }

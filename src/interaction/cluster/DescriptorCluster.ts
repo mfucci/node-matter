@@ -10,10 +10,10 @@ import { Endpoint } from "../model/Endpoint";
 
 const CLUSTER_ID = 0x1d;
 
-export class DescriptorCluster extends Cluster {
-    static Builder = (allEndpoints: Endpoint[]) => (endpointId: number) => new DescriptorCluster(endpointId, allEndpoints);
+export class DescriptorCluster<ContextT> extends Cluster<ContextT> {
+    static Builder = <ContextT,>(allEndpoints: Endpoint<ContextT>[]) => (endpointId: number) => new DescriptorCluster<ContextT>(endpointId, allEndpoints);
 
-    constructor(endpointId: number, allEndpoints: Endpoint[]) {
+    constructor(endpointId: number, allEndpoints: Endpoint<ContextT>[]) {
         super(
             endpointId,
             0x1d,

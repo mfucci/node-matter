@@ -68,10 +68,20 @@ export class Crypto {
         }
     }
 
-    static ecdh(publicKey: Buffer) {
+    static ecdhGeneratePublicKey() {
         const ecdh = crypto.createECDH(EC_CURVE);
         ecdh.generateKeys();
-        return {publicKey: ecdh.getPublicKey(), sharedSecret: ecdh.computeSecret(publicKey)};
+        return {publicKey: ecdh.getPublicKey(), ecdh: ecdh};
+    }
+
+    static ecdhGeneratePublicKeyAndSecret(peerPublicKey: Buffer) {
+        const ecdh = crypto.createECDH(EC_CURVE);
+        ecdh.generateKeys();
+        return {publicKey: ecdh.getPublicKey(), sharedSecret: ecdh.computeSecret(peerPublicKey)};
+    }
+
+    static ecdhGenerateSecret(peerPublicKey: Buffer, ecdh: crypto.ECDH) {
+        return ecdh.computeSecret(peerPublicKey);
     }
 
     static hash(data: Buffer | Buffer[]) {
@@ -108,7 +118,7 @@ export class Crypto {
         return hmac.digest();
     }
 
-    static sign(privateKey: Buffer, data: Buffer | Buffer[], dsaEncoding:("ieee-p1363" | "der")  = "ieee-p1363") {
+    static sign(privateKey: Buffer, data: Buffer | Buffer[], dsaEncoding: ("ieee-p1363" | "der")  = "ieee-p1363") {
         const signer = crypto.createSign(HASH_ALGORITHM);
         if (Array.isArray(data)) {
             data.forEach(chunk => signer.update(chunk));
@@ -118,10 +128,10 @@ export class Crypto {
         return signer.sign({ key: Buffer.concat([EC_PRIVATE_KEY_PKCS8_HEADER, privateKey]), format: "der", type: "pkcs8", dsaEncoding });
     }
     
-    static verify(publicKey: Buffer, data: Buffer, signature: Buffer) {
+    static verify(publicKey: Buffer, data: Buffer, signature: Buffer, dsaEncoding: ("ieee-p1363" | "der")  = "ieee-p1363") {
         const verifier = crypto.createVerify(HASH_ALGORITHM);
         verifier.update(data);
-        const success = verifier.verify({ key: Buffer.concat([EC_PUBLIC_KEY_SPKI_HEADER, publicKey]), format: "der", type: "spki",  dsaEncoding: "ieee-p1363" }, signature);
+        const success = verifier.verify({ key: Buffer.concat([EC_PUBLIC_KEY_SPKI_HEADER, publicKey]), format: "der", type: "spki",  dsaEncoding }, signature);
         if (!success) throw new Error("Signature verification failed");
     }
 

@@ -4,84 +4,47 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Crypto } from "../crypto/Crypto";
-import { Message, MessageCodec, SessionType } from "../codec/MessageCodec";
-import { SessionManager } from "../session/SessionManager";
+import { MessageCodec, SessionType } from "../../codec/MessageCodec";
+import { Crypto } from "../../crypto/Crypto";
+import { NetInterface, NetListener } from "../../net/NetInterface";
+import { Session } from "../../session/Session";
+import { SessionManager } from "../../session/SessionManager";
+import { ExchangeSocket } from "./ExchangeSocket";
 import { MessageExchange } from "./MessageExchange";
-import { FabricManager } from "../fabric/FabricManager";
-import { MatterMdnsServer } from "../mdns/MatterMdnsServer";
-import { Session } from "../session/Session";
+import { Protocol } from "./Protocol";
 
-export const enum Protocol {
-    SECURE_CHANNEL = 0x0000,
-    INTERACTION_MODEL = 0x0001,
-}
-
-export interface ExchangeSocket<T> {
-    send(data: T): Promise<void>;
-    getName():string;
-}
-
-export interface Channel {
-    bind(listener: (socket: ExchangeSocket<Buffer>, messageBytes: Buffer) => void): void;
-}
-
-export interface ProtocolHandler {
-    onNewExchange(exchange: MessageExchange, message: Message): void;
-}
-
-export class MatterServer {
-    static async create(deviceName: string, deviceType: number, vendorId: number, productId: number, discriminator: number) {
-        const mdnsServer = await MatterMdnsServer.create();
-        mdnsServer.addRecordsForCommission(deviceName, deviceType, vendorId, productId, discriminator);
-        return new MatterServer(mdnsServer);
-    }
-
-    constructor(
-        private readonly mdnsServer: MatterMdnsServer,
-    ) {}
-
-    private readonly channels = new Array<Channel>();
-    private readonly protocolHandlers = new Map<Protocol, ProtocolHandler>();
+export class ExchangeManager<ContextT> {
     private readonly exchangeCounter = new ExchangeCounter();
     private readonly messageCounter = new MessageCounter();
-    private readonly exchanges = new Map<number, MessageExchange>();
-    private readonly sessionManager = new SessionManager(this);
-    private readonly fabricManager = new FabricManager();
+    private readonly exchanges = new Map<number, MessageExchange<ContextT>>();
+    private readonly protocols = new Map<number, Protocol<ContextT>>();
+    private readonly netListeners = new Array<NetListener>();
 
-    addChannel(channel: Channel) {
-        this.channels.push(channel);
-        return this;
+    constructor(
+        private readonly sessionManager: SessionManager<ContextT>,
+    ) {}
+
+    addNetInterface(netInterface: NetInterface) {
+        this.netListeners.push(netInterface.onData((socket, data) => this.onMessage(socket, data)));
     }
 
-    addProtocolHandler(protocol: Protocol, protocolHandler: ProtocolHandler) {
-        this.protocolHandlers.set(protocol, protocolHandler);
-        return this;
+    addProtocol(protocol: Protocol<ContextT>) {
+        this.protocols.set(protocol.getId(), protocol);
     }
 
-    start() {
-        this.channels.forEach(channel => channel.bind((socket, data) => this.onMessage(socket, data)));
-        this.mdnsServer.announce();
-    }
-
-    getMdnsServer() {
-        return this.mdnsServer;
-    }
-
-    getSessionManager() {
-        return this.sessionManager;
-    }
-
-    getFabricManager() {
-        return this.fabricManager;
-    }
-
-    initiateExchange(session: Session, channel: ExchangeSocket<Buffer>, protocolId: number) {
+    initiateExchange(session: Session<ContextT>, channel: ExchangeSocket<Buffer>, protocolId: number) {
         const exchangeId = this.exchangeCounter.getIncrementedCounter();
         const exchange = MessageExchange.initiate(session, channel, exchangeId, protocolId, this.messageCounter, () => this.exchanges.delete(exchangeId & 0x10000));
         // Ensure exchangeIds are not colliding in the Map by adding 1 in front of exchanges initiated by this device.
         this.exchanges.set(exchangeId & 0x10000, exchange);
         return exchange;
+    }
+
+    close() {
+        this.netListeners.forEach(netListener => netListener.close());
+        this.netListeners.length = 0;
+        [...this.exchanges.values()].forEach(exchange => exchange.close());
+        this.exchanges.clear();
     }
 
     private onMessage(socket: ExchangeSocket<Buffer>, messageBytes: Buffer) {
@@ -99,14 +62,14 @@ export class MatterServer {
         } else {
             const exchange = MessageExchange.fromInitialMessage(session, socket, this.messageCounter, message, () => this.exchanges.delete(exchangeId));
             this.exchanges.set(exchangeId, exchange);
-            const protocolHandler = this.protocolHandlers.get(message.payloadHeader.protocolId);
+            const protocolHandler = this.protocols.get(message.payloadHeader.protocolId);
             if (protocolHandler === undefined) throw new Error(`Unsupported protocol ${message.payloadHeader.protocolId}`);
             protocolHandler.onNewExchange(exchange, message);
         }
     }
 }
 
-class ExchangeCounter {
+export class ExchangeCounter {
     private exchangeCounter = Crypto.getRandomUInt16();
 
     getIncrementedCounter() {

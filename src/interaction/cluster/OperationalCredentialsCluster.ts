@@ -11,6 +11,8 @@ import { Cluster } from "../model/Cluster";
 import { NoResponseT } from "../model/Command";
 import { Session } from "../../session/Session";
 import { AddNocRequestT, AddTrustedRootCertificateRequestT, AttestationResponseT, AttestationT, CertificateChainRequestT, CertificateChainResponseT, CertificateSigningRequestT, CertificateType, CsrResponseT, RequestWithNonceT, Status, StatusResponseT } from "./OperationalCredentialsMessages";
+import { MatterServer } from "../../matter/MatterServer";
+import { ClusterDef, CommandDef } from "./ClusterDef";
 
 interface OperationalCredentialsClusterConf {
     devicePrivateKey: Buffer,
@@ -19,7 +21,8 @@ interface OperationalCredentialsClusterConf {
     certificateDeclaration: Buffer,
 }
 
-export class OperationalCredentialsCluster extends Cluster {
+// TODO: auto-generate this from OperationalCredentialsClusterDef
+export class OperationalCredentialsCluster extends Cluster<MatterServer> {
     static Builder = (conf: OperationalCredentialsClusterConf) => (endpointId: number) => new OperationalCredentialsCluster(endpointId, conf);
 
     private fabricBuilder?: FabricBuilder;
@@ -38,7 +41,7 @@ export class OperationalCredentialsCluster extends Cluster {
         this.addCommand(11, 11, "AddTrustedRootCertificate", AddTrustedRootCertificateRequestT, NoResponseT, ({certificate}) => this.addTrustedRootCertificate(certificate));
     }
 
-    private handleAttestationRequest(nonce: Buffer, session: Session) {
+    private handleAttestationRequest(nonce: Buffer, session: Session<MatterServer>) {
         const elements = TlvObjectCodec.encode({ declaration: this.conf.certificateDeclaration, nonce, timestamp: 0 }, AttestationT);
         return {elements: elements, signature: this.signWithDeviceKey(session, elements)};
     }
@@ -54,14 +57,14 @@ export class OperationalCredentialsCluster extends Cluster {
         }
     }
 
-    private handleCertificateSignRequest(nonce: Buffer, session: Session) {
+    private handleCertificateSignRequest(nonce: Buffer, session: Session<MatterServer>) {
         this.fabricBuilder = new FabricBuilder();
         const csr = this.fabricBuilder.createCertificateSigningRequest();
         const elements = TlvObjectCodec.encode({ csr, nonce }, CertificateSigningRequestT);
         return {elements, signature: this.signWithDeviceKey(session, elements)};
     }
 
-    private async addNewOperationalCertificates(nocCert: Buffer, icaCert: Buffer, ipkValue: Buffer, caseAdminNode: bigint, adminVendorId: number, session: Session) {
+    private async addNewOperationalCertificates(nocCert: Buffer, icaCert: Buffer, ipkValue: Buffer, caseAdminNode: bigint, adminVendorId: number, session: Session<MatterServer>) {
         if (this.fabricBuilder === undefined) throw new Error("CSRRequest and AddTrustedRootCertificate should be called first!")
 
         this.fabricBuilder.setNewOpCert(nocCert);
@@ -71,14 +74,10 @@ export class OperationalCredentialsCluster extends Cluster {
 
         const fabric = await this.fabricBuilder.build();
         this.fabricBuilder = undefined;
-        session.getServer().getFabricManager().addFabric(fabric);
+        session.getContext().setFabric(fabric);
         session.setFabric(fabric);
 
         // TODO: create ACL with caseAdminNode
-
-        const mdnsServer = session.getServer().getMdnsServer();
-        mdnsServer.addRecordsForFabric(fabric);
-        await mdnsServer.announce();
 
         return {status: Status.Success};
     }
@@ -88,7 +87,20 @@ export class OperationalCredentialsCluster extends Cluster {
         this.fabricBuilder.setRootCert(certificate);
     }
 
-    private signWithDeviceKey(session: Session, data: Buffer) {
+    private signWithDeviceKey(session: Session<MatterServer>, data: Buffer) {
         return Crypto.sign(this.conf.devicePrivateKey, [data, session.getAttestationChallengeKey()]);
     }
 }
+
+export const OperationalCredentialsClusterDef = ClusterDef(
+    0x3e,
+    "Operational Credentials",
+    {},
+    {
+        requestAttestation: CommandDef(0, RequestWithNonceT, 1, AttestationResponseT),
+        requestCertificateChain: CommandDef(2, CertificateChainRequestT, 3, CertificateChainResponseT),
+        requestCsr: CommandDef(4, RequestWithNonceT, 5, CsrResponseT),
+        addNoc: CommandDef(6, AddNocRequestT, 8, StatusResponseT),
+        addTrustedRootCertificate: CommandDef(11, AddTrustedRootCertificateRequestT, 11, NoResponseT),
+    },
+)

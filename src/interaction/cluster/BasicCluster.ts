@@ -5,7 +5,9 @@
  */
 
 import { StringT, UnsignedIntT } from "../../codec/TlvObjectCodec";
+import { MatterServer } from "../../matter/MatterServer";
 import { Cluster } from "../model/Cluster";
+import { AttributeDef, ClusterDef } from "./ClusterDef";
 
 interface BasicClusterConf {
     vendorName: string,
@@ -14,8 +16,9 @@ interface BasicClusterConf {
     productId: number,
 }
 
-export class BasicCluster extends Cluster {
-    static Builder = (conf: BasicClusterConf) => (endpointId: number) => new BasicCluster(endpointId, conf);
+// TODO: auto-generate this from BasicClusterDef
+export class BasicClusterServer extends Cluster<MatterServer> {
+    static Builder = (conf: BasicClusterConf) => (endpointId: number) => new BasicClusterServer(endpointId, conf);
 
     constructor(endpointId: number, { vendorName, vendorId, productName, productId }: BasicClusterConf) {
         super(
@@ -30,3 +33,15 @@ export class BasicCluster extends Cluster {
         this.addAttribute(4, "ProductID", UnsignedIntT, productId);
     }
 }
+
+export const BasicClusterDef = ClusterDef(
+    0x28,
+    "Basic",
+    {
+        vendorName: AttributeDef(1, StringT),
+        vendorId: AttributeDef(2, UnsignedIntT),
+        productName: AttributeDef(3, StringT),
+        productId: AttributeDef(4, UnsignedIntT),
+    },
+    {},
+);

@@ -1,13 +1,20 @@
-import { Message, MessageCodec, SessionType } from "../codec/MessageCodec";
-import { Queue } from "../util/Queue";
-import { Session } from "../session/Session";
-import { ExchangeSocket, MessageCounter } from "./MatterServer";
-import { MessageType } from "../session/secure/SecureChannelMessages";
+/**
+ * @license
+ * Copyright 2022 Marco Fucci di Napoli (mfucci@gmail.com)
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
-class MessageChannel implements ExchangeSocket<Message> {
+import { Message, MessageCodec, SessionType } from "../../codec/MessageCodec";
+import { Queue } from "../../util/Queue";
+import { Session } from "../../session/Session";
+import { ExchangeSocket } from "./ExchangeSocket";
+import { MessageType } from "../../session/secure/SecureChannelMessages";
+import { MessageCounter } from "./ExchangeManager";
+
+class MessageChannel<ContextT> implements ExchangeSocket<Message> {
     constructor(
         readonly channel: ExchangeSocket<Buffer>,
-        private readonly session: Session,
+        private readonly session: Session<ContextT>,
     ) {}
 
     send(message: Message): Promise<void> {
@@ -21,9 +28,8 @@ class MessageChannel implements ExchangeSocket<Message> {
     }
 }
 
-export class MessageExchange {
-    private readonly messageCodec = new MessageCodec();
-    readonly channel: MessageChannel;
+export class MessageExchange<ContextT> {
+    readonly channel: MessageChannel<ContextT>;
     private readonly activeRetransmissionTimeoutMs: number;
     private readonly retransmissionRetries: number;
     private readonly messagesQueue = new Queue<Message>();
@@ -31,14 +37,14 @@ export class MessageExchange {
     private sentMessageToAck: Message | undefined;
     private retransmissionTimeoutId:  NodeJS.Timeout | undefined;
 
-    static fromInitialMessage(
-        session: Session,
+    static fromInitialMessage<ContextT>(
+        session: Session<ContextT>,
         channel: ExchangeSocket<Buffer>,
         messageCounter: MessageCounter,
         initialMessage: Message,
         closeCallback: () => void,
     ) {
-        const exchange = new MessageExchange(
+        const exchange = new MessageExchange<ContextT>(
             session,
             channel,
             messageCounter,
@@ -54,8 +60,8 @@ export class MessageExchange {
         return exchange;
     }
 
-    static initiate(
-        session: Session,
+    static initiate<ContextT>(
+        session: Session<ContextT>,
         channel: ExchangeSocket<Buffer>,
         exchangeId: number,
         protocolId: number,
@@ -77,7 +83,7 @@ export class MessageExchange {
     }
 
     constructor(
-        readonly session: Session,
+        readonly session: Session<ContextT>,
         channel: ExchangeSocket<Buffer>,
         private readonly messageCounter: MessageCounter,
         private readonly isInitiator: boolean,
@@ -120,9 +126,9 @@ export class MessageExchange {
         }
         if (messageType === MessageType.StandaloneAck) {
             // This indicates the end of this message exchange
-            if (requiresAck) throw new Error("Standalone acks should but require an ack");
+            if (requiresAck) throw new Error("Standalone acks should not require an ack");
             // Wait some time before closing this exchange to handle potential retransmissions
-            setTimeout(() => this.closeExchange(), this.activeRetransmissionTimeoutMs * 3);
+            setTimeout(() => this.closeInternal(), this.activeRetransmissionTimeoutMs * 3);
             return;
         }
         if (requiresAck) {
@@ -146,7 +152,7 @@ export class MessageExchange {
                 protocolId: this.protocolId,
                 messageType,
                 isInitiatorMessage: this.isInitiator,
-                requiresAck: true,
+                requiresAck: messageType === MessageType.StandaloneAck ? false : true,
                 ackedMessageId: this.receivedMessageToAck?.packetHeader.messageId,
             },
             payload,
@@ -177,7 +183,15 @@ export class MessageExchange {
         this.retransmissionTimeoutId = setTimeout(() => this.retransmitMessage(message, retransmissionCount), this.activeRetransmissionTimeoutMs);
     }
 
-    private closeExchange() {
+    close() {
+        if (this.receivedMessageToAck !== undefined) {
+            this.send(MessageType.StandaloneAck, Buffer.alloc(0));
+        }
+        setTimeout(() => this.closeInternal(), this.activeRetransmissionTimeoutMs * 3);
+    }
+
+    private closeInternal() {
+        clearTimeout(this.retransmissionTimeoutId);
         this.messagesQueue.close();
         this.closeCallback();
     }

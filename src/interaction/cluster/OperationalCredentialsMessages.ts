@@ -4,12 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ByteStringT, Field, ObjectT, OptionalField, UnsignedIntT, UnsignedLongT } from "../../codec/TlvObjectCodec";
+import { TlvType } from "../../codec/TlvCodec";
+import { ByteStringT, Field, ObjectT, OptionalField, Template, UnsignedIntT, UnsignedLongT } from "../../codec/TlvObjectCodec";
 
 export const enum CertificateType {
     DeviceAttestation = 1,
     ProductAttestationIntermediate = 2,
 }
+export const CertificateTypeT = { tlvType: TlvType.UnsignedInt } as Template<CertificateType>;
 
 export const RequestWithNonceT = ObjectT({
     nonce: Field(0, ByteStringT),
@@ -26,7 +28,7 @@ export const CsrResponseT = ObjectT({
 });
 
 export const CertificateChainRequestT = ObjectT({
-    type: Field(0, UnsignedIntT),
+    type: Field(0, CertificateTypeT),
 });
 
 export const CertificateChainResponseT = ObjectT({

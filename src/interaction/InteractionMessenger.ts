@@ -4,8 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { JsType, TlvObjectCodec } from "../codec/TlvObjectCodec";
-import { MessageExchange } from "../server/MessageExchange";
+import { JsType, Template, TlvObjectCodec } from "../codec/TlvObjectCodec";
+import { MessageExchange } from "../matter/common/MessageExchange";
+import { MatterClient } from "../matter/MatterClient";
+import { MatterServer } from "../matter/MatterServer";
 import { StatusResponseT } from "./cluster/OperationalCredentialsMessages";
 import { InvokeRequestT, InvokeResponseT, ReadRequestT, DataReportT, SubscribeRequestT, SubscribeResponseT } from "./InteractionMessages";
 
@@ -34,10 +36,10 @@ export type SubscribeResponse = JsType<typeof SubscribeResponseT>;
 export type InvokeRequest = JsType<typeof InvokeRequestT>;
 export type InvokeResponse = JsType<typeof InvokeResponseT>;
 
-export class InteractionMessenger {
+export class InteractionServerMessenger {
 
     constructor(
-        private readonly exchange: MessageExchange,
+        private readonly exchange: MessageExchange<MatterServer>,
     ) {}
 
     async handleRequest(
@@ -81,5 +83,35 @@ export class InteractionMessenger {
 
     private sendStatus(status: Status) {
         this.exchange.send(MessageType.StatusResponse, TlvObjectCodec.encode({status}, StatusResponseT));
+    }
+}
+
+export class InteractionClientMessenger {
+    constructor(
+        private readonly exchange: MessageExchange<MatterClient>,
+    ) {}
+
+    sendReadRequest(readRequest: ReadRequest) {
+        return this.request(MessageType.ReadRequest, ReadRequestT, MessageType.ReportData, DataReportT, readRequest);
+    }
+
+    sendSubscribeRequest(subscribeRequest: SubscribeRequest) {
+        return this.request(MessageType.SubscribeRequest, SubscribeRequestT, MessageType.SubscribeResponse, SubscribeResponseT, subscribeRequest);
+    }
+
+    sendInvokeCommand(invokeRequest: InvokeRequest) {
+        return this.request(MessageType.InvokeCommandRequest, InvokeRequestT, MessageType.InvokeCommandResponse, InvokeResponseT, invokeRequest);
+    }
+
+    close() {
+        this.exchange.close();
+    }
+
+    private async request<RequestT, ResponseT>(requestMessageType: number, requestTemplate: Template<RequestT>, responseMessageType: number, responseTemplate: Template<ResponseT>, request: RequestT): Promise<ResponseT> {
+        await this.exchange.send(requestMessageType, TlvObjectCodec.encode(request, requestTemplate));
+        const responseMessage = await this.exchange.nextMessage();
+        const messageType = responseMessage.payloadHeader.messageType;
+        if (messageType !== responseMessageType) throw new Error(`Received unexpected message type: ${messageType}, expected: ${responseMessageType}`);
+        return TlvObjectCodec.decode(responseMessage.payload, responseTemplate);
     }
 }

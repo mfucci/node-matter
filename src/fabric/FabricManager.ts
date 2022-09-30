@@ -19,7 +19,7 @@ export class FabricManager {
 
     findFabricFromDestinationId(destinationId: Buffer, initiatorRandom: Buffer) {
         for (var fabric of this.fabrics) {
-            const candidateDestinationId = fabric.getDestinationId(initiatorRandom);
+            const candidateDestinationId = fabric.getDestinationId(fabric.nodeId, initiatorRandom);
             if (!candidateDestinationId.equals(destinationId)) continue;
             return fabric;
         }

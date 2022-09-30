@@ -4,8 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { TlvTag } from "./TlvTag";
-import { TlvType, Element, TlvCodec } from "./TlvCodec";
+import { TlvType, Element, TlvCodec, TlvTag } from "./TlvCodec";
 
 // Type structure definitions
 export type Template<T> = {tlvType?: TlvType, readAsBigint?: boolean};

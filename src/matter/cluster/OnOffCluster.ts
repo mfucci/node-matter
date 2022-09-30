@@ -4,41 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Cluster } from "./Cluster";
 import { BooleanT } from "../../codec/TlvObjectCodec";
-import { NoArgumentsT, NoResponseT } from "./Command";
-import { MatterDevice } from "../MatterDevice";
+import { AttributeSpec, ClusterSpec, CommandSpec, NoArgumentsT, NoResponseT } from "./ClusterSpec";
 
-const CLUSTER_ID = 0x06;
-
-export class OnOffCluster extends Cluster<MatterDevice> {
-    static Builder = (onCallback?: (() => void) | undefined, offCallback?: (() => void) | undefined) => (endpointId: number) => new OnOffCluster(endpointId, onCallback, offCallback);
-
-    private readonly onOffAttribute;
-
-    constructor(
-        endpointId: number,
-        private readonly onCallback: (() => void) | undefined,
-        private readonly offCallback: (() => void) | undefined,
-    ) {
-        super(
-            endpointId,
-            0x06,
-            "On/Off",
-        );
-
-        this.addCommand(0, 0, "Off", NoArgumentsT, NoResponseT, () => this.setOnOff(false)),
-        this.addCommand(1, 1, "On", NoArgumentsT, NoResponseT, () => this.setOnOff(true)),
-        this.addCommand(2, 2, "Toggle", NoArgumentsT, NoResponseT, () => this.setOnOff(!this.onOffAttribute.get())),
-
-        this.onOffAttribute = this.addAttribute(0, "OnOff", BooleanT, false);
-    }
-
-    private setOnOff(value: boolean) {
-        const currentValue = this.onOffAttribute.get();
-        if (value === currentValue) return;
-        if (value && this.onCallback !== undefined) this.onCallback();
-        if (!value && this.offCallback !== undefined) this.offCallback();
-        this.onOffAttribute.set(value);
-    }
-}
+export const OnOffClusterSpec = ClusterSpec(
+    0x06,
+    "On/Off",
+    {
+        on: AttributeSpec(0, BooleanT),
+    },
+    {
+        off: CommandSpec(0, NoArgumentsT, 0, NoResponseT),
+        on: CommandSpec(1, NoArgumentsT, 1, NoResponseT),
+        toggle: CommandSpec(2, NoArgumentsT, 2, NoResponseT),
+    },
+);

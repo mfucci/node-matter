@@ -42,8 +42,8 @@ export class MatterDevice {
         return this;
     }
 
-    addProtocol(protocol: ProtocolHandler<MatterDevice>) {
-        this.exchangeManager.addProtocol(protocol);
+    addProtocolHandler(protocol: ProtocolHandler<MatterDevice>) {
+        this.exchangeManager.addProtocolHandler(protocol);
         return this;
     }
 
@@ -81,6 +81,18 @@ export class MatterDevice {
 
     saveResumptionRecord(resumptionRecord: ResumptionRecord) {
         return this.sessionManager.saveResumptionRecord(resumptionRecord);
+    }
+
+    armFailSafe() {
+        return this.fabricManager.armFailSafe();
+    }
+
+    getFabricBuilder() {
+        return this.fabricManager.getFabricBuilder();
+    }
+
+    completeCommission() {
+        return this.fabricManager.completeCommission();
     }
 
     stop() {

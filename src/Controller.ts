@@ -7,12 +7,12 @@
  */
 
 import { MatterController } from "./matter/MatterController";
-import { MdnsMatterScanner } from "./net/mdns/MdnsMatterScanner";
 import { UdpInterface } from "./net/UdpInterface";
 import { Network } from "./net/Network";
 import { NetworkNode } from "./net/node/NetworkNode";
 import { getIntParameter, getParameter } from "./util/CommandLine";
 import { singleton } from "./util/Singleton";
+import { MdnsScanner } from "./matter/mdns/MdnsScanner";
 
 Network.get = singleton(() => new NetworkNode());
 
@@ -23,7 +23,7 @@ class Main {
         const port = getIntParameter("port") ?? 5540;
         const discriminator = getIntParameter("discriminator") ?? 3840;
         const setupPin = getIntParameter("pin") ?? 20202021;
-        const client = await MatterController.create(await MdnsMatterScanner.create(), await UdpInterface.create(5540));
+        const client = await MatterController.create(await MdnsScanner.create(), await UdpInterface.create(5540));
         try {
             await client.commission(ip, port, discriminator, setupPin);
         } finally {

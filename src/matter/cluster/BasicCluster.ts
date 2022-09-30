@@ -5,43 +5,16 @@
  */
 
 import { StringT, UnsignedIntT } from "../../codec/TlvObjectCodec";
-import { MatterDevice } from "../MatterDevice";
-import { Cluster } from "./Cluster";
-import { AttributeDef, ClusterDef } from "./ClusterDef";
+import { AttributeSpec, ClusterSpec } from "./ClusterSpec";
 
-interface BasicClusterConf {
-    vendorName: string,
-    vendorId: number,
-    productName: string,
-    productId: number,
-}
-
-// TODO: auto-generate this from BasicClusterDef
-export class BasicClusterServer extends Cluster<MatterDevice> {
-    static Builder = (conf: BasicClusterConf) => (endpointId: number) => new BasicClusterServer(endpointId, conf);
-
-    constructor(endpointId: number, { vendorName, vendorId, productName, productId }: BasicClusterConf) {
-        super(
-            endpointId,
-            0x28,
-            "Basic",
-        );
-
-        this.addAttribute(1, "VendorName", StringT, vendorName);
-        this.addAttribute(2, "VendorID", UnsignedIntT, vendorId);
-        this.addAttribute(3, "ProductName", StringT, productName);
-        this.addAttribute(4, "ProductID", UnsignedIntT, productId);
-    }
-}
-
-export const BasicClusterDef = ClusterDef(
+export const BasicClusterSpec = ClusterSpec(
     0x28,
     "Basic",
     {
-        vendorName: AttributeDef(1, StringT),
-        vendorId: AttributeDef(2, UnsignedIntT),
-        productName: AttributeDef(3, StringT),
-        productId: AttributeDef(4, UnsignedIntT),
+        vendorName: AttributeSpec(1, StringT),
+        vendorId: AttributeSpec(2, UnsignedIntT),
+        productName: AttributeSpec(3, StringT),
+        productId: AttributeSpec(4, UnsignedIntT),
     },
     {},
 );

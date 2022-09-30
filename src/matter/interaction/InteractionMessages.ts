@@ -14,7 +14,7 @@ export const StatusReport = ObjectT({
 const AttributePathT = ObjectT({
     endpointId: OptionalField(2, UnsignedIntT),
     clusterId: OptionalField(3, UnsignedIntT),
-    attributeId: OptionalField(4, UnsignedIntT),
+    id: OptionalField(4, UnsignedIntT),
 }, TlvType.List);
 
 export const ReadRequestT = ObjectT({
@@ -31,7 +31,7 @@ export const DataReportT = ObjectT({
             path: Field(1, ObjectT({
                 endpointId: Field(2, UnsignedIntT),
                 clusterId: Field(3, UnsignedIntT),
-                attributeId: Field(4, UnsignedIntT),
+                id: Field(4, UnsignedIntT),
             }, TlvType.List)),
             value: Field(2, AnyT),
         })),
@@ -80,7 +80,7 @@ export const InvokeRequestT = ObjectT({
         path: Field(0, ObjectT({
             endpointId: Field(0, UnsignedIntT),
             clusterId: Field(1, UnsignedIntT),
-            commandId: Field(2, UnsignedIntT),
+            id: Field(2, UnsignedIntT),
         }, TlvType.List)),
         args: Field(1, AnyT),
     }))),
@@ -93,7 +93,7 @@ export const InvokeResponseT = ObjectT({
             path: Field(0, ObjectT({
                 endpointId: Field(0, UnsignedIntT),
                 clusterId: Field(1, UnsignedIntT),
-                responseId: Field(2, UnsignedIntT),
+                id: Field(2, UnsignedIntT),
             }, TlvType.List)),
             response: Field(1, AnyT),
         })),
@@ -101,7 +101,7 @@ export const InvokeResponseT = ObjectT({
             path: Field(0, ObjectT({
                 endpointId: Field(0, UnsignedIntT),
                 clusterId: Field(1, UnsignedIntT),
-                commandId: Field(2, UnsignedIntT),
+                id: Field(2, UnsignedIntT),
             }, TlvType.List)),
             result: Field(1, ObjectT({
                 code: Field(0, UnsignedIntT),

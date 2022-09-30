@@ -28,7 +28,7 @@ export class ExchangeManager<ContextT> {
         this.netListeners.push(netInterface.onData((socket, data) => this.onMessage(socket, data)));
     }
 
-    addProtocol(protocol: ProtocolHandler<ContextT>) {
+    addProtocolHandler(protocol: ProtocolHandler<ContextT>) {
         this.protocols.set(protocol.getId(), protocol);
     }
 

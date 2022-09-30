@@ -9,13 +9,7 @@ import { UdpInterface } from "../src/net/UdpInterface";
 import { MatterController } from "../src/matter/MatterController";
 import { Crypto } from "../src/crypto/Crypto";
 import { DEVICE } from "../src/matter/common/DeviceTypes";
-import { BasicClusterServer } from "../src/matter/cluster/BasicCluster";
-import { GeneralCommissioningCluster } from "../src/matter/cluster/GeneralCommissioningCluster";
-import { OnOffCluster } from "../src/matter/cluster/OnOffCluster";
-import { OperationalCredentialsCluster } from "../src/matter/cluster/OperationalCredentialsCluster";
-import { InteractionProtocol } from "../src/matter/interaction/InteractionProtocol";
-import { Device } from "../src/matter/cluster/Device";
-import { Endpoint } from "../src/matter/cluster/Endpoint";
+import { ClusterServer, InteractionProtocol } from "../src/matter/interaction/InteractionProtocol";
 import { MdnsBroadcaster } from "../src/matter/mdns/MdnsBroadcaster";
 import { MatterDevice } from "../src/matter/MatterDevice";
 import { CaseServer } from "../src/matter/session/secure/CaseServer";
@@ -24,6 +18,12 @@ import { PaseServer } from "../src/matter/session/secure/PaseServer";
 import { NetworkFake } from "../src/net/fake/NetworkFake";
 import { Network } from "../src/net/Network";
 import { MdnsScanner } from "../src/matter/mdns/MdnsScanner";
+import { OnOffClusterSpec } from "../src/matter/cluster/OnOffCluster";
+import { BasicClusterSpec } from "../src/matter/cluster/BasicCluster";
+import { GeneralCommissioningClusterSpec, RegulatoryLocationType } from "../src/matter/cluster/GeneralCommissioningCluster";
+import { OperationalCredentialsClusterSpec } from "../src/matter/cluster/OperationalCredentialsCluster";
+import { GeneralCommissioningClusterHandler } from "../src/matter/cluster/server/GeneralCommissioningServer";
+import { OperationalCredentialsClusterHandler } from "../src/matter/cluster/server/OperationalCredentialsServer";
 
 const SERVER_IP = "192.168.200.1";
 const SERVER_MAC = "00:B0:D0:63:C2:26";
@@ -70,20 +70,37 @@ describe("Integration", () => {
         server = new MatterDevice(deviceName, deviceType, vendorId, productId, discriminator)
             .addNetInterface(await UdpInterface.create(matterPort, SERVER_IP))
             .addBroadcaster(await MdnsBroadcaster.create(SERVER_IP))
-            .addProtocol(new SecureChannelProtocol(
+            .addProtocolHandler(new SecureChannelProtocol(
                     new PaseServer(setupPin, { iteration: 1000, salt: Crypto.getRandomData(32) }),
                     new CaseServer(),
                 ))
-            .addProtocol(new InteractionProtocol(new Device([
-                new Endpoint(0x00, DEVICE.ROOT, [
-                    BasicClusterServer.Builder({ vendorName, vendorId, productName, productId }),
-                    GeneralCommissioningCluster.Builder(),
-                    OperationalCredentialsCluster.Builder({devicePrivateKey: DevicePrivateKey, deviceCertificate: DeviceCertificate, deviceIntermediateCertificate: ProductIntermediateCertificate, certificateDeclaration: CertificateDeclaration}),
-                ]),
-                new Endpoint(0x01, DEVICE.ON_OFF_LIGHT, [
-                    OnOffCluster.Builder(),
-                ]),
-            ])));
+            .addProtocolHandler(new InteractionProtocol()
+                .addEndpoint(0x00, DEVICE.ROOT, [
+                    new ClusterServer(BasicClusterSpec, { vendorName, vendorId, productName, productId }, {}),
+                    new ClusterServer(GeneralCommissioningClusterSpec, {
+                         breadcrumb: 0,
+                         comminssioningInfo: {failSafeExpiryLengthSeconds: 60 /* 1mn */},
+                         regulatoryConfig: RegulatoryLocationType.Indoor,
+                         locationCapability: RegulatoryLocationType.IndoorOutdoor,
+                     }, GeneralCommissioningClusterHandler),
+                     new ClusterServer(OperationalCredentialsClusterSpec, {},
+                         OperationalCredentialsClusterHandler({
+                             devicePrivateKey: DevicePrivateKey,
+                             deviceCertificate: DeviceCertificate,
+                             deviceIntermediateCertificate: ProductIntermediateCertificate,
+                             certificateDeclaration: CertificateDeclaration,
+                     })),
+                ])
+                .addEndpoint(0x01, DEVICE.ON_OFF_LIGHT, [
+                    new ClusterServer(OnOffClusterSpec, { on: false }, 
+                        {
+                            on: async ({attributes: {on}}) => on.set(true),
+                            off: async ({attributes: {on}}) => on.set(false),
+                            toggle: async ({attributes: {on}}) => on.set(!on.get()),
+                        }
+                    )
+                ])
+            );
         server.start();
 
         Network.get = () => { throw new Error("Network should not be requested post creation") };

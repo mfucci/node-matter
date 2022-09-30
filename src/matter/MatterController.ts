@@ -11,10 +11,9 @@ import { ExchangeManager } from "./common/ExchangeManager";
 import { PaseClient } from "./session/secure/PaseClient";
 import { ClusterClient, InteractionClient } from "./interaction/InteractionClient";
 import { INTERACTION_PROTOCOL_ID } from "./interaction/InteractionProtocol";
-import { BasicClusterDef } from "./cluster/BasicCluster";
-import { CommissioningError, GeneralCommissioningClusterDef, RegulatoryLocationType, SuccessFailureReponse } from "./cluster/GeneralCommissioningCluster";
-import { OperationalCredentialsClusterDef } from "./cluster/OperationalCredentialsCluster";
-import { CertificateSigningRequestT, CertificateType } from "./cluster/OperationalCredentialsMessages";
+import { BasicClusterSpec } from "./cluster/BasicCluster";
+import { CommissioningError, GeneralCommissioningClusterSpec, RegulatoryLocationType, SuccessFailureReponse } from "./cluster/GeneralCommissioningCluster";
+import { CertificateType, CertSigningRequestT, OperationalCredentialsClusterSpec } from "./cluster/OperationalCredentialsCluster";
 import { Crypto } from "../crypto/Crypto";
 import { CertificateManager, jsToMatterDate, OperationalCertificateT, RootCertificateT } from "./certificate/CertificateManager";
 import { TlvObjectCodec } from "../codec/TlvObjectCodec";
@@ -66,34 +65,34 @@ export class MatterController {
         let interactionClient = new InteractionClient(() => this.exchangeManager.initiateExchange(paseSecureSession, paseChannel, INTERACTION_PROTOCOL_ID));
         
         // Get and display the product name (just for debugging)
-        const basicClusterClient = ClusterClient(interactionClient, 0, BasicClusterDef);
+        const basicClusterClient = ClusterClient(interactionClient, 0, BasicClusterSpec);
         const productName = await basicClusterClient.getProductName();
         console.log(`Paired with device: ${productName}`);
 
         // Do the commissioning
-        let generalCommissioningClusterClient = ClusterClient(interactionClient, 0, GeneralCommissioningClusterDef);
-        this.ensureSuccess(await generalCommissioningClusterClient.armFailSafe({ breadcrumb: 1, expiryLengthSeconds: 60 }));
-        this.ensureSuccess(await generalCommissioningClusterClient.updateRegulatoryConfig({ breadcrumb: 2, config: RegulatoryLocationType.IndoorOutdoor, countryCode: "US"}));
+        let generalCommissioningClusterClient = ClusterClient(interactionClient, 0, GeneralCommissioningClusterSpec);
+        this.ensureSuccess(await generalCommissioningClusterClient.armFailSafe({ breadcrumbStep: 1, expiryLengthSeconds: 60 }));
+        this.ensureSuccess(await generalCommissioningClusterClient.updateRegulatoryConfig({ breadcrumbStep: 2, config: RegulatoryLocationType.IndoorOutdoor, countryCode: "US"}));
         
-        const operationalCredentialsClusterClient = ClusterClient(interactionClient, 0, OperationalCredentialsClusterDef);
-        const { certificate: deviceAttestation } = await operationalCredentialsClusterClient.requestCertificateChain({ type: CertificateType.DeviceAttestation });
+        const operationalCredentialsClusterClient = ClusterClient(interactionClient, 0, OperationalCredentialsClusterSpec);
+        const { certificate: deviceAttestation } = await operationalCredentialsClusterClient.requestCertChain({ type: CertificateType.DeviceAttestation });
         // TODO: extract device public key from deviceAttestation
-        const { certificate: productAttestation } = await operationalCredentialsClusterClient.requestCertificateChain({ type: CertificateType.ProductAttestationIntermediate });
+        const { certificate: productAttestation } = await operationalCredentialsClusterClient.requestCertChain({ type: CertificateType.ProductAttestationIntermediate });
         // TODO: validate deviceAttestation and productAttestation
         const { elements: attestationElements, signature: attestationSignature } = await operationalCredentialsClusterClient.requestAttestation({ nonce: Crypto.getRandomData(16) });
         // TODO: validate attestationSignature using device public key 
-        const { elements: csrElements, signature: csrSignature } = await operationalCredentialsClusterClient.requestCsr({ nonce: Crypto.getRandomData(16) });
+        const { elements: csrElements, signature: csrSignature } = await operationalCredentialsClusterClient.requestCertSigning({ nonce: Crypto.getRandomData(16) });
         // TOTO: validate csrSignature using device public key
-        const { csr } = TlvObjectCodec.decode(csrElements, CertificateSigningRequestT);
-        const operationalPublicKey = CertificateManager.getPublicKeyFromCsr(csr);
+        const { certSigningRequest } = TlvObjectCodec.decode(csrElements, CertSigningRequestT);
+        const operationalPublicKey = CertificateManager.getPublicKeyFromCsr(certSigningRequest);
         
-        await operationalCredentialsClusterClient.addTrustedRootCertificate({ certificate: this.certificateManager.getRootCert() });
+        await operationalCredentialsClusterClient.addRootCert({ certificate: this.certificateManager.getRootCert() });
         const peerNodeId = BigInt(1);
         const peerOperationalCert = this.certificateManager.generateNoc(operationalPublicKey, FABRIC_ID, peerNodeId);
-        await operationalCredentialsClusterClient.addNoc({
-            nocCert: peerOperationalCert,
-            icaCert: Buffer.alloc(0),
-            ipkValue: this.fabric.identityProtectionKey,
+        await operationalCredentialsClusterClient.addOperationalCert({
+            operationalCert: peerOperationalCert,
+            intermediateCaCert: Buffer.alloc(0),
+            identityProtectionKey: this.fabric.identityProtectionKey,
             adminVendorId: ADMIN_VENDOR_ID,
             caseAdminNode: CONTROLLER_NODE_ID,
         });
@@ -109,7 +108,7 @@ export class MatterController {
         interactionClient = new InteractionClient(() => this.exchangeManager.initiateExchange(operationalSecureSession, operationalChannel, INTERACTION_PROTOCOL_ID));
 
         // Complete the commission
-        generalCommissioningClusterClient = ClusterClient(interactionClient, 0, GeneralCommissioningClusterDef);
+        generalCommissioningClusterClient = ClusterClient(interactionClient, 0, GeneralCommissioningClusterSpec);
         this.ensureSuccess(await generalCommissioningClusterClient.commissioningComplete({}));
     }
 

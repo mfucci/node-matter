@@ -8,11 +8,12 @@ import { Template, TlvObjectCodec } from "../../codec/TlvObjectCodec";
 import { MessageExchange } from "../common/MessageExchange";
 import { MatterController } from "../MatterController";
 import { capitalize } from "../../util/String";
-import { AttributeDefs, ClusterClient, ClusterDef, CommandDefs } from "../cluster/ClusterDef";
+import { AttributeSpecs, ClusterSpec, CommandSpecs, NoResponseT } from "../cluster/ClusterSpec";
 import { InteractionClientMessenger } from "./InteractionMessenger";
-import { NoResponseT, ResultCode } from "../cluster/Command";
+import { ResultCode } from "../cluster/server/Command";
+import { ClusterClient } from "../cluster/client/ClusterClient";
 
-export function ClusterClient<CommandT extends CommandDefs, AttributeT extends AttributeDefs>(interactionClient: InteractionClient, endpointId: number, clusterDef: ClusterDef<CommandT, AttributeT>): ClusterClient<ClusterDef<CommandT, AttributeT>> {
+export function ClusterClient<CommandT extends CommandSpecs, AttributeT extends AttributeSpecs>(interactionClient: InteractionClient, endpointId: number, clusterDef: ClusterSpec<CommandT, AttributeT>): ClusterClient<CommandT, AttributeT> {
     const result: any = {};
     const { id: clusterId, commands, attributes } = clusterDef;
 
@@ -31,7 +32,7 @@ export function ClusterClient<CommandT extends CommandDefs, AttributeT extends A
         result[commandName] = async <RequestT, ResponseT>(request: RequestT) => interactionClient.invoke<RequestT, ResponseT>(endpointId, clusterId, request, requestId, requestTemplate, responseId, responseTemplate);
     }
 
-    return result as ClusterClient<ClusterDef<CommandT, AttributeT>>;
+    return result as ClusterClient<CommandT, AttributeT>;
 }
 
 export class InteractionClient {
@@ -39,33 +40,33 @@ export class InteractionClient {
         private readonly exchangeProvider: () => MessageExchange<MatterController>,
     ) {}
 
-    async get<T>(endpointId: number, clusterId: number, attributeId: number, template: Template<T>): Promise<T> {
+    async get<T>(endpointId: number, clusterId: number, id: number, template: Template<T>): Promise<T> {
         return this.withMessenger<T>(async messenger => {
             const response = await messenger.sendReadRequest({
-                attributes: [ {endpointId , clusterId, attributeId} ],
+                attributes: [ {endpointId , clusterId, id} ],
                 interactionModelRevision: 1,
                 isFabricFiltered: true,
             });
 
-            const value = response.values.map(({value}) => value).find(({ path: { endpointId, clusterId, attributeId }}) => endpointId === endpointId && clusterId === clusterId && attributeId === attributeId);
-            if (value === undefined) throw new Error(`Attribute ${endpointId}/${clusterId}/${attributeId} not found`);
+            const value = response.values.map(({value}) => value).find(({ path }) => endpointId === path.endpointId && clusterId === path.clusterId && id === path.id);
+            if (value === undefined) throw new Error(`Attribute ${endpointId}/${clusterId}/${id} not found`);
             return TlvObjectCodec.decodeElement(value.value, template);
         });
     }
 
-    async set<T>(endpointId: number, clusterId: number, attributeId: number, value: T, template: Template<T>): Promise<void> {
+    async set<T>(endpointId: number, clusterId: number, id: number, value: T, template: Template<T>): Promise<void> {
         throw new Error("not implemented");
     }
 
-    async subscribe(endpointId: number, clusterId: number, attributeId: number, template: Template<any>): Promise<void> {
+    async subscribe(endpointId: number, clusterId: number, id: number, template: Template<any>): Promise<void> {
         throw new Error("not implemented");
     }
 
-    async invoke<RequestT, ResponseT>(endpointId: number, clusterId: number, request: RequestT, commandId: number, requestTemplate: Template<RequestT>, responseId: number, responseTemplate: Template<ResponseT>): Promise<ResponseT> {
+    async invoke<RequestT, ResponseT>(endpointId: number, clusterId: number, request: RequestT, id: number, requestTemplate: Template<RequestT>, responseId: number, responseTemplate: Template<ResponseT>): Promise<ResponseT> {
         return this.withMessenger<ResponseT>(async messenger => {
             const { responses } = await messenger.sendInvokeCommand({
                 invokes: [
-                    { path: { endpointId, clusterId, commandId }, args: TlvObjectCodec.encodeElement(request, requestTemplate) }
+                    { path: { endpointId, clusterId, id }, args: TlvObjectCodec.encodeElement(request, requestTemplate) }
                 ],
                 timedRequest: false,
                 suppressResponse: false,

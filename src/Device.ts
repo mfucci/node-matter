@@ -12,19 +12,19 @@ import { SecureChannelProtocol } from "./matter/session/secure/SecureChannelProt
 import { PaseServer } from "./matter/session/secure/PaseServer";
 import { Crypto } from "./crypto/Crypto";
 import { CaseServer } from "./matter/session/secure/CaseServer";
-import { InteractionProtocol } from "./matter/interaction/InteractionProtocol";
-import { Device } from "./matter/cluster/Device";
-import { Endpoint } from "./matter/cluster/Endpoint";
-import { BasicClusterServer } from "./matter/cluster/BasicCluster";
-import { GeneralCommissioningCluster } from "./matter/cluster/GeneralCommissioningCluster";
-import { OperationalCredentialsCluster } from "./matter/cluster/OperationalCredentialsCluster";
-import { OnOffCluster } from "./matter/cluster/OnOffCluster";
+import { ClusterServer, InteractionProtocol } from "./matter/interaction/InteractionProtocol";
+import { BasicClusterSpec } from "./matter/cluster/BasicCluster";
+import { GeneralCommissioningClusterSpec, RegulatoryLocationType } from "./matter/cluster/GeneralCommissioningCluster";
+import { OperationalCredentialsClusterSpec } from "./matter/cluster/OperationalCredentialsCluster";
 import { DEVICE } from "./matter/common/DeviceTypes";
 import { MdnsBroadcaster } from "./matter/mdns/MdnsBroadcaster";
 import { Network } from "./net/Network";
 import { NetworkNode } from "./net/node/NetworkNode";
 import { commandExecutor } from "./util/CommandLine";
 import { singleton } from "./util/Singleton";
+import { OnOffClusterSpec } from "./matter/cluster/OnOffCluster";
+import { GeneralCommissioningClusterHandler } from "./matter/cluster/server/GeneralCommissioningServer";
+import { OperationalCredentialsClusterHandler } from "./matter/cluster/server/OperationalCredentialsServer";
 
 // From Chip-Test-DAC-FFF1-8000-0007-Key.der
 const DevicePrivateKey = Buffer.from("727F1005CBA47ED7822A9D930943621617CFD3B79D9AF528B801ECF9F1992204", "hex");
@@ -49,23 +49,46 @@ class Main {
         const productName = "Matter test device";
         const productId = 0X8001;
         const discriminator = 3840;
+
+        const onOffClusterServer = new ClusterServer(OnOffClusterSpec,
+            { on: false }, // Off by default
+            // Barebone implementation of the On/Off cluster
+            {
+                on: async ({attributes: {on}}) => on.set(true),
+                off: async ({attributes: {on}}) => on.set(false),
+                toggle: async ({attributes: {on}}) => on.set(!on.get()),
+            }
+        );
+
+        // We listen to the attribute update to trigger an action. This could also have been done in the method invokations in the server.
+        onOffClusterServer.attributes.on.addListener(0, on => commandExecutor(on ? "on" : "off")?.());
+
         (new MatterDevice(deviceName, deviceType, vendorId, productId, discriminator))
             .addNetInterface(await UdpInterface.create(5540))
             .addBroadcaster(await MdnsBroadcaster.create())
-            .addProtocol(new SecureChannelProtocol(
+            .addProtocolHandler(new SecureChannelProtocol(
                     new PaseServer(20202021, { iteration: 1000, salt: Crypto.getRandomData(32) }),
                     new CaseServer(),
                 ))
-            .addProtocol(new InteractionProtocol(new Device([
-                new Endpoint(0x00, DEVICE.ROOT, [
-                    BasicClusterServer.Builder({ vendorName, vendorId, productName, productId }),
-                    GeneralCommissioningCluster.Builder(),
-                    OperationalCredentialsCluster.Builder({devicePrivateKey: DevicePrivateKey, deviceCertificate: DeviceCertificate, deviceIntermediateCertificate: ProductIntermediateCertificate, certificateDeclaration: CertificateDeclaration}),
-                ]),
-                new Endpoint(0x01, DEVICE.ON_OFF_LIGHT, [
-                    OnOffCluster.Builder(commandExecutor("on"), commandExecutor("off")),
-                ]),
-            ])))
+            .addProtocolHandler(new InteractionProtocol()
+               .addEndpoint(0x00, DEVICE.ROOT, [
+                   new ClusterServer(BasicClusterSpec, { vendorName, vendorId, productName, productId }, {}),
+                   new ClusterServer(GeneralCommissioningClusterSpec, {
+                        breadcrumb: 0,
+                        comminssioningInfo: {failSafeExpiryLengthSeconds: 60 /* 1mn */},
+                        regulatoryConfig: RegulatoryLocationType.Indoor,
+                        locationCapability: RegulatoryLocationType.IndoorOutdoor,
+                    }, GeneralCommissioningClusterHandler),
+                    new ClusterServer(OperationalCredentialsClusterSpec, {},
+                        OperationalCredentialsClusterHandler({
+                            devicePrivateKey: DevicePrivateKey,
+                            deviceCertificate: DeviceCertificate,
+                            deviceIntermediateCertificate: ProductIntermediateCertificate,
+                            certificateDeclaration: CertificateDeclaration,
+                    })),
+                ])
+                .addEndpoint(0x01, DEVICE.ON_OFF_LIGHT, [ onOffClusterServer ])
+            )
             .start()
     }
 }

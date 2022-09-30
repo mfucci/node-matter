@@ -5,10 +5,10 @@
  */
 
 import { JsType, Template, TlvObjectCodec } from "../../codec/TlvObjectCodec";
+import { StatusResponseT } from "../cluster/OperationalCredentialsCluster";
 import { MessageExchange } from "../common/MessageExchange";
 import { MatterController } from "../MatterController";
 import { MatterDevice } from "../MatterDevice";
-import { StatusResponseT } from "../cluster/OperationalCredentialsMessages";
 import { InvokeRequestT, InvokeResponseT, ReadRequestT, DataReportT, SubscribeRequestT, SubscribeResponseT } from "./InteractionMessages";
 
 export const enum Status {

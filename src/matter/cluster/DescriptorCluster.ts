@@ -5,32 +5,16 @@
  */
 
 import { ArrayT, Field, ObjectT, UnsignedIntT } from "../../codec/TlvObjectCodec";
-import { Cluster } from "./Cluster";
-import { Endpoint } from "./Endpoint";
+import { AttributeSpec, ClusterSpec } from "./ClusterSpec";
 
-const CLUSTER_ID = 0x1d;
-
-export class DescriptorCluster<ContextT> extends Cluster<ContextT> {
-    static Builder = <ContextT,>(allEndpoints: Endpoint<ContextT>[]) => (endpointId: number) => new DescriptorCluster<ContextT>(endpointId, allEndpoints);
-
-    constructor(endpointId: number, allEndpoints: Endpoint<ContextT>[]) {
-        super(
-            endpointId,
-            0x1d,
-            "Descriptor",
-        );
-        const endpoint = allEndpoints.find(endpoint => endpoint.id === endpointId);
-        if (endpoint === undefined) throw new Error(`Endpoint with id ${endpointId} doesn't exist`);
-        
-        this.addAttribute(0, "DeviceList", ArrayT(ObjectT({
-            type: Field(0, UnsignedIntT),
-            revision: Field(1, UnsignedIntT),
-        })), [{
-            type: endpoint.device.code,
-            revision: 1,
-        }]);
-        this.addAttribute(1, "ServerList", ArrayT(UnsignedIntT), [CLUSTER_ID, ...endpoint.getClusterIds()]);
-        this.addAttribute(3, "ClientList", ArrayT(UnsignedIntT), []);
-        this.addAttribute(4, "PartsList", ArrayT(UnsignedIntT), endpointId === 0 ? allEndpoints.map(endpoint => endpoint.id).filter(endpointId => endpointId !== 0) : []);
-    }
-}
+export const DescriptorClusterSpec = ClusterSpec(
+    0x1d,
+    "Descriptor",
+    {
+        deviceList: AttributeSpec(0, ArrayT(ObjectT({ type: Field(0, UnsignedIntT), revision: Field(1, UnsignedIntT) }))),
+        serverList: AttributeSpec(1, ArrayT(UnsignedIntT)),
+        clientList: AttributeSpec(3, ArrayT(UnsignedIntT)),
+        partsList: AttributeSpec(4, ArrayT(UnsignedIntT)),
+    },
+    {},
+);

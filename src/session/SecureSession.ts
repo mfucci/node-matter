@@ -69,6 +69,10 @@ export class SecureSession<T> implements Session<T> {
         this.fabric = fabric;
     }
 
+    getFabric() {
+        return this.fabric;
+    }
+
     getName() {
         return `secure/${this.id}`;
     }

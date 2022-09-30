@@ -13,6 +13,7 @@ const COMPRESSED_FABRIC_ID_INFO = Buffer.from("CompressedFabric");
 const GROUP_SECURITY_INFO = Buffer.from("GroupKey v1.0");
 
 export class Fabric {
+
     constructor(
         readonly id: bigint,
         readonly nodeId: bigint,
@@ -22,6 +23,7 @@ export class Fabric {
         private readonly vendorId: number,
         private readonly rootCert: Buffer,
         readonly identityProtectionKey: Buffer,
+        readonly operationalIdentityProtectionKey: Buffer,
         readonly intermediateCACert: Buffer | undefined,
         readonly newOpCert: Buffer,
     ) {}
@@ -46,7 +48,7 @@ export class Fabric {
         writter.writeUInt64(this.id);
         writter.writeUInt64(nodeId);
         const elements = writter.toBuffer();
-        return Crypto.hmac(this.identityProtectionKey, elements);
+        return Crypto.hmac(this.operationalIdentityProtectionKey, elements);
     }
 }
 
@@ -116,6 +118,7 @@ export class FabricBuilder {
             this.keyPair,
             this.vendorId,
             this.rootCert,
+            this.identityProtectionKey,
             await Crypto.hkdf(this.identityProtectionKey, operationalId, GROUP_SECURITY_INFO, 16),
             this.intermediateCACert,
             this.newOpCert,

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { SessionManager } from "../session/SessionManager";
+import { ResumptionRecord, SessionManager } from "../session/SessionManager";
 import { FabricManager } from "../fabric/FabricManager";
 import { Session } from "../session/Session";
 import { Fabric } from "../fabric/Fabric";
@@ -73,6 +73,14 @@ export class MatterServer {
 
     initiateExchange(session: Session<MatterServer>, channel: ExchangeSocket<Buffer>, protocolId: number) {
         return this.exchangeManager.initiateExchange(session, channel, protocolId);
+    }
+
+    findResumptionRecordById(resumptionId: Buffer) {
+        return this.sessionManager.findResumptionRecordById(resumptionId);
+    }
+
+    saveResumptionRecord(resumptionRecord: ResumptionRecord) {
+        return this.sessionManager.saveResumptionRecord(resumptionRecord);
     }
 
     stop() {

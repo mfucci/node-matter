@@ -17,6 +17,7 @@ import { Element } from "../../codec/TlvCodec";
 import { Attribute } from "../cluster/server/Attribute";
 import { ClusterSpec } from "../cluster/ClusterSpec";
 import { Attributes, AttributeValues, ClusterServerHandlers } from "../cluster/server/ClusterServer";
+import { SecureSession } from "../session/SecureSession";
 
 export const INTERACTION_PROTOCOL_ID = 0x0001;
 
@@ -47,6 +48,10 @@ interface Path {
     endpointId: number,
     clusterId: number,
     id: number,
+}
+interface AttributeWithPath {
+    path: Path,
+    attribute: Attribute<any>,
 }
 
 function pathToId({endpointId, clusterId, id}: Path) {
@@ -136,8 +141,6 @@ export class InteractionProtocol implements ProtocolHandler<MatterDevice> {
     handleSubscribeRequest(exchange: MessageExchange<MatterDevice>, { minIntervalFloorSeconds, maxIntervalCeilingSeconds, attributeRequests, keepSubscriptions }: SubscribeRequest): SubscribeResponse | undefined {
         console.log(`Received subscribe request from ${exchange.channel.getName()}`);
 
-        throw new Error("TODO");
-        /*
         if (!exchange.session.isSecure()) throw new Error("Subscriptions are only implemented on secure sessions");
 
         const session = exchange.session as SecureSession<MatterDevice>;
@@ -147,7 +150,7 @@ export class InteractionProtocol implements ProtocolHandler<MatterDevice> {
         }
 
         if (attributeRequests !== undefined) {
-            const attributes = attributeRequests.flatMap(path => this.device.getAttributes(path));
+            const attributes = this.getAttributes(attributeRequests);
 
             if (attributeRequests.length === 0) throw new Error("Invalid subscription request");
 
@@ -156,7 +159,7 @@ export class InteractionProtocol implements ProtocolHandler<MatterDevice> {
                 minIntervalFloorSeconds,
                 maxIntervalCeilingSeconds,
             };
-        } */
+        }
     }
 
     async handleInvokeRequest(exchange: MessageExchange<MatterDevice>, {invokes}: InvokeRequest): Promise<InvokeResponse> {
@@ -184,8 +187,8 @@ export class InteractionProtocol implements ProtocolHandler<MatterDevice> {
         };
     }
 
-    private getAttributes(filters: Partial<Path>[] ): { path: Path, attribute: Attribute<any> }[] {
-        const result = new Array<{ path: Path, attribute: Attribute<any> }>();
+    private getAttributes(filters: Partial<Path>[] ): AttributeWithPath[] {
+        const result = new Array<AttributeWithPath>();
 
         filters.forEach(({ endpointId, clusterId, id }) => {
             if (endpointId !== undefined && clusterId !== undefined && id !== undefined) {
@@ -208,33 +211,40 @@ export class InteractionProtocol implements ProtocolHandler<MatterDevice> {
 
 export class SubscriptionHandler {
 
-    static Builder = (session: Session<MatterDevice>, channel: Channel<Buffer>, server: MatterDevice, attributes: Attribute<any>[]) => (subscriptionId: number) => new SubscriptionHandler(subscriptionId, session, channel, server, attributes);
+    static Builder = (session: Session<MatterDevice>, channel: Channel<Buffer>, server: MatterDevice, attributes: AttributeWithPath[]) => (subscriptionId: number) => new SubscriptionHandler(subscriptionId, session, channel, server, attributes);
 
     constructor(
         readonly subscriptionId: number,
         private readonly session: Session<MatterDevice>,
         private readonly channel: Channel<Buffer>,
         private readonly server: MatterDevice,
-        private readonly attributes: Attribute<any>[],
+        private readonly attributes: AttributeWithPath[],
     ) {
         // TODO: implement minIntervalFloorSeconds and maxIntervalCeilingSeconds
 
-        //attributes.forEach(attribute => attribute.addSubscription(this));
+        attributes.forEach(({path, attribute}) => attribute.addListener(subscriptionId, () => this.sendUpdate(path, attribute)));
     }
 
-    /*sendReport(report: Report) {
+    sendUpdate(path: Path, attribute: Attribute<any>) {
         // TODO: this should be sent to the last discovered address of this node instead of the one used to request the subscription
 
+        const { value, version } = attribute.getWithVersion();
         const exchange = this.server.initiateExchange(this.session, this.channel, INTERACTION_PROTOCOL_ID);
         new InteractionServerMessenger(exchange).sendDataReport({
             subscriptionId: this.subscriptionId,
             isFabricFiltered: true,
             interactionModelRevision: 1,
-            values: [{ value: report }],
+            values: [{
+                value: {
+                    path,
+                    version,
+                    value: TlvObjectCodec.encodeElement(value, attribute.template) as Element,
+                },
+            }],
         });
-    }*/
+    }
 
     cancel() {
-        //this.attributes.forEach(attribute => attribute.removeSubscription(this.subscriptionId));
+        this.attributes.forEach(({attribute}) => attribute.removeListener(this.subscriptionId));
     }
 }

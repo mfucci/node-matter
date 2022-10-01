@@ -158,6 +158,7 @@ export class InteractionProtocol implements ProtocolHandler<MatterDevice> {
                 subscriptionId: session.addSubscription(SubscriptionHandler.Builder(session, exchange.channel.channel, session.getContext(), attributes)),
                 minIntervalFloorSeconds,
                 maxIntervalCeilingSeconds,
+                interactionModelRevision: 1,
             };
         }
     }
@@ -223,6 +224,7 @@ export class SubscriptionHandler {
         // TODO: implement minIntervalFloorSeconds and maxIntervalCeilingSeconds
 
         attributes.forEach(({path, attribute}) => attribute.addListener(subscriptionId, () => this.sendUpdate(path, attribute)));
+        this.sendUpdateAll();
     }
 
     sendUpdate(path: Path, attribute: Attribute<any>) {
@@ -232,7 +234,6 @@ export class SubscriptionHandler {
         const exchange = this.server.initiateExchange(this.session, this.channel, INTERACTION_PROTOCOL_ID);
         new InteractionServerMessenger(exchange).sendDataReport({
             subscriptionId: this.subscriptionId,
-            isFabricFiltered: true,
             interactionModelRevision: 1,
             values: [{
                 value: {
@@ -241,6 +242,24 @@ export class SubscriptionHandler {
                     value: TlvObjectCodec.encodeElement(value, attribute.template) as Element,
                 },
             }],
+        });
+    }
+
+    sendUpdateAll() {
+        // TODO: this should be sent to the last discovered address of this node instead of the one used to request the subscription
+
+        const values = this.attributes.map(({attribute, path}) => ({path, valueVersion: attribute.getWithVersion(), template: attribute.template }));
+        const exchange = this.server.initiateExchange(this.session, this.channel, INTERACTION_PROTOCOL_ID);
+        new InteractionServerMessenger(exchange).sendDataReport({
+            subscriptionId: this.subscriptionId,
+            interactionModelRevision: 1,
+            values: values.map(({ path, template, valueVersion: {value, version}}) => ({
+                value: {
+                    path,
+                    version,
+                    value: TlvObjectCodec.encodeElement(value, template) as Element,
+                },
+            })),
         });
     }
 

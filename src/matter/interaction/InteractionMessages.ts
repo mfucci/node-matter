@@ -36,7 +36,7 @@ export const DataReportT = ObjectT({
             value: Field(2, AnyT),
         })),
     }))),
-    isFabricFiltered: Field(4, BooleanT),
+    isFabricFiltered: OptionalField(4, BooleanT),
     interactionModelRevision: Field(0xFF, UnsignedIntT),
 });
 
@@ -71,6 +71,7 @@ export const SubscribeResponseT = ObjectT({
     subscriptionId: Field(0, UnsignedIntT),
     minIntervalFloorSeconds: OptionalField(1, UnsignedIntT),
     maxIntervalCeilingSeconds: Field(2, UnsignedIntT),
+    interactionModelRevision: Field(0xFF, UnsignedIntT),
 });
 
 export const InvokeRequestT = ObjectT({

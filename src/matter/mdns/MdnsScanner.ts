@@ -12,6 +12,7 @@ import { getPromiseResolver } from "../../util/Promises";
 import { Network } from "../../net/Network";
 import { bigintToBuffer } from "../../util/BigInt";
 import { MatterServer, Scanner } from "../common/Scanner";
+import { Fabric } from "../fabric/Fabric";
 
 type MatterServerRecordWithExpire = MatterServer & { expires: number };
 
@@ -32,7 +33,7 @@ export class MdnsScanner implements Scanner {
         this.intervalId = setInterval(() => this.expire(), 60 * 1000 /* 1 mn */);
     }
 
-    async lookForDevice(operationalId: Buffer, nodeId: bigint): Promise<MatterServer | undefined> {
+    async lookForDevice({operationalId}: Fabric, nodeId: bigint): Promise<MatterServer | undefined> {
         const nodeIdString = bigintToBuffer(nodeId).toString("hex").toUpperCase();
         const operationalIdString = operationalId.toString("hex").toUpperCase();
         const deviceMatterQname = getDeviceMatterQname(operationalIdString, nodeIdString);

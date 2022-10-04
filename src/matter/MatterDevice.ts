@@ -14,10 +14,12 @@ import { ProtocolHandler } from "./common/ProtocolHandler";
 import { Broadcaster } from "./common/Broadcaster";
 import { ExchangeManager } from "./common/ExchangeManager";
 import { requireMinNodeVersion } from "../util/Node";
+import { Scanner } from "./common/Scanner";
 
 requireMinNodeVersion(16);
 
 export class MatterDevice {
+    private readonly scanners = new Array<Scanner>();
     private readonly broadcasters = new Array<Broadcaster>();
     private readonly fabricManager = new FabricManager();
     private readonly sessionManager = new SessionManager(this);
@@ -30,6 +32,11 @@ export class MatterDevice {
         private readonly productId: number,
         private readonly discriminator: number,
     ) {}
+
+    addScanner(scanner: Scanner) {
+        this.scanners.push(scanner);
+        return this;
+    }
 
     addBroadcaster(broadcaster: Broadcaster) {
         broadcaster.setCommissionMode(this.deviceName, this.deviceType, this.vendorId, this.productId, this.discriminator);
@@ -93,6 +100,11 @@ export class MatterDevice {
 
     completeCommission() {
         return this.fabricManager.completeCommission();
+    }
+
+    lookForDevice(fabric: Fabric, nodeId: bigint) {
+        // TODO: return the first not undefined answer or undefined
+        return this.scanners[0].lookForDevice(fabric, nodeId);
     }
 
     stop() {

@@ -155,7 +155,7 @@ export class InteractionProtocol implements ProtocolHandler<MatterDevice> {
             if (attributeRequests.length === 0) throw new Error("Invalid subscription request");
 
             return {
-                subscriptionId: session.addSubscription(SubscriptionHandler.Builder(session, exchange.channel.channel, session.getContext(), attributes)),
+                subscriptionId: session.addSubscription(SubscriptionHandler.Builder(session.getContext(), session.getPeerNodeId(), attributes)),
                 minIntervalFloorSeconds,
                 maxIntervalCeilingSeconds,
                 interactionModelRevision: 1,
@@ -212,13 +212,12 @@ export class InteractionProtocol implements ProtocolHandler<MatterDevice> {
 
 export class SubscriptionHandler {
 
-    static Builder = (session: Session<MatterDevice>, channel: Channel<Buffer>, server: MatterDevice, attributes: AttributeWithPath[]) => (subscriptionId: number) => new SubscriptionHandler(subscriptionId, session, channel, server, attributes);
+    static Builder = (server: MatterDevice, peerNodeId: bigint, attributes: AttributeWithPath[]) => (subscriptionId: number) => new SubscriptionHandler(subscriptionId, server, peerNodeId, attributes);
 
     constructor(
         readonly subscriptionId: number,
-        private readonly session: Session<MatterDevice>,
-        private readonly channel: Channel<Buffer>,
         private readonly server: MatterDevice,
+        private readonly peerNodeId: bigint,
         private readonly attributes: AttributeWithPath[],
     ) {
         // TODO: implement minIntervalFloorSeconds and maxIntervalCeilingSeconds

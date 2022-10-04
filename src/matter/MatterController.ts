@@ -98,7 +98,7 @@ export class MatterController {
         });
 
         // Look for the device broadcast over MDNS
-        const scanResult = await this.scanner.lookForDevice(this.fabric.operationalId, peerNodeId);
+        const scanResult = await this.scanner.lookForDevice(this.fabric, peerNodeId);
         if (scanResult === undefined) throw new Error("The device being commmissioned cannot be found on the network");
         const { ip: operationalIp, port: operationalPort } = scanResult;
 
@@ -113,7 +113,7 @@ export class MatterController {
     }
 
     async connect(nodeId: bigint) {
-        const scanResult = await this.scanner.lookForDevice(this.fabric.operationalId, nodeId);
+        const scanResult = await this.scanner.lookForDevice(this.fabric, nodeId);
         if (scanResult === undefined) throw new Error("The device being commmissioned cannot be found on the network");
         const { ip: operationalIp, port: operationalPort } = scanResult;
 

@@ -33,7 +33,7 @@ export class MdnsScanner implements Scanner {
         this.intervalId = setInterval(() => this.expire(), 60 * 1000 /* 1 mn */);
     }
 
-    async lookForDevice({operationalId}: Fabric, nodeId: bigint): Promise<MatterServer | undefined> {
+    async findDevice({operationalId}: Fabric, nodeId: bigint): Promise<MatterServer | undefined> {
         const nodeIdString = bigintToBuffer(nodeId).toString("hex").toUpperCase();
         const operationalIdString = operationalId.toString("hex").toUpperCase();
         const deviceMatterQname = getDeviceMatterQname(operationalIdString, nodeIdString);

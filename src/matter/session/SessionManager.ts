@@ -55,6 +55,15 @@ export class SessionManager<ContextT> {
         return this.sessions.get(sessionId);
     }
 
+    getSessionForNode(fabric: Fabric, nodeId: bigint) {
+        return [...this.sessions.values()].find(session => {
+            if (!session.isSecure()) return false;
+            const secureSession = session as SecureSession<any>;
+            return secureSession.getFabric() === fabric && secureSession.getPeerNodeId() === nodeId;
+        });
+    }
+
+
     getUnsecureSession() {
         return this.unsecureSession;
     }

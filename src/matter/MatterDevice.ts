@@ -21,6 +21,7 @@ requireMinNodeVersion(16);
 export class MatterDevice {
     private readonly scanners = new Array<Scanner>();
     private readonly broadcasters = new Array<Broadcaster>();
+    private readonly netInterfaces = new Array<NetInterface>();
     private readonly fabricManager = new FabricManager();
     private readonly sessionManager = new SessionManager(this);
     private readonly exchangeManager = new ExchangeManager<MatterDevice>(this.sessionManager);
@@ -46,6 +47,7 @@ export class MatterDevice {
 
     addNetInterface(netInterface: NetInterface) {
         this.exchangeManager.addNetInterface(netInterface);
+        this.netInterfaces.push(netInterface);
         return this;
     }
 
@@ -102,9 +104,18 @@ export class MatterDevice {
         return this.fabricManager.completeCommission();
     }
 
-    lookForDevice(fabric: Fabric, nodeId: bigint) {
+    async findDevice(fabric: Fabric, nodeId: bigint): Promise<undefined | {session: Session<MatterDevice>, channel: Channel<Buffer>}> {
         // TODO: return the first not undefined answer or undefined
-        return this.scanners[0].lookForDevice(fabric, nodeId);
+        console.log("find", nodeId);
+        const matterServer = await this.scanners[0].findDevice(fabric, nodeId);
+        console.log("server", matterServer);
+        if (matterServer === undefined) return undefined;
+        const { ip, port } = matterServer;
+        const session = this.sessionManager.getSessionForNode(fabric, nodeId);
+        console.log("session", session);
+        if (session === undefined) return undefined;
+        // TODO: have the interface and scanner linked
+        return { session, channel: await this.netInterfaces[0].openChannel(ip, port)};
     }
 
     stop() {

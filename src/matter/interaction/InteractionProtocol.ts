@@ -18,6 +18,8 @@ import { Attribute } from "../cluster/server/Attribute";
 import { ClusterSpec } from "../cluster/ClusterSpec";
 import { Attributes, AttributeValues, ClusterServerHandlers } from "../cluster/server/ClusterServer";
 import { SecureSession } from "../session/SecureSession";
+import { Fabric } from "../fabric/Fabric";
+import { MatterServer } from "../common/Scanner";
 
 export const INTERACTION_PROTOCOL_ID = 0x0001;
 
@@ -142,8 +144,9 @@ export class InteractionProtocol implements ProtocolHandler<MatterDevice> {
         console.log(`Received subscribe request from ${exchange.channel.getName()}`);
 
         if (!exchange.session.isSecure()) throw new Error("Subscriptions are only implemented on secure sessions");
-
         const session = exchange.session as SecureSession<MatterDevice>;
+        const fabric = session.getFabric();
+        if (fabric === undefined) throw new Error("Subscriptions are only implemented after a fabric has been assigned");
 
         if (!keepSubscriptions) {
             session.clearSubscriptions();
@@ -155,7 +158,7 @@ export class InteractionProtocol implements ProtocolHandler<MatterDevice> {
             if (attributeRequests.length === 0) throw new Error("Invalid subscription request");
 
             return {
-                subscriptionId: session.addSubscription(SubscriptionHandler.Builder(session.getContext(), session.getPeerNodeId(), attributes)),
+                subscriptionId: session.addSubscription(SubscriptionHandler.Builder(session.getContext(), session, exchange.channel.channel, fabric, session.getPeerNodeId(), attributes)),
                 minIntervalFloorSeconds,
                 maxIntervalCeilingSeconds,
                 interactionModelRevision: 1,
@@ -212,11 +215,14 @@ export class InteractionProtocol implements ProtocolHandler<MatterDevice> {
 
 export class SubscriptionHandler {
 
-    static Builder = (server: MatterDevice, peerNodeId: bigint, attributes: AttributeWithPath[]) => (subscriptionId: number) => new SubscriptionHandler(subscriptionId, server, peerNodeId, attributes);
+    static Builder = (server: MatterDevice, session: Session<MatterDevice>, channel: Channel<Buffer>, fabric: Fabric, peerNodeId: bigint, attributes: AttributeWithPath[]) => (subscriptionId: number) => new SubscriptionHandler(subscriptionId, server, session, channel, fabric, peerNodeId, attributes);
 
     constructor(
         readonly subscriptionId: number,
         private readonly server: MatterDevice,
+        private readonly session: Session<MatterDevice>,
+        private readonly channel: Channel<Buffer>,
+        private readonly fabric: Fabric,
         private readonly peerNodeId: bigint,
         private readonly attributes: AttributeWithPath[],
     ) {
@@ -226,9 +232,10 @@ export class SubscriptionHandler {
         this.sendUpdateAll();
     }
 
-    sendUpdate(path: Path, attribute: Attribute<any>) {
-        // TODO: this should be sent to the last discovered address of this node instead of the one used to request the subscription
-
+    async sendUpdate(path: Path, attribute: Attribute<any>) {
+        /*const findResult = await this.server.findDevice(this.fabric, this.peerNodeId);
+        if (findResult === undefined) return;
+        const { session, channel } = findResult;*/
         const { value, version } = attribute.getWithVersion();
         const exchange = this.server.initiateExchange(this.session, this.channel, INTERACTION_PROTOCOL_ID);
         new InteractionServerMessenger(exchange).sendDataReport({
@@ -244,9 +251,10 @@ export class SubscriptionHandler {
         });
     }
 
-    sendUpdateAll() {
-        // TODO: this should be sent to the last discovered address of this node instead of the one used to request the subscription
-
+    async sendUpdateAll() {
+        /*const findResult = await this.server.findDevice(this.fabric, this.peerNodeId);
+        if (findResult === undefined) return;
+        const { session, channel } = findResult;*/
         const values = this.attributes.map(({attribute, path}) => ({path, valueVersion: attribute.getWithVersion(), template: attribute.template }));
         const exchange = this.server.initiateExchange(this.session, this.channel, INTERACTION_PROTOCOL_ID);
         new InteractionServerMessenger(exchange).sendDataReport({

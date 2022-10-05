@@ -12,6 +12,6 @@ export type MatterServer = {
 };
 
 export interface Scanner {
-    lookForDevice(fabric: Fabric, nodeId: bigint): Promise<MatterServer | undefined>;
+    findDevice(fabric: Fabric, nodeId: bigint): Promise<MatterServer | undefined>;
     close(): void;
 }

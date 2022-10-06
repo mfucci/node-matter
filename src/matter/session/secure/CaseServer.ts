@@ -54,8 +54,7 @@ export class CaseServer implements ProtocolHandler<MatterDevice> {
             await messenger.sendSigma2Resume({ resumptionId, resumeMic, sessionId });
 
             // All good! Create secure session
-            const secureSession = await server.createSecureSession(sessionId, fabric.nodeId, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, false, mrpParams?.idleRetransTimeoutMs, mrpParams?.activeRetransTimeoutMs);
-            secureSession.setFabric(fabric);
+            const secureSession = await server.createSecureSession(sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, false, mrpParams?.idleRetransTimeoutMs, mrpParams?.activeRetransTimeoutMs);
             console.log(`Case server: session resumed with ${messenger.getChannelName()}`);
 
             resumptionRecord.resumptionId = resumptionId; /* Update the ID */
@@ -85,8 +84,7 @@ export class CaseServer implements ProtocolHandler<MatterDevice> {
 
             // All good! Create secure session
             const secureSessionSalt = Buffer.concat([operationalIdentityProtectionKey, Crypto.hash([ sigma1Bytes, sigma2Bytes, sigma3Bytes ])]);
-            const secureSession = await server.createSecureSession(sessionId, nodeId, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, false, mrpParams?.idleRetransTimeoutMs, mrpParams?.activeRetransTimeoutMs);
-            secureSession.setFabric(fabric);
+            const secureSession = await server.createSecureSession(sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, false, mrpParams?.idleRetransTimeoutMs, mrpParams?.activeRetransTimeoutMs);
             console.log(`Case server: Paired succesfully with ${messenger.getChannelName()}`);
             await messenger.sendSuccess();
 

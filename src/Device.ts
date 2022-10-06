@@ -12,7 +12,7 @@ import { SecureChannelProtocol } from "./matter/session/secure/SecureChannelProt
 import { PaseServer } from "./matter/session/secure/PaseServer";
 import { Crypto } from "./crypto/Crypto";
 import { CaseServer } from "./matter/session/secure/CaseServer";
-import { ClusterServer, InteractionProtocol } from "./matter/interaction/InteractionProtocol";
+import { ClusterServer, InteractionServer } from "./matter/interaction/InteractionServer";
 import { BasicClusterSpec } from "./matter/cluster/BasicCluster";
 import { GeneralCommissioningClusterSpec, RegulatoryLocationType } from "./matter/cluster/GeneralCommissioningCluster";
 import { OperationalCredentialsClusterSpec } from "./matter/cluster/OperationalCredentialsCluster";
@@ -72,7 +72,7 @@ class Main {
                     new PaseServer(20202021, { iteration: 1000, salt: Crypto.getRandomData(32) }),
                     new CaseServer(),
                 ))
-            .addProtocolHandler(new InteractionProtocol()
+            .addProtocolHandler(new InteractionServer()
                .addEndpoint(0x00, DEVICE.ROOT, [
                    new ClusterServer(BasicClusterSpec, { vendorName, vendorId, productName, productId }, {}),
                    new ClusterServer(GeneralCommissioningClusterSpec, {

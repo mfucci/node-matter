@@ -15,6 +15,7 @@ import { Broadcaster } from "./common/Broadcaster";
 import { ExchangeManager } from "./common/ExchangeManager";
 import { requireMinNodeVersion } from "../util/Node";
 import { Scanner } from "./common/Scanner";
+import { ChannelManager } from "./common/ChannelManager";
 
 requireMinNodeVersion(16);
 
@@ -24,7 +25,8 @@ export class MatterDevice {
     private readonly netInterfaces = new Array<NetInterface>();
     private readonly fabricManager = new FabricManager();
     private readonly sessionManager = new SessionManager(this);
-    private readonly exchangeManager = new ExchangeManager<MatterDevice>(this.sessionManager);
+    private readonly channelManager = new ChannelManager();
+    private readonly exchangeManager = new ExchangeManager<MatterDevice>(this.sessionManager, this.channelManager);
 
     constructor(
         private readonly deviceName: string,
@@ -64,8 +66,8 @@ export class MatterDevice {
         return this.sessionManager.getNextAvailableSessionId();
     }
 
-    createSecureSession(sessionId: number, nodeId: bigint, peerNodeId: bigint, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
-        return this.sessionManager.createSecureSession(sessionId, nodeId, peerNodeId, peerSessionId, sharedSecret, salt, isInitiator, idleRetransTimeoutMs, activeRetransTimeoutMs);
+    createSecureSession(sessionId: number, fabric: Fabric | undefined, peerNodeId: bigint, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
+        return this.sessionManager.createSecureSession(sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, salt, isInitiator, idleRetransTimeoutMs, activeRetransTimeoutMs);
     }
 
     findFabricFromDestinationId(destinationId: Buffer, peerRandom: Buffer) {
@@ -80,8 +82,8 @@ export class MatterDevice {
         });
     }
 
-    initiateExchange(session: Session<MatterDevice>, channel: Channel<Buffer>, protocolId: number) {
-        return this.exchangeManager.initiateExchange(session, channel, protocolId);
+    initiateExchange(fabric: Fabric, nodeId: bigint, protocolId: number) {
+        return this.exchangeManager.initiateExchange(fabric, nodeId, protocolId);
     }
 
     findResumptionRecordById(resumptionId: Buffer) {

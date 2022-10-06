@@ -22,8 +22,6 @@ export interface Session<T> {
     getName(): string;
     decode(packet: Packet): Message;
     encode(message: Message): Packet;
-    getAttestationChallengeKey(): Buffer;
-    setFabric(fabric: Fabric): void;
     getMrpParameters(): MrpParameters;
     getContext(): T;
     getId(): number;

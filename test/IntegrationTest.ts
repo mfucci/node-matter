@@ -9,7 +9,7 @@ import { UdpInterface } from "../src/net/UdpInterface";
 import { MatterController } from "../src/matter/MatterController";
 import { Crypto } from "../src/crypto/Crypto";
 import { DEVICE } from "../src/matter/common/DeviceTypes";
-import { ClusterServer, InteractionProtocol } from "../src/matter/interaction/InteractionProtocol";
+import { ClusterServer, InteractionServer } from "../src/matter/interaction/InteractionServer";
 import { MdnsBroadcaster } from "../src/matter/mdns/MdnsBroadcaster";
 import { MatterDevice } from "../src/matter/MatterDevice";
 import { CaseServer } from "../src/matter/session/secure/CaseServer";
@@ -74,7 +74,7 @@ describe("Integration", () => {
                     new PaseServer(setupPin, { iteration: 1000, salt: Crypto.getRandomData(32) }),
                     new CaseServer(),
                 ))
-            .addProtocolHandler(new InteractionProtocol()
+            .addProtocolHandler(new InteractionServer()
                 .addEndpoint(0x00, DEVICE.ROOT, [
                     new ClusterServer(BasicClusterSpec, { vendorName, vendorId, productName, productId }, {}),
                     new ClusterServer(GeneralCommissioningClusterSpec, {

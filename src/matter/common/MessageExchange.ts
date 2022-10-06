@@ -7,29 +7,10 @@
 import { Message, MessageCodec, SessionType } from "../../codec/MessageCodec";
 import { Queue } from "../../util/Queue";
 import { Session } from "../session/Session";
-import { Channel } from "../../net/Channel";
 import { MessageType } from "../session/secure/SecureChannelMessages";
-import { MessageCounter } from "./ExchangeManager";
-
-class MessageChannel<ContextT> implements Channel<Message> {
-    constructor(
-        readonly channel: Channel<Buffer>,
-        private readonly session: Session<ContextT>,
-    ) {}
-
-    send(message: Message): Promise<void> {
-        const packet = this.session.encode(message);
-        const bytes = MessageCodec.encodePacket(packet);
-        return this.channel.send(bytes);
-    }
-
-    getName() {
-        return `${this.channel.getName()} on session ${this.session.getName()}`;
-    }
-}
+import { MessageChannel, MessageCounter } from "./ExchangeManager";
 
 export class MessageExchange<ContextT> {
-    readonly channel: MessageChannel<ContextT>;
     private readonly activeRetransmissionTimeoutMs: number;
     private readonly retransmissionRetries: number;
     private readonly messagesQueue = new Queue<Message>();
@@ -38,12 +19,12 @@ export class MessageExchange<ContextT> {
     private retransmissionTimeoutId:  NodeJS.Timeout | undefined;
 
     static fromInitialMessage<ContextT>(
-        session: Session<ContextT>,
-        channel: Channel<Buffer>,
+        channel: MessageChannel<ContextT>,
         messageCounter: MessageCounter,
         initialMessage: Message,
         closeCallback: () => void,
     ) {
+        const {session} = channel;
         const exchange = new MessageExchange<ContextT>(
             session,
             channel,
@@ -61,13 +42,13 @@ export class MessageExchange<ContextT> {
     }
 
     static initiate<ContextT>(
-        session: Session<ContextT>,
-        channel: Channel<Buffer>,
+        channel: MessageChannel<ContextT>,
         exchangeId: number,
         protocolId: number,
         messageCounter: MessageCounter,
         closeCallback: () => void,
     ) {
+        const {session} = channel;
         return new MessageExchange(
             session,
             channel,
@@ -84,17 +65,16 @@ export class MessageExchange<ContextT> {
 
     constructor(
         readonly session: Session<ContextT>,
-        channel: Channel<Buffer>,
+        readonly channel: MessageChannel<ContextT>,
         private readonly messageCounter: MessageCounter,
         private readonly isInitiator: boolean,
-        private readonly sessionId: number,
+        private readonly peerSessionId: number,
         private readonly nodeId: bigint | undefined,
         private readonly peerNodeId: bigint | undefined,
         private readonly exchangeId: number,
         private readonly protocolId: number,
         private readonly closeCallback: () => void,
     ) {
-        this.channel = new MessageChannel(channel, session);
         const {activeRetransmissionTimeoutMs: activeRetransmissionTimeoutMs, retransmissionRetries} = session.getMrpParameters();
         this.activeRetransmissionTimeoutMs = activeRetransmissionTimeoutMs;
         this.retransmissionRetries = retransmissionRetries;
@@ -102,6 +82,8 @@ export class MessageExchange<ContextT> {
 
     onMessageReceived(message: Message) {
         const { packetHeader: { messageId }, payloadHeader: { requiresAck, ackedMessageId, messageType } } = message;
+
+        console.log("onMessageReceived", MessageCodec.messageToString(message));
 
         if (messageId === this.receivedMessageToAck?.packetHeader.messageId) {
             // Received a message retransmission but the reply is not ready yet, ignoring
@@ -141,7 +123,7 @@ export class MessageExchange<ContextT> {
         if (this.sentMessageToAck !== undefined) throw new Error("The previous message has not been acked yet, cannot send a new message");
         const message = {
             packetHeader: {
-                sessionId: this.sessionId,
+                sessionId: this.peerSessionId,
                 sessionType: SessionType.Unicast, // TODO: support multicast
                 messageId: this.messageCounter.getIncrementedCounter(),
                 destNodeId: this.peerNodeId,

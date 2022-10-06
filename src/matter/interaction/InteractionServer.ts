@@ -19,7 +19,6 @@ import { ClusterSpec } from "../cluster/ClusterSpec";
 import { Attributes, AttributeValues, ClusterServerHandlers } from "../cluster/server/ClusterServer";
 import { SecureSession } from "../session/SecureSession";
 import { Fabric } from "../fabric/Fabric";
-import { MatterServer } from "../common/Scanner";
 
 export const INTERACTION_PROTOCOL_ID = 0x0001;
 
@@ -51,6 +50,7 @@ interface Path {
     clusterId: number,
     id: number,
 }
+
 interface AttributeWithPath {
     path: Path,
     attribute: Attribute<any>,
@@ -60,7 +60,7 @@ function pathToId({endpointId, clusterId, id}: Path) {
     return `${endpointId}/${clusterId}/${id}`;
 }
 
-export class InteractionProtocol implements ProtocolHandler<MatterDevice> {
+export class InteractionServer implements ProtocolHandler<MatterDevice> {
     private readonly attributes = new Map<string, Attribute<any>>();
     private readonly attributePaths = new Array<Path>();
     private readonly commands = new Map<string, Command<any, any>>();
@@ -158,8 +158,7 @@ export class InteractionProtocol implements ProtocolHandler<MatterDevice> {
             if (attributeRequests.length === 0) throw new Error("Invalid subscription request");
 
             return {
-                subscriptionId: session.addSubscription(SubscriptionHandler.Builder(session.getContext(), session, exchange.channel.channel, fabric, session.getPeerNodeId(), attributes)),
-                minIntervalFloorSeconds,
+                subscriptionId: session.addSubscription(SubscriptionHandler.Builder(session.getContext(), fabric, session.getPeerNodeId(), attributes)),
                 maxIntervalCeilingSeconds,
                 interactionModelRevision: 1,
             };
@@ -215,13 +214,11 @@ export class InteractionProtocol implements ProtocolHandler<MatterDevice> {
 
 export class SubscriptionHandler {
 
-    static Builder = (server: MatterDevice, session: Session<MatterDevice>, channel: Channel<Buffer>, fabric: Fabric, peerNodeId: bigint, attributes: AttributeWithPath[]) => (subscriptionId: number) => new SubscriptionHandler(subscriptionId, server, session, channel, fabric, peerNodeId, attributes);
+    static Builder = (server: MatterDevice, fabric: Fabric, peerNodeId: bigint, attributes: AttributeWithPath[]) => (subscriptionId: number) => new SubscriptionHandler(subscriptionId, server, fabric, peerNodeId, attributes);
 
     constructor(
         readonly subscriptionId: number,
         private readonly server: MatterDevice,
-        private readonly session: Session<MatterDevice>,
-        private readonly channel: Channel<Buffer>,
         private readonly fabric: Fabric,
         private readonly peerNodeId: bigint,
         private readonly attributes: AttributeWithPath[],
@@ -233,12 +230,11 @@ export class SubscriptionHandler {
     }
 
     async sendUpdate(path: Path, attribute: Attribute<any>) {
-        /*const findResult = await this.server.findDevice(this.fabric, this.peerNodeId);
-        if (findResult === undefined) return;
-        const { session, channel } = findResult;*/
+        const exchange = this.server.initiateExchange(this.fabric, this.peerNodeId, INTERACTION_PROTOCOL_ID);
+        if (exchange === undefined) return;
         const { value, version } = attribute.getWithVersion();
-        const exchange = this.server.initiateExchange(this.session, this.channel, INTERACTION_PROTOCOL_ID);
-        new InteractionServerMessenger(exchange).sendDataReport({
+        const messenger = new InteractionServerMessenger(exchange);
+        await messenger.sendDataReport({
             subscriptionId: this.subscriptionId,
             interactionModelRevision: 1,
             values: [{
@@ -249,15 +245,17 @@ export class SubscriptionHandler {
                 },
             }],
         });
+        await messenger.waitForSuccess();
+        messenger.close();
     }
 
     async sendUpdateAll() {
-        /*const findResult = await this.server.findDevice(this.fabric, this.peerNodeId);
-        if (findResult === undefined) return;
-        const { session, channel } = findResult;*/
+        const exchange = this.server.initiateExchange(this.fabric, this.peerNodeId, INTERACTION_PROTOCOL_ID);
+        if (exchange === undefined) return;
         const values = this.attributes.map(({attribute, path}) => ({path, valueVersion: attribute.getWithVersion(), template: attribute.template }));
-        const exchange = this.server.initiateExchange(this.session, this.channel, INTERACTION_PROTOCOL_ID);
-        new InteractionServerMessenger(exchange).sendDataReport({
+        const messenger = new InteractionServerMessenger(exchange);
+        console.log("Sending updates");
+        await messenger.sendDataReport({
             subscriptionId: this.subscriptionId,
             interactionModelRevision: 1,
             values: values.map(({ path, template, valueVersion: {value, version}}) => ({
@@ -268,6 +266,10 @@ export class SubscriptionHandler {
                 },
             })),
         });
+        console.log("Waiting for success");
+        await messenger.waitForSuccess();
+        console.log("Success received");
+        messenger.close();
     }
 
     cancel() {

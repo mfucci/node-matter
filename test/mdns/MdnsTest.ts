@@ -14,6 +14,7 @@ import { getPromiseResolver } from "../../src/util/Promises";
 import { NetworkFake } from "../../src/net/fake/NetworkFake";
 import { Network } from "../../src/net/Network";
 import { MdnsScanner } from "../../src/matter/mdns/MdnsScanner";
+import { Fabric } from "../../src/matter/fabric/Fabric";
 
 const SERVER_IP = "192.168.200.1";
 const SERVER_MAC = "00:B0:D0:63:C2:26";
@@ -91,7 +92,7 @@ describe("MDNS", () => {
             broadcaster.setFabric(OPERATIONAL_ID, NODE_ID);
             await broadcaster.announce();
 
-            const result = await scanner.lookForDevice(OPERATIONAL_ID, NODE_ID);
+            const result = await scanner.findDevice({operationalId: OPERATIONAL_ID} as Fabric, NODE_ID);
 
             assert.deepEqual(result, { ip: SERVER_IP, port: 5540 });
         });
@@ -99,7 +100,7 @@ describe("MDNS", () => {
         it("the client asks for the server record if it has not been announced", async () => {
             broadcaster.setFabric(OPERATIONAL_ID, NODE_ID);
 
-            const result = await scanner.lookForDevice(OPERATIONAL_ID, NODE_ID);
+            const result = await scanner.findDevice({operationalId: OPERATIONAL_ID} as Fabric, NODE_ID);
 
             assert.deepEqual(result, { ip: SERVER_IP, port: 5540 });
         });

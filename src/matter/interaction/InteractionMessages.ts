@@ -5,10 +5,18 @@
  */
 
 import { TlvType } from "../../codec/TlvCodec";
-import { AnyT, ArrayT, BooleanT, Field, ObjectT, OptionalField, UnsignedIntT, UnsignedLongT } from "../../codec/TlvObjectCodec";
+import { AnyT, ArrayT, BooleanT, Field, ObjectT, OptionalField, Template, UnsignedIntT, UnsignedLongT } from "../../codec/TlvObjectCodec";
 
-export const StatusReport = ObjectT({
-    status: OptionalField(0, UnsignedIntT),
+// See project-chip src/protocols/interaction_model/StatusCodeList.h
+export const enum StatusCode {
+    Success = 0x00,
+    Failure = 0x01,
+}
+export const StatusCodeT = { tlvType: TlvType.UnsignedInt } as Template<StatusCode>;
+
+export const StatusResponseT = ObjectT({
+    status: Field(0, StatusCodeT),
+    interactionModelRevision: Field(0xFF, UnsignedIntT),
 });
 
 const AttributePathT = ObjectT({
@@ -69,7 +77,6 @@ export const SubscribeRequestT = ObjectT({
 
 export const SubscribeResponseT = ObjectT({
     subscriptionId: Field(0, UnsignedIntT),
-    minIntervalFloorSeconds: OptionalField(1, UnsignedIntT),
     maxIntervalCeilingSeconds: Field(2, UnsignedIntT),
     interactionModelRevision: Field(0xFF, UnsignedIntT),
 });

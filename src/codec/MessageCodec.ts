@@ -159,6 +159,10 @@ export class MessageCodec {
         return writer.toBuffer();
     }
 
+    static messageToString({packetHeader: {messageId, sessionId}, payloadHeader: {exchangeId, messageType, protocolId, ackedMessageId, requiresAck}}: Message) {
+        return `id:${sessionId}/${exchangeId}/${messageId} t:${protocolId}/${messageType}${ackedMessageId !== undefined ? ` acked:${ackedMessageId}` : ''} reqAck:${requiresAck}`;
+    }
+
     private static encodePayloadHeader({exchangeId, isInitiatorMessage, messageType, protocolId, requiresAck, ackedMessageId: ackedMessageCounter}: PayloadHeader) {
         const writer = new LEBufferWriter();
         const vendorId = (protocolId & 0xFFFF0000) >> 16;

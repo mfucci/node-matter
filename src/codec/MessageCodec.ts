@@ -159,8 +159,8 @@ export class MessageCodec {
         return writer.toBuffer();
     }
 
-    static messageToString({packetHeader: {messageId, sessionId}, payloadHeader: {exchangeId, messageType, protocolId, ackedMessageId, requiresAck}}: Message) {
-        return `id:${sessionId}/${exchangeId}/${messageId} t:${protocolId}/${messageType}${ackedMessageId !== undefined ? ` acked:${ackedMessageId}` : ''} reqAck:${requiresAck}`;
+    static messageToString({packetHeader: {messageId, sessionId}, payloadHeader: {exchangeId, messageType, protocolId, ackedMessageId, requiresAck}, payload}: Message) {
+        return `id:${sessionId}/${exchangeId}/${messageId} t:${protocolId}/${messageType}${ackedMessageId !== undefined ? ` acked:${ackedMessageId}` : ''} reqAck:${requiresAck} payload: ${payload.toString("hex")}`;
     }
 
     private static encodePayloadHeader({exchangeId, isInitiatorMessage, messageType, protocolId, requiresAck, ackedMessageId: ackedMessageCounter}: PayloadHeader) {

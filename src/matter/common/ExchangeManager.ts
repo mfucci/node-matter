@@ -77,7 +77,6 @@ export class ExchangeManager<ContextT> {
         if (packet.header.sessionType === SessionType.Group) throw new Error("Group messages are not supported");
 
         const session = this.sessionManager.getSession(packet.header.sessionId);
-        console.log('onMessage', packet.header.sessionId, session?.getId());
         if (session === undefined) throw new Error(`Cannot find a session for ID ${packet.header.sessionId}`);
 
         const message = session.decode(packet);

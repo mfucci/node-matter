@@ -141,7 +141,9 @@ export class MessageExchange<ContextT> {
         };
         this.receivedMessageToAck = undefined;
         this.sentMessageToAck = message;
-        this.retransmissionTimeoutId = setTimeout(() => this.retransmitMessage(message, 0), this.activeRetransmissionTimeoutMs);
+        if (message.payloadHeader.requiresAck) {
+            this.retransmissionTimeoutId = setTimeout(() => this.retransmitMessage(message, 0), this.activeRetransmissionTimeoutMs);
+        }
 
         return this.channel.send(message);
     }

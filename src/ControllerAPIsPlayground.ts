@@ -1,4 +1,4 @@
-import { MatterController } from "./matter/MatterController";
+/*import { MatterController } from "./matter/MatterController";
 
 const controller = new MatterController();
 const temperatureSensor = controller.getNode(1).getCluster(TemperatureSensorCluster);
@@ -17,4 +17,4 @@ temperatureSensor.subscribeTemperature(temperature => {
     const acOn = acSwitch.getOn();
     if (!acOn && temperature > Fahrenheit(80)) acSwitch.on();
     if (acOn && temperature < Fahrenheit(75)) acSwitch.off();
-}, { interval: Minutes(5) });
+}, { interval: Minutes(5) }); */

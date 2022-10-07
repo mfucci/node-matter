@@ -49,6 +49,6 @@ export class NetworkNode extends Network {
                 return {ip: address, mac};
             }
         }
-        throw new Error(`Cannot find the device IP on the subnet containing ${remoteAddress}`);
+        return undefined;
     }
 }

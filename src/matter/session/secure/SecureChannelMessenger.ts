@@ -50,6 +50,10 @@ export class SecureChannelMessenger<ContextT> {
         return this.exchange.channel.channel.getName();
     }
 
+    close() {
+        this.exchange.close();
+    }
+
     private async sendStatusReport(generalStatus: GeneralStatusCode, protocolStatus: ProtocolStatusCode) {
         const buffer = new LEBufferWriter();
         buffer.writeUInt16(generalStatus);

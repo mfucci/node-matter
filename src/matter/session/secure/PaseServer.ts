@@ -58,6 +58,7 @@ export class PaseServer implements ProtocolHandler<MatterDevice> {
         // All good! Creating the secure session
         await server.createSecureSession(sessionId, undefined /* fabric */, UNDEFINED_NODE_ID, peerSessionId, Ke, Buffer.alloc(0), false, mrpParameters?.idleRetransTimeoutMs, mrpParameters?.activeRetransTimeoutMs);
         await messenger.sendSuccess();
+        messenger.close();
         console.log(`Pase server: Paired succesfully with ${messenger.getChannelName()}`);
     }
 }

@@ -82,33 +82,35 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
             switch (message.payloadHeader.messageType) {
                 case MessageType.ReadRequest:
                     const readRequest = TlvObjectCodec.decode(message.payload, ReadRequestT);
-                    this.sendDataReport(handleReadRequest(readRequest));
+                    await this.sendDataReport(handleReadRequest(readRequest));
                     break;
                 case MessageType.SubscribeRequest:
                     const subscribeRequest = TlvObjectCodec.decode(message.payload, SubscribeRequestT);
                     const subscribeResponse = handleSubscribeRequest(subscribeRequest);
-                    if (subscribeResponse === undefined) {
-                        this.sendStatus(StatusCode.Success);
+                    if (subscribeRequest === undefined) {
+                        await this.sendStatus(StatusCode.Success);
                     } else {
-                        this.exchange.send(MessageType.SubscribeResponse, TlvObjectCodec.encode(subscribeResponse, SubscribeResponseT));
+                        await this.exchange.send(MessageType.SubscribeResponse, TlvObjectCodec.encode(subscribeResponse, SubscribeResponseT));
                     }
                     break;
                 case MessageType.InvokeCommandRequest:
                     const invokeRequest = TlvObjectCodec.decode(message.payload, InvokeRequestT);
                     const invokeResponse = await handleInvokeRequest(invokeRequest);
-                    this.exchange.send(MessageType.InvokeCommandResponse, TlvObjectCodec.encode(invokeResponse, InvokeResponseT));
+                    await this.exchange.send(MessageType.InvokeCommandResponse, TlvObjectCodec.encode(invokeResponse, InvokeResponseT));
                     break;
                 default:
                     throw new Error(`Unsupported message type ${message.payloadHeader.messageType}`);
             }
         } catch (error) {
             console.error(error);
-            this.sendStatus(StatusCode.Failure);
+            await this.sendStatus(StatusCode.Failure);
+        } finally {
+            this.exchange.close();
         }
     }
 
-    sendDataReport(dataReport: DataReport) {
-        return this.exchange.send(MessageType.ReportData, TlvObjectCodec.encode(dataReport, DataReportT));
+    async sendDataReport(dataReport: DataReport) {
+        await this.exchange.send(MessageType.ReportData, TlvObjectCodec.encode(dataReport, DataReportT));
     }
 }
 

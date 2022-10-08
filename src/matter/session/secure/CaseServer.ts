@@ -91,6 +91,7 @@ export class CaseServer implements ProtocolHandler<MatterDevice> {
             resumptionRecord = { peerNodeId, fabric, sharedSecret, resumptionId };
         }
 
+        messenger.close();
         server.saveResumptionRecord(resumptionRecord);
     }
 }

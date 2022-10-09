@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export type MatterDevice = {
+export type MatterServer = {
     ip: string,
     port: number,
 };
 
 export interface Scanner {
-    lookForDevice(operationalId: Buffer, nodeId: bigint): Promise<MatterDevice | undefined>;
+    lookForDevice(operationalId: Buffer, nodeId: bigint): Promise<MatterServer | undefined>;
     close(): void;
 }

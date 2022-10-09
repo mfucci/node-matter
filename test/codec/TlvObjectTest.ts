@@ -7,7 +7,7 @@
 import assert from "assert";
 import { TlvTag, TlvType } from "../../src/codec/TlvCodec";
 import { BooleanT, ByteStringT, JsType, ObjectT, Field, TlvObjectCodec, UnsignedIntT, OptionalField } from "../../src/codec/TlvObjectCodec";
-import { DataReportT } from "../../src/interaction/InteractionMessages";
+import { DataReportT } from "../../src/matter/interaction/InteractionMessages";
 
 
 const TEST_TEMPLATE = ObjectT({
@@ -46,7 +46,7 @@ const DECODED_ARRAY_VARIABLE = {
             path: {
                 endpointId: 0,
                 clusterId: 0x31,
-                attributeId: 0x03,
+                id: 0x03,
             },
             value: { tag: TlvTag.Anonymous, type: TlvType.UnsignedInt, value: 0x14},
         }},
@@ -55,7 +55,7 @@ const DECODED_ARRAY_VARIABLE = {
             path: {
                 endpointId: 0,
                 clusterId: 0x30,
-                attributeId: 0x01,
+                id: 0x01,
             },
             value: { tag: TlvTag.Anonymous, type: TlvType.Structure, value: [
                 {tag: TlvTag.contextual(0), type: TlvType.UnsignedInt, value: 0x3c},

@@ -5,25 +5,25 @@
  */
 
 import assert from "assert";
-import { UdpInterface } from "../src/net/MatterUdpInterface";
-import { MatterClient } from "../src/matter/MatterClient";
+import { UdpInterface } from "../src/net/UdpInterface";
+import { MatterController } from "../src/matter/MatterController";
 import { Crypto } from "../src/crypto/Crypto";
-import { DEVICE } from "../src/Devices";
-import { BasicClusterServer } from "../src/interaction/cluster/BasicCluster";
-import { GeneralCommissioningCluster } from "../src/interaction/cluster/GeneralCommissioningCluster";
-import { OnOffCluster } from "../src/interaction/cluster/OnOffCluster";
-import { OperationalCredentialsCluster } from "../src/interaction/cluster/OperationalCredentialsCluster";
-import { InteractionProtocol } from "../src/interaction/InteractionProtocol";
-import { Device } from "../src/interaction/model/Device";
-import { Endpoint } from "../src/interaction/model/Endpoint";
-import { MdnsMatterBroadcaster } from "../src/mdns/MdnsMatterBroadcaster";
-import { MatterServer } from "../src/matter/MatterServer";
-import { CaseServer } from "../src/session/secure/CaseServer";
-import { SecureChannelProtocol as SecureChannelProtocol } from "../src/session/secure/SecureChannelProtocol";
-import { PaseServer } from "../src/session/secure/PaseServer";
+import { DEVICE } from "../src/matter/common/DeviceTypes";
+import { ClusterServer, InteractionProtocol } from "../src/matter/interaction/InteractionProtocol";
+import { MdnsBroadcaster } from "../src/matter/mdns/MdnsBroadcaster";
+import { MatterDevice } from "../src/matter/MatterDevice";
+import { CaseServer } from "../src/matter/session/secure/CaseServer";
+import { SecureChannelProtocol as SecureChannelProtocol } from "../src/matter/session/secure/SecureChannelProtocol";
+import { PaseServer } from "../src/matter/session/secure/PaseServer";
 import { NetworkFake } from "../src/net/fake/NetworkFake";
 import { Network } from "../src/net/Network";
-import { MdnsMatterScanner } from "../src/mdns/MdnsMatterScanner";
+import { MdnsScanner } from "../src/matter/mdns/MdnsScanner";
+import { OnOffClusterSpec } from "../src/matter/cluster/OnOffCluster";
+import { BasicClusterSpec } from "../src/matter/cluster/BasicCluster";
+import { GeneralCommissioningClusterSpec, RegulatoryLocationType } from "../src/matter/cluster/GeneralCommissioningCluster";
+import { OperationalCredentialsClusterSpec } from "../src/matter/cluster/OperationalCredentialsCluster";
+import { GeneralCommissioningClusterHandler } from "../src/matter/cluster/server/GeneralCommissioningServer";
+import { OperationalCredentialsClusterHandler } from "../src/matter/cluster/server/OperationalCredentialsServer";
 
 const SERVER_IP = "192.168.200.1";
 const SERVER_MAC = "00:B0:D0:63:C2:26";
@@ -56,34 +56,51 @@ const setupPin = 20202021;
 const matterPort = 5540;
 
 describe("Integration", () => {
-    var server: MatterServer;
-    var client: MatterClient;
+    var server: MatterDevice;
+    var client: MatterController;
 
     before(async () => {
         Network.get = () => clientNetwork;
-        client = await MatterClient.create(
-            await MdnsMatterScanner.create(CLIENT_IP),
+        client = await MatterController.create(
+            await MdnsScanner.create(CLIENT_IP),
             await UdpInterface.create(5540, CLIENT_IP),
         );
 
         Network.get = () => serverNetwork;
-        server = new MatterServer(deviceName, deviceType, vendorId, productId, discriminator)
+        server = new MatterDevice(deviceName, deviceType, vendorId, productId, discriminator)
             .addNetInterface(await UdpInterface.create(matterPort, SERVER_IP))
-            .addBroadcaster(await MdnsMatterBroadcaster.create(SERVER_IP))
-            .addProtocol(new SecureChannelProtocol(
+            .addBroadcaster(await MdnsBroadcaster.create(SERVER_IP))
+            .addProtocolHandler(new SecureChannelProtocol(
                     new PaseServer(setupPin, { iteration: 1000, salt: Crypto.getRandomData(32) }),
                     new CaseServer(),
                 ))
-            .addProtocol(new InteractionProtocol(new Device([
-                new Endpoint(0x00, DEVICE.ROOT, [
-                    BasicClusterServer.Builder({ vendorName, vendorId, productName, productId }),
-                    GeneralCommissioningCluster.Builder(),
-                    OperationalCredentialsCluster.Builder({devicePrivateKey: DevicePrivateKey, deviceCertificate: DeviceCertificate, deviceIntermediateCertificate: ProductIntermediateCertificate, certificateDeclaration: CertificateDeclaration}),
-                ]),
-                new Endpoint(0x01, DEVICE.ON_OFF_LIGHT, [
-                    OnOffCluster.Builder(),
-                ]),
-            ])));
+            .addProtocolHandler(new InteractionProtocol()
+                .addEndpoint(0x00, DEVICE.ROOT, [
+                    new ClusterServer(BasicClusterSpec, { vendorName, vendorId, productName, productId }, {}),
+                    new ClusterServer(GeneralCommissioningClusterSpec, {
+                         breadcrumb: 0,
+                         comminssioningInfo: {failSafeExpiryLengthSeconds: 60 /* 1mn */},
+                         regulatoryConfig: RegulatoryLocationType.Indoor,
+                         locationCapability: RegulatoryLocationType.IndoorOutdoor,
+                     }, GeneralCommissioningClusterHandler),
+                     new ClusterServer(OperationalCredentialsClusterSpec, {},
+                         OperationalCredentialsClusterHandler({
+                             devicePrivateKey: DevicePrivateKey,
+                             deviceCertificate: DeviceCertificate,
+                             deviceIntermediateCertificate: ProductIntermediateCertificate,
+                             certificateDeclaration: CertificateDeclaration,
+                     })),
+                ])
+                .addEndpoint(0x01, DEVICE.ON_OFF_LIGHT, [
+                    new ClusterServer(OnOffClusterSpec, { on: false }, 
+                        {
+                            on: async ({attributes: {on}}) => on.set(true),
+                            off: async ({attributes: {on}}) => on.set(false),
+                            toggle: async ({attributes: {on}}) => on.set(!on.get()),
+                        }
+                    )
+                ])
+            );
         server.start();
 
         Network.get = () => { throw new Error("Network should not be requested post creation") };

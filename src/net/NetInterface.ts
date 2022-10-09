@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ExchangeSocket } from "../matter/common/ExchangeSocket";
+import { Channel } from "./Channel";
 
 export interface NetListener {
     close(): void;
 }
 
 export interface NetInterface {
-    openChannel(address: string, port: number): Promise<ExchangeSocket<Buffer>>;
-    onData(listener: (socket: ExchangeSocket<Buffer>, data: Buffer) => void): NetListener;
+    openChannel(address: string, port: number): Promise<Channel<Buffer>>;
+    onData(listener: (socket: Channel<Buffer>, data: Buffer) => void): NetListener;
 }

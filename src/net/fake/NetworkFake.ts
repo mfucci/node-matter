@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { UdpSocketOptions, UdpSocket } from "../UdpSocket";
+import { UdpChannelOptions, UdpChannel } from "../UdpChannel";
 import { Network } from "../Network";
-import { UdpSocketFake } from "./UdpSocketFake";
+import { UdpChannelFake } from "./UdpChannelFake";
 
 export class NetworkFake extends Network {
     constructor(
@@ -15,8 +15,8 @@ export class NetworkFake extends Network {
         super();
     }
 
-    createUdpSocket(options: UdpSocketOptions): Promise<UdpSocket> {
-        return UdpSocketFake.create(options);
+    createUdpChannel(options: UdpChannelOptions): Promise<UdpChannel> {
+        return UdpChannelFake.create(options);
     }
 
     getIpMacAddresses(): {ip: string, mac: string}[] {

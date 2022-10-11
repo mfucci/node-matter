@@ -45,11 +45,13 @@ export class CaseClient {
             const { sharedSecret, fabric } = resumptionRecord;
             const { sessionId: peerSessionId, resumptionId, resumeMic } = sigma2Resume;
 
-            const secureSessionSalt = Buffer.concat([random, resumptionId]);
-            const resumeKey = await Crypto.hkdf(sharedSecret, secureSessionSalt, KDFSR2_KEY_INFO);
+            const resumeSalt = Buffer.concat([random, resumptionId]);
+            const resumeKey = await Crypto.hkdf(sharedSecret, resumeSalt, KDFSR2_KEY_INFO);
             Crypto.decrypt(resumeKey, resumeMic, RESUME2_MIC_NONCE);
 
-            secureSession = await client.createSecureSession(sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, true);
+            const secureSessionSalt = Buffer.concat([random, resumptionRecord.resumptionId]);
+            secureSession = await client.createSecureSession(sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, true, true);
+            await messenger.sendSuccess();
             console.log(`Case client: session resumed with ${messenger.getChannelName()}`);
 
             resumptionRecord.resumptionId = resumptionId; /* update resumptionId */
@@ -78,7 +80,7 @@ export class CaseClient {
      
             // All good! Create secure session
             const secureSessionSalt = Buffer.concat([operationalIdentityProtectionKey, Crypto.hash([ sigma1Bytes, sigma2Bytes, sigma3Bytes ])]);
-            secureSession = await client.createSecureSession(sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, true);
+            secureSession = await client.createSecureSession(sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, true, false);
             console.log(`Case client: Paired succesfully with ${messenger.getChannelName()}`);
             resumptionRecord = {fabric, peerNodeId, sharedSecret, resumptionId: peerResumptionId };
         }

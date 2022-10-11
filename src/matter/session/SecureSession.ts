@@ -13,13 +13,14 @@ import { DEFAULT_ACTIVE_RETRANSMISSION_TIMEOUT_MS, DEFAULT_IDLE_RETRANSMISSION_T
 import { UNDEFINED_NODE_ID } from "./SessionManager";
 
 const SESSION_KEYS_INFO = Buffer.from("SessionKeys");
+const SESSION_RESUMPTION_KEYS_INFO = Buffer.from("SessionResumptionKeys");
 
 export class SecureSession<T> implements Session<T> {
     private nextSubscriptionId = 0;
     private readonly subscriptions = new Array<SubscriptionHandler>();
 
-    static async create<T>(context: T, id: number, fabric: Fabric | undefined, peerNodeId: bigint, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
-        const keys = await Crypto.hkdf(sharedSecret, salt, SESSION_KEYS_INFO, 16 * 3);
+    static async create<T>(context: T, id: number, fabric: Fabric | undefined, peerNodeId: bigint, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, isResumption: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
+        const keys = await Crypto.hkdf(sharedSecret, salt, isResumption ? SESSION_RESUMPTION_KEYS_INFO : SESSION_KEYS_INFO, 16 * 3);
         const decryptKey = isInitiator ? keys.slice(16, 32) : keys.slice(0, 16);
         const encryptKey = isInitiator ? keys.slice(0, 16) : keys.slice(16, 32);
         const attestationKey = keys.slice(32, 48);

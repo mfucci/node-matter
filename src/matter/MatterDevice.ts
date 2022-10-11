@@ -66,8 +66,8 @@ export class MatterDevice {
         return this.sessionManager.getNextAvailableSessionId();
     }
 
-    createSecureSession(sessionId: number, fabric: Fabric | undefined, peerNodeId: bigint, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
-        return this.sessionManager.createSecureSession(sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, salt, isInitiator, idleRetransTimeoutMs, activeRetransTimeoutMs);
+    createSecureSession(sessionId: number, fabric: Fabric | undefined, peerNodeId: bigint, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, isResumption: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
+        return this.sessionManager.createSecureSession(sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, salt, isInitiator, isResumption, idleRetransTimeoutMs, activeRetransTimeoutMs);
     }
 
     findFabricFromDestinationId(destinationId: Buffer, peerRandom: Buffer) {

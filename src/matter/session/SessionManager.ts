@@ -34,8 +34,8 @@ export class SessionManager<ContextT> {
         this.sessions.set(UNICAST_UNSECURE_SESSION_ID, this.unsecureSession);
     }
 
-    async createSecureSession(sessionId: number, fabric: Fabric | undefined, peerNodeId: bigint, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
-        const session = await SecureSession.create(this.context, sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, salt, isInitiator, idleRetransTimeoutMs, activeRetransTimeoutMs);
+    async createSecureSession(sessionId: number, fabric: Fabric | undefined, peerNodeId: bigint, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, isResumption: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
+        const session = await SecureSession.create(this.context, sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, salt, isInitiator, isResumption, idleRetransTimeoutMs, activeRetransTimeoutMs);
         this.sessions.set(sessionId, session);
 
         // TODO: close previous secure channel for 

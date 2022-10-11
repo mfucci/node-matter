@@ -56,9 +56,9 @@ export class PaseServer implements ProtocolHandler<MatterDevice> {
         if (!verifier.equals(hAY)) throw new Error("Received incorrect key confirmation from the initiator");
 
         // All good! Creating the secure session
-        await server.createSecureSession(sessionId, UNDEFINED_NODE_ID, UNDEFINED_NODE_ID, peerSessionId, Ke, Buffer.alloc(0), false, mrpParameters?.idleRetransTimeoutMs, mrpParameters?.activeRetransTimeoutMs);
+        await server.createSecureSession(sessionId, UNDEFINED_NODE_ID, UNDEFINED_NODE_ID, peerSessionId, Ke, Buffer.alloc(0), false, false, mrpParameters?.idleRetransTimeoutMs, mrpParameters?.activeRetransTimeoutMs);
         await messenger.sendSuccess();
         messenger.close();
-        console.log(`Pase server: Paired succesfully with ${messenger.getChannelName()}`);
+        console.log(`Pase server: session ${sessionId} created with ${messenger.getChannelName()}`);
     }
 }

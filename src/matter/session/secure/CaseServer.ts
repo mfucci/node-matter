@@ -52,15 +52,16 @@ export class CaseServer implements ProtocolHandler<MatterDevice> {
             const resumeKey = await Crypto.hkdf(sharedSecret, resumeSalt, KDFSR2_KEY_INFO);
             const resumeMic = Crypto.encrypt(resumeKey, Buffer.alloc(0), RESUME2_MIC_NONCE);
             await messenger.sendSigma2Resume({ resumptionId, resumeMic, sessionId });
-            await messenger.waitForSuccess();
 
             // All good! Create secure session
             const secureSessionSalt = Buffer.concat([peerRandom, peerResumptionId]);
             const secureSession = await server.createSecureSession(sessionId, fabric.nodeId, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, false, true, mrpParams?.idleRetransTimeoutMs, mrpParams?.activeRetransTimeoutMs);
             secureSession.setFabric(fabric);
             console.log(`Case server: session ${secureSession.getId()} resumed with ${messenger.getChannelName()}`);
-
             resumptionRecord.resumptionId = resumptionId; /* Update the ID */
+
+            // Wait for success on the peer side
+            await messenger.waitForSuccess();
         } else {
             // Generate sigma 2
             const fabric = server.findFabricFromDestinationId(destinationId, peerRandom);

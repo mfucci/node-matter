@@ -1,3 +1,9 @@
+/**
+ * @license
+ * Copyright 2022 Marco Fucci di Napoli (mfucci@gmail.com)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { Channel } from "../../net/Channel";
 import { Fabric } from "../fabric/Fabric";
 import { SecureSession } from "../session/SecureSession";

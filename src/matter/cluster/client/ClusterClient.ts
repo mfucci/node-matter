@@ -1,3 +1,9 @@
+/**
+ * @license
+ * Copyright 2022 Marco Fucci di Napoli (mfucci@gmail.com)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { AttributeSpecs, CommandSpec, CommandSpecs, TypeFromAttributeSpec } from "../ClusterSpec";
 
 type SignatureFromCommandSpec<Type> = Type extends CommandSpec<infer RequestT, infer ResponseT> ? (request: RequestT) => Promise<ResponseT> : never;

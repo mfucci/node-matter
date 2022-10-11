@@ -7,7 +7,7 @@
 import { Message, MessageCodec, Packet } from "../../codec/MessageCodec";
 import { Crypto } from "../../crypto/Crypto";
 import { Fabric } from "../fabric/Fabric";
-import { SubscriptionHandler } from "../interaction/InteractionServer";
+import { SubscriptionHandler } from "../interaction/SubscriptionHandler";
 import { LEBufferWriter } from "../../util/LEBufferWriter";
 import { DEFAULT_ACTIVE_RETRANSMISSION_TIMEOUT_MS, DEFAULT_IDLE_RETRANSMISSION_TIMEOUT_MS, DEFAULT_RETRANSMISSION_RETRIES, Session } from "./Session";
 import { UNDEFINED_NODE_ID } from "./SessionManager";

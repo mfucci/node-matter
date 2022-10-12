@@ -24,8 +24,8 @@ function createDgramSocket(address: string | undefined, port: number, options: d
 }
 
 export class UdpChannelNode implements UdpChannel {
-    static async create({listeningPort: port, listeningAddress: address, multicastInterface}: UdpChannelOptions) {
-        const socket = await createDgramSocket(address, port, { type: "udp4", reuseAddr: true });
+    static async create({listeningPort, listeningAddress, multicastInterface}: UdpChannelOptions) {
+        const socket = await createDgramSocket(listeningAddress, listeningPort, { type: "udp4", reuseAddr: true });
         if (multicastInterface !== undefined) socket.setMulticastInterface(multicastInterface);
         return new UdpChannelNode(socket);
     }

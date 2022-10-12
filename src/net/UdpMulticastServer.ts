@@ -39,7 +39,7 @@ export class UdpMulticastServer {
     }
 
     async createBroadcastChannel(interfaceIp: string): Promise<UdpChannel> {
-        return await this.network.createUdpChannel({listeningAddress: this.broadcastAddress, listeningPort: this.broadcastPort, multicastInterface: interfaceIp});
+        return await this.network.createUdpChannel({listeningAddress: interfaceIp, listeningPort: this.broadcastPort, multicastInterface: interfaceIp});
     }
 
     close() {

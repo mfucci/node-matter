@@ -12,7 +12,7 @@ import { PaseClient } from "./session/secure/PaseClient";
 import { ClusterClient, InteractionClient } from "./interaction/InteractionClient";
 import { INTERACTION_PROTOCOL_ID } from "./interaction/InteractionProtocol";
 import { BasicClusterSpec } from "./cluster/BasicCluster";
-import { CommissioningError, GeneralCommissioningClusterSpec, RegulatoryLocationType, SuccessFailureReponse } from "./cluster/GeneralCommissioningCluster";
+import { CommissioningError, GeneralCommissioningClusterSpec, RegulatoryLocationType, CommissioningSuccessFailureReponse } from "./cluster/GeneralCommissioningCluster";
 import { CertificateType, CertSigningRequestT, OperationalCredentialsClusterSpec } from "./cluster/OperationalCredentialsCluster";
 import { Crypto } from "../crypto/Crypto";
 import { CertificateManager, jsToMatterDate, OperationalCertificateT, RootCertificateT } from "./certificate/CertificateManager";
@@ -63,7 +63,7 @@ export class MatterController {
 
         // Use the created secure session to do the commissioning
         let interactionClient = new InteractionClient(() => this.exchangeManager.initiateExchange(paseSecureSession, paseChannel, INTERACTION_PROTOCOL_ID));
-        
+
         // Get and display the product name (just for debugging)
         const basicClusterClient = ClusterClient(interactionClient, 0, BasicClusterSpec);
         const productName = await basicClusterClient.getProductName();
@@ -73,19 +73,19 @@ export class MatterController {
         let generalCommissioningClusterClient = ClusterClient(interactionClient, 0, GeneralCommissioningClusterSpec);
         this.ensureSuccess(await generalCommissioningClusterClient.armFailSafe({ breadcrumbStep: 1, expiryLengthSeconds: 60 }));
         this.ensureSuccess(await generalCommissioningClusterClient.updateRegulatoryConfig({ breadcrumbStep: 2, config: RegulatoryLocationType.IndoorOutdoor, countryCode: "US"}));
-        
+
         const operationalCredentialsClusterClient = ClusterClient(interactionClient, 0, OperationalCredentialsClusterSpec);
         const { certificate: deviceAttestation } = await operationalCredentialsClusterClient.requestCertChain({ type: CertificateType.DeviceAttestation });
         // TODO: extract device public key from deviceAttestation
         const { certificate: productAttestation } = await operationalCredentialsClusterClient.requestCertChain({ type: CertificateType.ProductAttestationIntermediate });
         // TODO: validate deviceAttestation and productAttestation
         const { elements: attestationElements, signature: attestationSignature } = await operationalCredentialsClusterClient.requestAttestation({ nonce: Crypto.getRandomData(16) });
-        // TODO: validate attestationSignature using device public key 
+        // TODO: validate attestationSignature using device public key
         const { elements: csrElements, signature: csrSignature } = await operationalCredentialsClusterClient.requestCertSigning({ nonce: Crypto.getRandomData(16) });
         // TOTO: validate csrSignature using device public key
         const { certSigningRequest } = TlvObjectCodec.decode(csrElements, CertSigningRequestT);
         const operationalPublicKey = CertificateManager.getPublicKeyFromCsr(certSigningRequest);
-        
+
         await operationalCredentialsClusterClient.addRootCert({ certificate: this.certificateManager.getRootCert() });
         const peerNodeId = BigInt(1);
         const peerOperationalCert = this.certificateManager.generateNoc(operationalPublicKey, FABRIC_ID, peerNodeId);
@@ -123,7 +123,7 @@ export class MatterController {
         return new InteractionClient(() => this.exchangeManager.initiateExchange(operationalSecureSession, operationalChannel, INTERACTION_PROTOCOL_ID));
     }
 
-    private ensureSuccess({ errorCode, debugText }: SuccessFailureReponse) {
+    private ensureSuccess({ errorCode, debugText }: CommissioningSuccessFailureReponse) {
         if (errorCode === CommissioningError.Ok) return;
         throw new Error(`Commission error: ${errorCode}, ${debugText}`);
     }
@@ -186,7 +186,7 @@ class RootCertificateManager {
         const signature = Crypto.sign(this.rootKeyPair.privateKey, CertificateManager.rootCertToAsn1(unsignedCertificate));
         return TlvObjectCodec.encode({ ...unsignedCertificate, signature }, RootCertificateT);
     }
-    
+
     generateNoc(publicKey: Buffer, fabricId: bigint, nodeId: bigint): Buffer {
         const certId = this.nextCertificateId++;
         const unsignedCertificate = {

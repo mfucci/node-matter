@@ -56,7 +56,7 @@ export interface AttributeWithPath {
     attribute: Attribute<any>,
 }
 
-function pathToId({endpointId, clusterId, id}: Path) {
+export function pathToId({endpointId, clusterId, id}: Path) {
     return `${endpointId}/${clusterId}/${id}`;
 }
 
@@ -156,12 +156,13 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
             const attributes = this.getAttributes(attributeRequests);
 
             if (attributeRequests.length === 0) throw new Error("Invalid subscription request");
+            if (minIntervalFloorSeconds < 0) throw new Error("minIntervalFloorSeconds should be greater or equal to 0");
+            if (maxIntervalCeilingSeconds < 0) throw new Error("maxIntervalCeilingSeconds should be greater or equal to 1");
+            if (maxIntervalCeilingSeconds < minIntervalFloorSeconds) throw new Error("maxIntervalCeilingSeconds should be greater or equal to minIntervalFloorSeconds");
 
-            return {
-                subscriptionId: session.addSubscription(SubscriptionHandler.Builder(session.getContext(), fabric, session.getPeerNodeId(), attributes)),
-                maxIntervalCeilingSeconds,
-                interactionModelRevision: 1,
-            };
+            const subscriptionId = session.addSubscription(SubscriptionHandler.Builder(session.getContext(), fabric, session.getPeerNodeId(), attributes, minIntervalFloorSeconds, maxIntervalCeilingSeconds));
+
+            return { subscriptionId, maxIntervalCeilingSeconds, interactionModelRevision: 1 };
         }
     }
 
@@ -211,3 +212,5 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
         return result;
     }
 }
+
+

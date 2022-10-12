@@ -9,7 +9,7 @@ import { Template } from "../../../codec/TlvObjectCodec";
 export class Attribute<T> {
     private value: T;
     private version = 0;
-    private readonly listeners = new Map<number, (value: T) => void>();
+    private readonly listeners = new Array<(value: T, version: number) => void>();
 
     constructor(
         readonly id: number,
@@ -25,10 +25,7 @@ export class Attribute<T> {
 
         this.version++;
         this.value = value;
-
-        if (this.listeners.size !== 0) {
-            [...this.listeners.values()].forEach(listener => listener(value))
-        } 
+        this.listeners.forEach(listener => listener(value, this.version));
     }
 
     get(): T {
@@ -39,11 +36,11 @@ export class Attribute<T> {
         return { version: this.version, value: this.value };
     }
 
-    addListener(id: number, listener: (value: T) => void) {
-        this.listeners.set(id, listener);
+    addListener(listener: (value: T, version: number) => void) {
+        this.listeners.push(listener);
     }
 
-    removeListener(id: number) {
-        this.listeners.delete(id);
+    removeListener(listener: (value: T, version: number) => void) {
+        this.listeners.splice(this.listeners.findIndex(item => item === listener), 1);
     }
 }

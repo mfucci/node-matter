@@ -32,8 +32,9 @@ export class ClusterServer<ClusterT extends ClusterSpec<any, any>> {
 
         // Create attributes
         for (const name in attributeDefs) {
-            const { id, template } = attributeDefs[name];
-            this.attributes[name as (keyof ClusterT["attributes"])] = new Attribute(id, name, template, attributesValues[name]);
+            const { id, template, defaultValueDef } = attributeDefs[name];
+            const defaultValue = attributesValues[name] !== undefined ? attributesValues[name] : defaultValueDef;
+            this.attributes[name as (keyof ClusterT["attributes"])] = new Attribute(id, name, template, defaultValue);
         }
 
         // Create commands
@@ -73,7 +74,7 @@ export class InteractionProtocol implements ProtocolHandler<MatterDevice> {
     addEndpoint(endpointId: number, device: {name: string, code: number}, clusters: ClusterServer<any>[]) {
         // Add the descriptor cluster
         const descriptorCluster = new ClusterServer(DescriptorClusterSpec, {
-            deviceList: [{revision: 1, type: device.code}],
+            deviceTypeList: [{revision: 1, type: device.code}],
             serverList: [],
             clientList: [],
             partsList: [],
@@ -197,7 +198,7 @@ export class InteractionProtocol implements ProtocolHandler<MatterDevice> {
                 if (attribute === undefined) return;
                 result.push({ path, attribute });
             } else {
-                this.attributePaths.filter(path => 
+                this.attributePaths.filter(path =>
                     (endpointId === undefined || endpointId === path.endpointId)
                     && (clusterId === undefined || clusterId === path.clusterId)
                     && (id === undefined || id === path.id))

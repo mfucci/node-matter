@@ -50,7 +50,7 @@ export const GeneralCommissioningClusterSpec = ClusterSpec(
     "General Commissioning",
     {
         breadcrumb: AttributeSpec(0, UnsignedIntT),
-        comminssioningInfo: AttributeSpec(1, BasicCommissioningInfoT),
+        commissioningInfo: AttributeSpec(1, BasicCommissioningInfoT),
         regulatoryConfig: AttributeSpec(2, RegulatoryLocationTypeT),
         locationCapability: AttributeSpec(3, RegulatoryLocationTypeT),
     },

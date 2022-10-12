@@ -8,8 +8,8 @@ import { ByteStringT, Field, ObjectT, OptionalField, UnsignedIntT } from "../../
 
 export const KDFSR1_KEY_INFO = Buffer.from("Sigma1_Resume");
 export const KDFSR2_KEY_INFO = Buffer.from("Sigma2_Resume");
-export const RESUME1_MIC_NONCE = Buffer.from("NCASE_SigmaR1");
-export const RESUME2_MIC_NONCE = Buffer.from("NCASE_SigmaR2");
+export const RESUME1_MIC_NONCE = Buffer.from("NCASE_SigmaS1");
+export const RESUME2_MIC_NONCE = Buffer.from("NCASE_SigmaS2");
 export const KDFSR2_INFO = Buffer.from("Sigma2");
 export const KDFSR3_INFO = Buffer.from("Sigma3");
 export const TBE_DATA2_NONCE = Buffer.from("NCASE_Sigma2N");

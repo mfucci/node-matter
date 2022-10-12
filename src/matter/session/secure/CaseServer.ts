@@ -48,17 +48,20 @@ export class CaseServer implements ProtocolHandler<MatterDevice> {
             Crypto.decrypt(peerResumeKey, peerResumeMic, RESUME1_MIC_NONCE);
 
             // Generate sigma 2 resume
-            const secureSessionSalt = Buffer.concat([peerRandom, resumptionId]);
-            const resumeKey = await Crypto.hkdf(sharedSecret, secureSessionSalt, KDFSR2_KEY_INFO);
+            const resumeSalt = Buffer.concat([peerRandom, resumptionId]);
+            const resumeKey = await Crypto.hkdf(sharedSecret, resumeSalt, KDFSR2_KEY_INFO);
             const resumeMic = Crypto.encrypt(resumeKey, Buffer.alloc(0), RESUME2_MIC_NONCE);
             await messenger.sendSigma2Resume({ resumptionId, resumeMic, sessionId });
 
             // All good! Create secure session
-            const secureSession = await server.createSecureSession(sessionId, fabric.nodeId, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, false, mrpParams?.idleRetransTimeoutMs, mrpParams?.activeRetransTimeoutMs);
+            const secureSessionSalt = Buffer.concat([peerRandom, peerResumptionId]);
+            const secureSession = await server.createSecureSession(sessionId, fabric.nodeId, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, false, true, mrpParams?.idleRetransTimeoutMs, mrpParams?.activeRetransTimeoutMs);
             secureSession.setFabric(fabric);
-            console.log(`Case server: session resumed with ${messenger.getChannelName()}`);
-
+            console.log(`Case server: session ${secureSession.getId()} resumed with ${messenger.getChannelName()}`);
             resumptionRecord.resumptionId = resumptionId; /* Update the ID */
+
+            // Wait for success on the peer side
+            await messenger.waitForSuccess();
         } else {
             // Generate sigma 2
             const fabric = server.findFabricFromDestinationId(destinationId, peerRandom);
@@ -85,9 +88,9 @@ export class CaseServer implements ProtocolHandler<MatterDevice> {
 
             // All good! Create secure session
             const secureSessionSalt = Buffer.concat([operationalIdentityProtectionKey, Crypto.hash([ sigma1Bytes, sigma2Bytes, sigma3Bytes ])]);
-            const secureSession = await server.createSecureSession(sessionId, nodeId, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, false, mrpParams?.idleRetransTimeoutMs, mrpParams?.activeRetransTimeoutMs);
+            const secureSession = await server.createSecureSession(sessionId, nodeId, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, false, false, mrpParams?.idleRetransTimeoutMs, mrpParams?.activeRetransTimeoutMs);
             secureSession.setFabric(fabric);
-            console.log(`Case server: Paired succesfully with ${messenger.getChannelName()}`);
+            console.log(`Case server: session ${sessionId} created with ${messenger.getChannelName()}`);
             await messenger.sendSuccess();
 
             resumptionRecord = { peerNodeId, fabric, sharedSecret, resumptionId };

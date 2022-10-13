@@ -32,9 +32,8 @@ export class ClusterServer<ClusterT extends ClusterSpec<any, any>> {
 
         // Create attributes
         for (const name in attributeDefs) {
-            const { id, template, defaultValueDef } = attributeDefs[name];
-            const defaultValue = attributesValues[name] !== undefined ? attributesValues[name] : defaultValueDef;
-            this.attributes[name as (keyof ClusterT["attributes"])] = new Attribute(id, name, template, defaultValue);
+            const { id, template } = attributeDefs[name];
+            this.attributes[name as (keyof ClusterT["attributes"])] = new Attribute(id, name, template, attributesValues[name]);
         }
 
         // Create commands

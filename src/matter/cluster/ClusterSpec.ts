@@ -6,8 +6,8 @@
 
 import { ObjectT, Template } from "../../codec/TlvObjectCodec";
 
-export interface AttributeSpec<ValueT> { id: number, template: Template<ValueT>, defaultValue?: ValueT }
-export const AttributeSpec = <T,>(id: number, template: Template<T>, defaultValue?: T): AttributeSpec<T> => ({ id, template, defaultValue });
+export interface AttributeSpec<ValueT> { id: number, template: Template<ValueT> }
+export const AttributeSpec = <T,>(id: number, template: Template<T>): AttributeSpec<T> => ({ id, template });
 export type TypeFromAttributeSpec<Type> = Type extends AttributeSpec<infer T> ? T : never;
 export type AttributeSpecs = { [key: string]: AttributeSpec<any> };
 

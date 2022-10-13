@@ -61,7 +61,7 @@ class Main {
         );
 
         // We listen to the attribute update to trigger an action. This could also have been done in the method invokations in the server.
-        onOffClusterServer.attributes.on.addListener(0, on => console.log(`On/Off cluster: ${on ? "on" : "off"}`));
+        onOffClusterServer.attributes.on.addListener(0, on => commandExecutor(on ? "on" : "off")?.());
 
         (new MatterDevice(deviceName, deviceType, vendorId, productId, discriminator))
             .addNetInterface(await UdpInterface.create(5540))
@@ -72,9 +72,34 @@ class Main {
                 ))
             .addProtocolHandler(new InteractionProtocol()
                .addEndpoint(0x00, DEVICE.ROOT, [
-                   new ClusterServer(BasicClusterSpec, { vendorName, vendorId, productName, productId }, {}),
+                   new ClusterServer(BasicClusterSpec, {
+                     dataModelRevision: 1,
+                     vendorName,
+                     vendorId,
+                     productName,
+                     productId,
+                     nodeLabel: '',
+                     location: 'XX',
+                     hardwareVersion: 1,
+                     hardwareVersionString: '1.0',
+                     softwareVersion: 1,
+                     softwareVersionString: '1.0',
+                     // optional attributes
+                     manufacturingDate: '',
+                     partNumber: '',
+                     productURL: '',
+                     productLabel: '',
+                     serialNumber: '',
+                     localConfigDisabled: false,
+                     reachable: true,
+                     uniqueId: 1,
+                     capabilityMinima: {
+                       caseSessionsPerFabric: 100,
+                       subscriptionsPerFabric: 100,
+                     }
+                   }, {}),
                    new ClusterServer(GeneralCommissioningClusterSpec, {
-                        breadcrumb: 0,
+                        breadcrumb: BigInt(0),
                         commissioningInfo: {
                           failSafeExpiryLengthSeconds: 60 /* 1mn */,
                           maxCumulativeFailsafeSeconds: 60 * 60 /* 1h */,

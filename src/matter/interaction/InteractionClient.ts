@@ -8,12 +8,12 @@ import { Template, TlvObjectCodec } from "../../codec/TlvObjectCodec";
 import { MessageExchange } from "../common/MessageExchange";
 import { MatterController } from "../MatterController";
 import { capitalize } from "../../util/String";
-import { AttributeSpecs, ClusterSpec, CommandSpecs, NoResponseT } from "../cluster/ClusterSpec";
+import { Attributes, Cluster, Commands, NoResponseT } from "../cluster/Cluster";
 import { InteractionClientMessenger } from "./InteractionMessenger";
-import { ResultCode } from "../cluster/server/Command";
+import { ResultCode } from "../cluster/server/CommandServer";
 import { ClusterClient } from "../cluster/client/ClusterClient";
 
-export function ClusterClient<CommandT extends CommandSpecs, AttributeT extends AttributeSpecs>(interactionClient: InteractionClient, endpointId: number, clusterDef: ClusterSpec<CommandT, AttributeT>): ClusterClient<CommandT, AttributeT> {
+export function ClusterClient<CommandT extends Commands, AttributeT extends Attributes>(interactionClient: InteractionClient, endpointId: number, clusterDef: Cluster<CommandT, AttributeT>): ClusterClient<CommandT, AttributeT> {
     const result: any = {};
     const { id: clusterId, commands, attributes } = clusterDef;
 

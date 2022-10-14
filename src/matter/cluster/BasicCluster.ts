@@ -5,16 +5,16 @@
  */
 
 import { StringT, UnsignedIntT } from "../../codec/TlvObjectCodec";
-import { AttributeSpec, ClusterSpec } from "./ClusterSpec";
+import { Attribute, Cluster } from "./Cluster";
 
-export const BasicClusterSpec = ClusterSpec(
+export const BasicCluster = Cluster(
     0x28,
     "Basic",
     {
-        vendorName: AttributeSpec(1, StringT),
-        vendorId: AttributeSpec(2, UnsignedIntT),
-        productName: AttributeSpec(3, StringT),
-        productId: AttributeSpec(4, UnsignedIntT),
+        vendorName: Attribute(1, StringT),
+        vendorId: Attribute(2, UnsignedIntT),
+        productName: Attribute(3, StringT),
+        productId: Attribute(4, UnsignedIntT),
     },
     {},
 );

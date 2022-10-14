@@ -8,7 +8,7 @@ import { Template, TlvObjectCodec } from "../../codec/TlvObjectCodec";
 import { MessageExchange } from "../common/MessageExchange";
 import { MatterController } from "../MatterController";
 import { capitalize } from "../../util/String";
-import { Attributes, Cluster, Commands, NoResponseT } from "../cluster/Cluster";
+import { Attribute, AttributeJsType, Attributes, Cluster, Commands, NoResponseT } from "../cluster/Cluster";
 import { InteractionClientMessenger } from "./InteractionMessenger";
 import { ResultCode } from "../cluster/server/CommandServer";
 import { ClusterClient } from "../cluster/client/ClusterClient";
@@ -19,11 +19,11 @@ export function ClusterClient<CommandT extends Commands, AttributeT extends Attr
 
     // Add accessors
     for (const attributeName in attributes) {
-        const { id, template } = attributes[attributeName];
+        const attribute = attributes[attributeName];
         const captilizedAttributeName = capitalize(attributeName);
-        result[`get${captilizedAttributeName}`] = async () => interactionClient.get(endpointId, clusterId, id, template);
-        result[`set${captilizedAttributeName}`] = async <T,>(value: T) => interactionClient.set<T>(endpointId, clusterId, id, value, template);
-        result[`subscribe${captilizedAttributeName}`] = async () => interactionClient.subscribe(endpointId, clusterId, id, template);
+        result[`get${captilizedAttributeName}`] = async () => interactionClient.get(endpointId, clusterId, attribute);
+        result[`set${captilizedAttributeName}`] = async <T,>(value: T) => interactionClient.set<T>(endpointId, clusterId, attribute, value);
+        result[`subscribe${captilizedAttributeName}`] = async () => interactionClient.subscribe(endpointId, clusterId, attribute);
     }
 
     // Add command calls
@@ -40,8 +40,8 @@ export class InteractionClient {
         private readonly exchangeProvider: () => MessageExchange<MatterController>,
     ) {}
 
-    async get<T>(endpointId: number, clusterId: number, id: number, template: Template<T>): Promise<T> {
-        return this.withMessenger<T>(async messenger => {
+    async get<A extends Attribute<any>>(endpointId: number, clusterId: number, { id, template, optional, conformanceValue }: A): Promise<AttributeJsType<A>> {
+        return this.withMessenger<AttributeJsType<A>>(async messenger => {
             const response = await messenger.sendReadRequest({
                 attributes: [ {endpointId , clusterId, id} ],
                 interactionModelRevision: 1,
@@ -49,16 +49,20 @@ export class InteractionClient {
             });
 
             const value = response.values.map(({value}) => value).find(({ path }) => endpointId === path.endpointId && clusterId === path.clusterId && id === path.id);
-            if (value === undefined) throw new Error(`Attribute ${endpointId}/${clusterId}/${id} not found`);
+            if (value === undefined) {
+                if (optional) return undefined;
+                if (conformanceValue === undefined) throw new Error(`Attribute ${endpointId}/${clusterId}/${id} not found`);
+                return conformanceValue;
+            }
             return TlvObjectCodec.decodeElement(value.value, template);
         });
     }
 
-    async set<T>(endpointId: number, clusterId: number, id: number, value: T, template: Template<T>): Promise<void> {
+    async set<T>(endpointId: number, clusterId: number, { id, template, conformanceValue }: Attribute<T>, value: T): Promise<void> {
         throw new Error("not implemented");
     }
 
-    async subscribe(endpointId: number, clusterId: number, id: number, template: Template<any>): Promise<void> {
+    async subscribe(endpointId: number, clusterId: number, { id, template, conformanceValue }: Attribute<any>): Promise<void> {
         throw new Error("not implemented");
     }
 

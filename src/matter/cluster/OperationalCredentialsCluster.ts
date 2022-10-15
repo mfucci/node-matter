@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ClusterSpec, CommandSpec, NoResponseT } from "./ClusterSpec";
+import { Cluster, Command, NoResponseT } from "./Cluster";
 import { TlvType } from "../../codec/TlvCodec";
 import { ByteStringT, Field, ObjectT, OptionalField, Template, UnsignedIntT, UnsignedLongT } from "../../codec/TlvObjectCodec";
 
@@ -82,15 +82,15 @@ export const CertSigningRequestT = ObjectT({
     vendorReserved3: OptionalField(5, ByteStringT),
 });
 
-export const OperationalCredentialsClusterSpec = ClusterSpec(
+export const OperationalCredentialsCluster = Cluster(
     0x3e,
     "Operational Credentials",
     {},
     {
-        requestAttestation: CommandSpec(0, RequestWithNonceT, 1, AttestationResponseT),
-        requestCertChain: CommandSpec(2, CertChainRequestT, 3, CertChainResponseT),
-        requestCertSigning: CommandSpec(4, RequestWithNonceT, 5, CertSigningRequestResponseT),
-        addOperationalCert: CommandSpec(6, AddNocRequestT, 8, StatusResponseT),
-        addRootCert: CommandSpec(11, AddTrustedRootCertificateRequestT, 11, NoResponseT),
+        requestAttestation: Command(0, RequestWithNonceT, 1, AttestationResponseT),
+        requestCertChain: Command(2, CertChainRequestT, 3, CertChainResponseT),
+        requestCertSigning: Command(4, RequestWithNonceT, 5, CertSigningRequestResponseT),
+        addOperationalCert: Command(6, AddNocRequestT, 8, StatusResponseT),
+        addRootCert: Command(11, AddTrustedRootCertificateRequestT, 11, NoResponseT),
     },
 )

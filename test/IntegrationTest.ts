@@ -79,7 +79,7 @@ describe("Integration", () => {
                     new ClusterServer(BasicClusterSpec, { vendorName, vendorId, productName, productId }, {}),
                     new ClusterServer(GeneralCommissioningClusterSpec, {
                          breadcrumb: 0,
-                         comminssioningInfo: {failSafeExpiryLengthSeconds: 60 /* 1mn */},
+                         commissioningInfo: {failSafeExpiryLengthSeconds: 60 /* 1mn */},
                          regulatoryConfig: RegulatoryLocationType.Indoor,
                          locationCapability: RegulatoryLocationType.IndoorOutdoor,
                      }, GeneralCommissioningClusterHandler),

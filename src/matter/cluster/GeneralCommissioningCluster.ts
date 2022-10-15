@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Field, JsType, ObjectT, StringT, Template, UnsignedIntT, BooleanT, UnsignedLongT } from "../../codec/TlvObjectCodec";
+import { Field, JsType, ObjectT, StringT, Template, UnsignedIntT } from "../../codec/TlvObjectCodec";
 import { TlvType } from "../../codec/TlvCodec";
-import { AttributeSpec, ClusterSpec, CommandSpec, NoArgumentsT } from "./ClusterSpec";
+import { Attribute, Cluster, Command, NoArgumentsT, OptionalAttribute, WritableAttribute } from "./Cluster";
 
 export const enum RegulatoryLocationType {
     Indoor = 0,
@@ -26,52 +26,37 @@ const CommissioningErrorT = { tlvType: TlvType.UnsignedInt } as Template<Commiss
 
 const BasicCommissioningInfoT = ObjectT({
     failSafeExpiryLengthSeconds: Field(0, UnsignedIntT),
-    maxCumulativeFailsafeSeconds: Field(1, UnsignedIntT),
 });
 
-const CommissioningSuccessFailureResponseT = ObjectT({
+const SuccessFailureReponseT = ObjectT({
     errorCode: Field(0, CommissioningErrorT),
     debugText: Field(1, StringT),
 });
-export type CommissioningSuccessFailureReponse = JsType<typeof CommissioningSuccessFailureResponseT>;
+export type SuccessFailureReponse = JsType<typeof SuccessFailureReponseT>;
 
 const ArmFailSafeRequestT = ObjectT({
     expiryLengthSeconds: Field(0, UnsignedIntT),
-    breadcrumbStep: Field(1, UnsignedLongT),
+    breadcrumbStep: Field(1, UnsignedIntT),
 });
 
 const SetRegulatoryConfigRequestT = ObjectT({
     config: Field(0, RegulatoryLocationTypeT),
     countryCode: Field(1, StringT),
-    breadcrumbStep: Field(2, UnsignedLongT),
+    breadcrumbStep: Field(2, UnsignedIntT),
 });
 
-/**
- * This cluster is used to manage global aspects of the Commissioning flow.
- */
-export const GeneralCommissioningClusterSpec = ClusterSpec(
+export const GeneralCommissioningCluster = Cluster(
     0x30,
     "General Commissioning",
     {
-        breadcrumb: AttributeSpec(0, UnsignedLongT), /* writable: true, default:0x0000000000000000, access-read: view, access-write: administer */
-        commissioningInfo: AttributeSpec(1, BasicCommissioningInfoT), /* writable: false */
-        regulatoryConfig: AttributeSpec(2, RegulatoryLocationTypeT), /* writable: false */
-        locationCapability: AttributeSpec(3, RegulatoryLocationTypeT), /* writable: false */
-        supportsConcurrentConnections: AttributeSpec(4, BooleanT), /* writable: false, default: true */
+        breadcrumb: Attribute(0, UnsignedIntT),
+        commissioningInfo: Attribute(1, BasicCommissioningInfoT),
+        regulatoryConfig: Attribute(2, RegulatoryLocationTypeT),
+        locationCapability: Attribute(3, RegulatoryLocationTypeT),
     },
     {
-        /**
-         * Arm the persistent fail-safe timer with an expiry time of now + ExpiryLengthSeconds using device clock
-         */
-        armFailSafe: CommandSpec(0, ArmFailSafeRequestT, 1, CommissioningSuccessFailureResponseT), /* access-invoke: administer */
-        /**
-         * Set the regulatory configuration to be used during commissioning
-         */
-        updateRegulatoryConfig: CommandSpec(2, SetRegulatoryConfigRequestT, 3, CommissioningSuccessFailureResponseT), /* access-invoke: administer */
-        /**
-         * Signals the Server that the Client has successfully completed all steps of Commissioning/Reconfiguration
-         * needed during fail-safe period.
-         */
-        commissioningComplete: CommandSpec(4, NoArgumentsT, 5, CommissioningSuccessFailureResponseT), /* access-invoke: administer */
+        armFailSafe: Command(0, ArmFailSafeRequestT, 1, SuccessFailureReponseT),
+        updateRegulatoryConfig: Command(2, SetRegulatoryConfigRequestT, 3, SuccessFailureReponseT),
+        commissioningComplete: Command(4, NoArgumentsT, 5, SuccessFailureReponseT),
     },
 )

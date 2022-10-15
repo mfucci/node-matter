@@ -4,52 +4,36 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { StringT, UnsignedIntT, BooleanT, Field, ObjectT } from "../../codec/TlvObjectCodec";
-import { AttributeSpec, ClusterSpec } from "./ClusterSpec";
-
-const CapabilityMinimaT = ObjectT({
-  caseSessionsPerFabric: Field(0, UnsignedIntT),
-  subscriptionsPerFabric: Field(1, UnsignedIntT),
-});
+import { BooleanT, StringT, UnsignedIntT } from "../../codec/TlvObjectCodec";
+import { Attribute, Cluster, OptionalAttribute, OptionalWritableAttribute, WritableAttribute } from "./Cluster";
 
 /**
  * This cluster provides attributes and events for determining basic information about Nodes, which supports both
- * Commissioning and operational determination of Node characteristics, such as Vendor ID, Product ID and serial number,
+ * commissioning and operational determination of Node characteristics, such as Vendor ID, Product ID and serial number,
  * which apply to the whole Node. Also allows setting user device information such as location.
  */
-export const BasicClusterSpec = ClusterSpec(
+export const BasicCluster = Cluster(
     0x28,
     "Basic",
     {
-        dataModelRevision: AttributeSpec(0, UnsignedIntT),
-        vendorName: AttributeSpec(1, StringT), /* length: 32 */
-        vendorId: AttributeSpec(2, UnsignedIntT),
-        productName: AttributeSpec(3, StringT), /* length: 32 */
-        productId: AttributeSpec(4, UnsignedIntT),
-        nodeLabel: AttributeSpec(5, StringT), /* length: 32, default: "", writable: true */
-        location: AttributeSpec(6, StringT), /* length: 2, default: "XX", writable: true */
-        hardwareVersion: AttributeSpec(7, UnsignedIntT), /* default: 0 */
-        hardwareVersionString: AttributeSpec(8, StringT), /* length: 64, minLength: 1 */
-        softwareVersion: AttributeSpec(9, UnsignedIntT), /* default: 0 */
-        softwareVersionString: AttributeSpec(10, StringT), /* length: 64, minLength: 1 */
-        manufacturingDate: AttributeSpec(11, StringT),  /* optional: true, length: 16, minLength: 8 */
-        partNumber: AttributeSpec(12, StringT), /* optional: true, length: 32 */
-        productURL: AttributeSpec(13, StringT), /* optional: true, length: 256 */
-        productLabel: AttributeSpec(14, StringT), /* optional: true, length: 64 */
-        serialNumber: AttributeSpec(15, StringT), /* optional: true, length: 32 */
-        localConfigDisabled: AttributeSpec(16, BooleanT), /* default: false, optional: true, writable: true */
-        reachable: AttributeSpec(17, BooleanT), /* optional: true, default: true */
-        uniqueId: AttributeSpec(18, UnsignedIntT), /* optional: true, length: 32 */
-        capabilityMinima: AttributeSpec(19, CapabilityMinimaT), /* writable: false */
+        vendorName: Attribute(1, StringT),
+        vendorId: Attribute(2, UnsignedIntT),
+        productName: Attribute(3, StringT),
+        productId: Attribute(4, UnsignedIntT),
+        nodeLabel: WritableAttribute(5, StringT, ""), /* maxLength: 32, writeAcl: manage */
+        location: WritableAttribute(6, StringT, "XX"), /* length: 2, writeAcl: administer */
+        hardwareVersion: Attribute(7, UnsignedIntT, 0),
+        hardwareVersionString: Attribute(8, StringT), /* maxlength: 64, minLength: 1 */
+        softwareVersion: Attribute(9, UnsignedIntT, 0),
+        softwareVersionString: Attribute(10, StringT), /* length: 64, minLength: 1 */
+        manufacturingDate: OptionalAttribute(11, StringT),  /* maxLength: 16, minLength: 8 */
+        partNumber: OptionalAttribute(12, StringT), /* maxLength: 32 */
+        productURL: OptionalAttribute(13, StringT), /* maxLength: 256 */
+        productLabel: OptionalAttribute(14, StringT), /* maxLength: 64 */
+        serialNumber: OptionalAttribute(15, StringT), /* maxLength: 32 */
+        localConfigDisabled: OptionalWritableAttribute(16, BooleanT, false), /* writeAcl: manage */
+        reachable: OptionalAttribute(17, BooleanT, true),
+        uniqueId: OptionalAttribute(18, StringT), /* maxLength: 32 */
     },
     {},
 );
-
-/*
-Events:
-* server:
-   * 0: StartUp,
-   * 1: ShutDown,
-   * 2: Leave
-   * 3: ReachableChanged
- */

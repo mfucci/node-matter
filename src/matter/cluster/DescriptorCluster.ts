@@ -5,25 +5,16 @@
  */
 
 import { ArrayT, Field, ObjectT, UnsignedIntT } from "../../codec/TlvObjectCodec";
-import { AttributeSpec, ClusterSpec } from "./ClusterSpec";
+import { Attribute, Cluster } from "./Cluster";
 
-const DeviceTypeT = ObjectT({
-  type: Field(0, UnsignedIntT),
-  revision: Field(1, UnsignedIntT),
-});
-
-/**
- * The Descriptor Cluster is meant to replace the support from the Zigbee Device Object (ZDO) for describing a node,
- * its endpoints and clusters.
- */
-export const DescriptorClusterSpec = ClusterSpec(
+export const DescriptorCluster = Cluster(
     0x1d,
     "Descriptor",
     {
-        deviceTypeList: AttributeSpec(0, ArrayT(DeviceTypeT)), /* writable: false */
-        serverList: AttributeSpec(1, ArrayT(UnsignedIntT)), /* writable: false */
-        clientList: AttributeSpec(2, ArrayT(UnsignedIntT)), /* writable: false */
-        partsList: AttributeSpec(3, ArrayT(UnsignedIntT)), /* writable: false */
+        deviceList: Attribute(0, ArrayT(ObjectT({ type: Field(0, UnsignedIntT), revision: Field(1, UnsignedIntT) }))),
+        serverList: Attribute(1, ArrayT(UnsignedIntT)),
+        clientList: Attribute(3, ArrayT(UnsignedIntT)),
+        partsList: Attribute(4, ArrayT(UnsignedIntT)),
     },
     {},
 );

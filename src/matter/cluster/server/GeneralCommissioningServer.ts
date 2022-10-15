@@ -1,11 +1,11 @@
 import { MatterDevice } from "../../MatterDevice";
 import { SecureSession } from "../../session/SecureSession";
-import { CommissioningError, GeneralCommissioningClusterSpec } from "../GeneralCommissioningCluster";
-import { ClusterServerHandlers } from "./ClusterServer";
+import { CommissioningError, GeneralCommissioningCluster } from "../GeneralCommissioningCluster";
+import { ClusterServerHandlers, UseOptionalAttributes } from "./ClusterServer";
 
 const SuccessResponse = {errorCode: CommissioningError.Ok, debugText: ""};
 
-export const GeneralCommissioningClusterHandler: ClusterServerHandlers<typeof GeneralCommissioningClusterSpec> = {
+export const GeneralCommissioningClusterHandler: ClusterServerHandlers<typeof GeneralCommissioningCluster> = {
     armFailSafe: async ({ request: {breadcrumbStep}, attributes: {breadcrumb}, session }) => {
         session.getContext().armFailSafe();
         breadcrumb.set(breadcrumbStep);

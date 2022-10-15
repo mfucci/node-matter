@@ -13,7 +13,7 @@ export const enum ResultCode {
     Success = 0x00,
 }
 
-export class Command<RequestT, ResponseT> {
+export class CommandServer<RequestT, ResponseT> {
     constructor(
         readonly invokeId: number,
         readonly responseId: number,

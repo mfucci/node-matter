@@ -61,7 +61,7 @@ class Main {
         );
 
         // We listen to the attribute update to trigger an action. This could also have been done in the method invokations in the server.
-        onOffClusterServer.attributes.on.addListener(0, on => commandExecutor(on ? "on" : "off")?.());
+        onOffClusterServer.attributes.on.addListener(0, on => console.log(`On/Off cluster: ${on ? "on" : "off"}`));
 
         (new MatterDevice(deviceName, deviceType, vendorId, productId, discriminator))
             .addNetInterface(await UdpInterface.create(5540))

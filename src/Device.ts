@@ -15,7 +15,7 @@ import { CaseServer } from "./matter/session/secure/CaseServer";
 import { ClusterServer, InteractionProtocol } from "./matter/interaction/InteractionProtocol";
 import { BasicCluster } from "./matter/cluster/BasicCluster";
 import { GeneralCommissioningCluster, RegulatoryLocationType } from "./matter/cluster/GeneralCommissioningCluster";
-import { OperationalCredentialsClusterSpec } from "./matter/cluster/OperationalCredentialsCluster";
+import { OperationalCredentialsCluster } from "./matter/cluster/OperationalCredentialsCluster";
 import { DEVICE } from "./matter/common/DeviceTypes";
 import { MdnsBroadcaster } from "./matter/mdns/MdnsBroadcaster";
 import { Network } from "./net/Network";
@@ -72,14 +72,26 @@ class Main {
                 ))
             .addProtocolHandler(new InteractionProtocol()
                .addEndpoint(0x00, DEVICE.ROOT, [
-                   new ClusterServer(BasicCluster, { vendorName, vendorId, productName, productId }, {}),
-                   new ClusterServer(GeneralCommissioningCluster, {
+                    new ClusterServer(BasicCluster, {
+                        vendorName,
+                        vendorId,
+                        productName,
+                        productId,
+                        nodeLabel: "",
+                        hardwareVersion: 0,
+                        hardwareVersionString: "",
+                        location: "US",
+                        localConfigDisabled: false,
+                        softwareVersion: 1,
+                        softwareVersionString: "v1",
+                    }, {}),
+                    new ClusterServer(GeneralCommissioningCluster, {
                         breadcrumb: 0,
                         commissioningInfo: {failSafeExpiryLengthSeconds: 60 /* 1mn */},
                         regulatoryConfig: RegulatoryLocationType.Indoor,
                         locationCapability: RegulatoryLocationType.IndoorOutdoor,
                     }, GeneralCommissioningClusterHandler),
-                    new ClusterServer(OperationalCredentialsClusterSpec, {},
+                    new ClusterServer(OperationalCredentialsCluster, {},
                         OperationalCredentialsClusterHandler({
                             devicePrivateKey: DevicePrivateKey,
                             deviceCertificate: DeviceCertificate,

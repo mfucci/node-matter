@@ -15,8 +15,8 @@ import { DescriptorCluster } from "../cluster/DescriptorCluster";
 import { TlvObjectCodec } from "../../codec/TlvObjectCodec";
 import { Element } from "../../codec/TlvCodec";
 import { AttributeServer } from "../cluster/server/AttributeServer";
-import { Attributes, Cluster } from "../cluster/Cluster";
-import { AttributeServers, AttributeInitialValues, ClusterServerHandlers, OptionalAttributeNames } from "../cluster/server/ClusterServer";
+import { Cluster } from "../cluster/Cluster";
+import { AttributeServers, AttributeInitialValues, ClusterServerHandlers } from "../cluster/server/ClusterServer";
 import { SecureSession } from "../session/SecureSession";
 
 export const INTERACTION_PROTOCOL_ID = 0x0001;

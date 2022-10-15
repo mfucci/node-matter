@@ -82,7 +82,7 @@ export const CertSigningRequestT = ObjectT({
     vendorReserved3: OptionalField(5, ByteStringT),
 });
 
-export const OperationalCredentialsClusterSpec = Cluster(
+export const OperationalCredentialsCluster = Cluster(
     0x3e,
     "Operational Credentials",
     {},

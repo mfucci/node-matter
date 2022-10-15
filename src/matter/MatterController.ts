@@ -13,7 +13,7 @@ import { ClusterClient, InteractionClient } from "./interaction/InteractionClien
 import { INTERACTION_PROTOCOL_ID } from "./interaction/InteractionProtocol";
 import { BasicCluster } from "./cluster/BasicCluster";
 import { CommissioningError, GeneralCommissioningCluster, RegulatoryLocationType, SuccessFailureReponse } from "./cluster/GeneralCommissioningCluster";
-import { CertificateType, CertSigningRequestT, OperationalCredentialsClusterSpec } from "./cluster/OperationalCredentialsCluster";
+import { CertificateType, CertSigningRequestT, OperationalCredentialsCluster } from "./cluster/OperationalCredentialsCluster";
 import { Crypto } from "../crypto/Crypto";
 import { CertificateManager, jsToMatterDate, OperationalCertificateT, RootCertificateT } from "./certificate/CertificateManager";
 import { TlvObjectCodec } from "../codec/TlvObjectCodec";
@@ -74,7 +74,7 @@ export class MatterController {
         this.ensureSuccess(await generalCommissioningClusterClient.armFailSafe({ breadcrumbStep: 1, expiryLengthSeconds: 60 }));
         this.ensureSuccess(await generalCommissioningClusterClient.updateRegulatoryConfig({ breadcrumbStep: 2, config: RegulatoryLocationType.IndoorOutdoor, countryCode: "US"}));
 
-        const operationalCredentialsClusterClient = ClusterClient(interactionClient, 0, OperationalCredentialsClusterSpec);
+        const operationalCredentialsClusterClient = ClusterClient(interactionClient, 0, OperationalCredentialsCluster);
         const { certificate: deviceAttestation } = await operationalCredentialsClusterClient.requestCertChain({ type: CertificateType.DeviceAttestation });
         // TODO: extract device public key from deviceAttestation
         const { certificate: productAttestation } = await operationalCredentialsClusterClient.requestCertChain({ type: CertificateType.ProductAttestationIntermediate });

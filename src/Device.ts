@@ -73,6 +73,7 @@ class Main {
             .addProtocolHandler(new InteractionProtocol()
                .addEndpoint(0x00, DEVICE.ROOT, [
                     new ClusterServer(BasicCluster, {
+                        dataModelRevision: 1,
                         vendorName,
                         vendorId,
                         productName,
@@ -84,12 +85,16 @@ class Main {
                         localConfigDisabled: false,
                         softwareVersion: 1,
                         softwareVersionString: "v1",
+                        capabilityMinima: {
+                            caseSessionsPerFabric: 100,
+                            subscriptionsPerFabric: 100,
+                        }
                     }, {}),
                     new ClusterServer(GeneralCommissioningCluster, {
-                        breadcrumb: 0,
+                        breadcrumb: BigInt(0),
                         commissioningInfo: {
-                          failSafeExpiryLengthSeconds: 60 /* 1mn */,
-                          maxCumulativeFailsafeSeconds: 60 * 60 /* 1h */,
+                            failSafeExpiryLengthSeconds: 60 /* 1min */,
+                            maxCumulativeFailsafeSeconds: 60 * 60 /* 1h */,
                         },
                         regulatoryConfig: RegulatoryLocationType.Indoor,
                         locationCapability: RegulatoryLocationType.IndoorOutdoor,

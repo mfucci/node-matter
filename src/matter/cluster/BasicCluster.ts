@@ -4,8 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BooleanT, StringT, UnsignedIntT } from "../../codec/TlvObjectCodec";
+import { BooleanT, StringT, UnsignedIntT, ObjectT, Field } from "../../codec/TlvObjectCodec";
 import { Attribute, Cluster, OptionalAttribute, OptionalWritableAttribute, WritableAttribute } from "./Cluster";
+
+const CapabilityMinimaT = ObjectT({
+    caseSessionsPerFabric: Field(0, UnsignedIntT),
+    subscriptionsPerFabric: Field(1, UnsignedIntT),
+});
 
 /**
  * This cluster provides attributes and events for determining basic information about Nodes, which supports both
@@ -16,9 +21,10 @@ export const BasicCluster = Cluster(
     0x28,
     "Basic",
     {
-        vendorName: Attribute(1, StringT),
+        dataModelRevision: Attribute(0, UnsignedIntT),
+        vendorName: Attribute(1, StringT), /* length: 32 */
         vendorId: Attribute(2, UnsignedIntT),
-        productName: Attribute(3, StringT),
+        productName: Attribute(3, StringT), /* length: 32 */
         productId: Attribute(4, UnsignedIntT),
         nodeLabel: WritableAttribute(5, StringT, ""), /* maxLength: 32, writeAcl: manage */
         location: WritableAttribute(6, StringT, "XX"), /* length: 2, writeAcl: administer */
@@ -34,6 +40,16 @@ export const BasicCluster = Cluster(
         localConfigDisabled: OptionalWritableAttribute(16, BooleanT, false), /* writeAcl: manage */
         reachable: OptionalAttribute(17, BooleanT, true),
         uniqueId: OptionalAttribute(18, StringT), /* maxLength: 32 */
+        capabilityMinima: Attribute(19, CapabilityMinimaT),
     },
     {},
 );
+
+/*
+Events:
+* server:
+   * 0: StartUp,
+   * 1: ShutDown,
+   * 2: Leave
+   * 3: ReachableChanged
+*/

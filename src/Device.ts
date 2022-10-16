@@ -13,16 +13,16 @@ import { PaseServer } from "./matter/session/secure/PaseServer";
 import { Crypto } from "./crypto/Crypto";
 import { CaseServer } from "./matter/session/secure/CaseServer";
 import { ClusterServer, InteractionServer } from "./matter/interaction/InteractionServer";
-import { BasicClusterSpec } from "./matter/cluster/BasicCluster";
-import { GeneralCommissioningClusterSpec, RegulatoryLocationType } from "./matter/cluster/GeneralCommissioningCluster";
-import { OperationalCredentialsClusterSpec } from "./matter/cluster/OperationalCredentialsCluster";
+import { BasicCluster } from "./matter/cluster/BasicCluster";
+import { GeneralCommissioningCluster, RegulatoryLocationType } from "./matter/cluster/GeneralCommissioningCluster";
+import { OperationalCredentialsCluster } from "./matter/cluster/OperationalCredentialsCluster";
 import { DEVICE } from "./matter/common/DeviceTypes";
 import { MdnsBroadcaster } from "./matter/mdns/MdnsBroadcaster";
 import { Network } from "./net/Network";
 import { NetworkNode } from "./net/node/NetworkNode";
 import { commandExecutor } from "./util/CommandLine";
 import { singleton } from "./util/Singleton";
-import { OnOffClusterSpec } from "./matter/cluster/OnOffCluster";
+import { OnOffCluster } from "./matter/cluster/OnOffCluster";
 import { GeneralCommissioningClusterHandler } from "./matter/cluster/server/GeneralCommissioningServer";
 import { OperationalCredentialsClusterHandler } from "./matter/cluster/server/OperationalCredentialsServer";
 import { MdnsScanner } from "./matter/mdns/MdnsScanner";
@@ -51,9 +51,9 @@ class Main {
         const productId = 0X8001;
         const discriminator = 3840;
 
-        const onOffClusterServer = new ClusterServer(OnOffClusterSpec,
+        // Barebone implementation of the On/Off cluster
+        const onOffClusterServer = new ClusterServer(OnOffCluster,
             { on: false }, // Off by default
-            // Barebone implementation of the On/Off cluster
             {
                 on: async ({attributes: {on}}) => on.set(true),
                 off: async ({attributes: {on}}) => on.set(false),
@@ -74,14 +74,26 @@ class Main {
                 ))
             .addProtocolHandler(new InteractionServer()
                .addEndpoint(0x00, DEVICE.ROOT, [
-                   new ClusterServer(BasicClusterSpec, { vendorName, vendorId, productName, productId }, {}),
-                   new ClusterServer(GeneralCommissioningClusterSpec, {
+                    new ClusterServer(BasicCluster, {
+                        vendorName,
+                        vendorId,
+                        productName,
+                        productId,
+                        nodeLabel: "",
+                        hardwareVersion: 0,
+                        hardwareVersionString: "",
+                        location: "US",
+                        localConfigDisabled: false,
+                        softwareVersion: 1,
+                        softwareVersionString: "v1",
+                    }, {}),
+                    new ClusterServer(GeneralCommissioningCluster, {
                         breadcrumb: 0,
                         commissioningInfo: {failSafeExpiryLengthSeconds: 60 /* 1mn */},
                         regulatoryConfig: RegulatoryLocationType.Indoor,
                         locationCapability: RegulatoryLocationType.IndoorOutdoor,
                     }, GeneralCommissioningClusterHandler),
-                    new ClusterServer(OperationalCredentialsClusterSpec, {},
+                    new ClusterServer(OperationalCredentialsCluster, {},
                         OperationalCredentialsClusterHandler({
                             devicePrivateKey: DevicePrivateKey,
                             deviceCertificate: DeviceCertificate,

@@ -6,7 +6,7 @@
 
 import { Field, JsType, ObjectT, StringT, Template, UnsignedIntT } from "../../codec/TlvObjectCodec";
 import { TlvType } from "../../codec/TlvCodec";
-import { AttributeSpec, ClusterSpec, CommandSpec, NoArgumentsT } from "./ClusterSpec";
+import { Attribute, Cluster, Command, NoArgumentsT, OptionalAttribute, WritableAttribute } from "./Cluster";
 
 export const enum RegulatoryLocationType {
     Indoor = 0,
@@ -45,18 +45,18 @@ const SetRegulatoryConfigRequestT = ObjectT({
     breadcrumbStep: Field(2, UnsignedIntT),
 });
 
-export const GeneralCommissioningClusterSpec = ClusterSpec(
+export const GeneralCommissioningCluster = Cluster(
     0x30,
     "General Commissioning",
     {
-        breadcrumb: AttributeSpec(0, UnsignedIntT),
-        commissioningInfo: AttributeSpec(1, BasicCommissioningInfoT),
-        regulatoryConfig: AttributeSpec(2, RegulatoryLocationTypeT),
-        locationCapability: AttributeSpec(3, RegulatoryLocationTypeT),
+        breadcrumb: Attribute(0, UnsignedIntT),
+        commissioningInfo: Attribute(1, BasicCommissioningInfoT),
+        regulatoryConfig: Attribute(2, RegulatoryLocationTypeT),
+        locationCapability: Attribute(3, RegulatoryLocationTypeT),
     },
     {
-        armFailSafe: CommandSpec(0, ArmFailSafeRequestT, 1, SuccessFailureReponseT),
-        updateRegulatoryConfig: CommandSpec(2, SetRegulatoryConfigRequestT, 3, SuccessFailureReponseT),
-        commissioningComplete: CommandSpec(4, NoArgumentsT, 5, SuccessFailureReponseT),
+        armFailSafe: Command(0, ArmFailSafeRequestT, 1, SuccessFailureReponseT),
+        updateRegulatoryConfig: Command(2, SetRegulatoryConfigRequestT, 3, SuccessFailureReponseT),
+        commissioningComplete: Command(4, NoArgumentsT, 5, SuccessFailureReponseT),
     },
 )

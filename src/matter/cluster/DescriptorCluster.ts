@@ -5,16 +5,16 @@
  */
 
 import { ArrayT, Field, ObjectT, UnsignedIntT } from "../../codec/TlvObjectCodec";
-import { AttributeSpec, ClusterSpec } from "./ClusterSpec";
+import { Attribute, Cluster } from "./Cluster";
 
-export const DescriptorClusterSpec = ClusterSpec(
+export const DescriptorCluster = Cluster(
     0x1d,
     "Descriptor",
     {
-        deviceList: AttributeSpec(0, ArrayT(ObjectT({ type: Field(0, UnsignedIntT), revision: Field(1, UnsignedIntT) }))),
-        serverList: AttributeSpec(1, ArrayT(UnsignedIntT)),
-        clientList: AttributeSpec(3, ArrayT(UnsignedIntT)),
-        partsList: AttributeSpec(4, ArrayT(UnsignedIntT)),
+        deviceList: Attribute(0, ArrayT(ObjectT({ type: Field(0, UnsignedIntT), revision: Field(1, UnsignedIntT) }))),
+        serverList: Attribute(1, ArrayT(UnsignedIntT)),
+        clientList: Attribute(3, ArrayT(UnsignedIntT)),
+        partsList: Attribute(4, ArrayT(UnsignedIntT)),
     },
     {},
 );

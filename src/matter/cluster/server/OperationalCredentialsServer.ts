@@ -9,7 +9,7 @@ import { Crypto } from "../../../crypto/Crypto";
 import { MatterDevice } from "../../MatterDevice";
 import { SecureSession } from "../../session/SecureSession";
 import { Session } from "../../session/Session";
-import { AttestationT, CertificateType, CertSigningRequestT, OperationalCredentialsClusterSpec, Status } from "../OperationalCredentialsCluster";
+import { AttestationT, CertificateType, CertSigningRequestT, OperationalCredentialsCluster, Status } from "../OperationalCredentialsCluster";
 import { ClusterServerHandlers } from "./ClusterServer";
 
 interface OperationalCredentialsServerConf {
@@ -23,7 +23,7 @@ function signWithDeviceKey(conf: OperationalCredentialsServerConf,session: Secur
     return Crypto.sign(conf.devicePrivateKey, [data, session.getAttestationChallengeKey()]);
 }
 
-export const OperationalCredentialsClusterHandler: (conf: OperationalCredentialsServerConf) => ClusterServerHandlers<typeof OperationalCredentialsClusterSpec> = (conf) => ({
+export const OperationalCredentialsClusterHandler: (conf: OperationalCredentialsServerConf) => ClusterServerHandlers<typeof OperationalCredentialsCluster> = (conf) => ({
     requestAttestation: async ({ request: {nonce}, session }) => {
         const elements = TlvObjectCodec.encode({ declaration: conf.certificateDeclaration, nonce, timestamp: 0 }, AttestationT);
         return {elements: elements, signature: signWithDeviceKey(conf, session as SecureSession<MatterDevice>, elements)};

@@ -6,7 +6,7 @@
 
 import { Template } from "../../../codec/TlvObjectCodec";
 
-export class Attribute<T> {
+export class AttributeServer<T> {
     private value: T;
     private version = 0;
     private readonly listeners = new Array<(value: T, version: number) => void>();

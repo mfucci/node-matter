@@ -11,9 +11,9 @@ import { ExchangeManager, MessageChannel } from "./common/ExchangeManager";
 import { PaseClient } from "./session/secure/PaseClient";
 import { ClusterClient, InteractionClient } from "./interaction/InteractionClient";
 import { INTERACTION_PROTOCOL_ID } from "./interaction/InteractionServer";
-import { BasicClusterSpec } from "./cluster/BasicCluster";
-import { CommissioningError, GeneralCommissioningClusterSpec, RegulatoryLocationType, SuccessFailureReponse } from "./cluster/GeneralCommissioningCluster";
-import { CertificateType, CertSigningRequestT, OperationalCredentialsClusterSpec } from "./cluster/OperationalCredentialsCluster";
+import { BasicCluster } from "./cluster/BasicCluster";
+import { CommissioningError, GeneralCommissioningCluster, RegulatoryLocationType, SuccessFailureReponse } from "./cluster/GeneralCommissioningCluster";
+import { CertificateType, CertSigningRequestT, OperationalCredentialsCluster } from "./cluster/OperationalCredentialsCluster";
 import { Crypto } from "../crypto/Crypto";
 import { CertificateManager, jsToMatterDate, OperationalCertificateT, RootCertificateT } from "./certificate/CertificateManager";
 import { TlvObjectCodec } from "../codec/TlvObjectCodec";
@@ -69,16 +69,16 @@ export class MatterController {
         let interactionClient = new InteractionClient(() => this.exchangeManager.initiateExchangeWithChannel(paseSecureMessageChannel, INTERACTION_PROTOCOL_ID));
         
         // Get and display the product name (just for debugging)
-        const basicClusterClient = ClusterClient(interactionClient, 0, BasicClusterSpec);
+        const basicClusterClient = ClusterClient(interactionClient, 0, BasicCluster);
         const productName = await basicClusterClient.getProductName();
         console.log(`Paired with device: ${productName}`);
 
         // Do the commissioning
-        let generalCommissioningClusterClient = ClusterClient(interactionClient, 0, GeneralCommissioningClusterSpec);
+        let generalCommissioningClusterClient = ClusterClient(interactionClient, 0, GeneralCommissioningCluster);
         this.ensureSuccess(await generalCommissioningClusterClient.armFailSafe({ breadcrumbStep: 1, expiryLengthSeconds: 60 }));
         this.ensureSuccess(await generalCommissioningClusterClient.updateRegulatoryConfig({ breadcrumbStep: 2, config: RegulatoryLocationType.IndoorOutdoor, countryCode: "US"}));
-        
-        const operationalCredentialsClusterClient = ClusterClient(interactionClient, 0, OperationalCredentialsClusterSpec);
+
+        const operationalCredentialsClusterClient = ClusterClient(interactionClient, 0, OperationalCredentialsCluster);
         const { certificate: deviceAttestation } = await operationalCredentialsClusterClient.requestCertChain({ type: CertificateType.DeviceAttestation });
         // TODO: extract device public key from deviceAttestation
         const { certificate: productAttestation } = await operationalCredentialsClusterClient.requestCertChain({ type: CertificateType.ProductAttestationIntermediate });
@@ -114,7 +114,7 @@ export class MatterController {
         interactionClient = new InteractionClient(() => this.exchangeManager.initiateExchange(this.fabric, peerNodeId, INTERACTION_PROTOCOL_ID));
 
         // Complete the commission
-        generalCommissioningClusterClient = ClusterClient(interactionClient, 0, GeneralCommissioningClusterSpec);
+        generalCommissioningClusterClient = ClusterClient(interactionClient, 0, GeneralCommissioningCluster);
         this.ensureSuccess(await generalCommissioningClusterClient.commissioningComplete({}));
     }
 

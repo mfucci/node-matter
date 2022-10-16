@@ -10,37 +10,37 @@ import { Channel } from "../../net/Channel";
 import { MessageExchange } from "../common/MessageExchange";
 import { InteractionServerMessenger, InvokeRequest, InvokeResponse, ReadRequest, DataReport, SubscribeRequest, SubscribeResponse } from "./InteractionMessenger";
 import { Session } from "../session/Session";
-import { Command, ResultCode } from "../cluster/server/Command";
-import { DescriptorClusterSpec } from "../cluster/DescriptorCluster";
+import { CommandServer, ResultCode } from "../cluster/server/CommandServer";
+import { DescriptorCluster } from "../cluster/DescriptorCluster";
 import { TlvObjectCodec } from "../../codec/TlvObjectCodec";
 import { Element } from "../../codec/TlvCodec";
-import { Attribute } from "../cluster/server/Attribute";
-import { ClusterSpec } from "../cluster/ClusterSpec";
-import { Attributes, AttributeValues, ClusterServerHandlers } from "../cluster/server/ClusterServer";
+import { AttributeServer } from "../cluster/server/AttributeServer";
+import { Cluster } from "../cluster/Cluster";
+import { AttributeServers, AttributeInitialValues, ClusterServerHandlers } from "../cluster/server/ClusterServer";
 import { SecureSession } from "../session/SecureSession";
 import { SubscriptionHandler } from "./SubscriptionHandler";
 
 export const INTERACTION_PROTOCOL_ID = 0x0001;
 
-export class ClusterServer<ClusterT extends ClusterSpec<any, any>> {
+export class ClusterServer<ClusterT extends Cluster<any, any>> {
     readonly id: number;
-    readonly attributes = <Attributes<ClusterT["attributes"]>>{};
-    readonly commands = new Array<Command<any, any>>();
+    readonly attributes = <AttributeServers<ClusterT["attributes"]>>{};
+    readonly commands = new Array<CommandServer<any, any>>();
 
-    constructor(clusterDef: ClusterT, attributesValues: AttributeValues<ClusterT["attributes"]>, handlers: ClusterServerHandlers<ClusterT>) {
+    constructor(clusterDef: ClusterT, attributesInitialValues: AttributeInitialValues<ClusterT["attributes"]>, handlers: ClusterServerHandlers<ClusterT>) {
         const { id, attributes: attributeDefs, commands: commandDefs } = clusterDef;
         this.id = id;
 
         // Create attributes
-        for (const name in attributeDefs) {
+        for (const name in attributesInitialValues) {
             const { id, template } = attributeDefs[name];
-            this.attributes[name as (keyof ClusterT["attributes"])] = new Attribute(id, name, template, attributesValues[name]);
+            (this.attributes as any)[name] = new AttributeServer(id, name, template, (attributesInitialValues as any)[name]);
         }
 
         // Create commands
         for (const name in commandDefs) {
             const { requestId, requestTemplate, responseId, responseTemplate } = commandDefs[name];
-            this.commands.push(new Command(requestId, responseId, name, requestTemplate, responseTemplate, (request, session) => handlers[name]({request, attributes: this.attributes, session})));
+            this.commands.push(new CommandServer(requestId, responseId, name, requestTemplate, responseTemplate, (request, session) => handlers[name]({request, attributes: this.attributes, session})));
         }
     }
 }
@@ -53,7 +53,7 @@ export interface Path {
 
 export interface AttributeWithPath {
     path: Path,
-    attribute: Attribute<any>,
+    attribute: AttributeServer<any>,
 }
 
 export function pathToId({endpointId, clusterId, id}: Path) {
@@ -61,9 +61,9 @@ export function pathToId({endpointId, clusterId, id}: Path) {
 }
 
 export class InteractionServer implements ProtocolHandler<MatterDevice> {
-    private readonly attributes = new Map<string, Attribute<any>>();
+    private readonly attributes = new Map<string, AttributeServer<any>>();
     private readonly attributePaths = new Array<Path>();
-    private readonly commands = new Map<string, Command<any, any>>();
+    private readonly commands = new Map<string, CommandServer<any, any>>();
     private readonly commandPaths = new Array<Path>();
 
     constructor() {}
@@ -74,7 +74,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
 
     addEndpoint(endpointId: number, device: {name: string, code: number}, clusters: ClusterServer<any>[]) {
         // Add the descriptor cluster
-        const descriptorCluster = new ClusterServer(DescriptorClusterSpec, {
+        const descriptorCluster = new ClusterServer(DescriptorCluster, {
             deviceList: [{revision: 1, type: device.code}],
             serverList: [],
             clientList: [],
@@ -102,7 +102,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
 
         // Add part list if the endpoint is not root
         if (endpointId !== 0) {
-            const rootPartsListAttribute = this.attributes.get(pathToId({endpointId: 0, clusterId: DescriptorClusterSpec.id, id: DescriptorClusterSpec.attributes.partsList.id}));
+            const rootPartsListAttribute = this.attributes.get(pathToId({endpointId: 0, clusterId: DescriptorCluster.id, id: DescriptorCluster.attributes.partsList.id}));
             if (rootPartsListAttribute === undefined) throw new Error("The root endpoint should be added first!");
             rootPartsListAttribute.set([...rootPartsListAttribute.get(), endpointId]);
         }
@@ -205,12 +205,10 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
                     (endpointId === undefined || endpointId === path.endpointId)
                     && (clusterId === undefined || clusterId === path.clusterId)
                     && (id === undefined || id === path.id))
-                    .forEach(path => result.push({ path, attribute: this.attributes.get(pathToId(path)) as Attribute<any> }));
+                    .forEach(path => result.push({ path, attribute: this.attributes.get(pathToId(path)) as AttributeServer<any> }));
             }
         })
 
         return result;
     }
 }
-
-

@@ -18,10 +18,10 @@ import { PaseServer } from "../src/matter/session/secure/PaseServer";
 import { NetworkFake } from "../src/net/fake/NetworkFake";
 import { Network } from "../src/net/Network";
 import { MdnsScanner } from "../src/matter/mdns/MdnsScanner";
-import { OnOffClusterSpec } from "../src/matter/cluster/OnOffCluster";
-import { BasicClusterSpec } from "../src/matter/cluster/BasicCluster";
-import { GeneralCommissioningClusterSpec, RegulatoryLocationType } from "../src/matter/cluster/GeneralCommissioningCluster";
-import { OperationalCredentialsClusterSpec } from "../src/matter/cluster/OperationalCredentialsCluster";
+import { OnOffCluster } from "../src/matter/cluster/OnOffCluster";
+import { BasicCluster } from "../src/matter/cluster/BasicCluster";
+import { GeneralCommissioningCluster, RegulatoryLocationType } from "../src/matter/cluster/GeneralCommissioningCluster";
+import { OperationalCredentialsCluster } from "../src/matter/cluster/OperationalCredentialsCluster";
 import { GeneralCommissioningClusterHandler } from "../src/matter/cluster/server/GeneralCommissioningServer";
 import { OperationalCredentialsClusterHandler } from "../src/matter/cluster/server/OperationalCredentialsServer";
 
@@ -76,14 +76,26 @@ describe("Integration", () => {
                 ))
             .addProtocolHandler(new InteractionServer()
                 .addEndpoint(0x00, DEVICE.ROOT, [
-                    new ClusterServer(BasicClusterSpec, { vendorName, vendorId, productName, productId }, {}),
-                    new ClusterServer(GeneralCommissioningClusterSpec, {
+                    new ClusterServer(BasicCluster, {
+                        vendorName,
+                        vendorId,
+                        productName,
+                        productId,
+                        nodeLabel: "",
+                        hardwareVersion: 0,
+                        hardwareVersionString: "",
+                        location: "US",
+                        localConfigDisabled: false,
+                        softwareVersion: 1,
+                        softwareVersionString: "v1",
+                    }, {}),
+                    new ClusterServer(GeneralCommissioningCluster, {
                          breadcrumb: 0,
-                         comminssioningInfo: {failSafeExpiryLengthSeconds: 60 /* 1mn */},
+                         commissioningInfo: {failSafeExpiryLengthSeconds: 60 /* 1mn */},
                          regulatoryConfig: RegulatoryLocationType.Indoor,
                          locationCapability: RegulatoryLocationType.IndoorOutdoor,
                      }, GeneralCommissioningClusterHandler),
-                     new ClusterServer(OperationalCredentialsClusterSpec, {},
+                     new ClusterServer(OperationalCredentialsCluster, {},
                          OperationalCredentialsClusterHandler({
                              devicePrivateKey: DevicePrivateKey,
                              deviceCertificate: DeviceCertificate,
@@ -92,7 +104,7 @@ describe("Integration", () => {
                      })),
                 ])
                 .addEndpoint(0x01, DEVICE.ON_OFF_LIGHT, [
-                    new ClusterServer(OnOffClusterSpec, { on: false }, 
+                    new ClusterServer(OnOffCluster, { on: false }, 
                         {
                             on: async ({attributes: {on}}) => on.set(true),
                             off: async ({attributes: {on}}) => on.set(false),

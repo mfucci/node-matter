@@ -5,6 +5,13 @@
  */
 
 import assert from "assert";
+
+import { Time } from "../src/time/Time";
+import { singleton } from "../src/util/Singleton";
+import { TimeFake } from "../src/time/TimeFake";
+
+Time.get = singleton(() => new TimeFake());
+
 import { UdpInterface } from "../src/net/UdpInterface";
 import { MatterController } from "../src/matter/MatterController";
 import { Crypto } from "../src/crypto/Crypto";

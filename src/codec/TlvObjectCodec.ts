@@ -7,21 +7,19 @@
 import { TlvType, Element, TlvCodec, TlvTag } from "./TlvCodec";
 
 // Type structure definitions
-export type Template<T> = {tlvType?: TlvType, readAsBigint?: boolean};
-type ArrayTemplate<T> = Template<T> & {itemTemplate: Template<T>};
-type ObjectTemplate<T> = Template<T> & {fieldTemplates: FieldTemplates};
-type TaggedTemplate<T> = Template<T> & {tag?: TlvTag};
-type Field<T> = TaggedTemplate<T> & {optional: false};
-type OptionalField<T> = TaggedTemplate<T> & {optional: true};
+export interface Template<T> {tlvType?: TlvType, readAsBigint?: boolean, /* for type checking at compile-time only */ jsType?: T};
+export interface ArrayTemplate<T> extends Template<T> {itemTemplate: Template<T>};
+export interface ObjectTemplate<T> extends Template<T> {fieldTemplates: FieldTemplates};
+export interface TaggedTemplate<T> extends Template<T> {tag?: TlvTag};
+export interface Field<T> extends TaggedTemplate<T> {optional: false};
+export interface OptionalField<T> extends TaggedTemplate<T> {optional: true};
 type FieldTemplates = {[key: string]: Field<any> | OptionalField<any>};
 
 // Type utils
 type OptionalKeys<T extends object> = {[K in keyof T]: T[K] extends OptionalField<any> ? K : never}[keyof T];
 type RequiredKeys<T extends object> = {[K in keyof T]: T[K] extends OptionalField<any> ? never : K}[keyof T];
-type FlattenField<F> = F extends Field<infer T> ? T : never;
-type FlattenOptionalField<F> = F extends OptionalField<infer T> ? T : never;
-type TypeFromFieldTemplates<T extends FieldTemplates> = { [P in RequiredKeys<T>]: FlattenField<T[P]> } & { [P in OptionalKeys<T>]?: FlattenOptionalField<T[P]> };
 export type JsType<Type> = Type extends Template<infer T> ? T : never;
+export type TypeFromFieldTemplates<T extends FieldTemplates> = { [P in RequiredKeys<T>]: JsType<T[P]> } & { [P in OptionalKeys<T>]?: JsType<T[P]> };
 
 // Template definitions
 export const StringT:Template<string> = { tlvType: TlvType.String };

@@ -25,7 +25,7 @@
   "scripts": {
     "clean": "rm -rf build",
     "build": "tsc",
-    "test": "mocha"
+    "test": "TZ=utc mocha"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0",

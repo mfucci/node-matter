@@ -10,11 +10,11 @@
     private timeMs: number = 0;
 
      now(): Date {
-         return new Date(this.timeMs);
+        return new Date(this.timeMs);
      }
  
      nowMs(): number {
-         return this.timeMs;
+        return this.timeMs;
      }
 
      setTime(timeMs: number) {

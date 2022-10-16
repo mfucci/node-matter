@@ -99,9 +99,10 @@ export class MessageExchange<ContextT> {
             this.channel.send(this.sentMessageToAck);
             return;
         }
-        if (this.sentMessageToAck !== undefined) {
+        const sentMessageIdToAck = this.sentMessageToAck?.packetHeader.messageId;
+        if (sentMessageIdToAck !== undefined) {
             if (ackedMessageId === undefined) throw new Error("Previous message ack is missing");
-            if (ackedMessageId !== this.sentMessageToAck.packetHeader.messageId) throw new Error("Incorrect ack received");
+            if (ackedMessageId !== sentMessageIdToAck) throw new Error(`Incorrect ack received. Expected ${sentMessageIdToAck}, received: ${ackedMessageId}`);
             // The other side has received our previous message
             this.sentMessageAckSuccess?.();
             this.sentMessageToAck = undefined;

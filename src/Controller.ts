@@ -13,8 +13,11 @@ import { NetworkNode } from "./net/node/NetworkNode";
 import { getIntParameter, getParameter } from "./util/CommandLine";
 import { singleton } from "./util/Singleton";
 import { MdnsScanner } from "./matter/mdns/MdnsScanner";
+import { Time } from "./time/Time";
+import { TimeNode } from "./time/TimeNode";
 
 Network.get = singleton(() => new NetworkNode());
+Time.get = singleton(() => new TimeNode());
 
 class Main {
     async start() {

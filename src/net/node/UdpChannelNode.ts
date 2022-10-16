@@ -5,7 +5,10 @@
  */
 
 import dgram from "dgram";
+import { Logger } from "../../log/Logger";
 import { UdpChannel, UdpChannelOptions } from "../UdpChannel";
+
+const logger = Logger.get("UdpChannelNode");
 
 function createDgramSocket(address: string | undefined, port: number, options: dgram.SocketOptions) {
     const socket = dgram.createSocket(options);
@@ -17,7 +20,7 @@ function createDgramSocket(address: string | undefined, port: number, options: d
         socket.on("error", handleBindError);
         socket.bind(port, address, () => {
             socket.removeListener("error", handleBindError);
-            socket.on("error", error => console.error(error));
+            socket.on("error", error => logger.error(error));
             resolve(socket);
         });
     });

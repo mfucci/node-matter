@@ -2,11 +2,8 @@ import { MatterDevice } from "../MatterDevice";
 import { InteractionServerMessenger } from "./InteractionMessenger";
 import { Template, TlvObjectCodec } from "../../codec/TlvObjectCodec";
 import { Element } from "../../codec/TlvCodec";
-import { Attribute } from "../cluster/server/Attribute";
 import { Fabric } from "../fabric/Fabric";
-import { AttributeWithPath, Path, INTERACTION_PROTOCOL_ID, pathToId } from "./InteractionServer";
-import { version } from "elliptic";
-
+import { AttributeWithPath, Path, INTERACTION_PROTOCOL_ID } from "./InteractionServer";
 
 interface PathValueVersion<T> {
     path: Path,

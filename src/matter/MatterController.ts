@@ -22,6 +22,7 @@ import { Fabric, FabricBuilder } from "./fabric/Fabric";
 import { CaseClient } from "./session/secure/CaseClient";
 import { requireMinNodeVersion } from "../util/Node";
 import { Logger } from "../log/Logger";
+import { Time } from "../time/Time";
 
 requireMinNodeVersion(16);
 
@@ -168,14 +169,15 @@ class RootCertificateManager {
     }
 
     private generateRootCert(): Buffer {
+        const now = Time.get().now();
         const unsignedCertificate = {
             serialNumber: Buffer.alloc(1, this.rootCertId),
             signatureAlgorithm: 1 /* EcdsaWithSHA256 */ ,
             publicKeyAlgorithm: 1 /* EC */,
             ellipticCurveIdentifier: 1 /* P256v1 */,
             issuer: { },
-            notBefore: jsToMatterDate(new Date(), -1),
-            notAfter: jsToMatterDate(new Date(), 10),
+            notBefore: jsToMatterDate(now, -1),
+            notAfter: jsToMatterDate(now, 10),
             subject: { rcacId: this.rootCertId },
             ellipticCurvePublicKey: this.rootKeyPair.publicKey,
             extensions: {
@@ -190,6 +192,7 @@ class RootCertificateManager {
     }
     
     generateNoc(publicKey: Buffer, fabricId: bigint, nodeId: bigint): Buffer {
+        const now = Time.get().now();
         const certId = this.nextCertificateId++;
         const unsignedCertificate = {
             serialNumber: Buffer.alloc(1, certId), // TODO: figure out what should happen if certId > 255
@@ -197,8 +200,8 @@ class RootCertificateManager {
             publicKeyAlgorithm: 1 /* EC */,
             ellipticCurveIdentifier: 1 /* P256v1 */,
             issuer: { issuerRcacId: this.rootCertId },
-            notBefore: jsToMatterDate(new Date(), -1),
-            notAfter: jsToMatterDate(new Date(), 10),
+            notBefore: jsToMatterDate(now, -1),
+            notAfter: jsToMatterDate(now, 10),
             subject: { fabricId, nodeId },
             ellipticCurvePublicKey: publicKey,
             extensions: {

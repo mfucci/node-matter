@@ -4,7 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- import { Time } from "./Time";
+ import { Time, Timer } from "./Time";
+
+ class TimerFake implements Timer {
+    restart(): void {
+       throw new Error("Method not implemented.");
+    }
+    cancel(): void {
+       throw new Error("Method not implemented.");
+    }
+
+ }
 
  export class TimeFake extends Time {
     private timeMs: number = 0;
@@ -15,6 +25,14 @@
  
      nowMs(): number {
         return this.timeMs;
+     }
+
+     getTimer(durationMs: number, callback: () => void): Timer {
+        throw new Error("Method not implemented.");
+     }
+     
+     getPeriodicTimer(intervalMs: number, callback: () => void): Timer {
+        throw new Error("Method not implemented.");
      }
 
      setTime(timeMs: number) {

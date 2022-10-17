@@ -5,6 +5,7 @@
  */
 
 import { JsType, Template, TlvObjectCodec } from "../../codec/TlvObjectCodec";
+import { Logger } from "../../log/Logger";
 import { StatusResponseT } from "../cluster/OperationalCredentialsCluster";
 import { MessageExchange } from "../common/MessageExchange";
 import { MatterController } from "../MatterController";
@@ -35,6 +36,8 @@ export type SubscribeRequest = JsType<typeof SubscribeRequestT>;
 export type SubscribeResponse = JsType<typeof SubscribeResponseT>;
 export type InvokeRequest = JsType<typeof InvokeRequestT>;
 export type InvokeResponse = JsType<typeof InvokeResponseT>;
+
+const logger = Logger.get("InteractionServerMessenger");
 
 export class InteractionServerMessenger {
 
@@ -72,7 +75,7 @@ export class InteractionServerMessenger {
                     throw new Error(`Unsupported message type ${message.payloadHeader.messageType}`);
             }
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             await this.sendStatus(Status.Failure);
         } finally {
             this.exchange.close();

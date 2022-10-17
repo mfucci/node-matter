@@ -6,10 +6,13 @@
 
 import { Crypto } from "../../../crypto/Crypto";
 import { Spake2p } from "../../../crypto/Spake2p";
+import { Logger } from "../../../log/Logger";
 import { MessageExchange } from "../../common/MessageExchange";
 import { MatterController } from "../../MatterController";
 import { UNDEFINED_NODE_ID } from "../SessionManager";
 import { DEFAULT_PASSCODE_ID, PaseClientMessenger, SPAKE_CONTEXT } from "./PaseMessenger";
+
+const logger = Logger.get("PaseClient");
 
 export class PaseClient {
     constructor() {}
@@ -39,7 +42,7 @@ export class PaseClient {
         await messenger.waitForSuccess();
         const secureSession = await client.createSecureSession(sessionId, UNDEFINED_NODE_ID, UNDEFINED_NODE_ID, peerSessionId, Ke, Buffer.alloc(0), true, false);
         messenger.close();
-        console.log(`Pase client: Paired succesfully with ${messenger.getChannelName()}`);
+        logger.info(`Pase client: Paired succesfully with ${messenger.getChannelName()}`);
 
         return secureSession;
     }

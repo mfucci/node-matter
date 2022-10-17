@@ -35,6 +35,18 @@ function consoleLogger(level: Level, formatedLog: string) {
     }
 }
 
+/**
+ * Logger that can be used to emit traces.
+ * 
+ * Usage:
+ * const logger = Logger.get("loggerName");
+ * logger.debug("My debug message", "my extra value to log");
+ * 
+ * Configuration:
+ * Logger.defaultLogLevel sets the default log level for all the logger
+ * Logger.logLevels = { loggerName: Level.DEBUG } can set the level for the specific loggers
+ */
+
 export class Logger {
     static logFormater: (now: Date, level: Level, logger: string, ...values: any[]) => string = logFormater;
     static log: (level: Level, formatedLog: string) => void = consoleLogger;

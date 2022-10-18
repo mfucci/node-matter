@@ -86,8 +86,8 @@ class Main {
                         softwareVersion: 1,
                         softwareVersionString: "v1",
                         capabilityMinima: {
-                            caseSessionsPerFabric: 100,
-                            subscriptionsPerFabric: 100,
+                            caseSessionsPerFabric: 3,
+                            subscriptionsPerFabric: 3,
                         }
                     }, {}),
                     new ClusterServer(GeneralCommissioningCluster, {
@@ -100,7 +100,14 @@ class Main {
                         locationCapability: RegulatoryLocationType.IndoorOutdoor,
                         supportsConcurrentConnections: true,
                     }, GeneralCommissioningClusterHandler),
-                    new ClusterServer(OperationalCredentialsCluster, {},
+                    new ClusterServer(OperationalCredentialsCluster, {
+                            nocs: [],
+                            fabrics: [],
+                            supportedFabrics: 254,
+                            commissionedFabrics: 0,
+                            trustedRootCertificates: [],
+                            currentFabricIndex: 0,
+                        },
                         OperationalCredentialsClusterHandler({
                             devicePrivateKey: DevicePrivateKey,
                             deviceCertificate: DeviceCertificate,

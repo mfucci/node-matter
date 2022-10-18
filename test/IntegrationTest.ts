@@ -104,7 +104,14 @@ describe("Integration", () => {
                          locationCapability: RegulatoryLocationType.IndoorOutdoor,
                          supportsConcurrentConnections: true,
                      }, GeneralCommissioningClusterHandler),
-                     new ClusterServer(OperationalCredentialsCluster, {},
+                     new ClusterServer(OperationalCredentialsCluster, {
+                             nocs: [],
+                             fabrics: [],
+                             supportedFabrics: 254,
+                             commissionedFabrics: 0,
+                             trustedRootCertificates: [],
+                             currentFabricIndex: 0,
+                         },
                          OperationalCredentialsClusterHandler({
                              devicePrivateKey: DevicePrivateKey,
                              deviceCertificate: DeviceCertificate,

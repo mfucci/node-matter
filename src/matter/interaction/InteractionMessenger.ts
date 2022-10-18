@@ -4,17 +4,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { JsType, Template, TlvObjectCodec } from "../../codec/TlvObjectCodec";
-import { StatusResponseT } from "../cluster/OperationalCredentialsCluster";
+import {
+    Field,
+    JsType,
+    ObjectT,
+    Template,
+    TlvObjectCodec,
+} from "../../codec/TlvObjectCodec";
 import { MessageExchange } from "../common/MessageExchange";
 import { MatterController } from "../MatterController";
 import { MatterDevice } from "../MatterDevice";
 import { InvokeRequestT, InvokeResponseT, ReadRequestT, DataReportT, SubscribeRequestT, SubscribeResponseT } from "./InteractionMessages";
+import { TlvType } from "../../codec/TlvCodec";
 
 export const enum Status {
     Success = 0x00,
-    Failure = 0x01,  
+    Failure = 0x01,
 }
+const StatusT = { tlvType: TlvType.UnsignedInt } as Template<Status>;
+
+export const StatusResponseT = ObjectT({
+    status: Field(0, StatusT),
+});
 
 export const enum MessageType {
     StatusResponse = 0x01,

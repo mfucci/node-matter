@@ -53,7 +53,7 @@ export const GeneralCommissioningCluster = Cluster(
     0x30,
     "General Commissioning",
     {
-        breadcrumb: WritableAttribute(0, UnsignedLongT, BigInt(0)), /* readAcl: view, writeAcl: administer */
+        breadcrumb: WritableAttribute(0, UnsignedLongT, BigInt(0)), /* writeAcl: administer */
         commissioningInfo: Attribute(1, BasicCommissioningInfoT),
         regulatoryConfig: Attribute(2, RegulatoryLocationTypeT),
         locationCapability: Attribute(3, RegulatoryLocationTypeT),
@@ -61,11 +61,11 @@ export const GeneralCommissioningCluster = Cluster(
     },
     {
         /**
-         * Arm the persistent fail-safe timer with an expiry time of now + ExpiryLengthSeconds using device clock
+         * Arm the persistent fail-safe timer with an expiry time of now + ExpiryLengthSeconds using device clock.
          */
         armFailSafe: Command(0, ArmFailSafeRequestT, 1, CommissioningSuccessFailureResponseT),
         /**
-         * Set the regulatory configuration to be used during commissioning
+         * Sets the regulatory configuration to be used during commissioning.
          */
         updateRegulatoryConfig: Command(2, SetRegulatoryConfigRequestT, 3, CommissioningSuccessFailureResponseT),
         /**

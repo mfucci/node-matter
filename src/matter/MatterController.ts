@@ -79,9 +79,9 @@ export class MatterController {
         // TODO: extract device public key from deviceAttestation
         const { certificate: productAttestation } = await operationalCredentialsClusterClient.requestCertChain({ type: CertificateType.ProductAttestationIntermediate });
         // TODO: validate deviceAttestation and productAttestation
-        const { elements: attestationElements, signature: attestationSignature } = await operationalCredentialsClusterClient.requestAttestation({ nonce: Crypto.getRandomData(16) });
+        const { elements: attestationElements, signature: attestationSignature } = await operationalCredentialsClusterClient.requestAttestation({ attestationNonce: Crypto.getRandomData(16) });
         // TODO: validate attestationSignature using device public key
-        const { elements: csrElements, signature: csrSignature } = await operationalCredentialsClusterClient.requestCertSigning({ nonce: Crypto.getRandomData(16) });
+        const { elements: csrElements, signature: csrSignature } = await operationalCredentialsClusterClient.requestCertSigning({ certSigningRequestNonce: Crypto.getRandomData(16) });
         // TOTO: validate csrSignature using device public key
         const { certSigningRequest } = TlvObjectCodec.decode(csrElements, CertSigningRequestT);
         const operationalPublicKey = CertificateManager.getPublicKeyFromCsr(certSigningRequest);

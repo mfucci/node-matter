@@ -9,7 +9,7 @@ import { TlvType } from "../../codec/TlvCodec";
 import { ByteStringT, Field, ObjectT, OptionalField, Template, UnsignedIntT, UnsignedLongT, StringT, ArrayT, BooleanT } from "../../codec/TlvObjectCodec";
 
 const FabricDescriptorT = ObjectT({
-    rootPublicKey: Field(1, StringT), /* length: 65 */
+    rootPublicKey: Field(1, ByteStringT), /* length: 65 */
     vendorId: Field(2, UnsignedIntT), /* type: vendor-id */
     fabricID: Field(3, UnsignedIntT), /* type: fabric-id */
     nodeID: Field(4, UnsignedIntT), /* type: node-id */
@@ -17,8 +17,8 @@ const FabricDescriptorT = ObjectT({
 });
 
 const NocT = ObjectT({
-    noc: Field(1, StringT), /* maxLength: 400 */
-    icac: Field(2, StringT), /* maxLength: 400, default(not present): null */
+    noc: Field(1, ByteStringT), /* maxLength: 400 */
+    icac: Field(2, ByteStringT), /* maxLength: 400, default(not present): null */
 });
 
 export const enum CertificateType {

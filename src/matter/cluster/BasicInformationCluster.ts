@@ -17,9 +17,9 @@ const CapabilityMinimaT = ObjectT({
  * commissioning and operational determination of Node characteristics, such as Vendor ID, Product ID and serial number,
  * which apply to the whole Node. Also allows setting user device information such as location.
  */
-export const BasicCluster = Cluster(
+export const BasicInformationCluster = Cluster(
     0x28,
-    "Basic",
+    "Basic Information",
     {
         dataModelRevision: Attribute(0, UnsignedIntT),
         vendorName: Attribute(1, StringT), /* maxLength: 32 */

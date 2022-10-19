@@ -8,7 +8,7 @@ import { ArrayT, Field, ObjectT, UnsignedIntT } from "../../codec/TlvObjectCodec
 import { Attribute, Cluster } from "./Cluster";
 
 const DeviceTypeT = ObjectT({
-  type: Field(0, UnsignedIntT),
+  type: Field(0, UnsignedIntT), /* type: devtype-id */
   revision: Field(1, UnsignedIntT),
 });
 
@@ -21,9 +21,9 @@ export const DescriptorCluster = Cluster(
     "Descriptor",
     {
         deviceTypeList: Attribute(0, ArrayT(DeviceTypeT)), /* arrayMinLength: 1 */
-        serverList: Attribute(1, ArrayT(UnsignedIntT), []),
-        clientList: Attribute(3, ArrayT(UnsignedIntT), []),
-        partsList: Attribute(4, ArrayT(UnsignedIntT), []),
+        serverList: Attribute(1, ArrayT(UnsignedIntT), []), /* type: list[cluster-id] */
+        clientList: Attribute(3, ArrayT(UnsignedIntT), []), /* type: list[cluster-id] */
+        partsList: Attribute(4, ArrayT(UnsignedIntT), []), /* type: list[endpoint-no] */
     },
     {},
 );

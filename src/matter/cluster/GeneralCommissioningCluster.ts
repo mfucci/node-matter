@@ -36,13 +36,13 @@ const CommissioningSuccessFailureResponseT = ObjectT({
 export type CommissioningSuccessFailureResponse = JsType<typeof CommissioningSuccessFailureResponseT>;
 
 const ArmFailSafeRequestT = ObjectT({
-    expiryLengthSeconds: Field(0, UnsignedIntT),
+    expiryLengthSeconds: Field(0, UnsignedIntT), /* default: 900 */
     breadcrumbStep: Field(1, UnsignedLongT),
 });
 
 const SetRegulatoryConfigRequestT = ObjectT({
-    config: Field(0, RegulatoryLocationTypeT),
-    countryCode: Field(1, StringT),
+    newRegulatoryConfig: Field(0, RegulatoryLocationTypeT),
+    countryCode: Field(1, StringT), /* length: 2 */
     breadcrumbStep: Field(2, UnsignedLongT),
 });
 
@@ -55,8 +55,8 @@ export const GeneralCommissioningCluster = Cluster(
     {
         breadcrumb: WritableAttribute(0, UnsignedLongT, BigInt(0)), /* writeAcl: administer */
         commissioningInfo: Attribute(1, BasicCommissioningInfoT),
-        regulatoryConfig: Attribute(2, RegulatoryLocationTypeT),
-        locationCapability: Attribute(3, RegulatoryLocationTypeT),
+        regulatoryConfig: Attribute(2, RegulatoryLocationTypeT), /* default: value of locationCapability */
+        locationCapability: Attribute(3, RegulatoryLocationTypeT, RegulatoryLocationType.IndoorOutdoor),
         supportsConcurrentConnections: Attribute(4, BooleanT, true),
     },
     {
@@ -67,7 +67,7 @@ export const GeneralCommissioningCluster = Cluster(
         /**
          * Sets the regulatory configuration to be used during commissioning.
          */
-        updateRegulatoryConfig: Command(2, SetRegulatoryConfigRequestT, 3, CommissioningSuccessFailureResponseT),
+        setRegulatoryConfig: Command(2, SetRegulatoryConfigRequestT, 3, CommissioningSuccessFailureResponseT),
         /**
          * Signals the Server that the Client has successfully completed all steps of Commissioning/Reconfiguration
          * needed during fail-safe period.

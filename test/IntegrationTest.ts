@@ -18,7 +18,7 @@ import { PaseServer } from "../src/matter/session/secure/PaseServer";
 import { NetworkFake } from "../src/net/fake/NetworkFake";
 import { Network } from "../src/net/Network";
 import { MdnsScanner } from "../src/matter/mdns/MdnsScanner";
-import { OnOffCluster } from "../src/matter/cluster/OnOffCluster";
+import { OnOffCluster, OnOffStartUpOnOff } from "../src/matter/cluster/OnOffCluster";
 import { BasicInformationCluster } from "../src/matter/cluster/BasicInformationCluster";
 import { GeneralCommissioningCluster, RegulatoryLocationType } from "../src/matter/cluster/GeneralCommissioningCluster";
 import { OperationalCredentialsCluster } from "../src/matter/cluster/OperationalCredentialsCluster";
@@ -120,11 +120,20 @@ describe("Integration", () => {
                      })),
                 ])
                 .addEndpoint(0x01, DEVICE.ON_OFF_LIGHT, [
-                    new ClusterServer(OnOffCluster, { on: false },
+                    new ClusterServer(OnOffCluster, {
+                            onOff: false, // Off by default
+                            globalSceneControl: true,
+                            onTime: 0,
+                            offWaitTime: 0,
+                            startUpOnOff: OnOffStartUpOnOff.Off
+                        },
                         {
-                            on: async ({attributes: {on}}) => on.set(true),
-                            off: async ({attributes: {on}}) => on.set(false),
-                            toggle: async ({attributes: {on}}) => on.set(!on.get()),
+                            on: async ({ attributes: { onOff } }) => onOff.set(true),
+                            off: async ({ attributes: { onOff } }) => onOff.set(false),
+                            toggle: async ({ attributes: { onOff } }) => onOff.set(!onOff.get()),
+                            offWithEffect: async ({ attributes: { onOff } }) => Promise.resolve(), // TODO
+                            onWithRecallGlobalScene: async ({ attributes: { onOff } }) => Promise.resolve(), // TODO
+                            onWithTimedOff: async ({ attributes: { onOff } }) => Promise.resolve(), // TODO
                         }
                     )
                 ])

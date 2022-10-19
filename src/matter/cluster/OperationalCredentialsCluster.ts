@@ -114,7 +114,10 @@ export const RemoveFabricRequestT = ObjectT({
     fabricIndex: Field(0, UnsignedIntT), /* type: fabric_idx */
 });
 
-
+/**
+ * This cluster is used to add or remove Operational Credentials on a Commissionee or Node, as well as manage the
+ * associated Fabrics.
+ */
 export const OperationalCredentialsCluster = Cluster(
     0x3e,
     "Operational Credentials",

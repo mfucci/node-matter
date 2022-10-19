@@ -22,7 +22,7 @@ import { Network } from "./net/Network";
 import { NetworkNode } from "./net/node/NetworkNode";
 import { commandExecutor } from "./util/CommandLine";
 import { singleton } from "./util/Singleton";
-import { OnOffCluster } from "./matter/cluster/OnOffCluster";
+import { OnOffCluster, OnOffStartUpOnOff } from "./matter/cluster/OnOffCluster";
 import { GeneralCommissioningClusterHandler } from "./matter/cluster/server/GeneralCommissioningServer";
 import { OperationalCredentialsClusterHandler } from "./matter/cluster/server/OperationalCredentialsServer";
 
@@ -52,16 +52,25 @@ class Main {
 
         // Barebone implementation of the On/Off cluster
         const onOffClusterServer = new ClusterServer(OnOffCluster,
-            { on: false }, // Off by default
             {
-                on: async ({attributes: {on}}) => on.set(true),
-                off: async ({attributes: {on}}) => on.set(false),
-                toggle: async ({attributes: {on}}) => on.set(!on.get()),
+                onOff: false, // Off by default
+                globalSceneControl: true,
+                onTime: 0,
+                offWaitTime: 0,
+                startUpOnOff: OnOffStartUpOnOff.Off
+            },
+            {
+                on: async ({ attributes: { onOff } }) => onOff.set(true),
+                off: async ({ attributes: { onOff } }) => onOff.set(false),
+                toggle: async ({ attributes: { onOff } }) => onOff.set(!onOff.get()),
+                offWithEffect: async ({ attributes: { onOff } }) => Promise.resolve(), // TODO
+                onWithRecallGlobalScene: async ({ attributes: { onOff } }) => Promise.resolve(), // TODO
+                onWithTimedOff: async ({ attributes: { onOff } }) => Promise.resolve(), // TODO
             }
         );
 
         // We listen to the attribute update to trigger an action. This could also have been done in the method invokations in the server.
-        onOffClusterServer.attributes.on.addListener(0, on => commandExecutor(on ? "on" : "off")?.());
+        onOffClusterServer.attributes.onOff.addListener(0, on => commandExecutor(on ? "on" : "off")?.());
 
         (new MatterDevice(deviceName, deviceType, vendorId, productId, discriminator))
             .addNetInterface(await UdpInterface.create(5540))

@@ -13,6 +13,9 @@ import { TlvObjectCodec } from "../../../codec/TlvObjectCodec";
 import { KDFSR1_KEY_INFO, KDFSR2_INFO, KDFSR2_KEY_INFO, KDFSR3_INFO, RESUME1_MIC_NONCE, RESUME2_MIC_NONCE, EncryptedDataSigma2T, SignedDataT, TBE_DATA2_NONCE, TBE_DATA3_NONCE, EncryptedDataSigma3T } from "./CaseMessages";
 import { OperationalCertificateT } from "../../certificate/CertificateManager";
 import { SECURE_CHANNEL_PROTOCOL_ID } from "./SecureChannelMessages";
+import { Logger } from "../../../log/Logger";
+
+const logger = Logger.get("CaseServer");
 
 export class CaseServer implements ProtocolHandler<MatterDevice> {
     async onNewExchange(exchange: MessageExchange<MatterDevice>) {
@@ -20,7 +23,7 @@ export class CaseServer implements ProtocolHandler<MatterDevice> {
         try {
             await this.handleSigma1(exchange.session.getContext(), messenger);
         } catch (error) {
-            console.log("An error occured during the commissioning", error);
+            logger.error("An error occured during the commissioning", error);
             await messenger.sendError();
         }
     }
@@ -30,7 +33,7 @@ export class CaseServer implements ProtocolHandler<MatterDevice> {
     }
 
     private async handleSigma1(server: MatterDevice, messenger: CaseServerMessenger) {
-        console.log(`Case server: Received pairing request from ${messenger.getChannelName()}`);
+        logger.info(`Case server: Received pairing request from ${messenger.getChannelName()}`);
         // Generate pairing info
         const sessionId = server.getNextAvailableSessionId();
         const random = Crypto.getRandom();
@@ -57,7 +60,7 @@ export class CaseServer implements ProtocolHandler<MatterDevice> {
             const secureSessionSalt = Buffer.concat([peerRandom, peerResumptionId]);
             const secureSession = await server.createSecureSession(sessionId, fabric.nodeId, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, false, true, mrpParams?.idleRetransTimeoutMs, mrpParams?.activeRetransTimeoutMs);
             secureSession.setFabric(fabric);
-            console.log(`Case server: session ${secureSession.getId()} resumed with ${messenger.getChannelName()}`);
+            logger.info(`Case server: session ${secureSession.getId()} resumed with ${messenger.getChannelName()}`);
             resumptionRecord.resumptionId = resumptionId; /* Update the ID */
 
             // Wait for success on the peer side
@@ -90,7 +93,7 @@ export class CaseServer implements ProtocolHandler<MatterDevice> {
             const secureSessionSalt = Buffer.concat([operationalIdentityProtectionKey, Crypto.hash([ sigma1Bytes, sigma2Bytes, sigma3Bytes ])]);
             const secureSession = await server.createSecureSession(sessionId, nodeId, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, false, false, mrpParams?.idleRetransTimeoutMs, mrpParams?.activeRetransTimeoutMs);
             secureSession.setFabric(fabric);
-            console.log(`Case server: session ${sessionId} created with ${messenger.getChannelName()}`);
+            logger.info(`Case server: session ${sessionId} created with ${messenger.getChannelName()}`);
             await messenger.sendSuccess();
 
             resumptionRecord = { peerNodeId, fabric, sharedSecret, resumptionId };

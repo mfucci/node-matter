@@ -1,3 +1,4 @@
+import { Logger } from "../../../log/Logger";
 import { MatterDevice } from "../../MatterDevice";
 import { SecureSession } from "../../session/SecureSession";
 import {
@@ -8,6 +9,7 @@ import {
 import { ClusterServerHandlers } from "./ClusterServer";
 
 const SuccessResponse = {errorCode: CommissioningError.Ok, debugText: ""};
+const logger = Logger.get("GeneralCommissioningClusterHandler");
 
 export const GeneralCommissioningClusterHandler: ClusterServerHandlers<typeof GeneralCommissioningCluster> = {
     armFailSafe: async ({ request: {breadcrumbStep}, attributes: {breadcrumb}, session }) => {
@@ -35,7 +37,7 @@ export const GeneralCommissioningClusterHandler: ClusterServerHandlers<typeof Ge
         if (!session.isSecure()) throw new Error("commissioningComplete can only be called on a secure session");
         const fabric = (session as SecureSession<MatterDevice>).getFabric();
         if (fabric === undefined) throw new Error("commissioningComplete is called but the fabric has not been defined yet");
-        console.log(`Commissioning completed on fabric #${fabric.id} as node #${fabric.nodeId}.`)
+        logger.info(`Commissioning completed on fabric #${fabric.id} as node #${fabric.nodeId}.`)
         return SuccessResponse;
     },
 };

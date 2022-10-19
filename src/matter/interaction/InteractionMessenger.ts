@@ -12,7 +12,6 @@ import {
     TlvObjectCodec,
 } from "../../codec/TlvObjectCodec";
 import { Logger } from "../../log/Logger";
-import { StatusResponseT } from "../cluster/OperationalCredentialsCluster";
 import { MessageExchange } from "../common/MessageExchange";
 import { MatterController } from "../MatterController";
 import { MatterDevice } from "../MatterDevice";

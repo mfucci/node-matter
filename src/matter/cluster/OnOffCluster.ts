@@ -58,7 +58,7 @@ export const OnOffCluster = Cluster(
     0x06,
     "On/Off",
     {
-        onOff: Attribute(0, BooleanT, false), /* reportable: true */
+        onOff: Attribute(0, BooleanT, false), /* reportable: true, scene:true */
         globalSceneControl: OptionalAttribute(0x4000, BooleanT, true),
         onTime: OptionalWritableAttribute(0x4001, UnsignedIntT, 0),
         offWaitTime: OptionalWritableAttribute(0x4002, UnsignedIntT, 0),

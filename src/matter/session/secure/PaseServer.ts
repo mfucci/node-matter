@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2022 Marco Fucci di Napoli (mfucci@gmail.com)
+ * Copyright 2022 The node-matter Authors
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -12,6 +12,9 @@ import { MessageExchange } from "../../common/MessageExchange";
 import { PbkdfParameters, Spake2p } from "../../../crypto/Spake2p";
 import { SECURE_CHANNEL_PROTOCOL_ID } from "./SecureChannelMessages";
 import { MatterDevice } from "../../MatterDevice";
+import { Logger } from "../../../log/Logger";
+
+const logger = Logger.get("PaseServer");
 
 export class PaseServer implements ProtocolHandler<MatterDevice> {
 
@@ -29,13 +32,13 @@ export class PaseServer implements ProtocolHandler<MatterDevice> {
         try {
             await this.handlePairingRequest(exchange.session.getContext(), messenger);
         } catch (error) {
-            console.log("An error occured during the commissioning", error);
+            logger.error("An error occured during the commissioning", error);
             await messenger.sendError();
         }
     }
 
     private async handlePairingRequest(server: MatterDevice, messenger: PaseServerMessenger) {
-        console.log(`Pase server: Received pairing request from ${messenger.getChannelName()}`);
+        logger.info(`Pase server: Received pairing request from ${messenger.getChannelName()}`);
         const sessionId = server.getNextAvailableSessionId();
         const random = Crypto.getRandom();
 
@@ -59,6 +62,6 @@ export class PaseServer implements ProtocolHandler<MatterDevice> {
         await server.createSecureSession(sessionId, undefined /* fabric */, UNDEFINED_NODE_ID, peerSessionId, Ke, Buffer.alloc(0), false, false, mrpParameters?.idleRetransTimeoutMs, mrpParameters?.activeRetransTimeoutMs);
         await messenger.sendSuccess();
         messenger.close();
-        console.log(`Pase server: session ${sessionId} created with ${messenger.getChannelName()}`);
+        logger.info(`Pase server: session ${sessionId} created with ${messenger.getChannelName()}`);
     }
 }

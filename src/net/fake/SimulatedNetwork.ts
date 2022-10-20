@@ -1,13 +1,16 @@
 /**
  * @license
- * Copyright 2022 Marco Fucci di Napoli (mfucci@gmail.com)
+ * Copyright 2022 The node-matter Authors
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import { NetListener } from "../NetInterface";
 import { singleton } from "../../util/Singleton";
+import { Logger } from "../../log/Logger";
 
 export type Listener = (peerAddress: string, peerPort: number, data: Buffer) => void;
+
+const logger = Logger.get("SimulatedNetwork");
 
 export class SimulatedNetwork {
     static get = singleton(() => new SimulatedNetwork());
@@ -45,7 +48,7 @@ export class SimulatedNetwork {
             try {
                 listener(localAddress, localPort, data);
             } catch (error) {
-                console.error(error);
+                logger.error(error);
             }
         });
     }

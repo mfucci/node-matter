@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2022 Marco Fucci di Napoli (mfucci@gmail.com)
+ * Copyright 2022 The node-matter Authors
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -19,6 +19,7 @@ import { Cluster } from "../cluster/Cluster";
 import { AttributeServers, AttributeInitialValues, ClusterServerHandlers } from "../cluster/server/ClusterServer";
 import { SecureSession } from "../session/SecureSession";
 import { SubscriptionHandler } from "./SubscriptionHandler";
+import { Logger } from "../../log/Logger";
 
 export const INTERACTION_PROTOCOL_ID = 0x0001;
 
@@ -59,6 +60,8 @@ export interface AttributeWithPath {
 export function pathToId({endpointId, clusterId, id}: Path) {
     return `${endpointId}/${clusterId}/${id}`;
 }
+
+const logger = Logger.get("InteractionProtocol");
 
 export class InteractionServer implements ProtocolHandler<MatterDevice> {
     private readonly attributes = new Map<string, AttributeServer<any>>();
@@ -119,7 +122,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
     }
 
     handleReadRequest(exchange: MessageExchange<MatterDevice>, {attributes: attributePaths}: ReadRequest): DataReport {
-        console.log(`Received read request from ${exchange.channel.getName()}: ${attributePaths.map(({endpointId = "*", clusterId = "*", id = "*"}) => `${endpointId}/${clusterId}/${id}`).join(", ")}`);
+        logger.debug(`Received read request from ${exchange.channel.getName()}: ${attributePaths.map(({endpointId = "*", clusterId = "*", id = "*"}) => `${endpointId}/${clusterId}/${id}`).join(", ")}`);
 
         const values = this.getAttributes(attributePaths)
             .map(({ path, attribute }) => {
@@ -141,7 +144,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
     }
 
     handleSubscribeRequest(exchange: MessageExchange<MatterDevice>, { minIntervalFloorSeconds, maxIntervalCeilingSeconds, attributeRequests, keepSubscriptions }: SubscribeRequest): SubscribeResponse | undefined {
-        console.log(`Received subscribe request from ${exchange.channel.getName()}`);
+        logger.debug(`Received subscribe request from ${exchange.channel.getName()}`);
 
         if (!exchange.session.isSecure()) throw new Error("Subscriptions are only implemented on secure sessions");
         const session = exchange.session as SecureSession<MatterDevice>;
@@ -167,7 +170,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
     }
 
     async handleInvokeRequest(exchange: MessageExchange<MatterDevice>, {invokes}: InvokeRequest): Promise<InvokeResponse> {
-        console.log(`Received invoke request from ${exchange.channel.getName()}: ${invokes.map(({path: {endpointId, clusterId, id}}) => `${endpointId}/${clusterId}/${id}`).join(", ")}`);
+        logger.debug(`Received invoke request from ${exchange.channel.getName()}: ${invokes.map(({path: {endpointId, clusterId, id}}) => `${endpointId}/${clusterId}/${id}`).join(", ")}`);
 
         const results = new Array<{path: Path, code: ResultCode, response?: Element, responseId: number }>();
 

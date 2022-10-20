@@ -2,7 +2,7 @@
  * Promise-based blocking queue.
  * 
  * @license
- * Copyright 2022 Marco Fucci di Napoli (mfucci@gmail.com)
+ * Copyright 2022 The node-matter Authors
  * SPDX-License-Identifier: Apache-2.0
  */
 

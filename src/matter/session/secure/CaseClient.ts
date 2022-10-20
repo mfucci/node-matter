@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2022 Marco Fucci di Napoli (mfucci@gmail.com)
+ * Copyright 2022 The node-matter Authors
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -12,6 +12,9 @@ import { MessageExchange } from "../../common/MessageExchange";
 import { MatterController } from "../../MatterController";
 import { KDFSR1_KEY_INFO, KDFSR2_INFO, KDFSR2_KEY_INFO, KDFSR3_INFO, RESUME1_MIC_NONCE, RESUME2_MIC_NONCE, EncryptedDataSigma2T, SignedDataT, TBE_DATA2_NONCE, TBE_DATA3_NONCE, EncryptedDataSigma3T } from "./CaseMessages";
 import { CaseClientMessenger } from "./CaseMessenger";
+import { Logger } from "../../../log/Logger";
+
+const logger = Logger.get("CaseClient");
 
 export class CaseClient {
     constructor() {}
@@ -52,7 +55,7 @@ export class CaseClient {
             const secureSessionSalt = Buffer.concat([random, resumptionRecord.resumptionId]);
             secureSession = await client.createSecureSession(sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, true, true);
             await messenger.sendSuccess();
-            console.log(`Case client: session resumed with ${messenger.getChannelName()}`);
+            logger.info(`Case client: session resumed with ${messenger.getChannelName()}`);
 
             resumptionRecord.resumptionId = resumptionId; /* update resumptionId */
         } else {
@@ -81,7 +84,7 @@ export class CaseClient {
             // All good! Create secure session
             const secureSessionSalt = Buffer.concat([operationalIdentityProtectionKey, Crypto.hash([ sigma1Bytes, sigma2Bytes, sigma3Bytes ])]);
             secureSession = await client.createSecureSession(sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, true, false);
-            console.log(`Case client: Paired succesfully with ${messenger.getChannelName()}`);
+            logger.info(`Case client: Paired succesfully with ${messenger.getChannelName()}`);
             resumptionRecord = {fabric, peerNodeId, sharedSecret, resumptionId: peerResumptionId };
         }
 

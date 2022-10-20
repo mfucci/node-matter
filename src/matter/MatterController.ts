@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2022 Marco Fucci di Napoli (mfucci@gmail.com)
+ * Copyright 2022 The node-matter Authors
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -22,12 +22,14 @@ import { Fabric, FabricBuilder } from "./fabric/Fabric";
 import { CaseClient } from "./session/secure/CaseClient";
 import { requireMinNodeVersion } from "../util/Node";
 import { ChannelManager } from "./common/ChannelManager";
+import { Logger } from "../log/Logger";
 
 requireMinNodeVersion(16);
 
 const FABRIC_ID = BigInt(1);
 const CONTROLLER_NODE_ID = BigInt(0);
 const ADMIN_VENDOR_ID = 752;
+const logger = Logger.get("MatterController");
 
 export class MatterController {
     public static async create(scanner: Scanner, netInterface: NetInterface) {
@@ -71,7 +73,7 @@ export class MatterController {
         // Get and display the product name (just for debugging)
         const basicClusterClient = ClusterClient(interactionClient, 0, BasicCluster);
         const productName = await basicClusterClient.getProductName();
-        console.log(`Paired with device: ${productName}`);
+        logger.info("Paired with device:", productName);
 
         // Do the commissioning
         let generalCommissioningClusterClient = ClusterClient(interactionClient, 0, GeneralCommissioningCluster);

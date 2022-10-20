@@ -1,10 +1,11 @@
 /**
  * @license
- * Copyright 2022 Marco Fucci di Napoli (mfucci@gmail.com)
+ * Copyright 2022 The node-matter Authors
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import { JsType, Template, TlvObjectCodec } from "../../codec/TlvObjectCodec";
+import { Logger } from "../../log/Logger";
 import { MessageExchange } from "../common/MessageExchange";
 import { MatterController } from "../MatterController";
 import { MatterDevice } from "../MatterDevice";
@@ -29,6 +30,8 @@ export type SubscribeRequest = JsType<typeof SubscribeRequestT>;
 export type SubscribeResponse = JsType<typeof SubscribeResponseT>;
 export type InvokeRequest = JsType<typeof InvokeRequestT>;
 export type InvokeResponse = JsType<typeof InvokeResponseT>;
+
+const logger = Logger.get("InteractionServerMessenger");
 
 
 class InteractionMessenger<ContextT> {
@@ -102,7 +105,7 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
                     throw new Error(`Unsupported message type ${message.payloadHeader.messageType}`);
             }
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             await this.sendStatus(StatusCode.Failure);
         } finally {
             this.exchange.close();

@@ -94,7 +94,7 @@ class Main {
                     // TODO implement logic with globalSceneControl, but before:
                     // 1. globalSceneControl is not possible to add to "attributes" above because not writable from extern!! ... but allowed to read and writable internally!!
                     // 2. globalSceneControl controls if "the server SHALL store its settings in its global scene" ... we need to add that first
-                    /* TODO: Also discuss specs if this should be done also "delayed when setting off" or "already when starting the fade/dim timers??"
+                    /*
                     if (globalSceneControl.get()) {
                         // TODO store settings in global scene
                         globalSceneControl.set(false);

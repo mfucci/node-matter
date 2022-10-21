@@ -11,7 +11,7 @@ import { ExchangeManager } from "./common/ExchangeManager";
 import { PaseClient } from "./session/secure/PaseClient";
 import { ClusterClient, InteractionClient } from "./interaction/InteractionClient";
 import { INTERACTION_PROTOCOL_ID } from "./interaction/InteractionProtocol";
-import { BasicCluster } from "./cluster/BasicCluster";
+import { BasicInformationCluster } from "./cluster/BasicInformationCluster";
 import { CommissioningError, GeneralCommissioningCluster, RegulatoryLocationType, SuccessFailureReponse } from "./cluster/GeneralCommissioningCluster";
 import { CertificateType, CertSigningRequestT, OperationalCredentialsCluster } from "./cluster/OperationalCredentialsCluster";
 import { Crypto } from "../crypto/Crypto";
@@ -65,9 +65,9 @@ export class MatterController {
 
         // Use the created secure session to do the commissioning
         let interactionClient = new InteractionClient(() => this.exchangeManager.initiateExchange(paseSecureSession, paseChannel, INTERACTION_PROTOCOL_ID));
-        
+
         // Get and display the product name (just for debugging)
-        const basicClusterClient = ClusterClient(interactionClient, 0, BasicCluster);
+        const basicClusterClient = ClusterClient(interactionClient, 0, BasicInformationCluster);
         const productName = await basicClusterClient.getProductName();
         logger.info("Paired with device:", productName);
 
@@ -82,12 +82,12 @@ export class MatterController {
         const { certificate: productAttestation } = await operationalCredentialsClusterClient.requestCertChain({ type: CertificateType.ProductAttestationIntermediate });
         // TODO: validate deviceAttestation and productAttestation
         const { elements: attestationElements, signature: attestationSignature } = await operationalCredentialsClusterClient.requestAttestation({ nonce: Crypto.getRandomData(16) });
-        // TODO: validate attestationSignature using device public key 
+        // TODO: validate attestationSignature using device public key
         const { elements: csrElements, signature: csrSignature } = await operationalCredentialsClusterClient.requestCertSigning({ nonce: Crypto.getRandomData(16) });
         // TOTO: validate csrSignature using device public key
         const { certSigningRequest } = TlvObjectCodec.decode(csrElements, CertSigningRequestT);
         const operationalPublicKey = CertificateManager.getPublicKeyFromCsr(certSigningRequest);
-        
+
         await operationalCredentialsClusterClient.addRootCert({ certificate: this.certificateManager.getRootCert() });
         const peerNodeId = BigInt(1);
         const peerOperationalCert = this.certificateManager.generateNoc(operationalPublicKey, FABRIC_ID, peerNodeId);
@@ -188,7 +188,7 @@ class RootCertificateManager {
         const signature = Crypto.sign(this.rootKeyPair.privateKey, CertificateManager.rootCertToAsn1(unsignedCertificate));
         return TlvObjectCodec.encode({ ...unsignedCertificate, signature }, RootCertificateT);
     }
-    
+
     generateNoc(publicKey: Buffer, fabricId: bigint, nodeId: bigint): Buffer {
         const certId = this.nextCertificateId++;
         const unsignedCertificate = {

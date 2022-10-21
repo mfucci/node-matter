@@ -9,13 +9,13 @@ import { Level, Logger } from "../../src/log/Logger";
 import { Time } from "../../src/time/Time";
 import { TimeFake } from "../../src/time/TimeFake";
 
-const fakeTime = new TimeFake();
-const fakeLogSink = new Array<{level: Level, log: string}>();
-const defaultFormatter = Logger.logFormater;
+const fakeTime = new TimeFake(1262679233478);
 Time.get = () => fakeTime;
 
-fakeTime.setTime(1262679233478);
+const defaultFormatter = Logger.logFormater;
 Logger.defaultLogLevel = Level.DEBUG;
+
+const fakeLogSink = new Array<{level: Level, log: string}>();
 Logger.log = (level, log) => fakeLogSink.push({ level, log });
 
 describe("Logger", () => {

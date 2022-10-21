@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2022 The node-matter Authors
+ * Copyright 2022 Marco Fucci di Napoli (mfucci@gmail.com)
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -12,7 +12,7 @@ import { PaseClient } from "./session/secure/PaseClient";
 import { ClusterClient, InteractionClient } from "./interaction/InteractionClient";
 import { INTERACTION_PROTOCOL_ID } from "./interaction/InteractionProtocol";
 import { BasicInformationCluster } from "./cluster/BasicInformationCluster";
-import { CommissioningError, GeneralCommissioningCluster, RegulatoryLocationType, SuccessFailureReponse } from "./cluster/GeneralCommissioningCluster";
+import { CommissioningError, GeneralCommissioningCluster, RegulatoryLocationType, CommissioningSuccessFailureResponse } from "./cluster/GeneralCommissioningCluster";
 import { CertificateType, CertSigningRequestT, OperationalCredentialsCluster } from "./cluster/OperationalCredentialsCluster";
 import { Crypto } from "../crypto/Crypto";
 import { CertificateManager, jsToMatterDate, OperationalCertificateT, RootCertificateT } from "./certificate/CertificateManager";
@@ -73,17 +73,17 @@ export class MatterController {
 
         // Do the commissioning
         let generalCommissioningClusterClient = ClusterClient(interactionClient, 0, GeneralCommissioningCluster);
-        this.ensureSuccess(await generalCommissioningClusterClient.armFailSafe({ breadcrumbStep: 1, expiryLengthSeconds: 60 }));
-        this.ensureSuccess(await generalCommissioningClusterClient.updateRegulatoryConfig({ breadcrumbStep: 2, config: RegulatoryLocationType.IndoorOutdoor, countryCode: "US"}));
+        this.ensureSuccess(await generalCommissioningClusterClient.armFailSafe({ breadcrumbStep: BigInt(1), expiryLengthSeconds: 60 }));
+        this.ensureSuccess(await generalCommissioningClusterClient.setRegulatoryConfig({ breadcrumbStep: BigInt(2), newRegulatoryConfig: RegulatoryLocationType.IndoorOutdoor, countryCode: "US"}));
 
         const operationalCredentialsClusterClient = ClusterClient(interactionClient, 0, OperationalCredentialsCluster);
         const { certificate: deviceAttestation } = await operationalCredentialsClusterClient.requestCertChain({ type: CertificateType.DeviceAttestation });
         // TODO: extract device public key from deviceAttestation
         const { certificate: productAttestation } = await operationalCredentialsClusterClient.requestCertChain({ type: CertificateType.ProductAttestationIntermediate });
         // TODO: validate deviceAttestation and productAttestation
-        const { elements: attestationElements, signature: attestationSignature } = await operationalCredentialsClusterClient.requestAttestation({ nonce: Crypto.getRandomData(16) });
+        const { elements: attestationElements, signature: attestationSignature } = await operationalCredentialsClusterClient.requestAttestation({ attestationNonce: Crypto.getRandomData(16) });
         // TODO: validate attestationSignature using device public key
-        const { elements: csrElements, signature: csrSignature } = await operationalCredentialsClusterClient.requestCertSigning({ nonce: Crypto.getRandomData(16) });
+        const { elements: csrElements, signature: csrSignature } = await operationalCredentialsClusterClient.requestCertSigning({ certSigningRequestNonce: Crypto.getRandomData(16) });
         // TOTO: validate csrSignature using device public key
         const { certSigningRequest } = TlvObjectCodec.decode(csrElements, CertSigningRequestT);
         const operationalPublicKey = CertificateManager.getPublicKeyFromCsr(certSigningRequest);
@@ -125,7 +125,7 @@ export class MatterController {
         return new InteractionClient(() => this.exchangeManager.initiateExchange(operationalSecureSession, operationalChannel, INTERACTION_PROTOCOL_ID));
     }
 
-    private ensureSuccess({ errorCode, debugText }: SuccessFailureReponse) {
+    private ensureSuccess({ errorCode, debugText }: CommissioningSuccessFailureResponse) {
         if (errorCode === CommissioningError.Ok) return;
         throw new Error(`Commission error: ${errorCode}, ${debugText}`);
     }

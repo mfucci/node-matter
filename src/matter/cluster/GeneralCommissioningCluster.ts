@@ -1,10 +1,10 @@
 /**
  * @license
- * Copyright 2022 The node-matter Authors
+ * Copyright 2022 Marco Fucci di Napoli (mfucci@gmail.com)
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Field, JsType, ObjectT, StringT, Template, UnsignedIntT } from "../../codec/TlvObjectCodec";
+import { Field, JsType, ObjectT, StringT, Template, UnsignedIntT, UnsignedLongT, BooleanT } from "../../codec/TlvObjectCodec";
 import { TlvType } from "../../codec/TlvCodec";
 import { Attribute, Cluster, Command, NoArgumentsT, OptionalAttribute, WritableAttribute } from "./Cluster";
 
@@ -26,37 +26,52 @@ const CommissioningErrorT = { tlvType: TlvType.UnsignedInt } as Template<Commiss
 
 const BasicCommissioningInfoT = ObjectT({
     failSafeExpiryLengthSeconds: Field(0, UnsignedIntT),
+    maxCumulativeFailsafeSeconds: Field(1, UnsignedIntT),
 });
 
-const SuccessFailureReponseT = ObjectT({
+const CommissioningSuccessFailureResponseT = ObjectT({
     errorCode: Field(0, CommissioningErrorT),
     debugText: Field(1, StringT),
 });
-export type SuccessFailureReponse = JsType<typeof SuccessFailureReponseT>;
+export type CommissioningSuccessFailureResponse = JsType<typeof CommissioningSuccessFailureResponseT>;
 
 const ArmFailSafeRequestT = ObjectT({
-    expiryLengthSeconds: Field(0, UnsignedIntT),
-    breadcrumbStep: Field(1, UnsignedIntT),
+    expiryLengthSeconds: Field(0, UnsignedIntT), /* default: 900 */
+    breadcrumbStep: Field(1, UnsignedLongT),
 });
 
 const SetRegulatoryConfigRequestT = ObjectT({
-    config: Field(0, RegulatoryLocationTypeT),
-    countryCode: Field(1, StringT),
-    breadcrumbStep: Field(2, UnsignedIntT),
+    newRegulatoryConfig: Field(0, RegulatoryLocationTypeT),
+    countryCode: Field(1, StringT), /* length: 2 */
+    breadcrumbStep: Field(2, UnsignedLongT),
 });
 
+/**
+ * This cluster is used to manage global aspects of the Commissioning flow.
+ */
 export const GeneralCommissioningCluster = Cluster(
     0x30,
     "General Commissioning",
     {
-        breadcrumb: Attribute(0, UnsignedIntT),
+        breadcrumb: WritableAttribute(0, UnsignedLongT, BigInt(0)), /* writeAcl: administer */
         commissioningInfo: Attribute(1, BasicCommissioningInfoT),
-        regulatoryConfig: Attribute(2, RegulatoryLocationTypeT),
-        locationCapability: Attribute(3, RegulatoryLocationTypeT),
+        regulatoryConfig: Attribute(2, RegulatoryLocationTypeT), /* default: value of locationCapability */
+        locationCapability: Attribute(3, RegulatoryLocationTypeT, RegulatoryLocationType.IndoorOutdoor),
+        supportsConcurrentConnections: Attribute(4, BooleanT, true),
     },
     {
-        armFailSafe: Command(0, ArmFailSafeRequestT, 1, SuccessFailureReponseT),
-        updateRegulatoryConfig: Command(2, SetRegulatoryConfigRequestT, 3, SuccessFailureReponseT),
-        commissioningComplete: Command(4, NoArgumentsT, 5, SuccessFailureReponseT),
+        /**
+         * Arm the persistent fail-safe timer with an expiry time of now + ExpiryLengthSeconds using device clock.
+         */
+        armFailSafe: Command(0, ArmFailSafeRequestT, 1, CommissioningSuccessFailureResponseT),
+        /**
+         * Sets or Updates the regulatory configuration to be used during commissioning.
+         */
+        setRegulatoryConfig: Command(2, SetRegulatoryConfigRequestT, 3, CommissioningSuccessFailureResponseT),
+        /**
+         * Informs that all steps of Commissioning/Reconfiguration needed during the fail-safe period have been
+         * completed.
+         */
+        commissioningComplete: Command(4, NoArgumentsT, 5, CommissioningSuccessFailureResponseT),
     },
 )

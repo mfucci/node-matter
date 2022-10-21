@@ -75,32 +75,49 @@ class Main {
                 ))
             .addProtocolHandler(new InteractionProtocol()
                .addEndpoint(0x00, DEVICE.ROOT, [
-                    new ClusterServer(BasicInformationCluster, {
-                        vendorName,
-                        vendorId,
-                        productName,
-                        productId,
-                        nodeLabel: "",
-                        hardwareVersion: 0,
-                        hardwareVersionString: "",
-                        location: "US",
-                        localConfigDisabled: false,
-                        softwareVersion: 1,
-                        softwareVersionString: "v1",
-                    }, {}),
-                    new ClusterServer(GeneralCommissioningCluster, {
-                        breadcrumb: 0,
-                        commissioningInfo: {failSafeExpiryLengthSeconds: 60 /* 1mn */},
-                        regulatoryConfig: RegulatoryLocationType.Indoor,
-                        locationCapability: RegulatoryLocationType.IndoorOutdoor,
-                    }, GeneralCommissioningClusterHandler),
-                    new ClusterServer(OperationalCredentialsCluster, {},
-                        OperationalCredentialsClusterHandler({
-                            devicePrivateKey: DevicePrivateKey,
-                            deviceCertificate: DeviceCertificate,
-                            deviceIntermediateCertificate: ProductIntermediateCertificate,
-                            certificateDeclaration: CertificateDeclaration,
-                    })),
+                   new ClusterServer(BasicInformationCluster, {
+                       dataModelRevision: 1,
+                       vendorName,
+                       vendorId,
+                       productName,
+                       productId,
+                       nodeLabel: "",
+                       hardwareVersion: 0,
+                       hardwareVersionString: "",
+                       location: "US",
+                       localConfigDisabled: false,
+                       softwareVersion: 1,
+                       softwareVersionString: "v1",
+                       capabilityMinima: {
+                           caseSessionsPerFabric: 3,
+                           subscriptionsPerFabric: 3,
+                       }
+                   }, {}),
+                   new ClusterServer(GeneralCommissioningCluster, {
+                       breadcrumb: BigInt(0),
+                       commissioningInfo: {
+                           failSafeExpiryLengthSeconds: 60 /* 1min */,
+                           maxCumulativeFailsafeSeconds: 900 /* Recommended according to Specs */,
+                       },
+                       regulatoryConfig: RegulatoryLocationType.Indoor,
+                       locationCapability: RegulatoryLocationType.IndoorOutdoor,
+                       supportsConcurrentConnections: true,
+                   }, GeneralCommissioningClusterHandler),
+                   new ClusterServer(OperationalCredentialsCluster, {
+                           nocs: [],
+                           fabrics: [],
+                           supportedFabrics: 254,
+                           commissionedFabrics: 0,
+                           trustedRootCertificates: [],
+                           currentFabricIndex: 0,
+                       },
+                       OperationalCredentialsClusterHandler({
+                           devicePrivateKey: DevicePrivateKey,
+                           deviceCertificate: DeviceCertificate,
+                           deviceIntermediateCertificate: ProductIntermediateCertificate,
+                           certificateDeclaration: CertificateDeclaration,
+                       })
+                   ),
                 ])
                 .addEndpoint(0x01, DEVICE.ON_OFF_LIGHT, [ onOffClusterServer ])
             )

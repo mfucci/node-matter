@@ -1,8 +1,12 @@
 import { Logger } from "../../../log/Logger";
 import { MatterDevice } from "../../MatterDevice";
 import { SecureSession } from "../../session/SecureSession";
-import { CommissioningError, GeneralCommissioningCluster } from "../GeneralCommissioningCluster";
-import { ClusterServerHandlers, UseOptionalAttributes } from "./ClusterServer";
+import {
+    CommissioningError,
+    GeneralCommissioningCluster,
+    RegulatoryLocationType
+} from "../GeneralCommissioningCluster";
+import { ClusterServerHandlers } from "./ClusterServer";
 
 const SuccessResponse = {errorCode: CommissioningError.Ok, debugText: ""};
 const logger = Logger.get("GeneralCommissioningClusterHandler");
@@ -14,9 +18,18 @@ export const GeneralCommissioningClusterHandler: ClusterServerHandlers<typeof Ge
         return SuccessResponse;
     },
 
-    updateRegulatoryConfig: async ({request: {breadcrumbStep, config}, attributes: {breadcrumb, regulatoryConfig}}) => {
+    setRegulatoryConfig: async ({request: {breadcrumbStep, newRegulatoryConfig, countryCode}, attributes: {breadcrumb, regulatoryConfig, locationCapability}}) => {
+        const locationCapabilityValue = locationCapability.get();
+        if (locationCapabilityValue !== RegulatoryLocationType.IndoorOutdoor && newRegulatoryConfig !== locationCapabilityValue) {
+            return {errorCode: CommissioningError.ValueOutsideRange, debugText: "Invalid regulatory location"};
+        }
+        if (locationCapabilityValue === RegulatoryLocationType.IndoorOutdoor) {
+            regulatoryConfig.set(newRegulatoryConfig);
+        }
+
+        // TODO countryCode should be set for the BasicInformationCluster.location!
+
         breadcrumb.set(breadcrumbStep);
-        regulatoryConfig.set(config);
         return SuccessResponse;
     },
 

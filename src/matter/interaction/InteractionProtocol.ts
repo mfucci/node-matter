@@ -1,6 +1,6 @@
 /**
  * @license
- * Copyright 2022 The node-matter Authors
+ * Copyright 2022 Marco Fucci di Napoli (mfucci@gmail.com)
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -76,7 +76,7 @@ export class InteractionProtocol implements ProtocolHandler<MatterDevice> {
     addEndpoint(endpointId: number, device: {name: string, code: number}, clusters: ClusterServer<any>[]) {
         // Add the descriptor cluster
         const descriptorCluster = new ClusterServer(DescriptorCluster, {
-            deviceList: [{revision: 1, type: device.code}],
+            deviceTypeList: [{revision: 1, type: device.code}],
             serverList: [],
             clientList: [],
             partsList: [],
@@ -200,7 +200,7 @@ export class InteractionProtocol implements ProtocolHandler<MatterDevice> {
                 if (attribute === undefined) return;
                 result.push({ path, attribute });
             } else {
-                this.attributePaths.filter(path => 
+                this.attributePaths.filter(path =>
                     (endpointId === undefined || endpointId === path.endpointId)
                     && (clusterId === undefined || clusterId === path.clusterId)
                     && (id === undefined || id === path.id))

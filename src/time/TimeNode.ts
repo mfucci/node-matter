@@ -8,6 +8,7 @@ import { Time, Timer } from "./Time";
 
 class TimerNode implements Timer {
     private timerId: NodeJS.Timer;
+    private callCount: number = 0;
 
     constructor(
             private readonly intervalMs: number,
@@ -40,7 +41,7 @@ export class TimeNode extends Time {
         return new TimerNode(durationMs, callback, false);
     }
 
-    getPeriodicTimer(intervalMs: number, callback: () => void): Timer {
+    getPeriodicTimer(intervalMs: number, callback: (callCount:) => void): Timer {
         return new TimerNode(intervalMs, callback, true);
     }   
 }

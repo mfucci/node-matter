@@ -12,6 +12,7 @@ import { getPromiseResolver } from "../../util/Promises";
 import { Network } from "../../net/Network";
 import { bigintToBuffer } from "../../util/BigInt";
 import { MatterServer, Scanner } from "../common/Scanner";
+import { Time } from "../../time/Time";
 
 type MatterServerRecordWithExpire = MatterServer & { expires: number };
 
@@ -41,14 +42,14 @@ export class MdnsScanner implements Scanner {
         if (record !== undefined) return { ip: record.ip, port: record.port };
 
         const { promise, resolver } = await getPromiseResolver<MatterServer | undefined>();
-        const timeoutId = setTimeout(() => {
+        const timer = Time.get().getTimer(5 * 1000 /* 5 s*/, () => {
             this.recordWaiters.delete(deviceMatterQname);
             resolver(undefined);
-        }, 5 * 1000 /* 5 s*/);
+        });
         this.recordWaiters.set(deviceMatterQname, resolver);
         this.multicastServer.send(DnsCodec.encode({ queries: [{ name: deviceMatterQname, recordClass: RecordClass.IN, recordType: RecordType.SRV }]}));
         const result = await promise;
-        clearTimeout(timeoutId);
+        timer.cancel();
         return result;
     }
 

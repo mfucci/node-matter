@@ -22,6 +22,7 @@ import { Fabric, FabricBuilder } from "./fabric/Fabric";
 import { CaseClient } from "./session/secure/CaseClient";
 import { requireMinNodeVersion } from "../util/Node";
 import { Logger } from "../log/Logger";
+import { Time } from "../time/Time";
 
 requireMinNodeVersion(16);
 

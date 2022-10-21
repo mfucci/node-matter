@@ -11,6 +11,7 @@ import { Channel } from "../../net/Channel";
 import { MessageType } from "../session/secure/SecureChannelMessages";
 import { MessageCounter } from "./ExchangeManager";
 import { getPromiseResolver } from "../../util/Promises";
+import { Time, Timer } from "../../time/Time";
 
 class MessageChannel<ContextT> implements Channel<Message> {
     constructor(
@@ -83,7 +84,7 @@ export class MessageExchange<ContextT> {
     private sentMessageToAck: Message | undefined;
     private sentMessageAckSuccess: (() => void) | undefined;
     private sentMessageAckFailure: (() => void) | undefined;
-    private retransmissionTimeoutId:  NodeJS.Timeout | undefined;
+    private retransmissionTimer: Timer | undefined;
 
     constructor(
         readonly session: Session<ContextT>,
@@ -123,7 +124,7 @@ export class MessageExchange<ContextT> {
             // The other side has received our previous message
             this.sentMessageAckSuccess?.();
             this.sentMessageToAck = undefined;
-            clearTimeout(this.retransmissionTimeoutId);
+            clearTimeout(this.retransmissionTimer);
         }
         if (messageType === MessageType.StandaloneAck) {
             // Don't include standalone acks in the message stream
@@ -159,7 +160,7 @@ export class MessageExchange<ContextT> {
         let ackPromise: Promise<void> | undefined;
         if (message.payloadHeader.requiresAck) {
             this.sentMessageToAck = message;
-            this.retransmissionTimeoutId = setTimeout(() => this.retransmitMessage(message, 0), this.activeRetransmissionTimeoutMs);
+            this.retransmissionTimer = Time.get().getTimer(this.activeRetransmissionTimeoutMs, () => this.retransmitMessage(message, 0));
             const { promise, resolver, rejecter } = await getPromiseResolver<void>();
             this.sentMessageAckSuccess = resolver;
             this.sentMessageAckFailure = rejecter;
@@ -190,18 +191,18 @@ export class MessageExchange<ContextT> {
         this.channel.send(message);
         retransmissionCount++;
         if (retransmissionCount === this.retransmissionRetries) return;
-        this.retransmissionTimeoutId = setTimeout(() => this.retransmitMessage(message, retransmissionCount), this.activeRetransmissionTimeoutMs);
+        this.retransmissionTimer = Time.get().getTimer(this.activeRetransmissionTimeoutMs, () => this.retransmitMessage(message, retransmissionCount));
     }
 
     close() {
         if (this.receivedMessageToAck !== undefined) {
             this.send(MessageType.StandaloneAck, Buffer.alloc(0));
         }
-        setTimeout(() => this.closeInternal(), this.activeRetransmissionTimeoutMs * (this.retransmissionRetries + 1));
+        Time.get().getTimer(this.activeRetransmissionTimeoutMs * (this.retransmissionRetries + 1), () => this.closeInternal());
     }
 
     private closeInternal() {
-        clearTimeout(this.retransmissionTimeoutId);
+        this.retransmissionTimer?.cancel();
         this.sentMessageAckFailure?.();
         this.messagesQueue.close();
         this.closeCallback();

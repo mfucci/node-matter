@@ -65,12 +65,12 @@ export const GeneralCommissioningCluster = Cluster(
          */
         armFailSafe: Command(0, ArmFailSafeRequestT, 1, CommissioningSuccessFailureResponseT),
         /**
-         * Sets the regulatory configuration to be used during commissioning.
+         * Sets or Updates the regulatory configuration to be used during commissioning.
          */
         setRegulatoryConfig: Command(2, SetRegulatoryConfigRequestT, 3, CommissioningSuccessFailureResponseT),
         /**
-         * Signals the Server that the Client has successfully completed all steps of Commissioning/Reconfiguration
-         * needed during fail-safe period.
+         * Informs that all steps of Commissioning/Reconfiguration needed during the fail-safe period have been
+         * completed.
          */
         commissioningComplete: Command(4, NoArgumentsT, 5, CommissioningSuccessFailureResponseT),
     },

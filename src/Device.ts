@@ -13,6 +13,7 @@ import { PaseServer } from "./matter/session/secure/PaseServer";
 import { Crypto } from "./crypto/Crypto";
 import { CaseServer } from "./matter/session/secure/CaseServer";
 import { ClusterServer, InteractionProtocol } from "./matter/interaction/InteractionProtocol";
+import { UseOptionalAttributes } from "./matter/cluster/server/ClusterServer"
 import { BasicInformationCluster } from "./matter/cluster/BasicInformationCluster";
 import { GeneralCommissioningCluster, RegulatoryLocationType } from "./matter/cluster/GeneralCommissioningCluster";
 import { OperationalCredentialsCluster } from "./matter/cluster/OperationalCredentialsCluster";
@@ -22,12 +23,7 @@ import { Network } from "./net/Network";
 import { NetworkNode } from "./net/node/NetworkNode";
 import { commandExecutor } from "./util/CommandLine";
 import { singleton } from "./util/Singleton";
-import {
-    OnOffCluster,
-    OnOffDelayedAllOffEffectVariant, OnOffDyingLightEffectVariant,
-    OnOffEffectIdentifier,
-    OnOffStartUpOnOff
-} from "./matter/cluster/OnOffCluster";
+import { OnOffCluster, OnOffStartUpOnOff } from "./matter/cluster/OnOffCluster";
 import { GeneralCommissioningClusterHandler } from "./matter/cluster/server/GeneralCommissioningServer";
 import { OperationalCredentialsClusterHandler } from "./matter/cluster/server/OperationalCredentialsServer";
 import { Time } from "./time/Time";
@@ -59,133 +55,25 @@ class Main {
         const discriminator = 3840;
 
         // Barebone implementation of the On/Off cluster
-        const onOffClusterServer = new ClusterServer(OnOffCluster,
+        const onOffClusterServer = new ClusterServer(UseOptionalAttributes(OnOffCluster, { globalSceneControl: true }),
             {
                 onOff: false, // Off by default
+                // TODO: check why the following attributes needs to be set, but being optional
                 globalSceneControl: true,
                 onTime: 0, // unit: 1/10ths second
                 offWaitTime: 0, // unit: 1/10ths second
                 startUpOnOff: OnOffStartUpOnOff.Off // null?
             },
             {
-                on: async ({ attributes: { onOff, onTime, offWaitTime /*, globalSceneControl*/ } }) => {
-                    onOff.set(true);
-                    // globalSceneControl.set(true);
-                    if (onTime.get() === 0) {
-                        offWaitTime.set(0);
-                    }
-                },
-                off: async ({ attributes: { onOff, onTime } }) => {
-                    onOff.set(false);
-                    onTime.set(0);
-                },
-                toggle: async ({ attributes: { onOff, onTime, offWaitTime } }) => {
-                    if (onOff.get()) {
-                        onOff.set(false);
-                        onTime.set(0);
-                    } else {
-                        onOff.set(true);
-                        if (onTime.get() === 0) {
-                            offWaitTime.set(0);
-                        }
-                    }
-                },
-                offWithEffect: async ({request: { effectId, effectVariant}, attributes: { onOff/*, globalSceneControl*/ } }) => {
-                    // TODO implement logic with globalSceneControl, but before:
-                    // 1. globalSceneControl is not possible to add to "attributes" above because not writable from extern!! ... but allowed to read and writable internally!!
-                    // 2. globalSceneControl controls if "the server SHALL store its settings in its global scene" ... we need to add that first
-                    /*
-                    if (globalSceneControl.get()) {
-                        // TODO store settings in global scene
-                        globalSceneControl.set(false);
-                    }
-                    // The global scene is defined as the scene that is stored with group identifier 0 and scene identifier 0.
-                     */
-                    // Just example implementation for now, I would moer assume because we do not support dimming that
-                    // we should just set off directly without delay?
-                    switch (effectId) {
-                        case OnOffEffectIdentifier.DelayedAllOff:
-                            switch (effectVariant) {
-                                case OnOffDelayedAllOffEffectVariant.FadeToOffIn_0p8Seconds:
-                                    setTimeout(() => onOff.set(false), 800);
-                                    break;
-                                case OnOffDelayedAllOffEffectVariant.NoFade:
-                                    onOff.set(false);
-                                    break;
-                                case OnOffDelayedAllOffEffectVariant["50PercentDimDownIn_0p8SecondsThenFadeToOffIn_12Seconds"]:
-                                    setTimeout(() => onOff.set(false), 12800);
-                                    break;
-                            }
-                            break;
-                        case OnOffEffectIdentifier.DyingLight:
-                            /*
-                            switch (effectVariant) {
-                                case OnOffDyingLightEffectVariant["20PercentDimUpIn_0p5SecondsThenFadeToOffIn_1Second"]:
-                                    setTimeout(() => onOff.set(false), 1500);
-                                    break;
-                            }
-                             */
-                            setTimeout(() => onOff.set(false), 1500);
-                            break;
-                    }
-                },
-                onWithRecallGlobalScene: async ({ attributes: { onOff, /*, globalSceneControl*/ } }) => {
-                    /*
-                    if (globalSceneControl.get()) {
-                        return; // discard command
-                    }
-                    */
-                    // TODO the Scene cluster server on the same endpoint SHALL recall its global scene, updating the OnOff
-                    //      attribute accordingly. The OnOff server SHALL then set the GlobalSceneControl attribute to TRUE.
-                    // if onOff set to TRUE during recalling option, set the GlobalSceneControl attribute to FALSE.
-                },
-                onWithTimedOff: async ({  request: { onOffControl, onTime, offWaitTime }, attributes: { onOff, offWaitTime: offWaitTimeAttr, onTime: onTimeAttr } }) => {
-                    const onOffValue = onOff.get();
-                    if (onOffControl === 1 && !onOffValue) { // TODO adjust onOffControl check when the bit map type is implemented
-                        return; // discard command
-                    }
-                    if (offWaitTimeAttr.get() > 0 && !onOffValue) {
-                        offWaitTimeAttr.set(Math.min(offWaitTime, offWaitTimeAttr.get() || 0));
-                    } else {
-                        onTimeAttr.set(Math.max(onTimeAttr.get(), onTime));
-                        offWaitTimeAttr.set(offWaitTime);
-                        onOff.set(true);
-                    }
-                },
+                on: async ({attributes: {onOff}}) => onOff.set(true),
+                off: async ({attributes: {onOff}}) => onOff.set(false),
+                toggle: async ({attributes: {onOff}}) => onOff.set(!onOff.get()),
+                // TODO Remove when OptionalCommand is implemented
+                offWithEffect: async () => Promise.resolve(),
+                onWithRecallGlobalScene: async () => Promise.resolve(),
+                onWithTimedOff: async () => Promise.resolve(),
             }
         );
-
-        let onTimeTimeout: NodeJS.Timeout | null = null
-        onOffClusterServer.attributes.onTime.addListener(0, (value) => {
-            if (onTimeTimeout) {
-                clearTimeout(onTimeTimeout);
-                onTimeTimeout = null;
-            }
-            if (value === 0) {
-                onOffClusterServer.attributes.offWaitTime.set(0);
-                onOffClusterServer.attributes.onOff.set(false);
-            }
-            if (value > 0 && onOffClusterServer.attributes.onOff.get()) {
-                onTimeTimeout = setTimeout(() => {
-                    onTimeTimeout = null;
-                    onOffClusterServer.attributes.onTime.set(value - 1);
-                }, 100);
-            }
-        });
-
-        let offWaitTimeout: NodeJS.Timeout | null = null
-        onOffClusterServer.attributes.offWaitTime.addListener(0, (value) => {
-            if (offWaitTimeout) {
-                clearTimeout(offWaitTimeout);
-                offWaitTimeout = null;
-            }
-            if (value > 0 && !onOffClusterServer.attributes.onOff.get()) {
-                offWaitTimeout = setTimeout(() => {
-                    offWaitTimeout = null;
-                    onOffClusterServer.attributes.offWaitTime.set(value - 1);
-                }, 100);
-            }
-        });
 
         // We listen to the attribute update to trigger an action. This could also have been done in the method invocations in the server.
         onOffClusterServer.attributes.onOff.addListener(0, on => commandExecutor(on ? "on" : "off")?.());

@@ -40,7 +40,10 @@ export const BasicInformationCluster = Cluster(
         localConfigDisabled: OptionalWritableAttribute(16, BooleanT, false), /* writeAcl: manage */
         reachable: OptionalAttribute(17, BooleanT, true),
         uniqueId: OptionalAttribute(18, StringT), /* maxLength: 32 */
-        capabilityMinima: Attribute(19, CapabilityMinimaT),
+        capabilityMinima: Attribute(19, CapabilityMinimaT, {
+            caseSessionsPerFabric: 3,
+            subscriptionsPerFabric: 3
+        }),
     },
     {},
 );

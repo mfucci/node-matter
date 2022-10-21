@@ -18,6 +18,7 @@ import { AttributeServer } from "../cluster/server/AttributeServer";
 import { Cluster } from "../cluster/Cluster";
 import { AttributeServers, AttributeInitialValues, ClusterServerHandlers } from "../cluster/server/ClusterServer";
 import { SecureSession } from "../session/SecureSession";
+import { Logger } from "../../log/Logger";
 
 export const INTERACTION_PROTOCOL_ID = 0x0001;
 
@@ -58,6 +59,8 @@ function pathToId({endpointId, clusterId, id}: Path) {
     return `${endpointId}/${clusterId}/${id}`;
 }
 
+const logger = Logger.get("InteractionProtocol");
+
 export class InteractionProtocol implements ProtocolHandler<MatterDevice> {
     private readonly attributes = new Map<string, AttributeServer<any>>();
     private readonly attributePaths = new Array<Path>();
@@ -73,7 +76,7 @@ export class InteractionProtocol implements ProtocolHandler<MatterDevice> {
     addEndpoint(endpointId: number, device: {name: string, code: number}, clusters: ClusterServer<any>[]) {
         // Add the descriptor cluster
         const descriptorCluster = new ClusterServer(DescriptorCluster, {
-            deviceList: [{revision: 1, type: device.code}],
+            deviceTypeList: [{revision: 1, type: device.code}],
             serverList: [],
             clientList: [],
             partsList: [],
@@ -117,7 +120,7 @@ export class InteractionProtocol implements ProtocolHandler<MatterDevice> {
     }
 
     handleReadRequest(exchange: MessageExchange<MatterDevice>, {attributes: attributePaths}: ReadRequest): DataReport {
-        console.log(`Received read request from ${exchange.channel.getName()}: ${attributePaths.map(({endpointId = "*", clusterId = "*", id = "*"}) => `${endpointId}/${clusterId}/${id}`).join(", ")}`);
+        logger.debug(`Received read request from ${exchange.channel.getName()}: ${attributePaths.map(({endpointId = "*", clusterId = "*", id = "*"}) => `${endpointId}/${clusterId}/${id}`).join(", ")}`);
 
         const values = this.getAttributes(attributePaths)
             .map(({ path, attribute }) => {
@@ -139,7 +142,7 @@ export class InteractionProtocol implements ProtocolHandler<MatterDevice> {
     }
 
     handleSubscribeRequest(exchange: MessageExchange<MatterDevice>, { minIntervalFloorSeconds, maxIntervalCeilingSeconds, attributeRequests, keepSubscriptions }: SubscribeRequest): SubscribeResponse | undefined {
-        console.log(`Received subscribe request from ${exchange.channel.getName()}`);
+        logger.debug(`Received subscribe request from ${exchange.channel.getName()}`);
 
         if (!exchange.session.isSecure()) throw new Error("Subscriptions are only implemented on secure sessions");
 
@@ -163,7 +166,7 @@ export class InteractionProtocol implements ProtocolHandler<MatterDevice> {
     }
 
     async handleInvokeRequest(exchange: MessageExchange<MatterDevice>, {invokes}: InvokeRequest): Promise<InvokeResponse> {
-        console.log(`Received invoke request from ${exchange.channel.getName()}: ${invokes.map(({path: {endpointId, clusterId, id}}) => `${endpointId}/${clusterId}/${id}`).join(", ")}`);
+        logger.debug(`Received invoke request from ${exchange.channel.getName()}: ${invokes.map(({path: {endpointId, clusterId, id}}) => `${endpointId}/${clusterId}/${id}`).join(", ")}`);
 
         const results = new Array<{path: Path, code: ResultCode, response?: Element, responseId: number }>();
 
@@ -197,7 +200,7 @@ export class InteractionProtocol implements ProtocolHandler<MatterDevice> {
                 if (attribute === undefined) return;
                 result.push({ path, attribute });
             } else {
-                this.attributePaths.filter(path => 
+                this.attributePaths.filter(path =>
                     (endpointId === undefined || endpointId === path.endpointId)
                     && (clusterId === undefined || clusterId === path.clusterId)
                     && (id === undefined || id === path.id))

@@ -4,17 +4,29 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { JsType, Template, TlvObjectCodec } from "../../codec/TlvObjectCodec";
-import { StatusResponseT } from "../cluster/OperationalCredentialsCluster";
+import {
+    Field,
+    JsType,
+    ObjectT,
+    Template,
+    TlvObjectCodec,
+} from "../../codec/TlvObjectCodec";
+import { Logger } from "../../log/Logger";
 import { MessageExchange } from "../common/MessageExchange";
 import { MatterController } from "../MatterController";
 import { MatterDevice } from "../MatterDevice";
 import { InvokeRequestT, InvokeResponseT, ReadRequestT, DataReportT, SubscribeRequestT, SubscribeResponseT } from "./InteractionMessages";
+import { TlvType } from "../../codec/TlvCodec";
 
 export const enum Status {
     Success = 0x00,
-    Failure = 0x01,  
+    Failure = 0x01,
 }
+const StatusT = { tlvType: TlvType.UnsignedInt } as Template<Status>;
+
+export const StatusResponseT = ObjectT({
+    status: Field(0, StatusT),
+});
 
 export const enum MessageType {
     StatusResponse = 0x01,
@@ -35,6 +47,8 @@ export type SubscribeRequest = JsType<typeof SubscribeRequestT>;
 export type SubscribeResponse = JsType<typeof SubscribeResponseT>;
 export type InvokeRequest = JsType<typeof InvokeRequestT>;
 export type InvokeResponse = JsType<typeof InvokeResponseT>;
+
+const logger = Logger.get("InteractionServerMessenger");
 
 export class InteractionServerMessenger {
 
@@ -72,7 +86,7 @@ export class InteractionServerMessenger {
                     throw new Error(`Unsupported message type ${message.payloadHeader.messageType}`);
             }
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             await this.sendStatus(Status.Failure);
         } finally {
             this.exchange.close();

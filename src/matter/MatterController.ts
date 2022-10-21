@@ -11,8 +11,8 @@ import { ExchangeManager } from "./common/ExchangeManager";
 import { PaseClient } from "./session/secure/PaseClient";
 import { ClusterClient, InteractionClient } from "./interaction/InteractionClient";
 import { INTERACTION_PROTOCOL_ID } from "./interaction/InteractionProtocol";
-import { BasicCluster } from "./cluster/BasicCluster";
-import { CommissioningError, GeneralCommissioningCluster, RegulatoryLocationType, SuccessFailureReponse } from "./cluster/GeneralCommissioningCluster";
+import { BasicInformationCluster } from "./cluster/BasicInformationCluster";
+import { CommissioningError, GeneralCommissioningCluster, RegulatoryLocationType, CommissioningSuccessFailureResponse } from "./cluster/GeneralCommissioningCluster";
 import { CertificateType, CertSigningRequestT, OperationalCredentialsCluster } from "./cluster/OperationalCredentialsCluster";
 import { Crypto } from "../crypto/Crypto";
 import { CertificateManager, jsToMatterDate, OperationalCertificateT, RootCertificateT } from "./certificate/CertificateManager";
@@ -21,12 +21,14 @@ import { Scanner } from "./common/Scanner";
 import { Fabric, FabricBuilder } from "./fabric/Fabric";
 import { CaseClient } from "./session/secure/CaseClient";
 import { requireMinNodeVersion } from "../util/Node";
+import { Logger } from "../log/Logger";
 
 requireMinNodeVersion(16);
 
 const FABRIC_ID = BigInt(1);
 const CONTROLLER_NODE_ID = BigInt(0);
 const ADMIN_VENDOR_ID = 752;
+const logger = Logger.get("MatterController");
 
 export class MatterController {
     public static async create(scanner: Scanner, netInterface: NetInterface) {
@@ -63,29 +65,29 @@ export class MatterController {
 
         // Use the created secure session to do the commissioning
         let interactionClient = new InteractionClient(() => this.exchangeManager.initiateExchange(paseSecureSession, paseChannel, INTERACTION_PROTOCOL_ID));
-        
+
         // Get and display the product name (just for debugging)
-        const basicClusterClient = ClusterClient(interactionClient, 0, BasicCluster);
+        const basicClusterClient = ClusterClient(interactionClient, 0, BasicInformationCluster);
         const productName = await basicClusterClient.getProductName();
-        console.log(`Paired with device: ${productName}`);
+        logger.info("Paired with device:", productName);
 
         // Do the commissioning
         let generalCommissioningClusterClient = ClusterClient(interactionClient, 0, GeneralCommissioningCluster);
-        this.ensureSuccess(await generalCommissioningClusterClient.armFailSafe({ breadcrumbStep: 1, expiryLengthSeconds: 60 }));
-        this.ensureSuccess(await generalCommissioningClusterClient.updateRegulatoryConfig({ breadcrumbStep: 2, config: RegulatoryLocationType.IndoorOutdoor, countryCode: "US"}));
+        this.ensureSuccess(await generalCommissioningClusterClient.armFailSafe({ breadcrumbStep: BigInt(1), expiryLengthSeconds: 60 }));
+        this.ensureSuccess(await generalCommissioningClusterClient.setRegulatoryConfig({ breadcrumbStep: BigInt(2), newRegulatoryConfig: RegulatoryLocationType.IndoorOutdoor, countryCode: "US"}));
 
         const operationalCredentialsClusterClient = ClusterClient(interactionClient, 0, OperationalCredentialsCluster);
         const { certificate: deviceAttestation } = await operationalCredentialsClusterClient.requestCertChain({ type: CertificateType.DeviceAttestation });
         // TODO: extract device public key from deviceAttestation
         const { certificate: productAttestation } = await operationalCredentialsClusterClient.requestCertChain({ type: CertificateType.ProductAttestationIntermediate });
         // TODO: validate deviceAttestation and productAttestation
-        const { elements: attestationElements, signature: attestationSignature } = await operationalCredentialsClusterClient.requestAttestation({ nonce: Crypto.getRandomData(16) });
-        // TODO: validate attestationSignature using device public key 
-        const { elements: csrElements, signature: csrSignature } = await operationalCredentialsClusterClient.requestCertSigning({ nonce: Crypto.getRandomData(16) });
+        const { elements: attestationElements, signature: attestationSignature } = await operationalCredentialsClusterClient.requestAttestation({ attestationNonce: Crypto.getRandomData(16) });
+        // TODO: validate attestationSignature using device public key
+        const { elements: csrElements, signature: csrSignature } = await operationalCredentialsClusterClient.requestCertSigning({ certSigningRequestNonce: Crypto.getRandomData(16) });
         // TOTO: validate csrSignature using device public key
         const { certSigningRequest } = TlvObjectCodec.decode(csrElements, CertSigningRequestT);
         const operationalPublicKey = CertificateManager.getPublicKeyFromCsr(certSigningRequest);
-        
+
         await operationalCredentialsClusterClient.addRootCert({ certificate: this.certificateManager.getRootCert() });
         const peerNodeId = BigInt(1);
         const peerOperationalCert = this.certificateManager.generateNoc(operationalPublicKey, FABRIC_ID, peerNodeId);
@@ -123,7 +125,7 @@ export class MatterController {
         return new InteractionClient(() => this.exchangeManager.initiateExchange(operationalSecureSession, operationalChannel, INTERACTION_PROTOCOL_ID));
     }
 
-    private ensureSuccess({ errorCode, debugText }: SuccessFailureReponse) {
+    private ensureSuccess({ errorCode, debugText }: CommissioningSuccessFailureResponse) {
         if (errorCode === CommissioningError.Ok) return;
         throw new Error(`Commission error: ${errorCode}, ${debugText}`);
     }
@@ -186,7 +188,7 @@ class RootCertificateManager {
         const signature = Crypto.sign(this.rootKeyPair.privateKey, CertificateManager.rootCertToAsn1(unsignedCertificate));
         return TlvObjectCodec.encode({ ...unsignedCertificate, signature }, RootCertificateT);
     }
-    
+
     generateNoc(publicKey: Buffer, fabricId: bigint, nodeId: bigint): Buffer {
         const certId = this.nextCertificateId++;
         const unsignedCertificate = {

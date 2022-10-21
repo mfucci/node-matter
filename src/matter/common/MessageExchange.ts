@@ -124,7 +124,7 @@ export class MessageExchange<ContextT> {
             // The other side has received our previous message
             this.sentMessageAckSuccess?.();
             this.sentMessageToAck = undefined;
-            clearTimeout(this.retransmissionTimer);
+            this.retransmissionTimer?.cancel();
         }
         if (messageType === MessageType.StandaloneAck) {
             // Don't include standalone acks in the message stream

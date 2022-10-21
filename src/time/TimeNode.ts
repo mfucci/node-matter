@@ -41,7 +41,7 @@ export class TimeNode extends Time {
         return new TimerNode(durationMs, callback, false);
     }
 
-    getPeriodicTimer(intervalMs: number, callback: (callCount:) => void): Timer {
+    getPeriodicTimer(intervalMs: number, callback: () => void): Timer {
         return new TimerNode(intervalMs, callback, true);
     }   
 }

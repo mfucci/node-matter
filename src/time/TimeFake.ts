@@ -87,4 +87,3 @@ export class TimeFake extends Time {
       this.callbacks.splice(index, 1);
    }
 }
- 

@@ -11,21 +11,18 @@ class TimerFake implements Timer {
       private readonly timeFake: TimeFake,
       private readonly durationMs: number,
       private readonly callback: () => void,
-   ) {
+   ) {}
+
+   start(): void {
       this.timeFake.callbackAtTime(this.timeFake.nowMs() + this.durationMs, this.callback);
    }
 
-   restart(): void {
-      this.timeFake.removeCallback(this.callback);
-      this.timeFake.callbackAtTime(this.timeFake.nowMs() + this.durationMs, this.callback);
-   }
-
-   cancel(): void {
+   stop(): void {
       this.timeFake.removeCallback(this.callback);
    }
 }
 
-class IntervaleFake extends TimerFake {
+class IntervalFake extends TimerFake {
    constructor(timeFake: TimeFake, durationMs: number, callback: () => void) {
       const intervalCallback = () => {
          timeFake.callbackAtTime(timeFake.nowMs() + durationMs, intervalCallback);
@@ -57,7 +54,7 @@ export class TimeFake extends Time {
    }
    
    getPeriodicTimer(intervalMs: number, callback: () => void): Timer {
-      return new IntervaleFake(this, intervalMs, callback);
+      return new IntervalFake(this, intervalMs, callback);
    }
 
    advanceTime(ms: number) {

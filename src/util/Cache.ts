@@ -6,16 +6,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { Time, Timer } from "../time/Time";
+
 export class Cache<T> {
     private readonly values = new Map<string, T>();
     private readonly timestamps = new Map<string, number>();
-    private readonly intervalId: NodeJS.Timeout;
+    private readonly periodicTimer: Timer;
 
     constructor(
         private readonly generator: (...params: string[]) => T,
         private readonly expirationMs: number,
     ) {
-        this.intervalId = setInterval(() => this.expire(), expirationMs);
+        this.periodicTimer = Time.get().getPeriodicTimer(expirationMs, () => this.expire());
     }
 
     get(...params: string[]) {
@@ -36,7 +38,7 @@ export class Cache<T> {
 
     close() {
         this.clear();
-        clearInterval(this.intervalId);
+        this.periodicTimer.stop();
     }
 
     private expire() {

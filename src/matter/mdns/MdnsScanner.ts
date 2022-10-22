@@ -12,7 +12,7 @@ import { getPromiseResolver } from "../../util/Promises";
 import { Network } from "../../net/Network";
 import { bigintToBuffer } from "../../util/BigInt";
 import { MatterServer, Scanner } from "../common/Scanner";
-import { Time } from "../../time/Time";
+import { Time, Timer } from "../../time/Time";
 
 type MatterServerRecordWithExpire = MatterServer & { expires: number };
 
@@ -24,13 +24,13 @@ export class MdnsScanner implements Scanner {
     private readonly network = Network.get();
     private readonly matterDeviceRecords = new Map<string, MatterServerRecordWithExpire>();
     private readonly recordWaiters = new Map<string, (record: MatterServer | undefined) => void>();
-    private readonly intervalId: NodeJS.Timeout;
+    private readonly periodicTimer: Timer;
 
     constructor(
         private readonly multicastServer: UdpMulticastServer,
     ) {
         multicastServer.onMessage((message, remoteIp) => this.handleDnsMessage(message, remoteIp));
-        this.intervalId = setInterval(() => this.expire(), 60 * 1000 /* 1 mn */);
+        this.periodicTimer = Time.get().getPeriodicTimer(60 * 1000 /* 1 mn */, () => this.expire());
     }
 
     async lookForDevice(operationalId: Buffer, nodeId: bigint): Promise<MatterServer | undefined> {
@@ -49,13 +49,13 @@ export class MdnsScanner implements Scanner {
         this.recordWaiters.set(deviceMatterQname, resolver);
         this.multicastServer.send(DnsCodec.encode({ queries: [{ name: deviceMatterQname, recordClass: RecordClass.IN, recordType: RecordType.SRV }]}));
         const result = await promise;
-        timer.cancel();
+        timer.stop();
         return result;
     }
 
     close() {
         this.multicastServer.close();
-        clearInterval(this.intervalId);
+        this.periodicTimer.stop();
         [...this.recordWaiters.values()].forEach(waiter => waiter(undefined));
     }
 

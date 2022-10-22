@@ -18,9 +18,10 @@ export abstract class Time {
 }
 
 export interface Timer {
-    /** Restarts the countdown or the timer if it has been cancelled. */
-    restart(): void;
 
-    /** Cancels this timer. It can be reset to restart it. */
-    cancel(): void;
+    /** Starts this timer. */
+    start(): void;
+
+    /** Stops this timer. */
+    stop(): void;
 }

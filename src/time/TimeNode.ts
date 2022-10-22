@@ -7,23 +7,20 @@
 import { Time, Timer } from "./Time";
 
 class TimerNode implements Timer {
-    private timerId: NodeJS.Timer;
+    private timerId: NodeJS.Timer | undefined;
     private callCount: number = 0;
 
     constructor(
             private readonly intervalMs: number,
             private readonly callback: () => void,
             private readonly periodic: boolean,
-        ) {
-        this.timerId = (periodic ? setInterval : setTimeout)(callback, intervalMs);
-    }
+        ) {}
 
-    restart(): void {
-        this.cancel();
+    start(): void {
         this.timerId = (this.periodic ? setInterval : setTimeout)(this.callback, this.intervalMs);
     }
 
-    cancel(): void {
+    stop(): void {
         (this.periodic ? clearInterval : clearTimeout)(this.timerId);
     }
 }

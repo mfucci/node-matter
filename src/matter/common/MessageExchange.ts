@@ -124,7 +124,7 @@ export class MessageExchange<ContextT> {
             // The other side has received our previous message
             this.sentMessageAckSuccess?.();
             this.sentMessageToAck = undefined;
-            this.retransmissionTimer?.cancel();
+            this.retransmissionTimer?.stop();
         }
         if (messageType === MessageType.StandaloneAck) {
             // Don't include standalone acks in the message stream
@@ -160,7 +160,7 @@ export class MessageExchange<ContextT> {
         let ackPromise: Promise<void> | undefined;
         if (message.payloadHeader.requiresAck) {
             this.sentMessageToAck = message;
-            this.retransmissionTimer = Time.get().getTimer(this.activeRetransmissionTimeoutMs, () => this.retransmitMessage(message, 0));
+            this.retransmissionTimer = Time.get().getTimer(this.activeRetransmissionTimeoutMs, () => this.retransmitMessage(message, 1));
             const { promise, resolver, rejecter } = await getPromiseResolver<void>();
             this.sentMessageAckSuccess = resolver;
             this.sentMessageAckFailure = rejecter;
@@ -202,7 +202,7 @@ export class MessageExchange<ContextT> {
     }
 
     private closeInternal() {
-        this.retransmissionTimer?.cancel();
+        this.retransmissionTimer?.stop();
         this.sentMessageAckFailure?.();
         this.messagesQueue.close();
         this.closeCallback();

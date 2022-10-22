@@ -45,6 +45,7 @@ describe("TimeFake", () => {
             let firedTime = undefined;
 
             const result = timeFake.getPeriodicTimer(30, () => firedTime = timeFake.nowMs());
+            result.start();
 
             assert.equal(firedTime, undefined);
 
@@ -57,31 +58,18 @@ describe("TimeFake", () => {
             assert.equal(firedTime, FAKE_TIME + 60);
         });
 
-        it("returns a periodic timer that can be cancelled", () => {
+        it("returns a periodic timer that can be stopped", () => {
             let firedTime = undefined;
 
             const result = timeFake.getPeriodicTimer(30, () => firedTime = timeFake.nowMs());
-            result.cancel();
+            result.start();
+            result.stop();
 
             assert.equal(firedTime, undefined);
 
             timeFake.advanceTime(45);
 
             assert.equal(firedTime, undefined);
-        });
-
-        it("returns a periodic timer that can be restarted", () => {
-            let firedTime = undefined;
-
-            const result = timeFake.getPeriodicTimer(30, () => firedTime = timeFake.nowMs());
-            timeFake.advanceTime(10);
-            result.restart();
-
-            assert.equal(firedTime, undefined);
-
-            timeFake.advanceTime(45);
-
-            assert.equal(firedTime, FAKE_TIME + 10 + 30);
         });
     });
 
@@ -90,6 +78,7 @@ describe("TimeFake", () => {
             let firedTime = undefined;
 
             const result = timeFake.getTimer(30, () => firedTime = timeFake.nowMs());
+            result.start();
 
             assert.equal(firedTime, undefined);
 
@@ -98,31 +87,18 @@ describe("TimeFake", () => {
             assert.equal(firedTime, FAKE_TIME + 30);
         });
 
-        it("returns a timer that can be cancelled", () => {
+        it("returns a timer that can be stopped", () => {
             let firedTime = undefined;
 
             const result = timeFake.getTimer(30, () => firedTime = timeFake.nowMs());
-            result.cancel();
+            result.start();
+            result.stop();
 
             assert.equal(firedTime, undefined);
 
             timeFake.advanceTime(45);
 
             assert.equal(firedTime, undefined);
-        });
-
-        it("returns a timer that can be restarted", () => {
-            let firedTime = undefined;
-
-            const result = timeFake.getTimer(30, () => firedTime = timeFake.nowMs());
-            timeFake.advanceTime(10);
-            result.restart();
-
-            assert.equal(firedTime, undefined);
-
-            timeFake.advanceTime(45);
-
-            assert.equal(firedTime, FAKE_TIME + 10 + 30);
         });
     }); 
 });

@@ -16,8 +16,7 @@ repository.
 
 ### Git
 
-Please, do your changes in a dedicated feature-/fix-branch in your forked repo
-and send us the pull request from these branches in your forked repo.
+Please send us the pull request from your forked repo.
 
 In the case that Commit rights to the main repository were granted to 
 contributors the following basic ground-rules should be applied:

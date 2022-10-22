@@ -9,4 +9,19 @@ export abstract class Time {
 
     abstract now(): Date;
     abstract nowMs(): number;
+
+    /** Returns a timer that will call callback after durationMs has passed. */
+    abstract getTimer(durationMs: number, callback: () => void): Timer;
+
+    /** Returns a timer that will periodically call callback at intervalMs intervals. */
+    abstract getPeriodicTimer(intervalMs: number, callback: () => void): Timer;
+}
+
+export interface Timer {
+
+    /** Starts this timer. */
+    start(): void;
+
+    /** Stops this timer. */
+    stop(): void;
 }

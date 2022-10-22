@@ -10,7 +10,7 @@ import { Time } from "../src/time/Time";
 import { singleton } from "../src/util/Singleton";
 import { TimeFake } from "../src/time/TimeFake";
 
-Time.get = singleton(() => new TimeFake());
+Time.get = singleton(() => new TimeFake(0));
 
 import { UdpInterface } from "../src/net/UdpInterface";
 import { MatterController } from "../src/matter/MatterController";

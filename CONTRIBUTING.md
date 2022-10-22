@@ -35,7 +35,8 @@ dependencies without a discussion before committing the PR.
 * Request a review from at least one of the other developers. If you had a 
 discussion on the topic with one developer please make sure to include this 
 developer in any case in your reveiw list. As of writing this @mfucci needs 
-to be included as reviewer also in all cases
+to be included as reviewer also in all cases. When the PR got approved it will
+be merged by the reviewer.
 
 In the case that Commit rights to the main repository were granted to 
 contributors the following rules should be applied:
@@ -44,6 +45,9 @@ contributors the following rules should be applied:
 an internal pull-request to solicit feedback from other contributors.
 * Internal pull-requests to solicit feedback are encouraged for any other 
 non-trivial contribution but left to the discretion of the contributor.
+* When PRs got reviewed from an other contributor with write access this 
+developer should also do the final merge after approving the PR to also do 
+the required post tasks (like delete branches if needed and such).
 
 "Internal-pull-request" means that also with direct commit access to the 
 main repository a PR from another branch on the repo is used.

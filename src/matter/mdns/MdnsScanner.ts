@@ -31,7 +31,7 @@ export class MdnsScanner implements Scanner {
         private readonly multicastServer: UdpMulticastServer,
     ) {
         multicastServer.onMessage((message, remoteIp) => this.handleDnsMessage(message, remoteIp));
-        this.periodicTimer = Time.get().getPeriodicTimer(60 * 1000 /* 1 mn */, () => this.expire());
+        this.periodicTimer = Time.getPeriodicTimer(60 * 1000 /* 1 mn */, () => this.expire()).start();
     }
 
     async findDevice({operationalId}: Fabric, nodeId: bigint): Promise<MatterServer | undefined> {
@@ -43,10 +43,10 @@ export class MdnsScanner implements Scanner {
         if (record !== undefined) return { ip: record.ip, port: record.port };
 
         const { promise, resolver } = await getPromiseResolver<MatterServer | undefined>();
-        const timer = Time.get().getTimer(5 * 1000 /* 5 s*/, () => {
+        const timer = Time.getTimer(5 * 1000 /* 5 s*/, () => {
             this.recordWaiters.delete(deviceMatterQname);
             resolver(undefined);
-        });
+        }).start();
         this.recordWaiters.set(deviceMatterQname, resolver);
         this.multicastServer.send(DnsCodec.encode({ queries: [{ name: deviceMatterQname, recordClass: RecordClass.IN, recordType: RecordType.SRV }]}));
         const result = await promise;

@@ -16,12 +16,14 @@ class TimerNode implements Timer {
             private readonly periodic: boolean,
         ) {}
 
-    start(): void {
+    start() {
         this.timerId = (this.periodic ? setInterval : setTimeout)(this.callback, this.intervalMs);
+        return this;
     }
 
-    stop(): void {
+    stop() {
         (this.periodic ? clearInterval : clearTimeout)(this.timerId);
+        return this;
     }
 }
 

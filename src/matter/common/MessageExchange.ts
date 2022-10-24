@@ -143,7 +143,8 @@ export class MessageExchange<ContextT> {
         let ackPromise: Promise<void> | undefined;
         if (message.payloadHeader.requiresAck) {
             this.sentMessageToAck = message;
-            this.retransmissionTimer = Time.get().getTimer(this.activeRetransmissionTimeoutMs, () => this.retransmitMessage(message, 1));
+            this.retransmissionTimer = Time.getTimer(this.activeRetransmissionTimeoutMs, () => this.retransmitMessage(message, 1))
+                .start();
             const { promise, resolver, rejecter } = await getPromiseResolver<void>();
             this.sentMessageAckSuccess = resolver;
             this.sentMessageAckFailure = rejecter;
@@ -174,14 +175,16 @@ export class MessageExchange<ContextT> {
         this.channel.send(message);
         retransmissionCount++;
         if (retransmissionCount === this.retransmissionRetries) return;
-        this.retransmissionTimer = Time.get().getTimer(this.activeRetransmissionTimeoutMs, () => this.retransmitMessage(message, retransmissionCount));
+        this.retransmissionTimer = Time.getTimer(this.activeRetransmissionTimeoutMs, () => this.retransmitMessage(message, retransmissionCount))
+            .start();
     }
 
     close() {
         if (this.receivedMessageToAck !== undefined) {
             this.send(MessageType.StandaloneAck, Buffer.alloc(0));
         }
-        Time.get().getTimer(this.activeRetransmissionTimeoutMs * (this.retransmissionRetries + 1), () => this.closeInternal());
+        Time.getTimer(this.activeRetransmissionTimeoutMs * (this.retransmissionRetries + 1), () => this.closeInternal())
+            .start();
     }
 
     private closeInternal() {

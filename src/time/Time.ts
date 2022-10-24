@@ -19,9 +19,9 @@ export abstract class Time {
 
 export interface Timer {
 
-    /** Starts this timer. */
-    start(): void;
+    /** Starts this timer, chainable. */
+    start(): Timer;
 
-    /** Stops this timer. */
-    stop(): void;
+    /** Stops this timer, chainable. */
+    stop(): Timer;
 }

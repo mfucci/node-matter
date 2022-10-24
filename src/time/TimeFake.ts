@@ -13,11 +13,12 @@ class TimerFake implements Timer {
       private readonly callback: () => void,
    ) {}
 
-   start(): void {
+   start() {
       this.timeFake.callbackAtTime(this.timeFake.nowMs() + this.durationMs, this.callback);
+      return this;
    }
 
-   stop(): void {
+   stop() {
       this.timeFake.removeCallback(this.callback);
    }
 }

@@ -22,15 +22,12 @@ export class AttributeServer<T> {
     }
 
     set(value: T) {
-        if (value === this.value) {
-            this.listeners.forEach(listener => listener(value, value));
-            return;
-        }
+        this.listeners.forEach(listener => listener(value, this.value));
 
-        const oldValue = this.value;
+        if (value === this.value) return;
+
         this.version++;
         this.value = value;
-        this.listeners.forEach(listener => listener(value, oldValue));
         this.matterListeners.forEach(listener => listener(value, this.version));
     }
 

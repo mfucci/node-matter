@@ -20,14 +20,25 @@ export const GeneralCommissioningClusterHandler: ClusterServerHandlers<typeof Ge
 
     setRegulatoryConfig: async ({request: {breadcrumbStep, newRegulatoryConfig, countryCode}, attributes: {breadcrumb, regulatoryConfig, locationCapability}}) => {
         const locationCapabilityValue = locationCapability.get();
-        if (locationCapabilityValue !== RegulatoryLocationType.IndoorOutdoor && newRegulatoryConfig !== locationCapabilityValue) {
-            return {errorCode: CommissioningError.ValueOutsideRange, debugText: "Invalid regulatory location"};
-        }
-        if (locationCapabilityValue === RegulatoryLocationType.IndoorOutdoor) {
-            regulatoryConfig.set(newRegulatoryConfig);
+
+        let validValues;
+        switch (locationCapabilityValue) {
+            case (RegulatoryLocationType.Outdoor):
+                validValues = [RegulatoryLocationType.Outdoor];
+                break;
+            case (RegulatoryLocationType.Indoor):
+                validValues = [RegulatoryLocationType.Indoor];
+                break;
+            case (RegulatoryLocationType.IndoorOutdoor):
+                validValues = [RegulatoryLocationType.Indoor, RegulatoryLocationType.Outdoor];
+                break;
+            default:
+                return {errorCode: CommissioningError.ValueOutsideRange, debugText: "Invalid regulatory location"};
         }
 
-        // TODO countryCode should be set for the BasicInformationCluster.location!
+        regulatoryConfig.set(newRegulatoryConfig);
+
+        // TODO countryCode should be set for the BasicCluster.location!
 
         breadcrumb.set(breadcrumbStep);
         return SuccessResponse;

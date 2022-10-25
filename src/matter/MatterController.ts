@@ -11,7 +11,7 @@ import { ExchangeManager } from "./common/ExchangeManager";
 import { PaseClient } from "./session/secure/PaseClient";
 import { ClusterClient, InteractionClient } from "./interaction/InteractionClient";
 import { INTERACTION_PROTOCOL_ID } from "./interaction/InteractionProtocol";
-import { BasicInformationCluster } from "./cluster/BasicInformationCluster";
+import { BasicCluster } from "./cluster/BasicCluster";
 import { CommissioningError, GeneralCommissioningCluster, RegulatoryLocationType, CommissioningSuccessFailureResponse } from "./cluster/GeneralCommissioningCluster";
 import { CertificateType, CertSigningRequestT, OperationalCredentialsCluster } from "./cluster/OperationalCredentialsCluster";
 import { Crypto } from "../crypto/Crypto";
@@ -67,7 +67,7 @@ export class MatterController {
         let interactionClient = new InteractionClient(() => this.exchangeManager.initiateExchange(paseSecureSession, paseChannel, INTERACTION_PROTOCOL_ID));
 
         // Get and display the product name (just for debugging)
-        const basicClusterClient = ClusterClient(interactionClient, 0, BasicInformationCluster);
+        const basicClusterClient = ClusterClient(interactionClient, 0, BasicCluster);
         const productName = await basicClusterClient.getProductName();
         logger.info("Paired with device:", productName);
 

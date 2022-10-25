@@ -68,19 +68,19 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
     },
 
     updateOperationalCert: async ({ request: {operationalCert, intermediateCaCert, }, session}) => {
-        // TODO add logic
+        throw new Error("Not implemented");
 
         return {status: OperationalCertStatus.Success};
     },
 
     updateFabricLabel: async ({ request: {fabricIndex} }) => {
-        // TODO add logic
+        throw new Error("Not implemented");
 
         return {status: OperationalCertStatus.Success};
     },
 
     removeFabric: async ({ request: {fabricIndex} }) => {
-        // TODO add logic
+        throw new Error("Not implemented");
 
         return {status: OperationalCertStatus.Success};
     },

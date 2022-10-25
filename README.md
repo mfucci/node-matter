@@ -56,7 +56,7 @@ new MatterServer()
         ))
     .addProtocolHandler(Protocol.INTERACTION_MODEL, new InteractionProtocol(new Device([
         new Endpoint(0x00, "MA-rootdevice", [
-            new BasicInformationCluster({ vendorName: "node-matter", vendorId: 0xFFF1, productName: "Matter test device", productId: 0X8001 }),
+            new BasicCluster({ vendorName: "node-matter", vendorId: 0xFFF1, productName: "Matter test device", productId: 0X8001 }),
             new GeneralCommissioningCluster(),
             new OperationalCredentialsCluster(),
         ]),

@@ -17,7 +17,7 @@ export class Cache<T> {
         private readonly generator: (...params: string[]) => T,
         private readonly expirationMs: number,
     ) {
-        this.periodicTimer = Time.get().getPeriodicTimer(expirationMs, () => this.expire());
+        this.periodicTimer = Time.getPeriodicTimer(expirationMs, () => this.expire()).start();
     }
 
     get(...params: string[]) {

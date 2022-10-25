@@ -26,7 +26,7 @@ import { NetworkFake } from "../src/net/fake/NetworkFake";
 import { Network } from "../src/net/Network";
 import { MdnsScanner } from "../src/matter/mdns/MdnsScanner";
 import { OnOffCluster } from "../src/matter/cluster/OnOffCluster";
-import { BasicCluster } from "../src/matter/cluster/BasicCluster";
+import { BasicInformationCluster } from "../src/matter/cluster/BasicInformationCluster";
 import { GeneralCommissioningCluster, RegulatoryLocationType } from "../src/matter/cluster/GeneralCommissioningCluster";
 import { OperationalCredentialsCluster } from "../src/matter/cluster/OperationalCredentialsCluster";
 import { GeneralCommissioningClusterHandler } from "../src/matter/cluster/server/GeneralCommissioningServer";
@@ -83,7 +83,7 @@ describe("Integration", () => {
                 ))
             .addProtocolHandler(new InteractionProtocol()
                 .addEndpoint(0x00, DEVICE.ROOT, [
-                    new ClusterServer(BasicCluster, {
+                    new ClusterServer(BasicInformationCluster, {
                         dataModelRevision: 1,
                         vendorName,
                         vendorId,

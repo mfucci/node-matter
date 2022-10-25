@@ -62,6 +62,7 @@ describe("InteractionProtocol", () => {
             const interactionProtocol = new InteractionProtocol()
                 .addEndpoint(0, DEVICE.ROOT, [
                     new ClusterServer(BasicCluster, {
+                        dataModelRevision: 1,
                         vendorName: "vendor",
                         vendorId: 1,
                         productName: "product",
@@ -73,6 +74,10 @@ describe("InteractionProtocol", () => {
                         localConfigDisabled: false,
                         softwareVersion: 1,
                         softwareVersionString: "v1",
+                        capabilityMinima: {
+                            caseSessionsPerFabric: 100,
+                            subscriptionsPerFabric: 100,
+                        },
                     }, {}),
                 ]);
 

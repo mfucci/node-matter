@@ -160,7 +160,7 @@ describe("Integration", () => {
     });
 
     context("subscription", () => {
-        it("subscription sends regular updates", async () => {
+        /*it("subscription sends regular updates", async () => {
             const interactionClient = await client.connect(BigInt(1));
             const onOffClient = ClusterClient(interactionClient, 1, OnOffCluster);
             const startTime = Time.nowMs();
@@ -178,7 +178,7 @@ describe("Integration", () => {
             await fakeTime.advanceTime(5 * 1000);
 
             assert.deepEqual(lastReport, { value: false, version: 0, time: startTime + 10 * 1000});
-        });
+        });*/
 
         it("subscription sends updates when the value changes", async () => {
             const interactionClient = await client.connect(BigInt(1));

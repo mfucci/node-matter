@@ -35,7 +35,7 @@ export class SubscriptionHandler {
         private readonly minIntervalFloorMs: number,
         private readonly maxIntervalCeilingMs: number,
     ) {
-        attributes.forEach(({ attribute }) => attribute.addListener(this.listener));
+        attributes.forEach(({ attribute }) => attribute.addMatterListener(this.listener));
         this.updateTimer = Time.getTimer(this.minIntervalFloorMs, () => this.sendUpdate()).start();
     }
 
@@ -57,7 +57,7 @@ export class SubscriptionHandler {
     }
 
     cancel() {
-        this.attributes.forEach(({ attribute }) => attribute.removeListener(this.listener));
+        this.attributes.forEach(({ attribute }) => attribute.removeMatterListener(this.listener));
         this.updateTimer.stop();
     }
 

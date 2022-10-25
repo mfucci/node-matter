@@ -10,26 +10,41 @@ import { Time } from "../../src/time/Time";
 import { TimeFake } from "../../src/time/TimeFake";
 
 const fakeTime = new TimeFake(1262679233478);
-Time.get = () => fakeTime;
-
+    
 const defaultFormatter = Logger.logFormater;
-Logger.defaultLogLevel = Level.DEBUG;
-
+const defaultLevel = Logger.defaultLogLevel;
+const defaultLevels = Logger.logLevels;
+const defaultSink = Logger.log;
 const fakeLogSink = new Array<{level: Level, log: string}>();
-Logger.log = (level, log) => fakeLogSink.push({ level, log });
+
+const LOGGER_NAME = "UnitTest";
 
 describe("Logger", () => {
-    const logger = Logger.get("UnitTest");
+
+    const logger = Logger.get(LOGGER_NAME);
+
+    before(() => {
+        Time.get = () => fakeTime;
+
+        Logger.defaultLogLevel = Level.DEBUG;
+        Logger.log = (level, log) => fakeLogSink.push({ level, log });
+    });
 
     beforeEach(() => {
         Logger.logFormater = defaultFormatter;
         Logger.logLevels = {};
         Logger.defaultLogLevel = Level.DEBUG;
-        logger.minLevel = Level.DEBUG;
     });
 
     afterEach(() => {
         fakeLogSink.length = 0;
+    });
+
+    after(() => {
+        Logger.defaultLogLevel = defaultLevel;
+        Logger.log = defaultSink;
+        Logger.logFormater = defaultFormatter;
+        Logger.logLevels = defaultLevels;
     });
 
     context("debug", () => {
@@ -41,7 +56,7 @@ describe("Logger", () => {
         });
 
         it("doesn't log a message if level is above debug", () => {
-            logger.minLevel = Level.INFO;
+            Logger.logLevels[LOGGER_NAME] = Level.INFO;
 
             logger.debug("test");
             const result = fakeLogSink.pop();
@@ -59,7 +74,7 @@ describe("Logger", () => {
         });
 
         it("doesn't log a message if level is above info", () => {
-            logger.minLevel = Level.ERROR;
+            Logger.logLevels[LOGGER_NAME] = Level.ERROR;
 
             logger.info("test");
             const result = fakeLogSink.pop();
@@ -77,7 +92,7 @@ describe("Logger", () => {
         });
 
         it("doesn't log a message if level is above warn", () => {
-            logger.minLevel = Level.ERROR;
+            Logger.logLevels[LOGGER_NAME] = Level.ERROR;
 
             logger.warn("test");
             const result = fakeLogSink.pop();
@@ -95,7 +110,7 @@ describe("Logger", () => {
         });
 
         it("doesn't log a message if level is above error", () => {
-            logger.minLevel = Level.FATAL;
+            Logger.logLevels[LOGGER_NAME] = Level.FATAL;
 
             logger.error("test");
             const result = fakeLogSink.pop();
@@ -142,26 +157,6 @@ describe("Logger", () => {
             const result = fakeLogSink.pop();
 
             assert.equal(result?.log, "test");
-        });
-    });
-
-    context("log level", () => {
-        it("uses the default log level by default", () => {
-            Logger.defaultLogLevel = Level.ERROR;
-
-            const logger = Logger.get("test");
-
-            assert.equal(logger.minLevel, Level.ERROR);
-        });
-
-        it("uses the configured log level for the logger", () => {
-            Logger.logLevels = {
-                test: Level.INFO,
-            };
-
-            const logger = Logger.get("test");
-
-            assert.equal(logger.minLevel, Level.INFO);
         });
     });
 });

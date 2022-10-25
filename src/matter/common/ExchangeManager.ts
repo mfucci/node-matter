@@ -14,6 +14,9 @@ import { MessageExchange } from "./MessageExchange";
 import { ProtocolHandler } from "./ProtocolHandler";
 import { ChannelManager } from "./ChannelManager";
 import { Fabric } from "../fabric/Fabric";
+import { Logger } from "../../log/Logger";
+
+const logger = Logger.get("MessageChannel");
 
 export class MessageChannel<ContextT> implements Channel<Message> {
     constructor(
@@ -22,7 +25,7 @@ export class MessageChannel<ContextT> implements Channel<Message> {
     ) {}
 
     send(message: Message): Promise<void> {
-        console.log("sending", MessageCodec.messageToString(message));
+        logger.debug("sending", MessageCodec.messageToString(message));
         const packet = this.session.encode(message);
         const bytes = MessageCodec.encodePacket(packet);
         return this.channel.send(bytes);
@@ -59,9 +62,10 @@ export class ExchangeManager<ContextT> {
 
     initiateExchangeWithChannel(channel: MessageChannel<ContextT>, protocolId: number) {
         const exchangeId = this.exchangeCounter.getIncrementedCounter();
-        const exchange = MessageExchange.initiate(channel, exchangeId, protocolId, this.messageCounter, () => this.exchanges.delete(exchangeId & 0x10000));
+        const exchangeIndex = exchangeId | 0x10000; // Ensure initiated and received exchange index are different, since the exchangeID can be the same
+        const exchange = MessageExchange.initiate(channel, exchangeId, protocolId, this.messageCounter, () => this.exchanges.delete(exchangeIndex));
         // Ensure exchangeIds are not colliding in the Map by adding 1 in front of exchanges initiated by this device.
-        this.exchanges.set(exchangeId & 0x10000, exchange);
+        this.exchanges.set(exchangeIndex, exchange);
         return exchange;
     }
 
@@ -80,13 +84,13 @@ export class ExchangeManager<ContextT> {
         if (session === undefined) throw new Error(`Cannot find a session for ID ${packet.header.sessionId}`);
 
         const message = session.decode(packet);
-        const exchangeId = message.payloadHeader.isInitiatorMessage ? message.payloadHeader.exchangeId : message.payloadHeader.exchangeId & 0x10000;
-        if (this.exchanges.has(exchangeId)) {
-            const exchange = this.exchanges.get(exchangeId);
-            exchange?.onMessageReceived(message);
+        const exchangeIndex = message.payloadHeader.isInitiatorMessage ? message.payloadHeader.exchangeId : (message.payloadHeader.exchangeId | 0x10000);
+        const exchange = this.exchanges.get(exchangeIndex);
+        if (exchange !== undefined) {
+            exchange.onMessageReceived(message);
         } else {
-            const exchange = MessageExchange.fromInitialMessage(this.channelManager.getOrCreateChannel(channel, session), this.messageCounter, message, () => this.exchanges.delete(exchangeId));
-            this.exchanges.set(exchangeId, exchange);
+            const exchange = MessageExchange.fromInitialMessage(this.channelManager.getOrCreateChannel(channel, session), this.messageCounter, message, () => this.exchanges.delete(exchangeIndex));
+            this.exchanges.set(exchangeIndex, exchange);
             const protocolHandler = this.protocols.get(message.payloadHeader.protocolId);
             if (protocolHandler === undefined) throw new Error(`Unsupported protocol ${message.payloadHeader.protocolId}`);
             protocolHandler.onNewExchange(exchange, message);

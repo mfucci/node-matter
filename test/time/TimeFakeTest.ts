@@ -33,15 +33,15 @@ describe("TimeFake", () => {
     });
 
     context("advanceTime", () => {
-        it("advances the time by the duration specified", () => {
-            timeFake.advanceTime(45);
+        it("advances the time by the duration specified", async () => {
+            await timeFake.advanceTime(45);
 
             assert.equal(timeFake.nowMs(), FAKE_TIME + 45);
         });
     });
 
     context("getPeriodicTimer", () => {
-        it("returns a periodic timer that will call a callback periodically", () => {
+        it("returns a periodic timer that will call a callback periodically", async () => {
             let firedTime = undefined;
 
             const result = timeFake.getPeriodicTimer(30, () => firedTime = timeFake.nowMs());
@@ -49,16 +49,16 @@ describe("TimeFake", () => {
 
             assert.equal(firedTime, undefined);
 
-            timeFake.advanceTime(45);
+            await timeFake.advanceTime(45);
 
             assert.equal(firedTime, FAKE_TIME + 30);
 
-            timeFake.advanceTime(20);
+            await timeFake.advanceTime(20);
 
             assert.equal(firedTime, FAKE_TIME + 60);
         });
 
-        it("returns a periodic timer that can be stopped", () => {
+        it("returns a periodic timer that can be stopped", async () => {
             let firedTime = undefined;
 
             const result = timeFake.getPeriodicTimer(30, () => firedTime = timeFake.nowMs());
@@ -67,14 +67,14 @@ describe("TimeFake", () => {
 
             assert.equal(firedTime, undefined);
 
-            timeFake.advanceTime(45);
+            await timeFake.advanceTime(45);
 
             assert.equal(firedTime, undefined);
         });
     });
 
     context("getTimer", () => {
-        it("returns a timer that will call a callback in the future", () => {
+        it("returns a timer that will call a callback in the future", async () => {
             let firedTime = undefined;
 
             const result = timeFake.getTimer(30, () => firedTime = timeFake.nowMs());
@@ -82,12 +82,12 @@ describe("TimeFake", () => {
 
             assert.equal(firedTime, undefined);
 
-            timeFake.advanceTime(45);
+            await timeFake.advanceTime(45);
 
             assert.equal(firedTime, FAKE_TIME + 30);
         });
 
-        it("returns a timer that can be stopped", () => {
+        it("returns a timer that can be stopped", async () => {
             let firedTime = undefined;
 
             const result = timeFake.getTimer(30, () => firedTime = timeFake.nowMs());
@@ -96,7 +96,7 @@ describe("TimeFake", () => {
 
             assert.equal(firedTime, undefined);
 
-            timeFake.advanceTime(45);
+            await timeFake.advanceTime(45);
 
             assert.equal(firedTime, undefined);
         });

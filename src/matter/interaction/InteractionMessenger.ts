@@ -136,6 +136,11 @@ export class InteractionClientMessenger extends InteractionMessenger<MatterContr
         return this.request(MessageType.InvokeCommandRequest, InvokeRequestT, MessageType.InvokeCommandResponse, InvokeResponseT, invokeRequest);
     }
 
+    async readDataReport(): Promise<DataReport> {
+        const dataReportMessage = await this.exchange.waitFor(MessageType.ReportData);
+        return TlvObjectCodec.decode(dataReportMessage.payload, DataReportT);
+    }
+
     private async request<RequestT, ResponseT>(requestMessageType: number, requestTemplate: Template<RequestT>, responseMessageType: number, responseTemplate: Template<ResponseT>, request: RequestT): Promise<ResponseT> {
         await this.exchange.send(requestMessageType, TlvObjectCodec.encode(request, requestTemplate));
         const responseMessage = await this.nextMessage(responseMessageType);

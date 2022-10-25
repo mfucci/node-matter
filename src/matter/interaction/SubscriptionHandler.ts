@@ -1,3 +1,9 @@
+/**
+ * @license
+ * Copyright 2022 The node-matter Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { MatterDevice } from "../MatterDevice";
 import { InteractionServerMessenger } from "./InteractionMessenger";
 import { Template, TlvObjectCodec } from "../../codec/TlvObjectCodec";
@@ -29,9 +35,8 @@ export class SubscriptionHandler {
         private readonly minIntervalFloorMs: number,
         private readonly maxIntervalCeilingMs: number,
     ) {
-        attributes.forEach(({ attribute }) => attribute.addMatterListener(this.listener));
-        this.updateTimer = Time.get().getTimer(this.minIntervalFloorMs, () => this.sendUpdate()).start();
-        this.updateTimer.start();
+        attributes.forEach(({ attribute }) => attribute.addListener(this.listener));
+        this.updateTimer = Time.getTimer(this.minIntervalFloorMs, () => this.sendUpdate()).start();
     }
 
     async sendUpdate() {
@@ -39,7 +44,7 @@ export class SubscriptionHandler {
         const timeSinceLastUpdateMs = now - this.lastUpdateTimeMs;
         if (timeSinceLastUpdateMs < this.minIntervalFloorMs) {
             this.updateTimer.stop();
-            this.updateTimer = Time.get().getTimer(setTimeout(() => this.sendUpdate(), this.minIntervalFloorMs - timeSinceLastUpdateMs);
+            this.updateTimer = Time.getTimer(this.minIntervalFloorMs - timeSinceLastUpdateMs, () => this.sendUpdate()).start();
             return;
         }
 
@@ -47,13 +52,13 @@ export class SubscriptionHandler {
         await this.sendUpdateMessage(values);
         this.lastUpdateTimeMs = now;
 
-        clearTimeout(this.updateTimer);
-        this.updateTimer = setTimeout(() => this.sendUpdate(), this.maxIntervalCeilingMs);
+        this.updateTimer.stop();
+        this.updateTimer = Time.getTimer(this.maxIntervalCeilingMs, () => this.sendUpdate()).start();
     }
 
     cancel() {
-        this.attributes.forEach(({ attribute }) => attribute.removeMatterListener(this.listener));
-        clearTimeout(this.updateTimer);
+        this.attributes.forEach(({ attribute }) => attribute.removeListener(this.listener));
+        this.updateTimer.stop();
     }
 
     private async sendUpdateMessage(values: PathValueVersion<any>[]) {

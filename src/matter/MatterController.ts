@@ -10,7 +10,6 @@ import { NetInterface } from "../net/NetInterface";
 import { ExchangeManager, MessageChannel } from "./common/ExchangeManager";
 import { PaseClient } from "./session/secure/PaseClient";
 import { ClusterClient, InteractionClient } from "./interaction/InteractionClient";
-import { INTERACTION_PROTOCOL_ID } from "./interaction/InteractionServer";
 import { BasicCluster } from "./cluster/BasicCluster";
 import { CommissioningError, GeneralCommissioningCluster, RegulatoryLocationType, SuccessFailureReponse } from "./cluster/GeneralCommissioningCluster";
 import { CertificateType, CertSigningRequestT, OperationalCredentialsCluster } from "./cluster/OperationalCredentialsCluster";
@@ -69,7 +68,7 @@ export class MatterController {
 
         // Use the created secure session to do the commissioning
         const paseSecureMessageChannel = new MessageChannel(paseChannel, paseSecureSession);
-        let interactionClient = new InteractionClient(() => this.exchangeManager.initiateExchangeWithChannel(paseSecureMessageChannel, INTERACTION_PROTOCOL_ID));
+        let interactionClient = new InteractionClient(this.exchangeManager, paseSecureMessageChannel);
         
         // Get and display the product name (just for debugging)
         const basicClusterClient = ClusterClient(interactionClient, 0, BasicCluster);
@@ -114,7 +113,7 @@ export class MatterController {
         const operationalUnsecureMessageExchange = new MessageChannel(operationalChannel, this.sessionManager.getUnsecureSession());
         const operationalSecureSession = await this.caseClient.pair(this, this.exchangeManager.initiateExchangeWithChannel(operationalUnsecureMessageExchange, SECURE_CHANNEL_PROTOCOL_ID), this.fabric, peerNodeId);
         this.channelManager.setChannel(this.fabric, peerNodeId, new MessageChannel(operationalChannel, operationalSecureSession));
-        interactionClient = new InteractionClient(() => this.exchangeManager.initiateExchange(this.fabric, peerNodeId, INTERACTION_PROTOCOL_ID));
+        interactionClient = new InteractionClient(this.exchangeManager, this.channelManager.getChannel(this.fabric, peerNodeId));
 
         // Complete the commission
         generalCommissioningClusterClient = ClusterClient(interactionClient, 0, GeneralCommissioningCluster);
@@ -122,7 +121,7 @@ export class MatterController {
     }
 
     async connect(nodeId: bigint) {
-        return new InteractionClient(() => this.exchangeManager.initiateExchange(this.fabric, nodeId, INTERACTION_PROTOCOL_ID));
+        return new InteractionClient(this.exchangeManager, this.channelManager.getChannel(this.fabric, nodeId));
     }
 
     private ensureSuccess({ errorCode, debugText }: SuccessFailureReponse) {

@@ -108,13 +108,10 @@ export class MatterDevice {
 
     async findDevice(fabric: Fabric, nodeId: bigint): Promise<undefined | {session: Session<MatterDevice>, channel: Channel<Buffer>}> {
         // TODO: return the first not undefined answer or undefined
-        console.log("find", nodeId);
         const matterServer = await this.scanners[0].findDevice(fabric, nodeId);
-        console.log("server", matterServer);
         if (matterServer === undefined) return undefined;
         const { ip, port } = matterServer;
         const session = this.sessionManager.getSessionForNode(fabric, nodeId);
-        console.log("session", session);
         if (session === undefined) return undefined;
         // TODO: have the interface and scanner linked
         return { session, channel: await this.netInterfaces[0].openChannel(ip, port)};

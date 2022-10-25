@@ -7,11 +7,7 @@
 import assert from "assert";
 
 import { Time } from "../src/time/Time";
-import { singleton } from "../src/util/Singleton";
 import { TimeFake } from "../src/time/TimeFake";
-
-Time.get = singleton(() => new TimeFake(0));
-
 import { UdpInterface } from "../src/net/UdpInterface";
 import { MatterController } from "../src/matter/MatterController";
 import { Crypto } from "../src/crypto/Crypto";
@@ -31,6 +27,9 @@ import { GeneralCommissioningCluster, RegulatoryLocationType } from "../src/matt
 import { OperationalCredentialsCluster } from "../src/matter/cluster/OperationalCredentialsCluster";
 import { GeneralCommissioningClusterHandler } from "../src/matter/cluster/server/GeneralCommissioningServer";
 import { OperationalCredentialsClusterHandler } from "../src/matter/cluster/server/OperationalCredentialsServer";
+import { ClusterClient } from "../src/matter/interaction/InteractionClient";
+import { Level, Logger } from "../src/log/Logger";
+import { getPromiseResolver } from "../src/util/Promises";
 
 const SERVER_IP = "192.168.200.1";
 const SERVER_MAC = "00:B0:D0:63:C2:26";
@@ -62,11 +61,17 @@ const discriminator = 3840;
 const setupPin = 20202021;
 const matterPort = 5540;
 
+const TIME_START = 1666663000000;
+const fakeTime = new TimeFake(TIME_START);
+
 describe("Integration", () => {
     var server: MatterDevice;
+    var onOffServer: ClusterServer<typeof OnOffCluster>;
     var client: MatterController;
 
     before(async () => {
+        Logger.defaultLogLevel = Level.INFO;
+        Time.get = () => fakeTime;
         Network.get = () => clientNetwork;
         client = await MatterController.create(
             await MdnsScanner.create(CLIENT_IP),
@@ -74,6 +79,13 @@ describe("Integration", () => {
         );
 
         Network.get = () => serverNetwork;
+        onOffServer = new ClusterServer(OnOffCluster, { on: false }, 
+            {
+                on: async ({attributes: {on}}) => on.set(true),
+                off: async ({attributes: {on}}) => on.set(false),
+                toggle: async ({attributes: {on}}) => on.set(!on.get()),
+            }
+        );
         server = new MatterDevice(deviceName, deviceType, vendorId, productId, discriminator)
             .addNetInterface(await UdpInterface.create(matterPort, SERVER_IP))
             .addBroadcaster(await MdnsBroadcaster.create(SERVER_IP))
@@ -110,15 +122,7 @@ describe("Integration", () => {
                              certificateDeclaration: CertificateDeclaration,
                      })),
                 ])
-                .addEndpoint(0x01, DEVICE.ON_OFF_LIGHT, [
-                    new ClusterServer(OnOffCluster, { on: false }, 
-                        {
-                            on: async ({attributes: {on}}) => on.set(true),
-                            off: async ({attributes: {on}}) => on.set(false),
-                            toggle: async ({attributes: {on}}) => on.set(!on.get()),
-                        }
-                    )
-                ])
+                .addEndpoint(0x01, DEVICE.ON_OFF_LIGHT, [ onOffServer ])
             );
         server.start();
 
@@ -132,10 +136,50 @@ describe("Integration", () => {
             assert.ok(true);
         });
 
-        it("the session is resume if it has been established previously", async () => {
+        it("the session is resumed if it has been established previously", async () => {
             await client.connect(BigInt(1));
 
             assert.ok(true);
+        });
+    });
+
+    context("subscription", () => {
+        it("subscription sends regular updates", async () => {
+            const interactionClient = await client.connect(BigInt(1));
+            const onOffClient = ClusterClient(interactionClient, 1, OnOffCluster);
+            const startTime = Time.nowMs();
+            let lastReport: { value: boolean, version: number, time: number } | undefined;
+
+            await onOffClient.subscribeOn((value, version) => lastReport = { value, version, time: Time.nowMs() }, 0, 5);
+            await fakeTime.advanceTime(0);
+
+            assert.deepEqual(lastReport, { value: false, version: 0, time: startTime});
+
+            await fakeTime.advanceTime(8 * 1000);
+
+            assert.deepEqual(lastReport, { value: false, version: 0, time: startTime + 5 * 1000});
+
+            await fakeTime.advanceTime(5 * 1000);
+
+            assert.deepEqual(lastReport, { value: false, version: 0, time: startTime + 10 * 1000});
+        });
+
+        it("subscription sends updates when the value changes", async () => {
+            const interactionClient = await client.connect(BigInt(1));
+            const onOffClient = ClusterClient(interactionClient, 1, OnOffCluster);
+            const startTime = Time.nowMs();
+            let callback = (value: boolean, version: number) => {};
+            await onOffClient.subscribeOn((value, version) => callback(value, version), 0, 5);
+            await fakeTime.advanceTime(0);
+
+            const { promise, resolver } = await getPromiseResolver<{value: boolean, version: number, time: number}>();
+            callback = (value: boolean, version: number) => resolver({ value, version, time: Time.nowMs() });
+
+            await fakeTime.advanceTime(2 * 1000);
+            onOffServer.attributes.on.set(true);
+            const lastReport = await promise;
+
+            assert.deepEqual(lastReport, { value: true, version: 1, time: startTime + 2 * 1000});
         });
     });
 

@@ -6,10 +6,8 @@
 
 import { MatterDevice } from "../MatterDevice";
 import { ProtocolHandler } from "../common/ProtocolHandler";
-import { Channel } from "../../net/Channel";
 import { MessageExchange } from "../common/MessageExchange";
 import { InteractionServerMessenger, InvokeRequest, InvokeResponse, ReadRequest, DataReport, SubscribeRequest, SubscribeResponse } from "./InteractionMessenger";
-import { Session } from "../session/Session";
 import { CommandServer, ResultCode } from "../cluster/server/CommandServer";
 import { DescriptorCluster } from "../cluster/DescriptorCluster";
 import { TlvObjectCodec } from "../../codec/TlvObjectCodec";

@@ -4,13 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Time, Timer } from "./Time";
+import { getPromiseResolver } from "../util/Promises";
+import { Time, Timer, TimerCallback } from "./Time";
 
 class TimerFake implements Timer {
    constructor(
       private readonly timeFake: TimeFake,
       private readonly durationMs: number,
-      private readonly callback: () => void,
+      private readonly callback: TimerCallback,
    ) {}
 
    start() {
@@ -25,17 +26,17 @@ class TimerFake implements Timer {
 }
 
 class IntervalFake extends TimerFake {
-   constructor(timeFake: TimeFake, durationMs: number, callback: () => void) {
-      const intervalCallback = () => {
+   constructor(timeFake: TimeFake, durationMs: number, callback: TimerCallback) {
+      const intervalCallback = async () => {
          timeFake.callbackAtTime(timeFake.nowMs() + durationMs, intervalCallback);
-         callback();
+         await callback();
       };
       super(timeFake, durationMs, intervalCallback);
    }
 }
 
 export class TimeFake extends Time {
-   private readonly callbacks = new Array<{atMs: number, callback: () => void}>();
+   private readonly callbacks = new Array<{atMs: number, callback: TimerCallback}>();
 
    constructor(
       private timeMs: number,
@@ -51,15 +52,15 @@ export class TimeFake extends Time {
       return this.timeMs;
    }
 
-   getTimer(durationMs: number, callback: () => void): Timer {
+   getTimer(durationMs: number, callback: TimerCallback): Timer {
       return new TimerFake(this, durationMs, callback);
    }
    
-   getPeriodicTimer(intervalMs: number, callback: () => void): Timer {
+   getPeriodicTimer(intervalMs: number, callback: TimerCallback): Timer {
       return new IntervalFake(this, intervalMs, callback);
    }
 
-   advanceTime(ms: number) {
+   async advanceTime(ms: number) {
       const newTimeMs = this.timeMs + ms;
 
       while (true) {
@@ -68,22 +69,24 @@ export class TimeFake extends Time {
          if (atMs > newTimeMs) break;
          this.callbacks.shift();
          this.timeMs = atMs;
-         callback();
+         await callback();
       }
 
       this.timeMs = newTimeMs;
    }
 
-   callbackAtTime(atMs: number, callback: () => void) {
-      if (atMs <= this.timeMs) {
-         callback();
-      } else {
-         this.callbacks.push({atMs, callback});
-         this.callbacks.sort(({atMs: atMsA}, {atMs: atMsB}) => atMsA - atMsB);
-      }
+   async yield() {
+      const { promise, resolver } = await getPromiseResolver<void>();
+      resolver();
+      await promise;
    }
 
-   removeCallback(callbackToRemove: () => void) {
+   callbackAtTime(atMs: number, callback: TimerCallback) {
+      this.callbacks.push({atMs, callback});
+      this.callbacks.sort(({atMs: atMsA}, {atMs: atMsB}) => atMsA - atMsB);
+   }
+
+   removeCallback(callbackToRemove: TimerCallback) {
       const index = this.callbacks.findIndex(({callback}) => callbackToRemove === callback);
       if (index === -1) return;
       this.callbacks.splice(index, 1);

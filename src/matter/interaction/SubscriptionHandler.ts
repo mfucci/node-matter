@@ -4,6 +4,7 @@ import { Template, TlvObjectCodec } from "../../codec/TlvObjectCodec";
 import { Element } from "../../codec/TlvCodec";
 import { Fabric } from "../fabric/Fabric";
 import { AttributeWithPath, Path, INTERACTION_PROTOCOL_ID } from "./InteractionServer";
+import { Time, Timer } from "../../time/Time";
 
 interface PathValueVersion<T> {
     path: Path,
@@ -17,7 +18,7 @@ export class SubscriptionHandler {
 
     private lastUpdateTimeMs = 0;
     private readonly listener = () => this.sendUpdate();
-    private intervalId: NodeJS.Timeout;
+    private updateTimer: Timer;
 
     constructor(
         readonly subscriptionId: number,
@@ -29,15 +30,15 @@ export class SubscriptionHandler {
         private readonly maxIntervalCeilingMs: number,
     ) {
         attributes.forEach(({ attribute }) => attribute.addListener(this.listener));
-        this.intervalId = setTimeout(() => this.sendUpdate(), this.minIntervalFloorMs);
+        this.updateTimer = Time.getTimer(this.minIntervalFloorMs, () => this.sendUpdate()).start();
     }
 
     async sendUpdate() {
         const now = Date.now();
         const timeSinceLastUpdateMs = now - this.lastUpdateTimeMs;
         if (timeSinceLastUpdateMs < this.minIntervalFloorMs) {
-            clearTimeout(this.intervalId);
-            this.intervalId = setTimeout(() => this.sendUpdate(), this.minIntervalFloorMs - timeSinceLastUpdateMs);
+            this.updateTimer.stop();
+            this.updateTimer = Time.getTimer(this.minIntervalFloorMs - timeSinceLastUpdateMs, () => this.sendUpdate()).start();
             return;
         }
 
@@ -45,13 +46,13 @@ export class SubscriptionHandler {
         await this.sendUpdateMessage(values);
         this.lastUpdateTimeMs = now;
 
-        clearTimeout(this.intervalId);
-        this.intervalId = setTimeout(() => this.sendUpdate(), this.maxIntervalCeilingMs);
+        this.updateTimer.stop();
+        this.updateTimer = Time.getTimer(this.maxIntervalCeilingMs, () => this.sendUpdate()).start();
     }
 
     cancel() {
         this.attributes.forEach(({ attribute }) => attribute.removeListener(this.listener));
-        clearTimeout(this.intervalId);
+        this.updateTimer.stop();
     }
 
     private async sendUpdateMessage(values: PathValueVersion<any>[]) {

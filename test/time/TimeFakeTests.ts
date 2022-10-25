@@ -9,6 +9,8 @@ import { TimeFake } from "../../src/time/TimeFake";
 
 const FAKE_TIME = 36000000;
 
+/* Content change */
+
 describe("TimeFake", () => {
     let timeFake: TimeFake;
 

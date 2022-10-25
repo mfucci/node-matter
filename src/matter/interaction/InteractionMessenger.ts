@@ -4,7 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { JsType, Template, TlvObjectCodec } from "../../codec/TlvObjectCodec";
+import {
+    Field,
+    JsType,
+    ObjectT,
+    Template,
+    TlvObjectCodec,
+} from "../../codec/TlvObjectCodec";
 import { Logger } from "../../log/Logger";
 import { MessageExchange } from "../common/MessageExchange";
 import { MatterController } from "../MatterController";

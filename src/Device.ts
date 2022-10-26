@@ -27,7 +27,6 @@ import { GeneralCommissioningClusterHandler } from "./matter/cluster/server/Gene
 import { OperationalCredentialsClusterHandler } from "./matter/cluster/server/OperationalCredentialsServer";
 import { Time } from "./time/Time";
 import { TimeNode } from "./time/TimeNode";
-import { AttributeServers, ClusterServerHandlers, CommandHandlers } from "./matter/cluster/server/ClusterServer";
 
 // From Chip-Test-DAC-FFF1-8000-0007-Key.der
 const DevicePrivateKey = Buffer.from("727F1005CBA47ED7822A9D930943621617CFD3B79D9AF528B801ECF9F1992204", "hex");

@@ -11,7 +11,7 @@ import { ReadRequest, DataReport } from "../../../src/matter/interaction/Interac
 import { MessageExchange } from "../../../src/matter/common/MessageExchange";
 import { DEVICE } from "../../../src/matter/common/DeviceTypes";
 import { MatterDevice } from "../../../src/matter/MatterDevice";
-import { BasicCluster } from "../../../src/matter/cluster/BasicCluster";
+import { BasicInformationCluster } from "../../../src/matter/cluster/BasicInformationCluster";
 
 const READ_REQUEST: ReadRequest = {
     interactionModelRevision: 1,
@@ -61,7 +61,7 @@ describe("InteractionProtocol", () => {
         it("replies with attribute values", () => {
             const interactionProtocol = new InteractionServer()
                 .addEndpoint(0, DEVICE.ROOT, [
-                    new ClusterServer(BasicCluster, {
+                    new ClusterServer(BasicInformationCluster, {
                         dataModelRevision: 1,
                         vendorName: "vendor",
                         vendorId: 1,

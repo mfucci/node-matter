@@ -13,7 +13,7 @@ import { PaseServer } from "./matter/session/secure/PaseServer";
 import { Crypto } from "./crypto/Crypto";
 import { CaseServer } from "./matter/session/secure/CaseServer";
 import { ClusterServer, InteractionServer } from "./matter/interaction/InteractionServer";
-import { BasicCluster } from "./matter/cluster/BasicCluster";
+import { BasicInformationCluster } from "./matter/cluster/BasicInformationCluster";
 import { GeneralCommissioningCluster, RegulatoryLocationType } from "./matter/cluster/GeneralCommissioningCluster";
 import { OperationalCredentialsCluster } from "./matter/cluster/OperationalCredentialsCluster";
 import { DEVICE } from "./matter/common/DeviceTypes";
@@ -77,7 +77,7 @@ class Main {
                 ))
             .addProtocolHandler(new InteractionServer()
                .addEndpoint(0x00, DEVICE.ROOT, [
-                   new ClusterServer(BasicCluster, {
+                   new ClusterServer(BasicInformationCluster, {
                        dataModelRevision: 1,
                        vendorName,
                        vendorId,

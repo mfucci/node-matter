@@ -44,7 +44,7 @@ export const GeneralCommissioningClusterHandler: ClusterServerHandlers<typeof Ge
 
         regulatoryConfig.set(newRegulatoryConfig);
 
-        // TODO countryCode should be set for the BasicCluster.location!
+        // TODO countryCode should be set for the BasicInformationCluster.location!
 
         breadcrumb.set(breadcrumbStep);
         return SuccessResponse;

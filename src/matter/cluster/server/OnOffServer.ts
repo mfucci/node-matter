@@ -12,8 +12,8 @@ import { AttributeServer } from "./AttributeServer";
 
 /*
 TODO: Global Cluster fields needs to be added also here because, as discussed, based on the implementation.
-* Cluster Revision: 3 (If I get it right from the Specs)
-* FeatureMap: ??
+* Cluster Revision: 4 (If I get it right from the Specs - Application Cluster Specs 1.5.1)
+* FeatureMap: Bit 0 should be set when it is a "lighting" usecase AND Level Control cluster is supported
 * AttributeList:
   * Supported always: onOff, onTime, offWaitTime
   * Supported if we have a scene cluster: globalSceneControl
@@ -25,6 +25,12 @@ TODO: Global Cluster fields needs to be added also here because, as discussed, b
 * GeneratedCommandList: empty
 * EventList: empty
 * FabricIndex: empty
+ */
+
+/*
+TODO: If the Scenes server cluster is implemented on the same endpoint, the following extension field SHALL
+      be added to the Scene Table:
+      * OnOff
  */
 
 export const OnOffClusterHandler: () => ClusterServerHandlers<typeof OnOffCluster> = () => ({

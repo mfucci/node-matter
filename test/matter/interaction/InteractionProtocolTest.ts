@@ -6,7 +6,7 @@
 
 import assert from "assert";
 import { TlvTag, TlvType } from "../../../src/codec/TlvCodec";
-import { ClusterServer, InteractionProtocol } from "../../../src/matter/interaction/InteractionProtocol";
+import { ClusterServer, InteractionServer } from "../../../src/matter/interaction/InteractionServer";
 import { ReadRequest, DataReport } from "../../../src/matter/interaction/InteractionMessenger";
 import { MessageExchange } from "../../../src/matter/common/MessageExchange";
 import { DEVICE } from "../../../src/matter/common/DeviceTypes";
@@ -59,7 +59,7 @@ describe("InteractionProtocol", () => {
 
     context("handleReadRequest", () => {
         it("replies with attribute values", () => {
-            const interactionProtocol = new InteractionProtocol()
+            const interactionProtocol = new InteractionServer()
                 .addEndpoint(0, DEVICE.ROOT, [
                     new ClusterServer(BasicInformationCluster, {
                         dataModelRevision: 1,

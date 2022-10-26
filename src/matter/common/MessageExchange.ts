@@ -7,37 +7,22 @@
 import { Message, MessageCodec, SessionType } from "../../codec/MessageCodec";
 import { Queue } from "../../util/Queue";
 import { Session } from "../session/Session";
-import { Channel } from "../../net/Channel";
-import { MessageType } from "../session/secure/SecureChannelMessages";
-import { MessageCounter } from "./ExchangeManager";
+import { MessageType, SECURE_CHANNEL_PROTOCOL_ID } from "../session/secure/SecureChannelMessages";
+import { MessageChannel, MessageCounter } from "./ExchangeManager";
 import { getPromiseResolver } from "../../util/Promises";
 import { Time, Timer } from "../../time/Time";
+import { Logger } from "../../log/Logger";
 
-class MessageChannel<ContextT> implements Channel<Message> {
-    constructor(
-        readonly channel: Channel<Buffer>,
-        private readonly session: Session<ContextT>,
-    ) {}
-
-    send(message: Message): Promise<void> {
-        const packet = this.session.encode(message);
-        const bytes = MessageCodec.encodePacket(packet);
-        return this.channel.send(bytes);
-    }
-
-    getName() {
-        return `${this.channel.getName()} on session ${this.session.getName()}`;
-    }
-}
+const logger = Logger.get("MessageExchange");
 
 export class MessageExchange<ContextT> {
     static fromInitialMessage<ContextT>(
-        session: Session<ContextT>,
-        channel: Channel<Buffer>,
+        channel: MessageChannel<ContextT>,
         messageCounter: MessageCounter,
         initialMessage: Message,
         closeCallback: () => void,
     ) {
+        const {session} = channel;
         const exchange = new MessageExchange<ContextT>(
             session,
             channel,
@@ -55,13 +40,13 @@ export class MessageExchange<ContextT> {
     }
 
     static initiate<ContextT>(
-        session: Session<ContextT>,
-        channel: Channel<Buffer>,
+        channel: MessageChannel<ContextT>,
         exchangeId: number,
         protocolId: number,
         messageCounter: MessageCounter,
         closeCallback: () => void,
     ) {
+        const {session} = channel;
         return new MessageExchange(
             session,
             channel,
@@ -76,7 +61,6 @@ export class MessageExchange<ContextT> {
         );
     }
 
-    readonly channel: MessageChannel<ContextT>;
     private readonly activeRetransmissionTimeoutMs: number;
     private readonly retransmissionRetries: number;
     private readonly messagesQueue = new Queue<Message>();
@@ -88,28 +72,32 @@ export class MessageExchange<ContextT> {
 
     constructor(
         readonly session: Session<ContextT>,
-        channel: Channel<Buffer>,
+        readonly channel: MessageChannel<ContextT>,
         private readonly messageCounter: MessageCounter,
         private readonly isInitiator: boolean,
-        private readonly sessionId: number,
+        private readonly peerSessionId: number,
         private readonly nodeId: bigint | undefined,
         private readonly peerNodeId: bigint | undefined,
         private readonly exchangeId: number,
         private readonly protocolId: number,
         private readonly closeCallback: () => void,
     ) {
-        this.channel = new MessageChannel(channel, session);
-        const {activeRetransmissionTimeoutMs, idleRetransmissionTimeoutMs, retransmissionRetries} = session.getMrpParameters();
+        const {activeRetransmissionTimeoutMs: activeRetransmissionTimeoutMs, retransmissionRetries} = session.getMrpParameters();
         this.activeRetransmissionTimeoutMs = activeRetransmissionTimeoutMs;
         this.retransmissionRetries = retransmissionRetries;
     }
 
     onMessageReceived(message: Message) {
-        const { packetHeader: { messageId }, payloadHeader: { requiresAck, ackedMessageId, messageType } } = message;
+        const { packetHeader: { messageId }, payloadHeader: { requiresAck, ackedMessageId, protocolId, messageType } } = message;
+
+        logger.debug("onMessageReceived", MessageCodec.messageToString(message));
+        logger.debug(this.exchangeId, this.sentMessageToAck !== undefined ? MessageCodec.messageToString(this.sentMessageToAck) : "no message to ack");
 
         if (messageId === this.receivedMessageToAck?.packetHeader.messageId) {
             // Received a message retransmission but the reply is not ready yet, ignoring
-            // TODO: send a standalone ack if ack is requested
+            if (requiresAck) {
+                this.send(MessageType.StandaloneAck, Buffer.alloc(0));
+            }
             return;
         }
         if (messageId === this.sentMessageToAck?.payloadHeader.ackedMessageId) {
@@ -118,17 +106,21 @@ export class MessageExchange<ContextT> {
             this.channel.send(this.sentMessageToAck);
             return;
         }
-        if (this.sentMessageToAck !== undefined) {
+        const sentMessageIdToAck = this.sentMessageToAck?.packetHeader.messageId;
+        if (sentMessageIdToAck !== undefined) {
             if (ackedMessageId === undefined) throw new Error("Previous message ack is missing");
-            if (ackedMessageId !== this.sentMessageToAck.packetHeader.messageId) throw new Error("Incorrect ack received");
+            if (ackedMessageId !== sentMessageIdToAck) throw new Error(`Incorrect ack received. Expected ${sentMessageIdToAck}, received: ${ackedMessageId}`);
             // The other side has received our previous message
             this.sentMessageAckSuccess?.();
             this.sentMessageToAck = undefined;
             this.retransmissionTimer?.stop();
         }
-        if (messageType === MessageType.StandaloneAck) {
+        if (protocolId === SECURE_CHANNEL_PROTOCOL_ID && messageType === MessageType.StandaloneAck) {
             // Don't include standalone acks in the message stream
             return;
+        }
+        if (protocolId !== this.protocolId) {
+            throw new Error(`Received a message for an unexpected protocol. Expected: ${this.protocolId}, received: ${protocolId}`);
         }
         if (requiresAck) {
             this.receivedMessageToAck = message;
@@ -140,7 +132,7 @@ export class MessageExchange<ContextT> {
         if (this.sentMessageToAck !== undefined) throw new Error("The previous message has not been acked yet, cannot send a new message");
         const message = {
             packetHeader: {
-                sessionId: this.sessionId,
+                sessionId: this.peerSessionId,
                 sessionType: SessionType.Unicast, // TODO: support multicast
                 messageId: this.messageCounter.getIncrementedCounter(),
                 destNodeId: this.peerNodeId,
@@ -148,7 +140,7 @@ export class MessageExchange<ContextT> {
             },
             payloadHeader: {
                 exchangeId: this.exchangeId,
-                protocolId: this.protocolId,
+                protocolId: messageType === MessageType.StandaloneAck ? SECURE_CHANNEL_PROTOCOL_ID : this.protocolId,
                 messageType,
                 isInitiatorMessage: this.isInitiator,
                 requiresAck: messageType === MessageType.StandaloneAck ? false : true,
@@ -188,8 +180,8 @@ export class MessageExchange<ContextT> {
         return message;
     }
 
-    private retransmitMessage(message: Message, retransmissionCount: number) {
-        this.channel.send(message);
+    private async retransmitMessage(message: Message, retransmissionCount: number) {
+        await this.channel.send(message);
         retransmissionCount++;
         if (retransmissionCount === this.retransmissionRetries) return;
         this.retransmissionTimer = Time.getTimer(this.activeRetransmissionTimeoutMs, () => this.retransmitMessage(message, retransmissionCount))

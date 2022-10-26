@@ -12,7 +12,7 @@ import { SecureChannelProtocol } from "./matter/session/secure/SecureChannelProt
 import { PaseServer } from "./matter/session/secure/PaseServer";
 import { Crypto } from "./crypto/Crypto";
 import { CaseServer } from "./matter/session/secure/CaseServer";
-import { ClusterServer, InteractionProtocol } from "./matter/interaction/InteractionProtocol";
+import { ClusterServer, InteractionServer } from "./matter/interaction/InteractionServer";
 import { BasicInformationCluster } from "./matter/cluster/BasicInformationCluster";
 import { GeneralCommissioningCluster, RegulatoryLocationType } from "./matter/cluster/GeneralCommissioningCluster";
 import { OperationalCredentialsCluster } from "./matter/cluster/OperationalCredentialsCluster";
@@ -25,6 +25,7 @@ import { singleton } from "./util/Singleton";
 import { OnOffCluster } from "./matter/cluster/OnOffCluster";
 import { GeneralCommissioningClusterHandler } from "./matter/cluster/server/GeneralCommissioningServer";
 import { OperationalCredentialsClusterHandler } from "./matter/cluster/server/OperationalCredentialsServer";
+import { MdnsScanner } from "./matter/mdns/MdnsScanner";
 import { Time } from "./time/Time";
 import { TimeNode } from "./time/TimeNode";
 
@@ -64,16 +65,17 @@ class Main {
         );
 
         // We listen to the attribute update to trigger an action. This could also have been done in the method invokations in the server.
-        onOffClusterServer.attributes.on.addListener(0, on => commandExecutor(on ? "on" : "off")?.());
+        onOffClusterServer.attributes.on.addListener(on => commandExecutor(on ? "on" : "off")?.());
 
         (new MatterDevice(deviceName, deviceType, vendorId, productId, discriminator))
             .addNetInterface(await UdpInterface.create(5540))
+            .addScanner(await MdnsScanner.create())
             .addBroadcaster(await MdnsBroadcaster.create())
             .addProtocolHandler(new SecureChannelProtocol(
                     new PaseServer(20202021, { iteration: 1000, salt: Crypto.getRandomData(32) }),
                     new CaseServer(),
                 ))
-            .addProtocolHandler(new InteractionProtocol()
+            .addProtocolHandler(new InteractionServer()
                .addEndpoint(0x00, DEVICE.ROOT, [
                    new ClusterServer(BasicInformationCluster, {
                        dataModelRevision: 1,

@@ -7,10 +7,9 @@
 import { SECURE_CHANNEL_PROTOCOL_ID } from "./session/secure/SecureChannelMessages";
 import { ResumptionRecord, SessionManager } from "./session/SessionManager";
 import { NetInterface } from "../net/NetInterface";
-import { ExchangeManager } from "./common/ExchangeManager";
+import { ExchangeManager, MessageChannel } from "./common/ExchangeManager";
 import { PaseClient } from "./session/secure/PaseClient";
 import { ClusterClient, InteractionClient } from "./interaction/InteractionClient";
-import { INTERACTION_PROTOCOL_ID } from "./interaction/InteractionProtocol";
 import { BasicInformationCluster } from "./cluster/BasicInformationCluster";
 import { CommissioningError, GeneralCommissioningCluster, RegulatoryLocationType, CommissioningSuccessFailureResponse } from "./cluster/GeneralCommissioningCluster";
 import { CertificateType, CertSigningRequestT, OperationalCredentialsCluster } from "./cluster/OperationalCredentialsCluster";
@@ -21,6 +20,7 @@ import { Scanner } from "./common/Scanner";
 import { Fabric, FabricBuilder } from "./fabric/Fabric";
 import { CaseClient } from "./session/secure/CaseClient";
 import { requireMinNodeVersion } from "../util/Node";
+import { ChannelManager } from "./common/ChannelManager";
 import { Logger } from "../log/Logger";
 import { Time } from "../time/Time";
 
@@ -45,7 +45,8 @@ export class MatterController {
     }
 
     private readonly sessionManager = new SessionManager(this);
-    private readonly exchangeManager = new ExchangeManager<MatterController>(this.sessionManager);
+    private readonly channelManager = new ChannelManager();
+    private readonly exchangeManager = new ExchangeManager<MatterController>(this.sessionManager, this.channelManager);
     private readonly paseClient = new PaseClient();
     private readonly caseClient = new CaseClient();
 
@@ -62,10 +63,12 @@ export class MatterController {
         const paseChannel = await this.netInterface.openChannel(commissionAddress, commissionPort);
 
         // Do PASE paring
-        const paseSecureSession = await this.paseClient.pair(this, this.exchangeManager.initiateExchange(this.sessionManager.getUnsecureSession(), paseChannel, SECURE_CHANNEL_PROTOCOL_ID), setupPin);
+        const paseUnsecureMessageChannel = new MessageChannel(paseChannel, this.sessionManager.getUnsecureSession());
+        const paseSecureSession = await this.paseClient.pair(this, this.exchangeManager.initiateExchangeWithChannel(paseUnsecureMessageChannel, SECURE_CHANNEL_PROTOCOL_ID), setupPin);
 
         // Use the created secure session to do the commissioning
-        let interactionClient = new InteractionClient(() => this.exchangeManager.initiateExchange(paseSecureSession, paseChannel, INTERACTION_PROTOCOL_ID));
+        const paseSecureMessageChannel = new MessageChannel(paseChannel, paseSecureSession);
+        let interactionClient = new InteractionClient(this.exchangeManager, paseSecureMessageChannel);
 
         // Get and display the product name (just for debugging)
         const basicClusterClient = ClusterClient(interactionClient, 0, BasicInformationCluster);
@@ -101,14 +104,16 @@ export class MatterController {
         });
 
         // Look for the device broadcast over MDNS
-        const scanResult = await this.scanner.lookForDevice(this.fabric.operationalId, peerNodeId);
-        if (scanResult === undefined) throw new Error("The device being commmissioned cannot be found on the network");
+        const scanResult = await this.scanner.findDevice(this.fabric, peerNodeId);
+        if (scanResult === undefined) throw new Error("The device being commissioned cannot be found on the network");
         const { ip: operationalIp, port: operationalPort } = scanResult;
 
         // Do CASE pairing
         const operationalChannel = await this.netInterface.openChannel(operationalIp, operationalPort);
-        const operationalSecureSession = await this.caseClient.pair(this, this.exchangeManager.initiateExchange(this.sessionManager.getUnsecureSession(), operationalChannel, SECURE_CHANNEL_PROTOCOL_ID), this.fabric, peerNodeId);
-        interactionClient = new InteractionClient(() => this.exchangeManager.initiateExchange(operationalSecureSession, operationalChannel, INTERACTION_PROTOCOL_ID));
+        const operationalUnsecureMessageExchange = new MessageChannel(operationalChannel, this.sessionManager.getUnsecureSession());
+        const operationalSecureSession = await this.caseClient.pair(this, this.exchangeManager.initiateExchangeWithChannel(operationalUnsecureMessageExchange, SECURE_CHANNEL_PROTOCOL_ID), this.fabric, peerNodeId);
+        this.channelManager.setChannel(this.fabric, peerNodeId, new MessageChannel(operationalChannel, operationalSecureSession));
+        interactionClient = new InteractionClient(this.exchangeManager, this.channelManager.getChannel(this.fabric, peerNodeId));
 
         // Complete the commission
         generalCommissioningClusterClient = ClusterClient(interactionClient, 0, GeneralCommissioningCluster);
@@ -116,14 +121,7 @@ export class MatterController {
     }
 
     async connect(nodeId: bigint) {
-        const scanResult = await this.scanner.lookForDevice(this.fabric.operationalId, nodeId);
-        if (scanResult === undefined) throw new Error("The device being commmissioned cannot be found on the network");
-        const { ip: operationalIp, port: operationalPort } = scanResult;
-
-        // Do CASE pairing
-        const operationalChannel = await this.netInterface.openChannel(operationalIp, operationalPort);
-        const operationalSecureSession = await this.caseClient.pair(this, this.exchangeManager.initiateExchange(this.sessionManager.getUnsecureSession(), operationalChannel, SECURE_CHANNEL_PROTOCOL_ID), this.fabric, nodeId);
-        return new InteractionClient(() => this.exchangeManager.initiateExchange(operationalSecureSession, operationalChannel, INTERACTION_PROTOCOL_ID));
+        return new InteractionClient(this.exchangeManager, this.channelManager.getChannel(this.fabric, nodeId));
     }
 
     private ensureSuccess({ errorCode, debugText }: CommissioningSuccessFailureResponse) {
@@ -135,8 +133,8 @@ export class MatterController {
         return this.sessionManager.getNextAvailableSessionId();
     }
 
-    createSecureSession(sessionId: number, nodeId: bigint, peerNodeId: bigint, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, isResumption: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
-        return this.sessionManager.createSecureSession(sessionId, nodeId, peerNodeId, peerSessionId, sharedSecret, salt, isInitiator, isResumption, idleRetransTimeoutMs, activeRetransTimeoutMs);
+    createSecureSession(sessionId: number, fabric: Fabric | undefined,  peerNodeId: bigint, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, isResumption: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
+        return this.sessionManager.createSecureSession(sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, salt, isInitiator, isResumption, idleRetransTimeoutMs, activeRetransTimeoutMs);
     }
 
     getResumptionRecord(resumptionId: Buffer) {

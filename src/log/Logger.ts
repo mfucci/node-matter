@@ -54,14 +54,11 @@ export class Logger {
     static logLevels: { [logger: string]: Level } = {};
 
     static get(name: string) {
-        return new Logger(name, this.logLevels[name] ?? this.defaultLogLevel);
+        return new Logger(name);
     }
-
-    private readonly time = Time.get();
 
     constructor(
         private readonly name: string,
-        public minLevel: Level,
     ) {}
 
     debug = (...values: any[]) => this.log(Level.DEBUG, values);
@@ -71,7 +68,7 @@ export class Logger {
     fatal = (...values: any[]) => this.log(Level.FATAL, values);
 
     private log(level: Level, values: any[]) {
-        if (level < this.minLevel) return;
-        Logger.log(level, Logger.logFormater(this.time.now(), level, this.name, values));
+        if (level < (Logger.logLevels[this.name] ?? Logger.defaultLogLevel)) return;
+        Logger.log(level, Logger.logFormater(Time.now(), level, this.name, values));
     }
 }

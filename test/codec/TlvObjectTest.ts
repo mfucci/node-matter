@@ -8,6 +8,7 @@ import assert from "assert";
 import { TlvTag, TlvType } from "../../src/codec/TlvCodec";
 import { BooleanT, ByteStringT, JsType, ObjectT, Field, TlvObjectCodec, UnsignedIntT, OptionalField } from "../../src/codec/TlvObjectCodec";
 import { DataReportT } from "../../src/matter/interaction/InteractionMessages";
+import { DataReport } from "../../src/matter/interaction/InteractionMessenger";
 
 
 const TEST_TEMPLATE = ObjectT({
@@ -39,7 +40,7 @@ const DECODED_NO_OPTIONALS: JsType<typeof TEST_TEMPLATE> = {
     hasPbkdfParameters: false,
 };
 
-const DECODED_ARRAY_VARIABLE = {
+const DECODED_ARRAY_VARIABLE: DataReport = {
     values: [
         { value: {
             version: 0x0cc69a79,

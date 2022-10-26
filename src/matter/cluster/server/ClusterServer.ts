@@ -1,3 +1,9 @@
+/**
+ * @license
+ * Copyright 2022 The node-matter Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { MatterDevice } from "../../MatterDevice";
 import { Session } from "../../session/Session";
 import { Cluster, Command, Commands, AttributeJsType, Attributes, Attribute, OptionalAttribute } from "../Cluster";

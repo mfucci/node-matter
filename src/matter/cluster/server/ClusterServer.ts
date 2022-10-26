@@ -14,7 +14,7 @@ export type AttributeInitialValues<A extends Attributes> = Merge<{ [P in Mandato
 type MandatoryCommandNames<C extends Commands> = {[K in keyof C]: C[K] extends OptionalCommand<any, any> ? never : K}[keyof C];
 type OptionalCommandNames<C extends Commands> = {[K in keyof C]: C[K] extends OptionalCommand<any, any> ? K : never}[keyof C];
 type CommandHandler<C extends Command<any, any>, A extends AttributeServers<any>> = C extends Command<infer RequestT, infer ResponseT> ? (args: { request: RequestT, attributes: A, session: Session<MatterDevice> }) => Promise<ResponseT> : never;
-export type CommandHandlers<T extends Commands, A extends AttributeServers<any>> = Merge<{ [P in MandatoryCommandNames<T>]: CommandHandler<T[P], A> }, { [P in OptionalCommandNames<T>]?: CommandHandler<T[P], A> }>;
+type CommandHandlers<T extends Commands, A extends AttributeServers<any>> = Merge<{ [P in MandatoryCommandNames<T>]: CommandHandler<T[P], A> }, { [P in OptionalCommandNames<T>]?: CommandHandler<T[P], A> }>;
 
 /** Handlers to process cluster commands */
 export type ClusterServerHandlers<C extends Cluster<any, any>> = CommandHandlers<C["commands"], AttributeServers<C["attributes"]>>;

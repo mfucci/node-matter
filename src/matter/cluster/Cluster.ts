@@ -20,8 +20,12 @@ export const OptionalWritableAttribute = <T,>(id: number, template: Template<T>,
 /* Interfaces and helper methods to define a cluster command */
 export const NoArgumentsT = ObjectT({});
 export const NoResponseT = <Template<void>>{};
-export interface Command<RequestT, ResponseT> { requestId: number, requestTemplate: Template<RequestT>, responseId: number, responseTemplate: Template<ResponseT> };
-export const Command = <RequestT, ResponseT>(requestId: number, requestTemplate: Template<RequestT>, responseId: number, responseTemplate: Template<ResponseT>): Command<RequestT, ResponseT> => ({ requestId, requestTemplate, responseId, responseTemplate });
+export interface Command<RequestT, ResponseT> { optional: boolean, requestId: number, requestTemplate: Template<RequestT>, responseId: number, responseTemplate: Template<ResponseT> };
+export interface OptionalCommand<RequestT, ResponseT> extends Command<RequestT, ResponseT> { optional: true };
+export type ResponseType<T extends Command<any, any>> = T extends OptionalCommand<any, infer ResponseT> ? ResponseT | undefined : (T extends Command<any, infer ResponseT> ? ResponseT : never);
+export type RequestType<T extends Command<any, any>> = T extends Command<infer RequestT, any> ? RequestT : never;
+export const Command = <RequestT, ResponseT>(requestId: number, requestTemplate: Template<RequestT>, responseId: number, responseTemplate: Template<ResponseT>): Command<RequestT, ResponseT> => ({ optional: false, requestId, requestTemplate, responseId, responseTemplate });
+export const OptionalCommand = <RequestT, ResponseT>(requestId: number, requestTemplate: Template<RequestT>, responseId: number, responseTemplate: Template<ResponseT>): OptionalCommand<RequestT, ResponseT> => ({ optional: true, requestId, requestTemplate, responseId, responseTemplate });
 
 /* Interfaces and helper methods to define a cluster */
 export interface Attributes { [key: string]: Attribute<any> }

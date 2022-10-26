@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { Merge } from "../util/Type";
 import { TlvType, Element, TlvCodec, TlvTag } from "./TlvCodec";
 
 // Type structure definitions
@@ -19,7 +20,7 @@ type FieldTemplates = {[key: string]: Field<any> | OptionalField<any>};
 type OptionalKeys<T extends object> = {[K in keyof T]: T[K] extends OptionalField<any> ? K : never}[keyof T];
 type RequiredKeys<T extends object> = {[K in keyof T]: T[K] extends OptionalField<any> ? never : K}[keyof T];
 export type JsType<Type> = Type extends Template<infer T> ? T : never;
-export type TypeFromFieldTemplates<T extends FieldTemplates> = { [P in RequiredKeys<T>]: JsType<T[P]> } & { [P in OptionalKeys<T>]?: JsType<T[P]> };
+export type TypeFromFieldTemplates<T extends FieldTemplates> = Merge<{ [P in RequiredKeys<T>]: JsType<T[P]> }, { [P in OptionalKeys<T>]?: JsType<T[P]> }>;
 
 // Template definitions
 export const StringT:Template<string> = { tlvType: TlvType.String };

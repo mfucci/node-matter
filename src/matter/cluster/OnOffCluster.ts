@@ -5,7 +5,7 @@
  */
 
 import { BooleanT } from "../../codec/TlvObjectCodec";
-import { Attribute, Cluster, Command, NoArgumentsT, NoResponseT } from "./Cluster";
+import { Attribute, Cluster, Command, NoArgumentsT, NoResponseT, OptionalCommand } from "./Cluster";
 
 export const OnOffCluster = Cluster(
     0x06,

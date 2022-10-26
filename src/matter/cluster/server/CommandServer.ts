@@ -5,7 +5,7 @@
  */
 
 import { Element } from "../../../codec/TlvCodec";
-import { ObjectT, Template, TlvObjectCodec } from "../../../codec/TlvObjectCodec";
+import { Template, TlvObjectCodec } from "../../../codec/TlvObjectCodec";
 import { MatterDevice } from "../../MatterDevice";
 import { Session } from "../../session/Session";
 

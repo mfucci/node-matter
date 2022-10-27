@@ -9,7 +9,8 @@ import { Template } from "../../../codec/TlvObjectCodec";
 export class AttributeServer<T> {
     private value: T;
     private version = 0;
-    private readonly listeners = new Map<number, (value: T) => void>();
+    private readonly matterListeners = new Array<(value: T, version: number) => void>();
+    private readonly listeners = new Array<(newValue: T, oldValue: T) => void>();
 
     constructor(
         readonly id: number,
@@ -21,14 +22,13 @@ export class AttributeServer<T> {
     }
 
     set(value: T) {
-        if (value === this.value) return;
-
-        this.version++;
-        this.value = value;
-
-        if (this.listeners.size !== 0) {
-            [...this.listeners.values()].forEach(listener => listener(value))
-        } 
+        const oldValue = this.value;
+        if (value !== oldValue) {
+            this.version++;
+            this.value = value;
+            this.matterListeners.forEach(listener => listener(value, this.version));
+        }
+        this.listeners.forEach(listener => listener(value, oldValue));
     }
 
     get(): T {
@@ -39,11 +39,19 @@ export class AttributeServer<T> {
         return { version: this.version, value: this.value };
     }
 
-    addListener(id: number, listener: (value: T) => void) {
-        this.listeners.set(id, listener);
+    addMatterListener(listener: (value: T, version: number) => void) {
+        this.matterListeners.push(listener);
     }
 
-    removeListener(id: number) {
-        this.listeners.delete(id);
+    removeMatterListener(listener: (value: T, version: number) => void) {
+        this.matterListeners.splice(this.matterListeners.findIndex(item => item === listener), 1);
+    }
+
+    addListener(listener: (newValue: T, oldValue: T) => void) {
+        this.listeners.push(listener);
+    }
+
+    removeListener(listener: (newValue: T, oldValue: T) => void) {
+        this.listeners.splice(this.listeners.findIndex(item => item === listener), 1);
     }
 }

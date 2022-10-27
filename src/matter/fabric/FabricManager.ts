@@ -46,5 +46,6 @@ export class FabricManager {
 
     completeCommission() {
         // TODO: disable failSafe timer
+        // TODO: delete CASE sessions
     }
 }

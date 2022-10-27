@@ -9,9 +9,13 @@ import { MessageExchange } from "../common/MessageExchange";
 import { MatterController } from "../MatterController";
 import { capitalize } from "../../util/String";
 import { Attribute, AttributeJsType, Attributes, Cluster, Command, Commands, NoResponseT, RequestType, ResponseType } from "../cluster/Cluster";
-import { InteractionClientMessenger } from "./InteractionMessenger";
+import { DataReport, InteractionClientMessenger } from "./InteractionMessenger";
 import { ResultCode } from "../cluster/server/CommandServer";
 import { ClusterClient } from "../cluster/client/ClusterClient";
+import { ExchangeManager, MessageChannel } from "../common/ExchangeManager";
+import { INTERACTION_PROTOCOL_ID } from "./InteractionServer";
+import { ProtocolHandler } from "../common/ProtocolHandler";
+import { StatusCode } from "./InteractionMessages";
 
 export function ClusterClient<CommandT extends Commands, AttributeT extends Attributes>(interactionClient: InteractionClient, endpointId: number, clusterDef: Cluster<CommandT, AttributeT>): ClusterClient<CommandT, AttributeT> {
     const result: any = {};
@@ -23,7 +27,7 @@ export function ClusterClient<CommandT extends Commands, AttributeT extends Attr
         const captilizedAttributeName = capitalize(attributeName);
         result[`get${captilizedAttributeName}`] = async () => interactionClient.get(endpointId, clusterId, attribute);
         result[`set${captilizedAttributeName}`] = async <T,>(value: T) => interactionClient.set<T>(endpointId, clusterId, attribute, value);
-        result[`subscribe${captilizedAttributeName}`] = async () => interactionClient.subscribe(endpointId, clusterId, attribute);
+        result[`subscribe${captilizedAttributeName}`] = async <T,>(listener: (value: T, version: number) => void, minIntervalS: number, maxIntervalS: number) => interactionClient.subscribe(endpointId, clusterId, attribute, listener, minIntervalS, maxIntervalS);
     }
 
     // Add command calls
@@ -35,10 +39,35 @@ export function ClusterClient<CommandT extends Commands, AttributeT extends Attr
     return result as ClusterClient<CommandT, AttributeT>;
 }
 
-export class InteractionClient {
+export class SubscriptionClient implements ProtocolHandler<MatterController> {
+
     constructor(
-        private readonly exchangeProvider: () => MessageExchange<MatterController>,
+        private readonly subscriptionListeners: Map<number, (dataReport: DataReport) => void>,
     ) {}
+
+    getId() {
+        return INTERACTION_PROTOCOL_ID;
+    }
+
+    async onNewExchange(exchange: MessageExchange<MatterController>) {
+        const messenger = new InteractionClientMessenger(exchange);
+        const dataReport = await messenger.readDataReport();
+        await messenger.sendStatus(StatusCode.Success);
+        const subscriptionId = dataReport.subscriptionId;
+        if (subscriptionId === undefined) return;
+        this.subscriptionListeners.get(subscriptionId)?.(dataReport);
+    }
+}
+
+export class InteractionClient {
+    private readonly subscriptionListeners = new Map<number, (dataReport: DataReport) => void>();
+
+    constructor(
+        private readonly exchangeManager: ExchangeManager<MatterController>,
+        private readonly channel: MessageChannel<MatterController>,
+    ) {
+        this.exchangeManager.addProtocolHandler(new SubscriptionClient(this.subscriptionListeners));
+    }
 
     async get<A extends Attribute<any>>(endpointId: number, clusterId: number, { id, template, optional, conformanceValue }: A): Promise<AttributeJsType<A>> {
         return this.withMessenger<AttributeJsType<A>>(async messenger => {
@@ -62,8 +91,30 @@ export class InteractionClient {
         throw new Error("not implemented");
     }
 
-    async subscribe(endpointId: number, clusterId: number, { id, template, conformanceValue }: Attribute<any>): Promise<void> {
-        throw new Error("not implemented");
+    async subscribe<A extends Attribute<any>>(
+        endpointId: number,
+        clusterId: number,
+        { id, template, conformanceValue }: A,
+        listener: (value: AttributeJsType<A>, version: number) => void,
+        minIntervalFloorSeconds: number,  
+        maxIntervalCeilingSeconds: number, 
+    ): Promise<void> {
+        return this.withMessenger<void>(async messenger => {
+            const { subscriptionId } = await messenger.sendSubscribeRequest({
+                attributeRequests: [ {endpointId , clusterId, id} ],
+                keepSubscriptions: true,
+                minIntervalFloorSeconds,  
+                maxIntervalCeilingSeconds,              
+                isFabricFiltered: true,
+            });
+
+            this.subscriptionListeners.set(subscriptionId, (dataReport: DataReport) => {
+                const value = dataReport.values.map(({value}) => value).find(({ path }) => endpointId === path.endpointId && clusterId === path.clusterId && id === path.id);
+                if (value === undefined) return;
+                listener(TlvObjectCodec.decodeElement(value.value, template), value.version);
+            });
+            return;
+        });
     }
 
     async invoke<C extends Command<any, any>>(endpointId: number, clusterId: number, request: RequestType<C>, id: number, requestTemplate: Template<RequestType<C>>, responseId: number, responseTemplate: Template<ResponseType<C>>, optional: boolean): Promise<ResponseType<C>> {
@@ -92,7 +143,7 @@ export class InteractionClient {
     }
 
     private async withMessenger<T>(invoke: (messenger: InteractionClientMessenger) => Promise<T>): Promise<T> {
-        const messenger = new InteractionClientMessenger(this.exchangeProvider());
+        const messenger = new InteractionClientMessenger(this.exchangeManager.initiateExchangeWithChannel(this.channel, INTERACTION_PROTOCOL_ID));
         try {
             return await invoke(messenger);
         } finally {

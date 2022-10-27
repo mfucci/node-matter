@@ -53,8 +53,7 @@ export class CaseClient {
             Crypto.decrypt(resumeKey, resumeMic, RESUME2_MIC_NONCE);
 
             const secureSessionSalt = Buffer.concat([random, resumptionRecord.resumptionId]);
-            secureSession = await client.createSecureSession(sessionId, nodeId, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, true, true);
-            secureSession.setFabric(fabric);
+            secureSession = await client.createSecureSession(sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, true, true);
             await messenger.sendSuccess();
             logger.info(`Case client: session resumed with ${messenger.getChannelName()}`);
 
@@ -84,8 +83,7 @@ export class CaseClient {
      
             // All good! Create secure session
             const secureSessionSalt = Buffer.concat([operationalIdentityProtectionKey, Crypto.hash([ sigma1Bytes, sigma2Bytes, sigma3Bytes ])]);
-            secureSession = await client.createSecureSession(sessionId, nodeId, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, true, false);
-            secureSession.setFabric(fabric);
+            secureSession = await client.createSecureSession(sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, true, false);
             logger.info(`Case client: Paired succesfully with ${messenger.getChannelName()}`);
             resumptionRecord = {fabric, peerNodeId, sharedSecret, resumptionId: peerResumptionId };
         }

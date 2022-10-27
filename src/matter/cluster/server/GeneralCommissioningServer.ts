@@ -1,3 +1,9 @@
+/**
+ * @license
+ * Copyright 2022 The node-matter Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { Logger } from "../../../log/Logger";
 import { MatterDevice } from "../../MatterDevice";
 import { SecureSession } from "../../session/SecureSession";

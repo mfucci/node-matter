@@ -7,30 +7,30 @@
 import { Message, MessageCodec, Packet } from "../../codec/MessageCodec";
 import { Crypto } from "../../crypto/Crypto";
 import { Fabric } from "../fabric/Fabric";
-import { SubscriptionHandler } from "../interaction/InteractionProtocol";
+import { SubscriptionHandler } from "../interaction/SubscriptionHandler";
 import { LEBufferWriter } from "../../util/LEBufferWriter";
 import { DEFAULT_ACTIVE_RETRANSMISSION_TIMEOUT_MS, DEFAULT_IDLE_RETRANSMISSION_TIMEOUT_MS, DEFAULT_RETRANSMISSION_RETRIES, Session } from "./Session";
+import { UNDEFINED_NODE_ID } from "./SessionManager";
 
 const SESSION_KEYS_INFO = Buffer.from("SessionKeys");
 const SESSION_RESUMPTION_KEYS_INFO = Buffer.from("SessionResumptionKeys");
 
 export class SecureSession<T> implements Session<T> {
-    private fabric?: Fabric;
     private nextSubscriptionId = 0;
     private readonly subscriptions = new Array<SubscriptionHandler>();
 
-    static async create<T>(context: T, id: number, nodeId: bigint, peerNodeId: bigint, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, isResumption: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
+    static async create<T>(context: T, id: number, fabric: Fabric | undefined, peerNodeId: bigint, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, isResumption: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
         const keys = await Crypto.hkdf(sharedSecret, salt, isResumption ? SESSION_RESUMPTION_KEYS_INFO : SESSION_KEYS_INFO, 16 * 3);
         const decryptKey = isInitiator ? keys.slice(16, 32) : keys.slice(0, 16);
         const encryptKey = isInitiator ? keys.slice(0, 16) : keys.slice(16, 32);
         const attestationKey = keys.slice(32, 48);
-        return new SecureSession(context, id, nodeId, peerNodeId, peerSessionId, sharedSecret, decryptKey, encryptKey, attestationKey, idleRetransTimeoutMs, activeRetransTimeoutMs);
+        return new SecureSession(context, id, fabric, peerNodeId, peerSessionId, sharedSecret, decryptKey, encryptKey, attestationKey, idleRetransTimeoutMs, activeRetransTimeoutMs);
     }
 
     constructor(
         private readonly context: T,
         private readonly id: number,
-        private readonly nodeId: bigint,
+        private readonly fabric: Fabric | undefined,
         private readonly peerNodeId: bigint,
         private readonly peerSessionId: number,
         private readonly sharedSecret: Buffer,
@@ -58,16 +58,12 @@ export class SecureSession<T> implements Session<T> {
         const {header, bytes} = MessageCodec.encodePayload(message);
         const headerBytes = MessageCodec.encodePacketHeader(message.packetHeader);
         const securityFlags = headerBytes.readUInt8(3);
-        const nonce = this.generateNonce(securityFlags, header.messageId, this.nodeId);
+        const nonce = this.generateNonce(securityFlags, header.messageId, this.fabric?.nodeId ?? UNDEFINED_NODE_ID);
         return { header, bytes: Crypto.encrypt(this.encryptKey, bytes, nonce, headerBytes)};
     }
 
     getAttestationChallengeKey(): Buffer {
         return this.attestationKey;
-    }
-
-    setFabric(fabric: Fabric) {
-        this.fabric = fabric;
     }
 
     getFabric() {
@@ -96,7 +92,7 @@ export class SecureSession<T> implements Session<T> {
     }
 
     getNodeId() {
-        return this.nodeId;
+        return this.fabric?.nodeId ?? UNDEFINED_NODE_ID;
     }
 
     getPeerNodeId() {

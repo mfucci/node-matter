@@ -6,10 +6,8 @@
 
 import { MatterDevice } from "../MatterDevice";
 import { ProtocolHandler } from "../common/ProtocolHandler";
-import { Channel } from "../../net/Channel";
 import { MessageExchange } from "../common/MessageExchange";
 import { InteractionServerMessenger, InvokeRequest, InvokeResponse, ReadRequest, DataReport, SubscribeRequest, SubscribeResponse } from "./InteractionMessenger";
-import { Session } from "../session/Session";
 import { CommandServer, ResultCode } from "../cluster/server/CommandServer";
 import { DescriptorCluster } from "../cluster/DescriptorCluster";
 import { TlvObjectCodec } from "../../codec/TlvObjectCodec";
@@ -18,6 +16,7 @@ import { AttributeServer } from "../cluster/server/AttributeServer";
 import { Cluster } from "../cluster/Cluster";
 import { AttributeServers, AttributeInitialValues, ClusterServerHandlers } from "../cluster/server/ClusterServer";
 import { SecureSession } from "../session/SecureSession";
+import { SubscriptionHandler } from "./SubscriptionHandler";
 import { Logger } from "../../log/Logger";
 
 export const INTERACTION_PROTOCOL_ID = 0x0001;
@@ -47,23 +46,24 @@ export class ClusterServer<ClusterT extends Cluster<any, any>> {
     }
 }
 
-interface Path {
+export interface Path {
     endpointId: number,
     clusterId: number,
     id: number,
 }
-interface AttributeWithPath {
+
+export interface AttributeWithPath {
     path: Path,
     attribute: AttributeServer<any>,
 }
 
-function pathToId({endpointId, clusterId, id}: Path) {
+export function pathToId({endpointId, clusterId, id}: Path) {
     return `${endpointId}/${clusterId}/${id}`;
 }
 
 const logger = Logger.get("InteractionProtocol");
 
-export class InteractionProtocol implements ProtocolHandler<MatterDevice> {
+export class InteractionServer implements ProtocolHandler<MatterDevice> {
     private readonly attributes = new Map<string, AttributeServer<any>>();
     private readonly attributePaths = new Array<Path>();
     private readonly commands = new Map<string, CommandServer<any, any>>();
@@ -147,8 +147,9 @@ export class InteractionProtocol implements ProtocolHandler<MatterDevice> {
         logger.debug(`Received subscribe request from ${exchange.channel.getName()}`);
 
         if (!exchange.session.isSecure()) throw new Error("Subscriptions are only implemented on secure sessions");
-
         const session = exchange.session as SecureSession<MatterDevice>;
+        const fabric = session.getFabric();
+        if (fabric === undefined) throw new Error("Subscriptions are only implemented after a fabric has been assigned");
 
         if (!keepSubscriptions) {
             session.clearSubscriptions();
@@ -158,12 +159,13 @@ export class InteractionProtocol implements ProtocolHandler<MatterDevice> {
             const attributes = this.getAttributes(attributeRequests);
 
             if (attributeRequests.length === 0) throw new Error("Invalid subscription request");
+            if (minIntervalFloorSeconds < 0) throw new Error("minIntervalFloorSeconds should be greater or equal to 0");
+            if (maxIntervalCeilingSeconds < 0) throw new Error("maxIntervalCeilingSeconds should be greater or equal to 1");
+            if (maxIntervalCeilingSeconds < minIntervalFloorSeconds) throw new Error("maxIntervalCeilingSeconds should be greater or equal to minIntervalFloorSeconds");
 
-            return {
-                subscriptionId: session.addSubscription(SubscriptionHandler.Builder(session, exchange.channel.channel, session.getContext(), attributes)),
-                minIntervalFloorSeconds,
-                maxIntervalCeilingSeconds,
-            };
+            const subscriptionId = session.addSubscription(SubscriptionHandler.Builder(session.getContext(), fabric, session.getPeerNodeId(), attributes, minIntervalFloorSeconds, maxIntervalCeilingSeconds));
+
+            return { subscriptionId, maxIntervalCeilingSeconds, interactionModelRevision: 1 };
         }
     }
 
@@ -211,45 +213,5 @@ export class InteractionProtocol implements ProtocolHandler<MatterDevice> {
         })
 
         return result;
-    }
-}
-
-export class SubscriptionHandler {
-
-    static Builder = (session: Session<MatterDevice>, channel: Channel<Buffer>, server: MatterDevice, attributes: AttributeWithPath[]) => (subscriptionId: number) => new SubscriptionHandler(subscriptionId, session, channel, server, attributes);
-
-    constructor(
-        readonly subscriptionId: number,
-        private readonly session: Session<MatterDevice>,
-        private readonly channel: Channel<Buffer>,
-        private readonly server: MatterDevice,
-        private readonly attributes: AttributeWithPath[],
-    ) {
-        // TODO: implement minIntervalFloorSeconds and maxIntervalCeilingSeconds
-
-        attributes.forEach(({path, attribute}) => attribute.addListener(subscriptionId, () => this.sendUpdate(path, attribute)));
-    }
-
-    sendUpdate(path: Path, attribute: AttributeServer<any>) {
-        // TODO: this should be sent to the last discovered address of this node instead of the one used to request the subscription
-
-        const { value, version } = attribute.getWithVersion();
-        const exchange = this.server.initiateExchange(this.session, this.channel, INTERACTION_PROTOCOL_ID);
-        new InteractionServerMessenger(exchange).sendDataReport({
-            subscriptionId: this.subscriptionId,
-            isFabricFiltered: true,
-            interactionModelRevision: 1,
-            values: [{
-                value: {
-                    path,
-                    version,
-                    value: TlvObjectCodec.encodeElement(value, attribute.template) as Element,
-                },
-            }],
-        });
-    }
-
-    cancel() {
-        this.attributes.forEach(({attribute}) => attribute.removeListener(this.subscriptionId));
     }
 }

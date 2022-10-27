@@ -38,8 +38,10 @@ export class ClusterServer<ClusterT extends Cluster<any, any>> {
 
         // Create commands
         for (const name in commandDefs) {
+            const handler = (handlers as any)[name];
+            if (handler === undefined) continue;
             const { requestId, requestTemplate, responseId, responseTemplate } = commandDefs[name];
-            this.commands.push(new CommandServer(requestId, responseId, name, requestTemplate, responseTemplate, (request, session) => handlers[name]({request, attributes: this.attributes, session})));
+            this.commands.push(new CommandServer(requestId, responseId, name, requestTemplate, responseTemplate, (request, session) => handler({request, attributes: this.attributes, session})));
         }
     }
 }

@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Attribute, Attributes, Command, Commands, AttributeJsType, WritableAttribute, OptionalAttribute, OptionalWritableAttribute } from "../Cluster";
+import { Attribute, Attributes, Command, Commands, AttributeJsType, WritableAttribute, OptionalAttribute, OptionalWritableAttribute, RequestType, ResponseType } from "../Cluster";
 
-type SignatureFromCommandSpec<T> = T extends Command<infer RequestT, infer ResponseT> ? (request: RequestT) => Promise<ResponseT> : never;
+type SignatureFromCommandSpec<C extends Command<any, any>> = (request: RequestType<C>) => Promise<ResponseType<C>>;
 type GetterTypeFromSpec<A extends Attribute<any>> = A extends OptionalAttribute<infer T> ? (T | undefined) : AttributeJsType<A>;
 type AttributeGetters<A extends Attributes> = { [P in keyof A as `get${Capitalize<string & P>}`]: () => Promise<GetterTypeFromSpec<A[P]>> };
 type WrittableAttributeNames<A extends Attributes> = {[K in keyof A]: A[K] extends WritableAttribute<any> ? K : never}[keyof A] | {[K in keyof A]: A[K] extends OptionalWritableAttribute<any> ? K : never}[keyof A];

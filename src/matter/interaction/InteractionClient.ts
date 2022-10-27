@@ -8,7 +8,7 @@ import { Template, TlvObjectCodec } from "../../codec/TlvObjectCodec";
 import { MessageExchange } from "../common/MessageExchange";
 import { MatterController } from "../MatterController";
 import { capitalize } from "../../util/String";
-import { Attribute, AttributeJsType, Attributes, Cluster, Commands, NoResponseT } from "../cluster/Cluster";
+import { Attribute, AttributeJsType, Attributes, Cluster, Command, Commands, NoResponseT, RequestType, ResponseType } from "../cluster/Cluster";
 import { DataReport, InteractionClientMessenger } from "./InteractionMessenger";
 import { ResultCode } from "../cluster/server/CommandServer";
 import { ClusterClient } from "../cluster/client/ClusterClient";
@@ -32,8 +32,8 @@ export function ClusterClient<CommandT extends Commands, AttributeT extends Attr
 
     // Add command calls
     for (const commandName in commands) {
-        const { requestId, requestTemplate, responseId, responseTemplate } = commands[commandName];
-        result[commandName] = async <RequestT, ResponseT>(request: RequestT) => interactionClient.invoke<RequestT, ResponseT>(endpointId, clusterId, request, requestId, requestTemplate, responseId, responseTemplate);
+        const { requestId, requestTemplate, responseId, responseTemplate, optional } = commands[commandName];
+        result[commandName] = async <RequestT, ResponseT>(request: RequestT) => interactionClient.invoke<Command<RequestT, ResponseT>>(endpointId, clusterId, request, requestId, requestTemplate, responseId, responseTemplate, optional);
     }
 
     return result as ClusterClient<CommandT, AttributeT>;
@@ -117,8 +117,8 @@ export class InteractionClient {
         });
     }
 
-    async invoke<RequestT, ResponseT>(endpointId: number, clusterId: number, request: RequestT, id: number, requestTemplate: Template<RequestT>, responseId: number, responseTemplate: Template<ResponseT>): Promise<ResponseT> {
-        return this.withMessenger<ResponseT>(async messenger => {
+    async invoke<C extends Command<any, any>>(endpointId: number, clusterId: number, request: RequestType<C>, id: number, requestTemplate: Template<RequestType<C>>, responseId: number, responseTemplate: Template<ResponseType<C>>, optional: boolean): Promise<ResponseType<C>> {
+        return this.withMessenger<ResponseType<C>>(async messenger => {
             const { responses } = await messenger.sendInvokeCommand({
                 invokes: [
                     { path: { endpointId, clusterId, id }, args: TlvObjectCodec.encodeElement(request, requestTemplate) }
@@ -132,9 +132,11 @@ export class InteractionClient {
                 const resultCode = result.result.code;
                 if (resultCode !== ResultCode.Success) throw new Error(`Received non-success result: ${resultCode}`);
                 if (responseTemplate !== NoResponseT) throw new Error("A response was expected for this command");
-                return undefined as unknown as ResponseT; // ResponseT is void, force casting the empty result
+                return undefined as unknown as ResponseType<C>; // ResponseType is void, force casting the empty result
             } if (response !== undefined) {
                 return TlvObjectCodec.decodeElement(response.response, responseTemplate);
+            } if (optional) {
+                return undefined as ResponseType<C>; // ResponseType allows undefined for optional commands
             }
             throw new Error("Received invoke response with no result nor response");
         });

@@ -16,37 +16,38 @@ repository.
 
 ### Git
 
-Please send us the pull request from your forked repo.
+Please send us the pull request including details about your change and 
+referencing relevant issues or discussions.
 
-In the case that Commit rights to the main repository were granted to 
+In the case that write access to the main repository were granted to 
 contributors the following basic ground-rules should be applied:
 
-* No --force pushes or modifying the Git history in any way.
 * Do not use the main branch for ongoing work. Please use feature- or 
 fix-branches instead
 
 ### Guidelines for contributions
 
 The following general guidelines for contributions apply:
+* If you plan to introduce new features, changes to the somwhoe "magic" typings
+or significant changes, the discussions in GitHub are a good idea to discuss 
+details together with the community before starting to work on it. This can ease
+the PR review provess because all parties know more context.
 * The library tries to have "no external dependencies" to be used in also other 
 JavaScript environments than just Node.js. Please do not introduce new 
 dependencies without a discussion before committing the PR.
-* Request a review from at least one of the other developers. If you had a 
-discussion on the topic with one developer please make sure to include this 
-developer in any case in your reveiw list. As of writing this @mfucci needs 
-to be included as reviewer also in all cases. When the PR got approved it will
-be merged by the reviewer.
+* If you had a discussion on the topic with one developer please make sure to 
+include this developer in any case in your review list. When the PR got 
+approved it will be merged by the reviewer.
 
-In the case that Commit rights to the main repository were granted to 
+In the case that write access to the main repository were granted to 
 contributors the following rules should be applied:
 
 * External API changes and significant modifications ought to be subject to 
 an internal pull-request to solicit feedback from other contributors.
 * Internal pull-requests to solicit feedback are encouraged for any other 
 non-trivial contribution but left to the discretion of the contributor.
-* When PRs got reviewed from an other contributor with write access this 
-developer should also do the final merge after approving the PR to also do 
-the required post tasks (like delete branches if needed and such).
+* As a reviewer, upon approval, don't merge the PR, let the author do the 
+final merge and associate post merge tasks if any.
 
 "Internal-pull-request" means that also with direct commit access to the 
 main repository a PR from another branch on the repo is used.
@@ -86,7 +87,8 @@ To build the project run
 npm run build
 ```
 
-Please make sure that your code builds without warnings or errors.
+Please make sure check already locally that your code builds without warnings
+or errors.
 
 The compiled code will be generated in the build/ directory and it not 
 commited to GitHub.
@@ -110,5 +112,5 @@ You can also run a specific test using:
 npm run test -- -g [test name declared in describe()]
 ```
 
-It is expected that new features or fixes do not negatively impact the test
-results.
+Please use the testing already locally to make sure the changes do not break 
+the tests.

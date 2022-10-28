@@ -7,7 +7,7 @@
 import { Merge } from "../../../util/Type";
 import { MatterDevice } from "../../MatterDevice";
 import { Session } from "../../session/Session";
-import { Cluster, Command, Commands, AttributeJsType, Attributes, Attribute, OptionalAttribute, OptionalCommand } from "../Cluster";
+import { Cluster, Command, Commands, AttributeJsType, Attributes, Attribute, OptionalAttribute, OptionalCommand, OptionalWritableAttribute, WritableAttribute } from "../Cluster";
 import { AttributeServer } from "./AttributeServer";
 
 type MandatoryAttributeNames<A extends Attributes> = {[K in keyof A]: A[K] extends OptionalAttribute<any> ? never : K}[keyof A];
@@ -26,13 +26,16 @@ type CommandHandlers<T extends Commands, A extends AttributeServers<any>> = Merg
 export type ClusterServerHandlers<C extends Cluster<any, any>> = CommandHandlers<C["commands"], AttributeServers<C["attributes"]>>;
 
 type OptionalAttributeConf<T extends Attributes> = { [K in OptionalAttributeNames<T>]?: true };
-type MakeAttributesMandatory<T extends Attributes, C extends OptionalAttributeConf<T>> = Merge<Omit<T, keyof C>, { [ K in Extract<keyof T, keyof C>]: Attribute<AttributeJsType<T[K]>> }>;
+type MakeAttributeMandatory<A extends Attribute<any>> = A extends OptionalWritableAttribute<infer T> ? WritableAttribute<T> : (A extends OptionalAttribute<infer T> ? Attribute<T> : A);
+type MakeAttributesMandatory<T extends Attributes, C extends OptionalAttributeConf<T>> = {[K in keyof T]: K extends keyof C ? MakeAttributeMandatory<T[K]> : T[K]};
+
+/* Merge<Omit<T, keyof C>, { [ K in Extract<keyof T, keyof C>]: Attribute<AttributeJsType<T[K]>> }>; */
 const MakeAttributesMandatory = <T extends Attributes, C extends OptionalAttributeConf<T>>(attributes: T, conf: C): MakeAttributesMandatory<T, C> => {
-    const result = { ...attributes };
+    const result = <Attributes>{ ...attributes };
     for (const key in conf) {
         (result as any)[key] = { ...result[key], optional: false };
     }
-    return result;
+    return result as MakeAttributesMandatory<T, C>;
 };
 type UseOptionalAttributes<C extends Cluster<any, any>, A extends OptionalAttributeConf<C["attributes"]>> = Cluster<C["commands"], MakeAttributesMandatory<C["attributes"], A>>;
 /** Forces the presence of the specified optional attributes, so they can be used in the command handlers */

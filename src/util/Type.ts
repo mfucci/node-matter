@@ -5,4 +5,4 @@
  */
 
 /** Merges two types into one */
-export type Merge<A, B, AB = A & B> = { [K in keyof AB]: AB[K] };
+export type Merge<A, B> = A & B extends infer AB ? { [K in keyof AB]: AB[K] } : never;

@@ -15,12 +15,18 @@ import { singleton } from "./util/Singleton";
 import { MdnsScanner } from "./matter/mdns/MdnsScanner";
 import { Time } from "./time/Time";
 import { TimeNode } from "./time/TimeNode";
+import { Logger } from "./log/Logger";
+import packageJson from "../package.json";
 
 Network.get = singleton(() => new NetworkNode());
 Time.get = singleton(() => new TimeNode());
 
-class Main {
+const logger = Logger.get("Controller");
+
+class Controller {
     async start() {
+        logger.info(`node-matter@${packageJson.version}`);
+
         const ip = getParameter("ip");
         if (ip === undefined) throw new Error("Please specify the IP of the device to commission with -ip");
         const port = getIntParameter("port") ?? 5540;
@@ -35,4 +41,4 @@ class Main {
     }
 }
 
-new Main().start();
+new Controller().start();

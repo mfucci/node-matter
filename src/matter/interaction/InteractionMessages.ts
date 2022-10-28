@@ -5,17 +5,15 @@
  */
 
 import { TlvType } from "../../codec/TlvCodec";
-import { AnyT, ArrayT, BooleanT, Field, ObjectT, OptionalField, Template, UnsignedIntT, UnsignedLongT } from "../../codec/TlvObjectCodec";
+import { AnyT, ArrayT, BooleanT, EnumT, Field, ObjectT, OptionalField, UnsignedIntT, UnsignedLongT } from "../../codec/TlvObjectCodec";
 
 // See project-chip src/protocols/interaction_model/StatusCodeList.h
 export const enum StatusCode {
     Success = 0x00,
     Failure = 0x01,
 }
-export const StatusCodeT = { tlvType: TlvType.UnsignedInt } as Template<StatusCode>;
-
 export const StatusResponseT = ObjectT({
-    status: Field(0, StatusCodeT),
+    status: Field(0, EnumT<StatusCode>()),
     interactionModelRevision: Field(0xFF, UnsignedIntT),
 });
 

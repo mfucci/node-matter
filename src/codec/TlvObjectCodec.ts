@@ -31,6 +31,7 @@ export const UnsignedLongT:Template<bigint> = { tlvType: TlvType.UnsignedInt, re
 export const AnyT:Template<any> = { };
 export const ArrayT = <T,>(itemTemplate: Template<T>) => ({ tlvType: TlvType.Array, itemTemplate } as Template<T[]>);
 export const ObjectT = <F extends FieldTemplates>(fieldTemplates: F, tlvType: TlvType = TlvType.Structure) => ({ tlvType, fieldTemplates } as Template<TypeFromFieldTemplates<F>>);
+export const EnumT = <T,>() => ({ tlvType: TlvType.UnsignedInt } as Template<T>);
 export const Field = <T,>(id: number, type: Template<T>):Field<T> =>  ({...type, tag: TlvTag.contextual(id), optional: false});
 export const OptionalField = <T,>(id: number, type: Template<T>):OptionalField<T> =>  ({...Field(id, type), optional: true});
 

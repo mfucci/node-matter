@@ -6,7 +6,7 @@
 
 import { Attribute, Cluster, Command, NoResponseT } from "./Cluster";
 import { TlvType } from "../../codec/TlvCodec";
-import { ByteStringT, Field, ObjectT, OptionalField, Template, UnsignedIntT, UnsignedLongT, StringT, ArrayT, BooleanT } from "../../codec/TlvObjectCodec";
+import { ByteStringT, Field, ObjectT, OptionalField, UnsignedIntT, UnsignedLongT, StringT, ArrayT, BooleanT, EnumT } from "../../codec/TlvObjectCodec";
 
 const FabricDescriptorT = ObjectT({
     rootPublicKey: Field(1, ByteStringT), /* length: 65 */
@@ -25,7 +25,6 @@ export const enum CertificateType {
     DeviceAttestation = 1,
     ProductAttestationIntermediate = 2,
 }
-export const CertificateTypeT = { tlvType: TlvType.UnsignedInt } as Template<CertificateType>;
 
 export const AttestationRequestT = ObjectT({
     attestationNonce: Field(0, ByteStringT), /* length: 32 */
@@ -47,7 +46,7 @@ export const CertSigningRequestResponseT = ObjectT({
 });
 
 export const CertChainRequestT = ObjectT({
-    type: Field(0, CertificateTypeT),
+    type: Field(0, EnumT<CertificateType>()),
 });
 
 export const CertChainResponseT = ObjectT({
@@ -83,10 +82,9 @@ export const enum OperationalCertStatus {
     LabelConflict = 0x0a,
     InvalidFabricIndex = 0x0b,
 }
-const OperationalCertStatusT = { tlvType: TlvType.UnsignedInt } as Template<OperationalCertStatus>;
 
 export const OperationalCertificateStatusResponseT = ObjectT({
-    status: Field(0, OperationalCertStatusT),
+    status: Field(0, EnumT<OperationalCertStatus>()),
     fabricIndex: OptionalField(1, UnsignedIntT), /* min: 1, max: 254, type: fabric_idx */
     debugText: OptionalField(2, StringT), /* maxLength: 128 */
 });

@@ -16,6 +16,8 @@ import { ExchangeManager } from "./common/ExchangeManager";
 import { requireMinNodeVersion } from "../util/Node";
 import { Scanner } from "./common/Scanner";
 import { ChannelManager } from "./common/ChannelManager";
+import { VendorId } from "./common/VendorId";
+import { NodeId } from "./common/NodeId";
 
 requireMinNodeVersion(16);
 
@@ -31,7 +33,7 @@ export class MatterDevice {
     constructor(
         private readonly deviceName: string,
         private readonly deviceType: number,
-        private readonly vendorId: number,
+        private readonly vendorId: VendorId,
         private readonly productId: number,
         private readonly discriminator: number,
     ) {}
@@ -66,7 +68,7 @@ export class MatterDevice {
         return this.sessionManager.getNextAvailableSessionId();
     }
 
-    createSecureSession(sessionId: number, fabric: Fabric | undefined, peerNodeId: bigint, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, isResumption: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
+    createSecureSession(sessionId: number, fabric: Fabric | undefined, peerNodeId: NodeId, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, isResumption: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
         return this.sessionManager.createSecureSession(sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, salt, isInitiator, isResumption, idleRetransTimeoutMs, activeRetransTimeoutMs);
     }
 
@@ -82,7 +84,7 @@ export class MatterDevice {
         });
     }
 
-    initiateExchange(fabric: Fabric, nodeId: bigint, protocolId: number) {
+    initiateExchange(fabric: Fabric, nodeId: NodeId, protocolId: number) {
         return this.exchangeManager.initiateExchange(fabric, nodeId, protocolId);
     }
 
@@ -106,7 +108,7 @@ export class MatterDevice {
         return this.fabricManager.completeCommission();
     }
 
-    async findDevice(fabric: Fabric, nodeId: bigint): Promise<undefined | {session: Session<MatterDevice>, channel: Channel<Buffer>}> {
+    async findDevice(fabric: Fabric, nodeId: NodeId): Promise<undefined | {session: Session<MatterDevice>, channel: Channel<Buffer>}> {
         // TODO: return the first not undefined answer or undefined
         const matterServer = await this.scanners[0].findDevice(fabric, nodeId);
         if (matterServer === undefined) return undefined;

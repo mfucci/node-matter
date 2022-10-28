@@ -9,15 +9,16 @@ import { Fabric } from "../fabric/Fabric";
 import { SecureSession } from "../session/SecureSession";
 import { Session } from "../session/Session";
 import { MessageChannel } from "./ExchangeManager";
+import { NodeId } from "./NodeId";
 
 export class ChannelManager {
     private readonly channels = new Map<string, MessageChannel<any>>();
 
-    setChannel(fabric: Fabric, nodeId: bigint, channel: MessageChannel<any>) {
+    setChannel(fabric: Fabric, nodeId: NodeId, channel: MessageChannel<any>) {
         this.channels.set(`${fabric.id}/${nodeId}`, channel);
     }
 
-    getChannel(fabric: Fabric, nodeId: bigint) {
+    getChannel(fabric: Fabric, nodeId: NodeId) {
         const result = this.channels.get(`${fabric.id}/${nodeId}`);
         if (result === undefined) throw new Error(`Can't find find a channel to node ${nodeId}`);
         return result;

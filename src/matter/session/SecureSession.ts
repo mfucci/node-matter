@@ -11,6 +11,7 @@ import { SubscriptionHandler } from "../interaction/SubscriptionHandler";
 import { LEBufferWriter } from "../../util/LEBufferWriter";
 import { DEFAULT_ACTIVE_RETRANSMISSION_TIMEOUT_MS, DEFAULT_IDLE_RETRANSMISSION_TIMEOUT_MS, DEFAULT_RETRANSMISSION_RETRIES, Session } from "./Session";
 import { UNDEFINED_NODE_ID } from "./SessionManager";
+import { NodeId, nodeIdToBigint } from "../common/NodeId";
 
 const SESSION_KEYS_INFO = Buffer.from("SessionKeys");
 const SESSION_RESUMPTION_KEYS_INFO = Buffer.from("SessionResumptionKeys");
@@ -19,7 +20,7 @@ export class SecureSession<T> implements Session<T> {
     private nextSubscriptionId = 0;
     private readonly subscriptions = new Array<SubscriptionHandler>();
 
-    static async create<T>(context: T, id: number, fabric: Fabric | undefined, peerNodeId: bigint, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, isResumption: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
+    static async create<T>(context: T, id: number, fabric: Fabric | undefined, peerNodeId: NodeId, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, isResumption: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
         const keys = await Crypto.hkdf(sharedSecret, salt, isResumption ? SESSION_RESUMPTION_KEYS_INFO : SESSION_KEYS_INFO, 16 * 3);
         const decryptKey = isInitiator ? keys.slice(16, 32) : keys.slice(0, 16);
         const encryptKey = isInitiator ? keys.slice(0, 16) : keys.slice(16, 32);
@@ -31,7 +32,7 @@ export class SecureSession<T> implements Session<T> {
         private readonly context: T,
         private readonly id: number,
         private readonly fabric: Fabric | undefined,
-        private readonly peerNodeId: bigint,
+        private readonly peerNodeId: NodeId,
         private readonly peerSessionId: number,
         private readonly sharedSecret: Buffer,
         private readonly decryptKey: Buffer,
@@ -111,11 +112,11 @@ export class SecureSession<T> implements Session<T> {
         this.subscriptions.length = 0;
     }
 
-    private generateNonce(securityFlags: number, messageId: number, nodeId: bigint) {
+    private generateNonce(securityFlags: number, messageId: number, nodeId: NodeId) {
         const buffer = new LEBufferWriter();
         buffer.writeUInt8(securityFlags);
         buffer.writeUInt32(messageId);
-        buffer.writeUInt64(nodeId);
+        buffer.writeUInt64(nodeIdToBigint(nodeId));
         return buffer.toBuffer();
     }
 }

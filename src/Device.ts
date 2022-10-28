@@ -30,6 +30,7 @@ import { Time } from "./time/Time";
 import { TimeNode } from "./time/TimeNode";
 import packageJson from "../package.json";
 import { Logger } from "./log/Logger";
+import { VendorId } from "./matter/common/VendorId";
 
 // From Chip-Test-DAC-FFF1-8000-0007-Key.der
 const DevicePrivateKey = Buffer.from("727F1005CBA47ED7822A9D930943621617CFD3B79D9AF528B801ECF9F1992204", "hex");
@@ -55,7 +56,7 @@ class Device {
         const deviceName = "Matter test device";
         const deviceType = 257 /* Dimmable bulb */;
         const vendorName = "node-matter";
-        const vendorId = 0xFFF1;
+        const vendorId = VendorId(0xFFF1);
         const productName = "Matter test device";
         const productId = 0X8001;
         const discriminator = 3840;

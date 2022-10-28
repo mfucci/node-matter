@@ -28,7 +28,7 @@ fix-branches instead
 ### Guidelines for contributions
 
 The following general guidelines for contributions apply:
-* If you plan to introduce new features, changes to the somwhoe "magic" typings
+* If you plan to introduce new features, changes to the somewhat "magic" typings
 or significant changes, the discussions in GitHub are a good idea to discuss 
 details together with the community before starting to work on it. This can ease
 the PR review provess because all parties know more context.
@@ -42,15 +42,10 @@ approved it will be merged by the reviewer.
 In the case that write access to the main repository were granted to 
 contributors the following rules should be applied:
 
-* External API changes and significant modifications ought to be subject to 
-an internal pull-request to solicit feedback from other contributors.
-* Internal pull-requests to solicit feedback are encouraged for any other 
-non-trivial contribution but left to the discretion of the contributor.
+* External API changes and significant modifications should use pull requests
+to solicit feedback from other contributors.
 * As a reviewer, upon approval, don't merge the PR, let the author do the 
 final merge and associate post merge tasks if any.
-
-"Internal-pull-request" means that also with direct commit access to the 
-main repository a PR from another branch on the repo is used.
 
 ### Code Style
 

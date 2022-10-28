@@ -6,6 +6,8 @@
 
 import assert from "assert";
 import { Crypto } from "../../../src/crypto/Crypto";
+import { NodeId } from "../../../src/matter/common/NodeId";
+import { VendorId } from "../../../src/matter/common/VendorId";
 import { Fabric, FabricBuilder } from "../../../src/matter/fabric/Fabric";
 
 const ROOT_CERT = Buffer.from("153001010024020137032414001826048012542826058015203b37062414001824070124080130094104d89eb7e3f3226d0918f4b85832457bb9981bca7aaef58c18fb5ec07525e472b2bd1617fb75ee41bd388f94ae6a6070efc896777516a5c54aff74ec0804cdde9d370a3501290118240260300414e766069362d7e35b79687161644d222bdde93a68300514e766069362d7e35b79687161644d222bdde93a6818300b404e8fb06526f0332b3e928166864a6d29cade53fb5b8918a6d134d0994bf1ae6dce6762dcba99e80e96249d2f1ccedb336b26990f935dba5a0b9e5b4c9e5d1d8f1818181824ff0118", "hex");
@@ -14,18 +16,18 @@ const IPK_KEY = Buffer.from("74656d706f726172792069706b203031", "hex");
 const OPERATIONAL_ID = Buffer.from("d559af361549a9a2", "hex");
 
 const TEST_FABRIC_ID = BigInt("0x2906C908D115D362");
-const TEST_NODE_ID = BigInt("0xCD5544AA7B13EF14");
+const TEST_NODE_ID = NodeId(BigInt("0xCD5544AA7B13EF14"));
 const TEST_ROOT_PUBLIC_KEY = Buffer.from("044a9f42b1ca4840d37292bbc7f6a7e11e22200c976fc900dbc98a7a383a641cb8254a2e56d4e295a847943b4e3897c4a773e930277b4d9fbede8a052686bfacfa", "hex");
 const TEST_IDENTITY_PROTECTION_KEY = Buffer.from("9bc61cd9c62a2df6d64dfcaa9dc472d4", "hex");
 const TEST_RANDOM = Buffer.from("7e171231568dfa17206b3accf8faec2f4d21b580113196f47c7c4deb810a73dc", "hex");
 const EXPECTED_DESTINATION_ID = Buffer.from("dc35dd5fc9134cc5544538c9c3fc4297c1ec3370c839136a80e10796451d4c53", "hex");
 
 const TEST_RANDOM_2 = Buffer.from("147546b42b4212ae62e3b393b973e7892e02a86d387d8f4829b0861495b5743a", "hex");
-const TEST_NODE_ID_2 = BigInt("0x0000000000000009");
+const TEST_NODE_ID_2 = NodeId(BigInt("0x0000000000000009"));
 const EXPECTED_DESTINATION_ID_2 = Buffer.from("e62053e0b5226773ab96833d79133c865ddb5a67c9ea932471c73405afcd68da", "hex");
 
 const TEST_FABRIC_ID_3 = BigInt("0x0000000000000001");
-const TEST_NODE_ID_3 = BigInt("0x0000000000000055");
+const TEST_NODE_ID_3 = NodeId(BigInt("0x0000000000000055"));
 const TEST_ROOT_PUBLIC_KEY_3 = Buffer.from("04d89eb7e3f3226d0918f4b85832457bb9981bca7aaef58c18fb5ec07525e472b2bd1617fb75ee41bd388f94ae6a6070efc896777516a5c54aff74ec0804cdde9d", "hex");
 const TEST_IDENTITY_PROTECTION_KEY_3 = Buffer.from("0c677d9b5ac585827b577470bd9bd516", "hex");
 const TEST_RANDOM_3 = Buffer.from("0b2a71876d3d090d37cb5286168ab9be0d2e7e0ccbedc1f55331b8a8051ee02f", "hex");
@@ -34,7 +36,7 @@ const EXPECTED_DESTINATION_ID_3 = Buffer.from("f7f7009606c61927af62502067581b4b0
 describe("FabricBuilder", () => {
     context("build", () => {
         const builder = new FabricBuilder();
-        builder.setVendorId(0);
+        builder.setVendorId(VendorId(0));
         builder.setRootCert(ROOT_CERT);
         builder.setOperationalCert(NEW_OP_CERT);
         builder.setIdentityProtectionKey(IPK_KEY);
@@ -57,7 +59,7 @@ describe("Fabric", () => {
 
     context("getDestinationId", () => {
         it("generates the correct destination ID", () => {
-            const fabric = new Fabric(TEST_FABRIC_ID, TEST_NODE_ID, Buffer.alloc(0), TEST_ROOT_PUBLIC_KEY, Crypto.createKeyPair(), 0, Buffer.alloc(0), Buffer.alloc(0), TEST_IDENTITY_PROTECTION_KEY, undefined, Buffer.alloc(0)); 
+            const fabric = new Fabric(TEST_FABRIC_ID, TEST_NODE_ID, Buffer.alloc(0), TEST_ROOT_PUBLIC_KEY, Crypto.createKeyPair(), VendorId(0), Buffer.alloc(0), Buffer.alloc(0), TEST_IDENTITY_PROTECTION_KEY, undefined, Buffer.alloc(0)); 
 
             const result = fabric.getDestinationId(TEST_NODE_ID, TEST_RANDOM);
 
@@ -66,7 +68,7 @@ describe("Fabric", () => {
 
         it("generates the correct destination ID 2", async () => {
             const builder = new FabricBuilder();
-            builder.setVendorId(0);
+            builder.setVendorId(VendorId(0));
             builder.setRootCert(ROOT_CERT);
             builder.setOperationalCert(NEW_OP_CERT);
             builder.setIdentityProtectionKey(IPK_KEY);
@@ -78,7 +80,7 @@ describe("Fabric", () => {
         });
 
         it("generates the correct destination ID 3", async () => {
-            const fabric = new Fabric(TEST_FABRIC_ID_3, TEST_NODE_ID_3, Buffer.alloc(0), TEST_ROOT_PUBLIC_KEY_3, Crypto.createKeyPair(), 0, Buffer.alloc(0), Buffer.alloc(0), TEST_IDENTITY_PROTECTION_KEY_3, undefined, Buffer.alloc(0)); 
+            const fabric = new Fabric(TEST_FABRIC_ID_3, TEST_NODE_ID_3, Buffer.alloc(0), TEST_ROOT_PUBLIC_KEY_3, Crypto.createKeyPair(), VendorId(0), Buffer.alloc(0), Buffer.alloc(0), TEST_IDENTITY_PROTECTION_KEY_3, undefined, Buffer.alloc(0)); 
 
             const result = fabric.getDestinationId(TEST_NODE_ID_3, TEST_RANDOM_3);
 

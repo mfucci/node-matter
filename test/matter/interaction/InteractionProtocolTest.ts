@@ -12,6 +12,7 @@ import { MessageExchange } from "../../../src/matter/common/MessageExchange";
 import { DEVICE } from "../../../src/matter/common/DeviceTypes";
 import { MatterDevice } from "../../../src/matter/MatterDevice";
 import { BasicInformationCluster } from "../../../src/matter/cluster/BasicInformationCluster";
+import { VendorId } from "../../../src/matter/common/VendorId";
 
 const READ_REQUEST: ReadRequest = {
     interactionModelRevision: 1,
@@ -64,7 +65,7 @@ describe("InteractionProtocol", () => {
                     new ClusterServer(BasicInformationCluster, {
                         dataModelRevision: 1,
                         vendorName: "vendor",
-                        vendorId: 1,
+                        vendorId: VendorId(1),
                         productName: "product",
                         productId: 2,
                         nodeLabel: "",

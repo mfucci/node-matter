@@ -15,6 +15,7 @@ import { NetworkFake } from "../../src/net/fake/NetworkFake";
 import { Network } from "../../src/net/Network";
 import { MdnsScanner } from "../../src/matter/mdns/MdnsScanner";
 import { Fabric } from "../../src/matter/fabric/Fabric";
+import { NodeId } from "../../src/matter/common/NodeId";
 
 const SERVER_IP = "192.168.200.1";
 const SERVER_MAC = "00:B0:D0:63:C2:26";
@@ -25,7 +26,7 @@ const serverNetwork = new NetworkFake([ {ip: SERVER_IP, mac: SERVER_MAC} ]);
 const clientNetwork = new NetworkFake([ {ip: CLIENT_IP, mac: CLIENT_MAC} ]);
 
 const OPERATIONAL_ID = bigintToBuffer(BigInt(24));
-const NODE_ID = BigInt(1);
+const NODE_ID = NodeId(BigInt(1));
 
 describe("MDNS", () => {
     var broadcaster: MdnsBroadcaster;

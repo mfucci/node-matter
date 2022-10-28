@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Field, JsType, ObjectT, StringT, Template, UnsignedIntT, UnsignedLongT, BooleanT } from "../../codec/TlvObjectCodec";
+import { Field, JsType, ObjectT, StringT, UnsignedIntT, UnsignedLongT, BooleanT, EnumT } from "../../codec/TlvObjectCodec";
 import { TlvType } from "../../codec/TlvCodec";
 import { Attribute, Cluster, Command, NoArgumentsT, OptionalAttribute, WritableAttribute } from "./Cluster";
 
@@ -13,7 +13,6 @@ export const enum RegulatoryLocationType {
     Outdoor = 1,
     IndoorOutdoor = 2,
 }
-const RegulatoryLocationTypeT = { tlvType: TlvType.UnsignedInt } as Template<RegulatoryLocationType>;
 
 export const enum CommissioningError {
     Ok = 0,
@@ -22,7 +21,6 @@ export const enum CommissioningError {
     NoFailSafe = 3,
     BusyWithOtherAdmin = 4,
 }
-const CommissioningErrorT = { tlvType: TlvType.UnsignedInt } as Template<CommissioningError>;
 
 const BasicCommissioningInfoT = ObjectT({
     failSafeExpiryLengthSeconds: Field(0, UnsignedIntT),
@@ -30,7 +28,7 @@ const BasicCommissioningInfoT = ObjectT({
 });
 
 const CommissioningSuccessFailureResponseT = ObjectT({
-    errorCode: Field(0, CommissioningErrorT),
+    errorCode: Field(0, EnumT<CommissioningError>()),
     debugText: Field(1, StringT),
 });
 export type CommissioningSuccessFailureResponse = JsType<typeof CommissioningSuccessFailureResponseT>;
@@ -41,7 +39,7 @@ const ArmFailSafeRequestT = ObjectT({
 });
 
 const SetRegulatoryConfigRequestT = ObjectT({
-    newRegulatoryConfig: Field(0, RegulatoryLocationTypeT),
+    newRegulatoryConfig: Field(0, EnumT<RegulatoryLocationType>()),
     countryCode: Field(1, StringT), /* length: 2 */
     breadcrumbStep: Field(2, UnsignedLongT),
 });
@@ -55,8 +53,8 @@ export const GeneralCommissioningCluster = Cluster(
     {
         breadcrumb: WritableAttribute(0, UnsignedLongT, BigInt(0)), /* writeAcl: administer */
         commissioningInfo: Attribute(1, BasicCommissioningInfoT),
-        regulatoryConfig: Attribute(2, RegulatoryLocationTypeT), /* default: value of locationCapability */
-        locationCapability: Attribute(3, RegulatoryLocationTypeT, RegulatoryLocationType.IndoorOutdoor),
+        regulatoryConfig: Attribute(2, EnumT<RegulatoryLocationType>()), /* default: value of locationCapability */
+        locationCapability: Attribute(3, EnumT<RegulatoryLocationType>(), RegulatoryLocationType.IndoorOutdoor),
         supportsConcurrentConnections: Attribute(4, BooleanT, true),
     },
     {

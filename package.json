@@ -24,7 +24,7 @@
   },
   "scripts": {
     "clean": "rm -rf build",
-    "build": "tsc",
+    "build": "npm run clean; tsc",
     "test": "TZ=utc mocha"
   },
   "devDependencies": {
@@ -43,10 +43,10 @@
   "files": [
     "build/**/*"
   ],
-  "main": "build/Main.js",
-  "types": "build/Main.d.ts",
+  "main": "build/Device.js",
+  "types": "build/Device.d.ts",
   "bin": {
-    "matter": "./build/Main.js",
+    "matter": "./build/Device.js",
     "matter-controller": "./build/Controller.js"
   }
 }

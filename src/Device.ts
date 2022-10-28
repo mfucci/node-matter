@@ -28,6 +28,8 @@ import { OperationalCredentialsClusterHandler } from "./matter/cluster/server/Op
 import { MdnsScanner } from "./matter/mdns/MdnsScanner";
 import { Time } from "./time/Time";
 import { TimeNode } from "./time/TimeNode";
+import packageJson from "../package.json";
+import { Logger } from "./log/Logger";
 
 // From Chip-Test-DAC-FFF1-8000-0007-Key.der
 const DevicePrivateKey = Buffer.from("727F1005CBA47ED7822A9D930943621617CFD3B79D9AF528B801ECF9F1992204", "hex");
@@ -44,8 +46,12 @@ const CertificateDeclaration = Buffer.from("3082021906092a864886f70d010702a08202
 Network.get = singleton(() => new NetworkNode());
 Time.get = singleton(() => new TimeNode());
 
-class Main {
+const logger = Logger.get("Device");
+
+class Device {
     async start() {
+        logger.info(`node-matter@${packageJson.version}`);
+
         const deviceName = "Matter test device";
         const deviceType = 257 /* Dimmable bulb */;
         const vendorName = "node-matter";
@@ -124,7 +130,9 @@ class Main {
                 .addEndpoint(0x01, DEVICE.ON_OFF_LIGHT, [ onOffClusterServer ])
             )
             .start()
+
+        logger.info("Listening");
     }
 }
 
-new Main().start();
+new Device().start();

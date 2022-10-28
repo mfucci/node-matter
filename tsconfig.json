@@ -9,5 +9,5 @@
     "declaration": true,
     "strict": true
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "dts/*.d.ts"],
 }

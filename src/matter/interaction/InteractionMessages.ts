@@ -7,7 +7,7 @@
 import { TlvType } from "../../codec/TlvCodec";
 import { AnyT, ArrayT, BooleanT, Field, ObjectT, OptionalField, Template, UnsignedIntT, UnsignedLongT } from "../../codec/TlvObjectCodec";
 
-// See project-chip src/protocols/interaction_model/StatusCodeList.h
+// From [Matter Core Specification R1.0], section 8.10
 export const enum StatusCode {
     Success = 0x00,
     Failure = 0x01,

@@ -5,15 +5,14 @@
  */
 
 import { Attribute, Cluster, Command, NoResponseT } from "./Cluster";
-import { TlvType } from "../../codec/TlvCodec";
-import { ByteStringT, Field, ObjectT, OptionalField, UnsignedIntT, UnsignedLongT, StringT, ArrayT, BooleanT, EnumT } from "../../codec/TlvObjectCodec";
+import { ByteStringT, Field, ObjectT, OptionalField, UnsignedIntT, UnsignedLongT, StringT, ArrayT, BooleanT, EnumT, BoundedUnsignedIntT } from "../../codec/TlvObjectCodec";
 
 const FabricDescriptorT = ObjectT({
     rootPublicKey: Field(1, ByteStringT), /* length: 65 */
     vendorId: Field(2, UnsignedIntT), /* type: vendor-id */
     fabricID: Field(3, UnsignedIntT), /* type: fabric-id */
     nodeID: Field(4, UnsignedIntT), /* type: node-id */
-    label: Field(5, StringT), /* maxLength: 32, default: "" */
+    label: Field(5, StringT({ maxLength: 32 })), /* default: "" */
 });
 
 const NocT = ObjectT({
@@ -85,8 +84,8 @@ export const enum OperationalCertStatus {
 
 export const OperationalCertificateStatusResponseT = ObjectT({
     status: Field(0, EnumT<OperationalCertStatus>()),
-    fabricIndex: OptionalField(1, UnsignedIntT), /* min: 1, max: 254, type: fabric_idx */
-    debugText: OptionalField(2, StringT), /* maxLength: 128 */
+    fabricIndex: OptionalField(1, BoundedUnsignedIntT({ min: 1, max: 254 })), /* type: fabric_idx */
+    debugText: OptionalField(2, StringT({ maxLength: 128 })),
 });
 
 export const AttestationT = ObjectT({
@@ -122,42 +121,39 @@ export const OperationalCredentialsCluster = Cluster(
     {
         nocs: Attribute(0, ArrayT(NocT)),
         fabrics: Attribute(1, ArrayT(FabricDescriptorT)),
-        supportedFabrics: Attribute(2, UnsignedIntT), /* min: 5, max: 254 */
+        supportedFabrics: Attribute(2, BoundedUnsignedIntT({ min: 5, max: 254 })),
         commissionedFabrics: Attribute(3, UnsignedIntT),
         trustedRootCertificates: Attribute(4, ArrayT(ByteStringT)), /* arrayMaxLength: 400 */
         currentFabricIndex: Attribute(5, UnsignedIntT),
     },
     {
-        /**
-         * Sender is requesting attestation information from the receiver.
-         */
+        /** Sender is requesting attestation information from the receiver. */
         requestAttestation: Command(0, AttestationRequestT, 1, AttestationResponseT),
-        /**
-         * Sender is requesting a device attestation certificate from the receiver.
-         */
+
+        /** Sender is requesting a device attestation certificate from the receiver. */
         requestCertChain: Command(2, CertChainRequestT, 3, CertChainResponseT),
-        /**
-         * Sender is requesting a certificate signing request (CSR) from the receiver.
-         */
+
+        /** Sender is requesting a certificate signing request (CSR) from the receiver. */
         requestCertSigning: Command(4, CertSigningRequestRequestT, 5, CertSigningRequestResponseT),
-        /**
-         * Sender is requesting to add the new node operational certificates.
-         */
+
+        /** Sender is requesting to add the new node operational certificates. */
         addOperationalCert: Command(6, AddNocRequestT, 8, OperationalCertificateStatusResponseT),
-        /**
-         * Sender is requesting to update the node operational certificates.
-         */
+
+        /** Sender is requesting to update the node operational certificates. */
         updateOperationalCert: Command(7, UpdateNocRequestT, 8, OperationalCertificateStatusResponseT),
+
         /**
          * This command SHALL be used by an Administrative Node to set the user-visible Label field for a given
          * Fabric, as reflected by entries in the Fabrics attribute.
          */
         updateFabricLabel: Command(9, UpdateFabricLabelRequestT, 8, OperationalCertificateStatusResponseT),
+
         /**
          * This command is used by Administrative Nodes to remove a given fabric index and delete all associated
          * fabric-scoped data.
          */
         removeFabric: Command(10, RemoveFabricRequestT, 8, OperationalCertificateStatusResponseT),
+
         /**
          * This command SHALL add a Trusted Root CA Certificate, provided as its CHIP Certificate representation.
          */

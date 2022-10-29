@@ -16,14 +16,17 @@ export class AttributeServer<T> {
         readonly id: number,
         readonly name: string,
         readonly template: Template<T>,
+        private readonly validator: (value: T, name: string) => void,
         defaultValue: T,
     ) {
+        validator(defaultValue, name);
         this.value = defaultValue;
     }
 
     set(value: T) {
         const oldValue = this.value;
         if (value !== oldValue) {
+            this.validator(value, this.name);
             this.version++;
             this.value = value;
             this.matterListeners.forEach(listener => listener(value, this.version));

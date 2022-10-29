@@ -96,7 +96,7 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
                 case MessageType.SubscribeRequest:
                     const subscribeRequest = TlvObjectCodec.decode(message.payload, SubscribeRequestT);
                     const subscribeResponse = handleSubscribeRequest(subscribeRequest);
-                    if (subscribeRequest === undefined) {
+                    if (subscribeResponse === undefined) {
                         await this.sendStatus(StatusCode.Success);
                     } else {
                         await this.exchange.send(MessageType.SubscribeResponse, TlvObjectCodec.encode(subscribeResponse, SubscribeResponseT));

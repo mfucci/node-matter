@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { Typed, UnsignedLongT } from "../../codec/TlvObjectCodec";
 import { NodeId } from "./NodeId";
 
 /**
@@ -13,3 +14,6 @@ import { NodeId } from "./NodeId";
  * @see [Matter Specification R1.0], section 6.6.2.1
  */
 export type SubjectId = NodeId; // Only NodeId is supported for now...
+
+/** Data model for a Subject Id */
+export const SubjectIdT = Typed<SubjectId>(UnsignedLongT);

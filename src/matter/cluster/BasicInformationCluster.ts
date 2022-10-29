@@ -4,12 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BooleanT, StringT, UnsignedIntT, ObjectT, Field, BoundedUnsignedIntT, Typed } from "../../codec/TlvObjectCodec";
-import { VendorId } from "../common/VendorId";
+import { BooleanT, StringT, UnsignedIntT, ObjectT, Field, BoundedUnsignedIntT } from "../../codec/TlvObjectCodec";
+import { FabricIndexT } from "../common/FabricIndex";
+import { VendorIdT } from "../common/VendorId";
 import { AccessLevel, Attribute, Cluster, Event, EventPriority, OptionalAttribute, OptionalEvent, OptionalWritableAttribute, WritableAttribute } from "./Cluster";
+import { MatterCoreSpecificationV1_0 } from "../../Specifications";
 
 
-/** @see [Matter Specification R1.0], section 11.1.6.2 */
+/** @see {@link MatterCoreSpecificationV1_0} § 11.1.6.2 */
 const CapabilityMinimaT = ObjectT({
     caseSessionsPerFabric: Field(0, BoundedUnsignedIntT({ min: 3 })),
     subscriptionsPerFabric: Field(1, BoundedUnsignedIntT({ min: 3 })),
@@ -20,15 +22,16 @@ const CapabilityMinimaT = ObjectT({
  * commissioning and operational determination of Node characteristics, such as Vendor ID, Product ID and serial number,
  * which apply to the whole Node. Also allows setting user device information such as location.
  * 
- * @see [Matter Specification R1.0], section 11.1
+ * @see {@link MatterCoreSpecificationV1_0} § 11.1
  */
+
 export const BasicInformationCluster = Cluster({
     id: 0x28,
     name: "Basic Information",
     attributes: {
         dataModelRevision: Attribute(0, UnsignedIntT),
         vendorName: Attribute(1, StringT({ maxLength: 32 })),
-        vendorId: Attribute(2, Typed<VendorId>(UnsignedIntT)),
+        vendorId: Attribute(2, VendorIdT),
         productName: Attribute(3, StringT({ maxLength: 32 })),
         productId: Attribute(4, UnsignedIntT),
         nodeLabel: WritableAttribute(5, StringT({ maxLength: 32 }), { default: "", writeAcl: AccessLevel.Manage } ),
@@ -50,7 +53,7 @@ export const BasicInformationCluster = Cluster({
     events: {
         startUp: Event(0, EventPriority.Critical, { softwareVersion: Field(0, UnsignedIntT) }),
         shutDown: OptionalEvent(1, EventPriority.Critical),
-        leave: OptionalEvent(2, EventPriority.Info, { fabricIndex: Field(0, UnsignedIntT) /* fabric-idx */ }),
+        leave: OptionalEvent(2, EventPriority.Info, { fabricIndex: Field(0, FabricIndexT) }),
         reachableChanged: OptionalEvent(3, EventPriority.Info, { reachableNewValue: Field(0, BooleanT) }),
     },
 });

@@ -30,7 +30,7 @@ export const NodeId_Matter = (nodeId: NodeId) => [ DerObject("2b0601040182a27c01
 export const RcacId_Matter = (id: number) => [ DerObject("2b0601040182a27c0104", {value: intTo16Chars(id)}) ];
 
 export const RootCertificateT = ObjectT({
-    serialNumber: Field(1, ByteStringT),
+    serialNumber: Field(1, ByteStringT()),
     signatureAlgorithm: Field(2, UnsignedIntT),
     issuer: Field(3, ObjectT({
         issuerRcacId: OptionalField(20, UnsignedIntT),
@@ -42,7 +42,7 @@ export const RootCertificateT = ObjectT({
     }, TlvType.List)),
     publicKeyAlgorithm: Field(7, UnsignedIntT),
     ellipticCurveIdentifier: Field(8, UnsignedIntT),
-    ellipticCurvePublicKey: Field(9, ByteStringT),
+    ellipticCurvePublicKey: Field(9, ByteStringT()),
     extensions: Field(10, ObjectT({
         basicConstraints: Field(1,  ObjectT({
             isCa: Field(1, BooleanT),
@@ -50,15 +50,15 @@ export const RootCertificateT = ObjectT({
         })),
         keyUsage: Field(2, UnsignedIntT),
         extendedKeyUsage: OptionalField(3, ArrayT(UnsignedIntT)),
-        subjectKeyIdentifier: Field(4, ByteStringT),
-        authorityKeyIdentifier: Field(5, ByteStringT),
-        futureExtension: OptionalField(6, ByteStringT),
+        subjectKeyIdentifier: Field(4, ByteStringT()),
+        authorityKeyIdentifier: Field(5, ByteStringT()),
+        futureExtension: OptionalField(6, ByteStringT()),
     }, TlvType.List)),
-    signature: Field(11, ByteStringT),
+    signature: Field(11, ByteStringT()),
 });
 
 export const OperationalCertificateT = ObjectT({
-    serialNumber: Field(1, ByteStringT),
+    serialNumber: Field(1, ByteStringT()),
     signatureAlgorithm: Field(2, UnsignedIntT),
     issuer: Field(3, ObjectT({
         issuerRcacId: OptionalField(20, UnsignedIntT),
@@ -71,7 +71,7 @@ export const OperationalCertificateT = ObjectT({
     }, TlvType.List)),
     publicKeyAlgorithm: Field(7, UnsignedIntT),
     ellipticCurveIdentifier: Field(8, UnsignedIntT),
-    ellipticCurvePublicKey: Field(9, ByteStringT),
+    ellipticCurvePublicKey: Field(9, ByteStringT()),
     extensions: Field(10, ObjectT({
         basicConstraints: Field(1,  ObjectT({
             isCa: Field(1, BooleanT),
@@ -79,11 +79,11 @@ export const OperationalCertificateT = ObjectT({
         })),
         keyUsage: Field(2, UnsignedIntT),
         extendedKeyUsage: OptionalField(3, ArrayT(UnsignedIntT)),
-        subjectKeyIdentifier: Field(4, ByteStringT),
-        authorityKeyIdentifier: Field(5, ByteStringT),
-        futureExtension: OptionalField(6, ByteStringT),
+        subjectKeyIdentifier: Field(4, ByteStringT()),
+        authorityKeyIdentifier: Field(5, ByteStringT()),
+        futureExtension: OptionalField(6, ByteStringT()),
     }, TlvType.List)),
-    signature: Field(11, ByteStringT),
+    signature: Field(11, ByteStringT()),
 });
 
 export type RootCertificate = JsType<typeof RootCertificateT>;

@@ -8,7 +8,6 @@ import { TlvObjectCodec } from "../../../codec/TlvObjectCodec";
 import { Crypto } from "../../../crypto/Crypto";
 import { MatterDevice } from "../../MatterDevice";
 import { SecureSession } from "../../session/SecureSession";
-import { Session } from "../../session/Session";
 import {
     AttestationT,
     CertificateType,

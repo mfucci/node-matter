@@ -12,7 +12,7 @@ import { DataReport } from "../../src/matter/interaction/InteractionMessenger";
 
 
 const TEST_TEMPLATE = ObjectT({
-    initiatorRandom: Field(1, ByteStringT),
+    initiatorRandom: Field(1, ByteStringT()),
     initiatorSessionId: Field(2, UnsignedIntT),
     passcodeId: OptionalField(3, UnsignedIntT),
     hasPbkdfParameters: Field(4, BooleanT),

@@ -6,11 +6,13 @@
 
 import { BooleanT, StringT, UnsignedIntT, ObjectT, Field, BoundedUnsignedIntT, Typed } from "../../codec/TlvObjectCodec";
 import { VendorId } from "../common/VendorId";
-import { Attribute, Cluster, OptionalAttribute, OptionalWritableAttribute, WritableAttribute } from "./Cluster";
+import { AccessLevel, Attribute, Cluster, Event, EventPriority, OptionalAttribute, OptionalEvent, OptionalWritableAttribute, WritableAttribute } from "./Cluster";
 
+
+/** @see [Matter Specification R1.0], section 11.1.6.2 */
 const CapabilityMinimaT = ObjectT({
-        caseSessionsPerFabric: Field(0, BoundedUnsignedIntT({ min: 3 })),
-        subscriptionsPerFabric: Field(1, BoundedUnsignedIntT({ min: 3 })),
+    caseSessionsPerFabric: Field(0, BoundedUnsignedIntT({ min: 3 })),
+    subscriptionsPerFabric: Field(1, BoundedUnsignedIntT({ min: 3 })),
 });
 
 /**
@@ -20,50 +22,35 @@ const CapabilityMinimaT = ObjectT({
  * 
  * @see [Matter Specification R1.0], section 11.1
  */
-export const BasicInformationCluster = Cluster(
-    0x28,
-    "Basic Information",
-    {
-            dataModelRevision: Attribute(0, UnsignedIntT),
-            vendorName: Attribute(1, StringT({ maxLength: 32 })),
-            vendorId: Attribute(2, Typed<VendorId>(UnsignedIntT)),
-            productName: Attribute(3, StringT({ maxLength: 32 })),
-            productId: Attribute(4, UnsignedIntT),
-            nodeLabel: WritableAttribute(5, StringT({ maxLength: 32 }), ""), /* writeAcl: manage */
-            location: WritableAttribute(6, StringT({ length: 2 }), "XX"), /* writeAcl: administer */
-            hardwareVersion: Attribute(7, UnsignedIntT, 0),
-            hardwareVersionString: Attribute(8, StringT({ minLength: 1, maxLength: 64 })),
-            softwareVersion: Attribute(9, UnsignedIntT, 0),
-            softwareVersionString: Attribute(10, StringT({ minLength: 1, maxLength: 64 })),
-            manufacturingDate: OptionalAttribute(11, StringT({ minLength: 8, maxLength: 16 })),
-            partNumber: OptionalAttribute(12, StringT({ maxLength: 32 })),
-            productURL: OptionalAttribute(13, StringT({ maxLength: 256 })),
-            productLabel: OptionalAttribute(14, StringT({ maxLength: 64 })),
-            serialNumber: OptionalAttribute(15, StringT({ maxLength: 32 })),
-            localConfigDisabled: OptionalWritableAttribute(16, BooleanT, false), /* writeAcl: manage */
-            reachable: OptionalAttribute(17, BooleanT, true),
-            uniqueId: OptionalAttribute(18, StringT({ maxLength: 32 })),
-            capabilityMinima: Attribute(19, CapabilityMinimaT, { caseSessionsPerFabric: 3, subscriptionsPerFabric: 3 }),
+export const BasicInformationCluster = Cluster({
+    id: 0x28,
+    name: "Basic Information",
+    attributes: {
+        dataModelRevision: Attribute(0, UnsignedIntT),
+        vendorName: Attribute(1, StringT({ maxLength: 32 })),
+        vendorId: Attribute(2, Typed<VendorId>(UnsignedIntT)),
+        productName: Attribute(3, StringT({ maxLength: 32 })),
+        productId: Attribute(4, UnsignedIntT),
+        nodeLabel: WritableAttribute(5, StringT({ maxLength: 32 }), { default: "", writeAcl: AccessLevel.Manage } ),
+        location: WritableAttribute(6, StringT({ length: 2 }), { default: "XX", writeAcl: AccessLevel.Administer } ),
+        hardwareVersion: Attribute(7, UnsignedIntT, { default: 0 }),
+        hardwareVersionString: Attribute(8, StringT({ minLength: 1, maxLength: 64 })),
+        softwareVersion: Attribute(9, UnsignedIntT, { default: 0 }),
+        softwareVersionString: Attribute(10, StringT({ minLength: 1, maxLength: 64 })),
+        manufacturingDate: OptionalAttribute(11, StringT({ minLength: 8, maxLength: 16 })),
+        partNumber: OptionalAttribute(12, StringT({ maxLength: 32 })),
+        productURL: OptionalAttribute(13, StringT({ maxLength: 256 })),
+        productLabel: OptionalAttribute(14, StringT({ maxLength: 64 })),
+        serialNumber: OptionalAttribute(15, StringT({ maxLength: 32 })),
+        localConfigDisabled: OptionalWritableAttribute(16, BooleanT, { default: false, writeAcl: AccessLevel.Manage } ),
+        reachable: OptionalAttribute(17, BooleanT, { default: true }),
+        uniqueId: OptionalAttribute(18, StringT({ maxLength: 32 })),
+        capabilityMinima: Attribute(19, CapabilityMinimaT, { default: { caseSessionsPerFabric: 3, subscriptionsPerFabric: 3 } }),
     },
-    {},
-);
-
-/*
-Events:
-    <event side="server" code="0x00" name="StartUp" priority="critical" optional="false">
-      <description>The StartUp event SHALL be emitted by a Node as soon as reasonable after completing a boot or reboot process.</description>
-      <field id="0" name="SoftwareVersion" type="INT32U"/>
-    </event>
-    <event side="server" code="0x01" name="ShutDown" priority="critical" optional="false">
-      <description>The ShutDown event SHOULD be emitted by a Node prior to any orderly shutdown sequence on a best-effort basis.</description>
-    </event>
-    <event side="server" code="0x02" name="Leave" priority="info" optional="false">
-      <description>The Leave event SHOULD be emitted by a Node prior to permanently leaving the Fabric.</description>
-      <field id="0" name="FabricIndex" type="fabric_idx"/>
-    </event>
-    <event side="server" code="0x03" name="ReachableChanged" priority="info" optional="true">
-      <description>This event (when supported) SHALL be generated when there is a change in the Reachable attribute.</description>
-      <field id="0" name="ReachableNewValue" type="boolean"/>
-    </event>
-
-*/
+    events: {
+        startUp: Event(0, EventPriority.Critical, { softwareVersion: Field(0, UnsignedIntT) }),
+        shutDown: OptionalEvent(1, EventPriority.Critical),
+        leave: OptionalEvent(2, EventPriority.Info, { fabricIndex: Field(0, UnsignedIntT) /* fabric-idx */ }),
+        reachableChanged: OptionalEvent(3, EventPriority.Info, { reachableNewValue: Field(0, BooleanT) }),
+    },
+});

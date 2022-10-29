@@ -18,7 +18,7 @@ export interface ObjectTemplate<T> extends Template<T> {fieldTemplates: FieldTem
 export interface TaggedTemplate<T> extends Template<T> {tag?: TlvTag};
 export interface Field<T> extends TaggedTemplate<T> {optional: false};
 export interface OptionalField<T> extends TaggedTemplate<T> {optional: true};
-type FieldTemplates = {[key: string]: Field<any> | OptionalField<any>};
+export type FieldTemplates = {[key: string]: Field<any> | OptionalField<any>};
 
 // Type utils
 type OptionalKeys<T extends object> = {[K in keyof T]: T[K] extends OptionalField<any> ? K : never}[keyof T];

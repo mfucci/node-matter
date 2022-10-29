@@ -12,6 +12,7 @@ import { MessageChannel, MessageCounter } from "./ExchangeManager";
 import { getPromiseResolver } from "../../util/Promises";
 import { Time, Timer } from "../../time/Time";
 import { Logger } from "../../log/Logger";
+import { NodeId, nodeIdToBigint } from "./NodeId";
 
 const logger = Logger.get("MessageExchange");
 
@@ -76,8 +77,8 @@ export class MessageExchange<ContextT> {
         private readonly messageCounter: MessageCounter,
         private readonly isInitiator: boolean,
         private readonly peerSessionId: number,
-        private readonly nodeId: bigint | undefined,
-        private readonly peerNodeId: bigint | undefined,
+        private readonly nodeId: NodeId | undefined,
+        private readonly peerNodeId: NodeId | undefined,
         private readonly exchangeId: number,
         private readonly protocolId: number,
         private readonly closeCallback: () => void,

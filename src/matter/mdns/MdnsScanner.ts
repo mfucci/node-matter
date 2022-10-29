@@ -14,6 +14,7 @@ import { bigintToBuffer } from "../../util/BigInt";
 import { MatterServer, Scanner } from "../common/Scanner";
 import { Fabric } from "../fabric/Fabric";
 import { Time, Timer } from "../../time/Time";
+import { NodeId, nodeIdToBigint } from "../common/NodeId";
 
 type MatterServerRecordWithExpire = MatterServer & { expires: number };
 
@@ -34,8 +35,8 @@ export class MdnsScanner implements Scanner {
         this.periodicTimer = Time.getPeriodicTimer(60 * 1000 /* 1 mn */, () => this.expire()).start();
     }
 
-    async findDevice({operationalId}: Fabric, nodeId: bigint): Promise<MatterServer | undefined> {
-        const nodeIdString = bigintToBuffer(nodeId).toString("hex").toUpperCase();
+    async findDevice({operationalId}: Fabric, nodeId: NodeId): Promise<MatterServer | undefined> {
+        const nodeIdString = bigintToBuffer(nodeIdToBigint(nodeId)).toString("hex").toUpperCase();
         const operationalIdString = operationalId.toString("hex").toUpperCase();
         const deviceMatterQname = getDeviceMatterQname(operationalIdString, nodeIdString);
 

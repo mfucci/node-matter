@@ -6,6 +6,7 @@
 
 import assert from "assert";
 import { MessageCodec } from "../../src/codec/MessageCodec";
+import { NodeId } from "../../src/matter/common/NodeId";
 
 const ENCODED = Buffer.from("040000000a4ff2177ea0c8a7cb6a63520520d3640000153001204715a406c6b0496ad52039e347db8528cb69a1cb2fce6f2318552ae65e103aca250233dc240300280435052501881325022c011818", "hex");
 
@@ -13,7 +14,7 @@ const DECODED = {
     packetHeader: {
         sessionId: 0,
         sessionType: 0,
-        sourceNodeId: BigInt("5936706156730294398"),
+        sourceNodeId: NodeId(BigInt("5936706156730294398")),
         messageId: 401755914,
         destGroupId: undefined,
         destNodeId: undefined
@@ -24,7 +25,7 @@ const DECODED = {
         exchangeId: 25811,
         messageType: 0x20,
         requiresAck: true,
-        ackedMessageId: undefined
+        ackedMessageId: undefined,
       },
       payload: Buffer.from("153001204715a406c6b0496ad52039e347db8528cb69a1cb2fce6f2318552ae65e103aca250233dc240300280435052501881325022c011818", "hex"),
 };
@@ -38,7 +39,7 @@ const DECODED_2 = {
         sourceNodeId: undefined,
         messageId: 2031257377,
         destGroupId: undefined,
-        destNodeId: BigInt("5936706156730294398")
+        destNodeId: NodeId(BigInt("5936706156730294398")),
       },
       payloadHeader: {
         protocolId: 0,

@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { NodeId, nodeIdToBigint } from "../matter/common/NodeId";
 import { LEBufferReader } from "../util/LEBufferReader";
 import { LEBufferWriter } from "../util/LEBufferWriter";
 
@@ -11,8 +12,8 @@ export interface PacketHeader {
     sessionId: number,
     sessionType: SessionType,
     messageId: number,
-    sourceNodeId?: bigint,
-    destNodeId?: bigint,
+    sourceNodeId?: NodeId,
+    destNodeId?: NodeId,
     destGroupId?: number,
 }
 
@@ -113,8 +114,8 @@ export class MessageCodec {
         const sessionId = reader.readUInt16();
         const securityFlags = reader.readUInt8();
         const messageId = reader.readUInt32();
-        const sourceNodeId = hasSourceNodeId ? reader.readUInt64() : undefined;
-        const destNodeId = hasDestNodeId ? reader.readUInt64() : undefined;
+        const sourceNodeId = hasSourceNodeId ? NodeId(reader.readUInt64()) : undefined;
+        const destNodeId = hasDestNodeId ? NodeId(reader.readUInt64()) : undefined;
         const destGroupId = hasDestGroupId ? reader.readUInt16() : undefined;
 
         const sessionType = securityFlags & 0b00000011;
@@ -153,8 +154,8 @@ export class MessageCodec {
         writer.writeUInt16(sessionId);
         writer.writeUInt8(securityFlags);
         writer.writeUInt32(messageCounter);
-        if (sourceNodeId !== undefined) writer.writeUInt64(sourceNodeId);
-        if (destNodeId !== undefined) writer.writeUInt64(destNodeId);
+        if (sourceNodeId !== undefined) writer.writeUInt64(nodeIdToBigint(sourceNodeId));
+        if (destNodeId !== undefined) writer.writeUInt64(nodeIdToBigint(destNodeId));
         if (destGroupId !== undefined) writer.writeUInt32(destGroupId);
         return writer.toBuffer();
     }

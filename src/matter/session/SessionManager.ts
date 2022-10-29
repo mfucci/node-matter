@@ -5,12 +5,13 @@
  */
 
 import { Crypto } from "../../crypto/Crypto";
+import { NodeId } from "../common/NodeId";
 import { Fabric } from "../fabric/Fabric";
 import { SecureSession } from "./SecureSession";
 import { Session } from "./Session";
 import { UnsecureSession } from "./UnsecureSession";
 
-export const UNDEFINED_NODE_ID = BigInt(0);
+export const UNDEFINED_NODE_ID = NodeId(BigInt(0));
 
 export const UNICAST_UNSECURE_SESSION_ID = 0x0000;
 
@@ -18,14 +19,14 @@ export interface ResumptionRecord {
     sharedSecret: Buffer,
     resumptionId: Buffer,
     fabric: Fabric,
-    peerNodeId: bigint,
+    peerNodeId: NodeId,
 }
 
 export class SessionManager<ContextT> {
     private readonly unsecureSession: UnsecureSession<ContextT>;
     private readonly sessions = new Map<number, Session<ContextT>>();
     private nextSessionId = Crypto.getRandomUInt16();
-    private resumptionRecords = new Map<bigint, ResumptionRecord>();
+    private resumptionRecords = new Map<NodeId, ResumptionRecord>();
 
     constructor(
         private readonly context: ContextT,
@@ -34,7 +35,7 @@ export class SessionManager<ContextT> {
         this.sessions.set(UNICAST_UNSECURE_SESSION_ID, this.unsecureSession);
     }
 
-    async createSecureSession(sessionId: number, fabric: Fabric | undefined, peerNodeId: bigint, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, isResumption: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
+    async createSecureSession(sessionId: number, fabric: Fabric | undefined, peerNodeId: NodeId, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, isResumption: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
         const session = await SecureSession.create(this.context, sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, salt, isInitiator, isResumption, idleRetransTimeoutMs, activeRetransTimeoutMs);
         this.sessions.set(sessionId, session);
 
@@ -57,7 +58,7 @@ export class SessionManager<ContextT> {
         return this.sessions.get(sessionId);
     }
 
-    getSessionForNode(fabric: Fabric, nodeId: bigint) {
+    getSessionForNode(fabric: Fabric, nodeId: NodeId) {
         return [...this.sessions.values()].find(session => {
             if (!session.isSecure()) return false;
             const secureSession = session as SecureSession<any>;
@@ -74,7 +75,7 @@ export class SessionManager<ContextT> {
         return [...this.resumptionRecords.values()].find(record => record.resumptionId.equals(resumptionId));
     }
 
-    findResumptionRecordByNodeId(nodeId: bigint) {
+    findResumptionRecordByNodeId(nodeId: NodeId) {
         return this.resumptionRecords.get(nodeId);
     }
 

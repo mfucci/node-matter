@@ -6,8 +6,9 @@
 
 import { AuthorityKeyIdentifier_X509, BasicConstraints_X509, BitBuffer, BYTES_KEY, ContextTagged, DerCodec, DerObject, EcdsaWithSHA256_X962, ELEMENTS_KEY, ExtendedKeyUsage_X509, KeyUsage_Signature_ContentCommited_X509, KeyUsage_Signature_X509, OBJECT_ID_KEY, OrganisationName_X520, PublicKeyEcPrime256v1_X962, SubjectKeyIdentifier_X509 } from "../../codec/DerCodec";
 import { TlvType } from "../../codec/TlvCodec";
-import { ArrayT, BooleanT, ByteStringT, Field, JsType, ObjectT, OptionalField, UnsignedIntT, UnsignedLongT } from "../../codec/TlvObjectCodec";
+import { ArrayT, BooleanT, ByteStringT, Field, JsType, ObjectT, OptionalField, Typed, UnsignedIntT, UnsignedLongT } from "../../codec/TlvObjectCodec";
 import { Crypto, KeyPair } from "../../crypto/Crypto";
+import { NodeId, nodeIdToBigint } from "../common/NodeId";
 
 const YEAR_S = 365 * 24 * 60 * 60;
 const EPOCH_OFFSET_S = 10957 * 24 * 60 * 60;
@@ -25,7 +26,7 @@ function intTo16Chars(value: bigint | number) {
 }
 
 export const FabricId_Matter = (id: bigint) => [ DerObject("2b0601040182a27c0105", {value: intTo16Chars(id)}) ];
-export const NodeId_Matter = (id: bigint) => [ DerObject("2b0601040182a27c0101", {value: intTo16Chars(id)}) ];
+export const NodeId_Matter = (nodeId: NodeId) => [ DerObject("2b0601040182a27c0101", {value: intTo16Chars(nodeIdToBigint(nodeId))}) ];
 export const RcacId_Matter = (id: number) => [ DerObject("2b0601040182a27c0104", {value: intTo16Chars(id)}) ];
 
 export const RootCertificateT = ObjectT({
@@ -66,7 +67,7 @@ export const OperationalCertificateT = ObjectT({
     notAfter: Field(5, UnsignedIntT),
     subject: Field(6, ObjectT({
         fabricId: Field(21, UnsignedLongT),
-        nodeId: Field(17, UnsignedLongT),
+        nodeId: Field(17, Typed<NodeId>(UnsignedLongT)),
     }, TlvType.List)),
     publicKeyAlgorithm: Field(7, UnsignedIntT),
     ellipticCurveIdentifier: Field(8, UnsignedIntT),

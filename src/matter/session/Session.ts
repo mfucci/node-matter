@@ -5,7 +5,7 @@
  */
 
 import { Message, Packet } from "../../codec/MessageCodec";
-import { Fabric } from "../fabric/Fabric";
+import { NodeId } from "../common/NodeId";
 
 export const DEFAULT_IDLE_RETRANSMISSION_TIMEOUT_MS = 5000;
 export const DEFAULT_ACTIVE_RETRANSMISSION_TIMEOUT_MS = 300;
@@ -26,6 +26,6 @@ export interface Session<T> {
     getContext(): T;
     getId(): number;
     getPeerSessionId(): number;
-    getNodeId(): bigint | undefined;
-    getPeerNodeId(): bigint | undefined;
+    getNodeId(): NodeId | undefined;
+    getPeerNodeId(): NodeId | undefined;
 }

@@ -23,12 +23,14 @@ import { requireMinNodeVersion } from "../util/Node";
 import { ChannelManager } from "./common/ChannelManager";
 import { Logger } from "../log/Logger";
 import { Time } from "../time/Time";
+import { NodeId } from "./common/NodeId";
+import { VendorId } from "./common/VendorId";
 
 requireMinNodeVersion(16);
 
 const FABRIC_ID = BigInt(1);
-const CONTROLLER_NODE_ID = BigInt(0);
-const ADMIN_VENDOR_ID = 752;
+const CONTROLLER_NODE_ID = NodeId(BigInt(0));
+const ADMIN_VENDOR_ID = VendorId(752);
 const logger = Logger.get("MatterController");
 
 export class MatterController {
@@ -93,7 +95,7 @@ export class MatterController {
         const operationalPublicKey = CertificateManager.getPublicKeyFromCsr(certSigningRequest);
 
         await operationalCredentialsClusterClient.addRootCert({ certificate: this.certificateManager.getRootCert() });
-        const peerNodeId = BigInt(1);
+        const peerNodeId = NodeId(BigInt(1));
         const peerOperationalCert = this.certificateManager.generateNoc(operationalPublicKey, FABRIC_ID, peerNodeId);
         await operationalCredentialsClusterClient.addOperationalCert({
             operationalCert: peerOperationalCert,
@@ -120,7 +122,7 @@ export class MatterController {
         this.ensureSuccess(await generalCommissioningClusterClient.commissioningComplete({}));
     }
 
-    async connect(nodeId: bigint) {
+    async connect(nodeId: NodeId) {
         return new InteractionClient(this.exchangeManager, this.channelManager.getChannel(this.fabric, nodeId));
     }
 
@@ -133,7 +135,7 @@ export class MatterController {
         return this.sessionManager.getNextAvailableSessionId();
     }
 
-    createSecureSession(sessionId: number, fabric: Fabric | undefined,  peerNodeId: bigint, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, isResumption: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
+    createSecureSession(sessionId: number, fabric: Fabric | undefined,  peerNodeId: NodeId, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, isResumption: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
         return this.sessionManager.createSecureSession(sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, salt, isInitiator, isResumption, idleRetransTimeoutMs, activeRetransTimeoutMs);
     }
 
@@ -141,7 +143,7 @@ export class MatterController {
         return this.sessionManager.findResumptionRecordById(resumptionId);
     }
 
-    findResumptionRecordByNodeId(nodeId: bigint) {
+    findResumptionRecordByNodeId(nodeId: NodeId) {
         return this.sessionManager.findResumptionRecordByNodeId(nodeId);
     }
 
@@ -189,7 +191,7 @@ class RootCertificateManager {
         return TlvObjectCodec.encode({ ...unsignedCertificate, signature }, RootCertificateT);
     }
 
-    generateNoc(publicKey: Buffer, fabricId: bigint, nodeId: bigint): Buffer {
+    generateNoc(publicKey: Buffer, fabricId: bigint, nodeId: NodeId): Buffer {
         const now = Time.get().now();
         const certId = this.nextCertificateId++;
         const unsignedCertificate = {

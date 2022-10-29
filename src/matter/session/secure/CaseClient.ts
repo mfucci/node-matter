@@ -13,13 +13,14 @@ import { MatterController } from "../../MatterController";
 import { KDFSR1_KEY_INFO, KDFSR2_INFO, KDFSR2_KEY_INFO, KDFSR3_INFO, RESUME1_MIC_NONCE, RESUME2_MIC_NONCE, EncryptedDataSigma2T, SignedDataT, TBE_DATA2_NONCE, TBE_DATA3_NONCE, EncryptedDataSigma3T } from "./CaseMessages";
 import { CaseClientMessenger } from "./CaseMessenger";
 import { Logger } from "../../../log/Logger";
+import { NodeId } from "../../common/NodeId";
 
 const logger = Logger.get("CaseClient");
 
 export class CaseClient {
     constructor() {}
 
-    async pair(client: MatterController, exchange: MessageExchange<MatterController>, fabric: Fabric, peerNodeId: bigint) {
+    async pair(client: MatterController, exchange: MessageExchange<MatterController>, fabric: Fabric, peerNodeId: NodeId) {
         const messenger = new CaseClientMessenger(exchange);
 
         // Generate pairing info

@@ -10,6 +10,8 @@ import { Broadcaster } from "../common/Broadcaster";
 import { bigintToBuffer } from "../../util/BigInt";
 import { getDeviceMatterQname, getFabricQname, MATTER_COMMISSION_SERVICE_QNAME, MATTER_SERVICE_QNAME, SERVICE_DISCOVERY_QNAME } from "./MdnsConsts";
 import { MdnsServer } from "../../net/MdnsServer";
+import { VendorId } from "../common/VendorId";
+import { NodeId, nodeIdToBigint } from "../common/NodeId";
 
 export class MdnsBroadcaster implements Broadcaster {
     static async create(multicastInterface?: string) {
@@ -20,7 +22,7 @@ export class MdnsBroadcaster implements Broadcaster {
         private readonly mdnsServer: MdnsServer,
     ) {}
 
-    setCommissionMode(deviceName: string, deviceType: number, vendorId: number, productId: number, discriminator: number) {
+    setCommissionMode(deviceName: string, deviceType: number, vendorId: VendorId, productId: number, discriminator: number) {
         const shortDiscriminator = (discriminator >> 8) & 0x0F;
         const instanceId = Crypto.getRandomData(8).toString("hex").toUpperCase();
         const vendorQname = `_V${vendorId}._sub.${MATTER_COMMISSION_SERVICE_QNAME}`;
@@ -63,8 +65,8 @@ export class MdnsBroadcaster implements Broadcaster {
         });
     }
 
-    setFabric(operationalId: Buffer, nodeId: bigint) {
-        const nodeIdString = bigintToBuffer(nodeId).toString("hex").toUpperCase();
+    setFabric(operationalId: Buffer, nodeId: NodeId) {
+        const nodeIdString = bigintToBuffer(nodeIdToBigint(nodeId)).toString("hex").toUpperCase();
         const operationalIdString = operationalId.toString("hex").toUpperCase();
         const fabricQname = getFabricQname(operationalIdString);
         const deviceMatterQname = getDeviceMatterQname(operationalIdString, nodeIdString);

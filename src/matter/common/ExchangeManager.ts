@@ -15,6 +15,7 @@ import { ProtocolHandler } from "./ProtocolHandler";
 import { ChannelManager } from "./ChannelManager";
 import { Fabric } from "../fabric/Fabric";
 import { Logger } from "../../log/Logger";
+import { NodeId } from "./NodeId";
 
 const logger = Logger.get("MessageChannel");
 
@@ -56,7 +57,7 @@ export class ExchangeManager<ContextT> {
         this.protocols.set(protocol.getId(), protocol);
     }
 
-    initiateExchange(fabric: Fabric, nodeId: bigint, protocolId: number) {
+    initiateExchange(fabric: Fabric, nodeId: NodeId, protocolId: number) {
         return this.initiateExchangeWithChannel(this.channelManager.getChannel(fabric, nodeId), protocolId);
     }
 

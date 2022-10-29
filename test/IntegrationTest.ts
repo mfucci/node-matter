@@ -30,6 +30,8 @@ import { OperationalCredentialsClusterHandler } from "../src/matter/cluster/serv
 import { ClusterClient } from "../src/matter/interaction/InteractionClient";
 import { Level, Logger } from "../src/log/Logger";
 import { getPromiseResolver } from "../src/util/Promises";
+import { VendorId } from "../src/matter/common/VendorId";
+import { NodeId } from "../src/matter/common/NodeId";
 
 const SERVER_IP = "192.168.200.1";
 const SERVER_MAC = "00:B0:D0:63:C2:26";
@@ -54,7 +56,7 @@ const CertificateDeclaration = Buffer.from("3082021906092a864886f70d010702a08202
 const deviceName = "Matter end-to-end device";
 const deviceType = 257 /* Dimmable bulb */;
 const vendorName = "node-matter";
-const vendorId = 0xFFF1;
+const vendorId = VendorId(0xFFF1);
 const productName = "Matter end-to-end device";
 const productId = 0X8001;
 const discriminator = 3840;
@@ -153,7 +155,7 @@ describe("Integration", () => {
         });
 
         it("the session is resumed if it has been established previously", async () => {
-            await client.connect(BigInt(1));
+            await client.connect(NodeId(BigInt(1)));
 
             assert.ok(true);
         });
@@ -181,7 +183,7 @@ describe("Integration", () => {
         });*/
 
         it("subscription sends updates when the value changes", async () => {
-            const interactionClient = await client.connect(BigInt(1));
+            const interactionClient = await client.connect(NodeId(BigInt(1)));
             const onOffClient = ClusterClient(interactionClient, 1, OnOffCluster);
             const startTime = Time.nowMs();
             let callback = (value: boolean, version: number) => {};

@@ -5,6 +5,7 @@
  */
 
 import { Fabric } from "../fabric/Fabric";
+import { NodeId } from "./NodeId";
 
 export type MatterServer = {
     ip: string,
@@ -12,6 +13,6 @@ export type MatterServer = {
 };
 
 export interface Scanner {
-    findDevice(fabric: Fabric, nodeId: bigint): Promise<MatterServer | undefined>;
+    findDevice(fabric: Fabric, nodeId: NodeId): Promise<MatterServer | undefined>;
     close(): void;
 }

@@ -5,8 +5,7 @@
  */
 
 import { Field, JsType, ObjectT, StringT, UnsignedIntT, UnsignedLongT, BooleanT, EnumT } from "../../codec/TlvObjectCodec";
-import { TlvType } from "../../codec/TlvCodec";
-import { Attribute, Cluster, Command, NoArgumentsT, OptionalAttribute, WritableAttribute } from "./Cluster";
+import { Attribute, Cluster, Command, NoArgumentsT, WritableAttribute } from "./Cluster";
 
 export const enum RegulatoryLocationType {
     Indoor = 0,

@@ -11,6 +11,7 @@ import { Element } from "../../codec/TlvCodec";
 import { Fabric } from "../fabric/Fabric";
 import { AttributeWithPath, Path, INTERACTION_PROTOCOL_ID } from "./InteractionServer";
 import { Time, Timer } from "../../time/Time";
+import { NodeId } from "../common/NodeId";
 
 interface PathValueVersion<T> {
     path: Path,
@@ -20,7 +21,7 @@ interface PathValueVersion<T> {
 
 export class SubscriptionHandler {
 
-    static Builder = (server: MatterDevice, fabric: Fabric, peerNodeId: bigint, attributes: AttributeWithPath[], minIntervalFloorSeconds: number, maxIntervalCeilingSeconds: number) => (subscriptionId: number) => new SubscriptionHandler(subscriptionId, server, fabric, peerNodeId, attributes, minIntervalFloorSeconds * 1000, maxIntervalCeilingSeconds * 1000);
+    static Builder = (server: MatterDevice, fabric: Fabric, peerNodeId: NodeId, attributes: AttributeWithPath[], minIntervalFloorSeconds: number, maxIntervalCeilingSeconds: number) => (subscriptionId: number) => new SubscriptionHandler(subscriptionId, server, fabric, peerNodeId, attributes, minIntervalFloorSeconds * 1000, maxIntervalCeilingSeconds * 1000);
 
     private lastUpdateTimeMs = 0;
     private readonly listener = () => this.sendUpdate();
@@ -30,7 +31,7 @@ export class SubscriptionHandler {
         readonly subscriptionId: number,
         private readonly server: MatterDevice,
         private readonly fabric: Fabric,
-        private readonly peerNodeId: bigint,
+        private readonly peerNodeId: NodeId,
         private readonly attributes: AttributeWithPath[],
         private readonly minIntervalFloorMs: number,
         private readonly maxIntervalCeilingMs: number,

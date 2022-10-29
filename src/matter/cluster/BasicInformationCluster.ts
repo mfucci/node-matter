@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BooleanT, StringT, UnsignedIntT, ObjectT, Field, BoundedUnsignedIntT } from "../../codec/TlvObjectCodec";
+import { BooleanT, StringT, UnsignedIntT, ObjectT, Field, BoundedUnsignedIntT, Typed } from "../../codec/TlvObjectCodec";
+import { VendorId } from "../common/VendorId";
 import { Attribute, Cluster, OptionalAttribute, OptionalWritableAttribute, WritableAttribute } from "./Cluster";
 
 const CapabilityMinimaT = ObjectT({
@@ -25,7 +26,7 @@ export const BasicInformationCluster = Cluster(
     {
             dataModelRevision: Attribute(0, UnsignedIntT),
             vendorName: Attribute(1, StringT({ maxLength: 32 })),
-            vendorId: Attribute(2, UnsignedIntT), /* type: vendor-id */
+            vendorId: Attribute(2, Typed<VendorId>(UnsignedIntT)),
             productName: Attribute(3, StringT({ maxLength: 32 })),
             productId: Attribute(4, UnsignedIntT),
             nodeLabel: WritableAttribute(5, StringT({ maxLength: 32 }), ""), /* writeAcl: manage */

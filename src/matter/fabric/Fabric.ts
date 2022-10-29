@@ -8,6 +8,8 @@ import { TlvObjectCodec } from "../../codec/TlvObjectCodec";
 import { Crypto, KeyPair } from "../../crypto/Crypto";
 import { LEBufferWriter } from "../../util/LEBufferWriter";
 import { CertificateManager, OperationalCertificateT, RootCertificateT } from "../certificate/CertificateManager";
+import { NodeId, nodeIdToBigint } from "../common/NodeId";
+import { VendorId } from "../common/VendorId";
 
 const COMPRESSED_FABRIC_ID_INFO = Buffer.from("CompressedFabric");
 const GROUP_SECURITY_INFO = Buffer.from("GroupKey v1.0");
@@ -16,11 +18,11 @@ export class Fabric {
 
     constructor(
         readonly id: bigint,
-        readonly nodeId: bigint,
+        readonly nodeId: NodeId,
         readonly operationalId: Buffer,
         readonly rootPublicKey: Buffer,
         private readonly keyPair: KeyPair,
-        private readonly vendorId: number,
+        private readonly vendorId: VendorId,
         private readonly rootCert: Buffer,
         readonly identityProtectionKey: Buffer,
         readonly operationalIdentityProtectionKey: Buffer,
@@ -41,12 +43,12 @@ export class Fabric {
         return;
     }
 
-    getDestinationId(nodeId: bigint, random: Buffer) {
+    getDestinationId(nodeId: NodeId, random: Buffer) {
         const writter = new LEBufferWriter();
         writter.writeBytes(random);
         writter.writeBytes(this.rootPublicKey);
         writter.writeUInt64(this.id);
-        writter.writeUInt64(nodeId);
+        writter.writeUInt64(nodeIdToBigint(nodeId));
         const elements = writter.toBuffer();
         return Crypto.hmac(this.operationalIdentityProtectionKey, elements);
     }
@@ -54,12 +56,12 @@ export class Fabric {
 
 export class FabricBuilder {
     private keyPair = Crypto.createKeyPair();
-    private vendorId?: number;
+    private vendorId?: VendorId;
     private rootCert?: Buffer;
     private intermediateCACert?: Buffer;
     private operationalCert?: Buffer;
     private fabricId?: bigint;
-    private nodeId?: bigint;
+    private nodeId?: NodeId;
     private rootPublicKey?: Buffer;
     private identityProtectionKey?: Buffer;
 
@@ -90,7 +92,7 @@ export class FabricBuilder {
         return this;
     }
 
-    setVendorId(vendorId: number) {
+    setVendorId(vendorId: VendorId) {
         this.vendorId = vendorId;
         return this;
     }

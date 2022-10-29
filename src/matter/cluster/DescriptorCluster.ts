@@ -16,14 +16,13 @@ const DeviceTypeT = ObjectT({
  * The Descriptor Cluster is meant to replace the support from the Zigbee Device Object (ZDO) for describing a node,
  * its endpoints and clusters.
  */
-export const DescriptorCluster = Cluster(
-    0x1d,
-    "Descriptor",
-    {
+export const DescriptorCluster = Cluster({
+    id: 0x1d,
+    name: "Descriptor",
+    attributes: {
         deviceTypeList: Attribute(0, ArrayT(DeviceTypeT, { minLength: 1 })),
-        serverList: Attribute(1, ArrayT(UnsignedIntT), []), /* type: list[cluster-id] */
-        clientList: Attribute(3, ArrayT(UnsignedIntT), []), /* type: list[cluster-id] */
-        partsList: Attribute(4, ArrayT(UnsignedIntT), []), /* type: list[endpoint-no] */
+        serverList: Attribute(1, ArrayT(UnsignedIntT), { default: [] }), /* type: list[cluster-id] */
+        clientList: Attribute(3, ArrayT(UnsignedIntT), { default: [] }), /* type: list[cluster-id] */
+        partsList: Attribute(4, ArrayT(UnsignedIntT), { default: [] }), /* type: list[endpoint-no] */
     },
-    {},
-);
+});

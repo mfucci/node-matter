@@ -21,7 +21,7 @@ import { Logger } from "../../log/Logger";
 
 export const INTERACTION_PROTOCOL_ID = 0x0001;
 
-export class ClusterServer<ClusterT extends Cluster<any, any>> {
+export class ClusterServer<ClusterT extends Cluster<any, any, any>> {
     readonly id: number;
     readonly attributes = <AttributeServers<ClusterT["attributes"]>>{};
     readonly commands = new Array<CommandServer<any, any>>();

@@ -17,7 +17,7 @@ import { INTERACTION_PROTOCOL_ID } from "./InteractionServer";
 import { ProtocolHandler } from "../common/ProtocolHandler";
 import { StatusCode } from "./InteractionMessages";
 
-export function ClusterClient<CommandT extends Commands, AttributeT extends Attributes>(interactionClient: InteractionClient, endpointId: number, clusterDef: Cluster<CommandT, AttributeT>): ClusterClient<CommandT, AttributeT> {
+export function ClusterClient<CommandT extends Commands, AttributeT extends Attributes>(interactionClient: InteractionClient, endpointId: number, clusterDef: Cluster<CommandT, AttributeT, any>): ClusterClient<CommandT, AttributeT> {
     const result: any = {};
     const { id: clusterId, commands, attributes } = clusterDef;
 
@@ -69,7 +69,7 @@ export class InteractionClient {
         this.exchangeManager.addProtocolHandler(new SubscriptionClient(this.subscriptionListeners));
     }
 
-    async get<A extends Attribute<any>>(endpointId: number, clusterId: number, { id, template, optional, conformanceValue }: A): Promise<AttributeJsType<A>> {
+    async get<A extends Attribute<any>>(endpointId: number, clusterId: number, { id, template, optional, default: conformanceValue }: A): Promise<AttributeJsType<A>> {
         return this.withMessenger<AttributeJsType<A>>(async messenger => {
             const response = await messenger.sendReadRequest({
                 attributes: [ {endpointId , clusterId, id} ],
@@ -87,14 +87,14 @@ export class InteractionClient {
         });
     }
 
-    async set<T>(endpointId: number, clusterId: number, { id, template, conformanceValue }: Attribute<T>, value: T): Promise<void> {
+    async set<T>(endpointId: number, clusterId: number, { id, template, default: conformanceValue }: Attribute<T>, value: T): Promise<void> {
         throw new Error("not implemented");
     }
 
     async subscribe<A extends Attribute<any>>(
         endpointId: number,
         clusterId: number,
-        { id, template, conformanceValue }: A,
+        { id, template, default: conformanceValue }: A,
         listener: (value: AttributeJsType<A>, version: number) => void,
         minIntervalFloorSeconds: number,  
         maxIntervalCeilingSeconds: number, 

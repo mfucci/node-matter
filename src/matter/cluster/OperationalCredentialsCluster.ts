@@ -118,10 +118,10 @@ export const RemoveFabricRequestT = ObjectT({
  * This cluster is used to add or remove Operational Credentials on a Commissionee or Node, as well as manage the
  * associated Fabrics.
  */
-export const OperationalCredentialsCluster = Cluster(
-    0x3e,
-    "Operational Credentials",
-    {
+export const OperationalCredentialsCluster = Cluster({
+    id: 0x3e,
+    name: "Operational Credentials",
+    attributes: {
         nocs: Attribute(0, ArrayT(NocT)),
         fabrics: Attribute(1, ArrayT(FabricDescriptorT)),
         supportedFabrics: Attribute(2, BoundedUnsignedIntT({ min: 5, max: 254 })),
@@ -129,7 +129,7 @@ export const OperationalCredentialsCluster = Cluster(
         trustedRootCertificates: Attribute(4, ArrayT(ByteStringT(), { maxLength: 400 })),
         currentFabricIndex: Attribute(5, UnsignedIntT),
     },
-    {
+    commands: {
         /** Sender is requesting attestation information from the receiver. */
         requestAttestation: Command(0, AttestationRequestT, 1, AttestationResponseT),
 
@@ -162,4 +162,4 @@ export const OperationalCredentialsCluster = Cluster(
          */
         addRootCert: Command(11, AddTrustedRootCertificateRequestT, 11, NoResponseT),
     },
-)
+});

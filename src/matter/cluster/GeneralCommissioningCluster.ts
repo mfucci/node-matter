@@ -28,7 +28,7 @@ const BasicCommissioningInfoT = ObjectT({
 
 const CommissioningSuccessFailureResponseT = ObjectT({
     errorCode: Field(0, EnumT<CommissioningError>()),
-    debugText: Field(1, StringT),
+    debugText: Field(1, StringT()),
 });
 export type CommissioningSuccessFailureResponse = JsType<typeof CommissioningSuccessFailureResponseT>;
 
@@ -39,7 +39,7 @@ const ArmFailSafeRequestT = ObjectT({
 
 const SetRegulatoryConfigRequestT = ObjectT({
     newRegulatoryConfig: Field(0, EnumT<RegulatoryLocationType>()),
-    countryCode: Field(1, StringT), /* length: 2 */
+    countryCode: Field(1, StringT({ length: 2 })),
     breadcrumbStep: Field(2, UnsignedLongT),
 });
 
@@ -57,14 +57,12 @@ export const GeneralCommissioningCluster = Cluster(
         supportsConcurrentConnections: Attribute(4, BooleanT, true),
     },
     {
-        /**
-         * Arm the persistent fail-safe timer with an expiry time of now + ExpiryLengthSeconds using device clock.
-         */
+        /** Arm the persistent fail-safe timer with an expiry time of now + ExpiryLengthSeconds using device clock. */
         armFailSafe: Command(0, ArmFailSafeRequestT, 1, CommissioningSuccessFailureResponseT),
-        /**
-         * Sets or Updates the regulatory configuration to be used during commissioning.
-         */
+
+        /** Sets or Updates the regulatory configuration to be used during commissioning. */
         setRegulatoryConfig: Command(2, SetRegulatoryConfigRequestT, 3, CommissioningSuccessFailureResponseT),
+        
         /**
          * Informs that all steps of Commissioning/Reconfiguration needed during the fail-safe period have been
          * completed.

@@ -32,8 +32,8 @@ export class ClusterServer<ClusterT extends Cluster<any, any>> {
 
         // Create attributes
         for (const name in attributesInitialValues) {
-            const { id, template } = attributeDefs[name];
-            (this.attributes as any)[name] = new AttributeServer(id, name, template, (attributesInitialValues as any)[name]);
+            const { id, template, validator } = attributeDefs[name];
+            (this.attributes as any)[name] = new AttributeServer(id, name, template, validator ?? (() => {}), (attributesInitialValues as any)[name]);
         }
 
         // Create commands

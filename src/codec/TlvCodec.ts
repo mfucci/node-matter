@@ -44,7 +44,9 @@ export interface Element {
     type: TlvType,
     value: any,
     tag: TlvTag,
-}const COMMON_PROFILE = 0x00000000;
+}
+
+const COMMON_PROFILE = 0x00000000;
 const UNSPECIFIED_PROFILE = 0xFFFFFFFF;
 
 export class TlvTag {

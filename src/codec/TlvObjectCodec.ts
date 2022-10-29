@@ -26,45 +26,53 @@ type RequiredKeys<T extends object> = {[K in keyof T]: T[K] extends OptionalFiel
 export type JsType<Type> = Type extends Template<infer T> ? T : never;
 export type TypeFromFieldTemplates<T extends FieldTemplates> = Merge<{ [P in RequiredKeys<T>]: JsType<T[P]> }, { [P in OptionalKeys<T>]?: JsType<T[P]> }>;
 
-// Constraints definitions
+// Constraints
+export class InvalidParameterError extends Error {}
+
 export type IntConstraints = {
     min?: number,
     max?: number,
 }
-export type StringConstraints = {
+const intValidator = ({ min, max }: IntConstraints) => (value: number | bigint, name: string) => {
+    if (min !== undefined && value < min) throw new InvalidParameterError(`Parameter ${name} is lower than ${min}. Value: ${value}`);
+    if (max !== undefined && value > max) throw new InvalidParameterError(`Parameter ${name} is higher than ${max}. Value: ${value}`);
+}
+
+export type ArrayConstraints = {
     minLength?: number,
     maxLength?: number,
     length?: number,
 }
-
-export class InvalidParameterError extends Error {}
-
-const stringValidator = ({ minLength = 0, maxLength, length }: StringConstraints) => (value: string, name: string) => {
-    const valueLength = value.length;
-    if (length !== undefined) {
-        if (valueLength !== length) throw new InvalidParameterError(`Parameter ${name} should have a length of ${length}. Value: "${value}"`);
+function valueToString(value: string | Buffer | Array<any>) {
+    if (typeof value === "string") {
+        return `"${value}"`;
+    } else if (Buffer.isBuffer(value)) {
+        return `0x${value.toString("hex")}`;
     } else {
-        if (valueLength < minLength) throw new InvalidParameterError(`Parameter ${name} is shorter than ${minLength} characters. Value: "${value}"`);
-        if (maxLength !== undefined && valueLength > maxLength) throw new InvalidParameterError(`Parameter ${name} is longer than ${maxLength} characters. Value: "${value}"`);
+        return value.toString();
     }
 }
-
-const intValidator = ({ min, max }: IntConstraints) => (value: number | bigint, name: string) => {
-    if (min !== undefined && value < min) throw new InvalidParameterError(`Parameter ${name} is lower than ${min}. Value: "${value}"`);
-    if (max !== undefined && value > max) throw new InvalidParameterError(`Parameter ${name} is higher than ${max}. Value: "${value}"`);
+const arrayValidator = ({ minLength = 0, maxLength, length }: ArrayConstraints) => (value: string | Buffer | Array<any>, name: string) => {
+    const valueLength = value.length;
+    if (length !== undefined) {
+        if (valueLength !== length) throw new InvalidParameterError(`Parameter ${name} should have a length of ${length}. Length: ${valueLength}, value: ${valueToString(value)}`);
+    } else {
+        if (valueLength < minLength) throw new InvalidParameterError(`Parameter ${name} is shorter than ${minLength}. Length: ${valueLength}, value: ${valueToString(value)}`);
+        if (maxLength !== undefined && valueLength > maxLength) throw new InvalidParameterError(`Parameter ${name} is longer than ${maxLength}. Length: ${valueLength}, value: ${valueToString(value)}`);
+    }
 }
 
 // Template definitions
 export const Constraint = <T,>(template: Template<T>, validator: (value: T, name: string) => void): Template<T> => ({...template, validator });
-export const StringT = (constraints: StringConstraints = { maxLength: 256 }):Template<string> => ({ tlvType: TlvType.String, validator: stringValidator(constraints) } as Template<string>);
+export const StringT = (constraints: ArrayConstraints = { maxLength: 256 }):Template<string> => ({ tlvType: TlvType.String, validator: arrayValidator(constraints) });
 export const BooleanT:Template<boolean> = { tlvType: TlvType.Boolean };
-export const ByteStringT:Template<Buffer> = { tlvType: TlvType.ByteString };
+export const ByteStringT = (constraints: ArrayConstraints = { maxLength: 256 }):Template<Buffer> => ({ tlvType: TlvType.ByteString, validator: arrayValidator(constraints) });
 export const UnsignedIntT:Template<number> = { tlvType: TlvType.UnsignedInt };
 export const BoundedUnsignedIntT = ({min = 0, max}: IntConstraints = {}):Template<number> => ({ tlvType: TlvType.UnsignedInt, validator: intValidator({min: Math.max(min, 0), max })});
 export const UnsignedLongT:Template<bigint> = { tlvType: TlvType.UnsignedInt, readAsBigint: true };
 export const BoundedUnsignedLongT = ({min = 0, max}: IntConstraints = {}):Template<number> => ({ tlvType: TlvType.UnsignedInt, readAsBigint: true, validator: intValidator({min: Math.max(min, 0), max })});
 export const AnyT:Template<any> = { };
-export const ArrayT = <T,>(itemTemplate: Template<T>) => ({ tlvType: TlvType.Array, itemTemplate } as Template<T[]>);
+export const ArrayT = <T,>(itemTemplate: Template<T>, constraints?: ArrayConstraints) => ({ tlvType: TlvType.Array, itemTemplate, validator: constraints ? arrayValidator(constraints) : (() => {}) } as Template<T[]>);
 export const ObjectT = <F extends FieldTemplates>(fieldTemplates: F, tlvType: TlvType = TlvType.Structure) => ({ tlvType, fieldTemplates } as Template<TypeFromFieldTemplates<F>>);
 export const EnumT = <T,>() => ({ tlvType: TlvType.UnsignedInt } as Template<T>);
 export const Field = <T,>(id: number, type: Template<T>):Field<T> =>  ({...type, tag: TlvTag.contextual(id), optional: false});

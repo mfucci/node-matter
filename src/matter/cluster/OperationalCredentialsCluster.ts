@@ -8,7 +8,7 @@ import { Attribute, Cluster, Command, NoResponseT } from "./Cluster";
 import { ByteStringT, Field, ObjectT, OptionalField, UnsignedIntT, UnsignedLongT, StringT, ArrayT, BooleanT, EnumT, BoundedUnsignedIntT } from "../../codec/TlvObjectCodec";
 
 const FabricDescriptorT = ObjectT({
-    rootPublicKey: Field(1, ByteStringT), /* length: 65 */
+    rootPublicKey: Field(1, ByteStringT({ length: 65 })),
     vendorId: Field(2, UnsignedIntT), /* type: vendor-id */
     fabricID: Field(3, UnsignedIntT), /* type: fabric-id */
     nodeID: Field(4, UnsignedIntT), /* type: node-id */
@@ -16,8 +16,8 @@ const FabricDescriptorT = ObjectT({
 });
 
 const NocT = ObjectT({
-    noc: Field(1, ByteStringT), /* maxLength: 400 */
-    icac: Field(2, ByteStringT), /* maxLength: 400, default(not present): null */
+    noc: Field(1, ByteStringT({ maxLength: 400 })),
+    icac: Field(2, ByteStringT({ maxLength: 400 })), /* default(not present): null */
 });
 
 export const enum CertificateType {
@@ -26,22 +26,22 @@ export const enum CertificateType {
 }
 
 export const AttestationRequestT = ObjectT({
-    attestationNonce: Field(0, ByteStringT), /* length: 32 */
+    attestationNonce: Field(0, ByteStringT({ length: 32 })),
 });
 
 export const AttestationResponseT = ObjectT({
-    elements: Field(0, ByteStringT),
-    signature: Field(1, ByteStringT), /* length: 64 */
+    elements: Field(0, ByteStringT({ maxLength: 600 })), // TODO: check actual max length in specs
+    signature: Field(1, ByteStringT({ length: 64 })),
 });
 
 export const CertSigningRequestRequestT = ObjectT({
-    certSigningRequestNonce: Field(0, ByteStringT), /* length: 32 */
+    certSigningRequestNonce: Field(0, ByteStringT({ length: 32 })),
     isForUpdateNOC: OptionalField(1, BooleanT), /* default: false */
 });
 
 export const CertSigningRequestResponseT = ObjectT({
-    elements: Field(0, ByteStringT),
-    signature: Field(1, ByteStringT), /* length: 64 */
+    elements: Field(0, ByteStringT()),
+    signature: Field(1, ByteStringT({ length: 64 })),
 });
 
 export const CertChainRequestT = ObjectT({
@@ -49,24 +49,24 @@ export const CertChainRequestT = ObjectT({
 });
 
 export const CertChainResponseT = ObjectT({
-    certificate: Field(0, ByteStringT), /* maxLength: 600 */
+    certificate: Field(0, ByteStringT({ maxLength: 600 })),
 });
 
 export const AddNocRequestT = ObjectT({
-    operationalCert: Field(0, ByteStringT), /* maxLength: 400 */
-    intermediateCaCert: OptionalField(1, ByteStringT), /* maxLength: 400 */
-    identityProtectionKey: Field(2, ByteStringT), /* length: 16 */
+    operationalCert: Field(0, ByteStringT({ maxLength: 400 })),
+    intermediateCaCert: OptionalField(1, ByteStringT({ maxLength: 400 })),
+    identityProtectionKey: Field(2, ByteStringT({ length: 16 })),
     caseAdminNode: Field(3, UnsignedLongT), /* type: subject-id */
     adminVendorId: Field(4, UnsignedIntT), /* type: vendor-id */
 });
 
 export const UpdateNocRequestT = ObjectT({
-    operationalCert: Field(0, ByteStringT), /* maxLength: 400 */
-    intermediateCaCert: OptionalField(1, ByteStringT), /* maxLength: 400 */
+    operationalCert: Field(0, ByteStringT({ maxLength: 400 })),
+    intermediateCaCert: OptionalField(1, ByteStringT({ maxLength: 400 })),
 });
 
 export const AddTrustedRootCertificateRequestT = ObjectT({
-    certificate: Field(0, ByteStringT), /* maxLength: 400 */
+    certificate: Field(0, ByteStringT({ maxLength: 400 })),
 });
 
 export const enum OperationalCertStatus {
@@ -89,18 +89,18 @@ export const OperationalCertificateStatusResponseT = ObjectT({
 });
 
 export const AttestationT = ObjectT({
-    declaration: Field(1, ByteStringT),
-    attestationNonce: Field(2, ByteStringT),
+    declaration: Field(1, ByteStringT({ maxLength: 600 })), // TODO: check actual max length in specs
+    attestationNonce: Field(2, ByteStringT()),
     timestamp: Field(3, UnsignedIntT),
-    firmwareInfo: OptionalField(4, ByteStringT),
+    firmwareInfo: OptionalField(4, ByteStringT()),
 });
 
 export const CertSigningRequestT = ObjectT({
-    certSigningRequest: Field(1, ByteStringT),
-    certSigningRequestNonce: Field(2, ByteStringT),
-    vendorReserved1: OptionalField(3, ByteStringT),
-    vendorReserved2: OptionalField(4, ByteStringT),
-    vendorReserved3: OptionalField(5, ByteStringT),
+    certSigningRequest: Field(1, ByteStringT()),
+    certSigningRequestNonce: Field(2, ByteStringT()),
+    vendorReserved1: OptionalField(3, ByteStringT()),
+    vendorReserved2: OptionalField(4, ByteStringT()),
+    vendorReserved3: OptionalField(5, ByteStringT()),
 });
 
 export const UpdateFabricLabelRequestT = ObjectT({
@@ -123,7 +123,7 @@ export const OperationalCredentialsCluster = Cluster(
         fabrics: Attribute(1, ArrayT(FabricDescriptorT)),
         supportedFabrics: Attribute(2, BoundedUnsignedIntT({ min: 5, max: 254 })),
         commissionedFabrics: Attribute(3, UnsignedIntT),
-        trustedRootCertificates: Attribute(4, ArrayT(ByteStringT)), /* arrayMaxLength: 400 */
+        trustedRootCertificates: Attribute(4, ArrayT(ByteStringT(), { maxLength: 400 })),
         currentFabricIndex: Attribute(5, UnsignedIntT),
     },
     {

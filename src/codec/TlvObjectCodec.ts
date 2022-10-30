@@ -20,6 +20,10 @@ export interface Field<T> extends TaggedTemplate<T> {optional: false};
 export interface OptionalField<T> extends TaggedTemplate<T> {optional: true};
 export type FieldTemplates = {[key: string]: Field<any> | OptionalField<any>};
 
+interface BitTemplate { position: number }
+type BitTemplates = {[key: string]: BitTemplate};
+type TypeFromBitTemplates<T extends BitTemplates> = {[K in keyof T]: boolean};
+
 // Type utils
 type OptionalKeys<T extends object> = {[K in keyof T]: T[K] extends OptionalField<any> ? K : never}[keyof T];
 type RequiredKeys<T extends object> = {[K in keyof T]: T[K] extends OptionalField<any> ? never : K}[keyof T];
@@ -66,6 +70,7 @@ const arrayValidator = ({ minLength = 0, maxLength, length }: ArrayConstraints) 
 export const Constraint = <T,>(template: Template<T>, validator: (value: T, name: string) => void): Template<T> => ({...template, validator });
 export const StringT = (constraints: ArrayConstraints = { maxLength: 256 }):Template<string> => ({ tlvType: TlvType.String, validator: arrayValidator(constraints) });
 export const BooleanT:Template<boolean> = { tlvType: TlvType.Boolean };
+export const BitMapT = <T extends BitTemplates>(bits: T): Template<TypeFromBitTemplates<T>> => ({});
 export const ByteStringT = (constraints: ArrayConstraints = { maxLength: 256 }):Template<Buffer> => ({ tlvType: TlvType.ByteString, validator: arrayValidator(constraints) });
 export const UnsignedIntT:Template<number> = { tlvType: TlvType.UnsignedInt };
 export const BoundedUnsignedIntT = ({min = 0, max}: IntConstraints = {}):Template<number> => ({ tlvType: TlvType.UnsignedInt, validator: intValidator({min: Math.max(min, 0), max })});

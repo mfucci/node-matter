@@ -5,6 +5,7 @@
  */
 
 import { BoundedUnsignedIntT, Typed } from "../../codec/TlvObjectCodec";
+import { MatterCoreSpecificationV1_0 } from "../../Specifications";
 
 /**
  * Each fabric supported on a node is referenced by fabric-index that is unique on the node. This
@@ -14,7 +15,7 @@ import { BoundedUnsignedIntT, Typed } from "../../codec/TlvObjectCodec";
  * a fab­ric, such as fabric-scoped data model elements, then the fabric-index values SHALL NOT include 0
  * (zero) or null.
  * 
- * @see [Matter Specification R1.0], section 7.5.2
+ * @see {@link MatterCoreSpecificationV1_0} § 7.5.2
  */
 export type FabricIndex = { fabricIndex: true /* Hack to force strong type checking at compile time */ };
 export const FabricIndex = (id: number) => id as unknown as FabricIndex;

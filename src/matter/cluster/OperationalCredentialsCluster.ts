@@ -6,15 +6,15 @@
 
 import { Attribute, Cluster, Command, NoResponseT } from "./Cluster";
 import { ByteStringT, Field, ObjectT, OptionalField, UnsignedIntT, UnsignedLongT, StringT, ArrayT, BooleanT, EnumT, Typed, BoundedUnsignedIntT } from "../../codec/TlvObjectCodec";
-import { VendorId } from "../common/VendorId";
-import { NodeId } from "../common/NodeId";
+import { VendorIdT } from "../common/VendorId";
+import { NodeIdT } from "../common/NodeId";
 import { SubjectId } from "../common/SubjectId";
 
 const FabricDescriptorT = ObjectT({
     rootPublicKey: Field(1, ByteStringT({ length: 65 })),
-    vendorId: Field(2, Typed<VendorId>(UnsignedIntT)),
+    vendorId: Field(2, VendorIdT),
     fabricID: Field(3, UnsignedIntT), /* type: fabric-id */
-    nodeID: Field(4, Typed<NodeId>(UnsignedIntT)),
+    nodeID: Field(4, NodeIdT),
     label: Field(5, StringT({ maxLength: 32 })), /* default: "" */
 });
 
@@ -60,7 +60,7 @@ export const AddNocRequestT = ObjectT({
     intermediateCaCert: OptionalField(1, ByteStringT({ maxLength: 400 })),
     identityProtectionKey: Field(2, ByteStringT({ length: 16 })),
     caseAdminNode: Field(3, Typed<SubjectId>(UnsignedLongT)),
-    adminVendorId: Field(4, Typed<VendorId>(UnsignedIntT)),
+    adminVendorId: Field(4, VendorIdT),
 });
 
 export const UpdateNocRequestT = ObjectT({

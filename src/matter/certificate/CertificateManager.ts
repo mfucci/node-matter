@@ -8,7 +8,7 @@ import { AuthorityKeyIdentifier_X509, BasicConstraints_X509, BitBuffer, BYTES_KE
 import { TlvType } from "../../codec/TlvCodec";
 import { ArrayT, BooleanT, ByteStringT, Field, JsType, ObjectT, OptionalField, Typed, UnsignedIntT, UnsignedLongT } from "../../codec/TlvObjectCodec";
 import { Crypto, KeyPair } from "../../crypto/Crypto";
-import { NodeId, nodeIdToBigint } from "../common/NodeId";
+import { NodeId, NodeIdT, nodeIdToBigint } from "../common/NodeId";
 
 const YEAR_S = 365 * 24 * 60 * 60;
 const EPOCH_OFFSET_S = 10957 * 24 * 60 * 60;
@@ -67,7 +67,7 @@ export const OperationalCertificateT = ObjectT({
     notAfter: Field(5, UnsignedIntT),
     subject: Field(6, ObjectT({
         fabricId: Field(21, UnsignedLongT),
-        nodeId: Field(17, Typed<NodeId>(UnsignedLongT)),
+        nodeId: Field(17, NodeIdT),
     }, TlvType.List)),
     publicKeyAlgorithm: Field(7, UnsignedIntT),
     ellipticCurveIdentifier: Field(8, UnsignedIntT),

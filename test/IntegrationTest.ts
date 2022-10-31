@@ -105,7 +105,7 @@ describe("Integration", () => {
                         productId,
                         nodeLabel: "",
                         hardwareVersion: 0,
-                        hardwareVersionString: "",
+                        hardwareVersionString: "0",
                         location: "US",
                         localConfigDisabled: false,
                         softwareVersion: 1,

@@ -88,9 +88,9 @@ describe("TlvObjectCodec", () => {
         });
 
         it("decodes a bitmap", () => {
-            const result = TlvObjectCodec.decode(ENCODED, BitMapT({ flag1: Bit(1), flag2: Bit(3) }));
+            const result = TlvObjectCodec.decode(Buffer.from("040a", "hex"), BitMapT({ flag1: Bit(1), flag2: Bit(3) }));
 
-            assert.deepEqual(result, DECODED);
+            assert.deepEqual(result, { flag1: true, flag2: true});
         });
     });
 
@@ -116,7 +116,7 @@ describe("TlvObjectCodec", () => {
         it("encodes a bitmap", () => {
             const result = TlvObjectCodec.encode({ flag1: true, flag2: true}, BitMapT({ flag1: Bit(1), flag2: Bit(3) }));
 
-            assert.deepEqual(result, DECODED);
+            assert.deepEqual(result.toString("hex"), "040a");
         });
     });
 });

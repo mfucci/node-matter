@@ -6,7 +6,7 @@
 
 import assert from "assert";
 import { TlvTag, TlvType } from "../../src/codec/TlvCodec";
-import { BooleanT, ByteStringT, JsType, ObjectT, Field, TlvObjectCodec, UnsignedIntT, OptionalField } from "../../src/codec/TlvObjectCodec";
+import { BooleanT, ByteStringT, JsType, ObjectT, Field, TlvObjectCodec, UnsignedIntT, OptionalField, BitMapT, Bit } from "../../src/codec/TlvObjectCodec";
 import { DataReportT } from "../../src/matter/interaction/InteractionMessages";
 import { DataReport } from "../../src/matter/interaction/InteractionMessenger";
 
@@ -86,6 +86,12 @@ describe("TlvObjectCodec", () => {
 
             assert.deepEqual(result, DECODED_ARRAY_VARIABLE);
         });
+
+        it("decodes a bitmap", () => {
+            const result = TlvObjectCodec.decode(ENCODED, BitMapT({ flag1: Bit(1), flag2: Bit(3) }));
+
+            assert.deepEqual(result, DECODED);
+        });
     });
 
     context("encode", () => {
@@ -105,6 +111,12 @@ describe("TlvObjectCodec", () => {
             const result = TlvObjectCodec.encode(DECODED_ARRAY_VARIABLE, DataReportT);
 
             assert.deepEqual(result.toString("hex"), ENCODED_ARRAY_VARIABLE.toString("hex"));
+        });
+
+        it("encodes a bitmap", () => {
+            const result = TlvObjectCodec.encode({ flag1: true, flag2: true}, BitMapT({ flag1: Bit(1), flag2: Bit(3) }));
+
+            assert.deepEqual(result, DECODED);
         });
     });
 });

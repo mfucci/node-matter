@@ -6,7 +6,7 @@
 
 import { AuthorityKeyIdentifier_X509, BasicConstraints_X509, BitBuffer, BYTES_KEY, ContextTagged, DerCodec, DerObject, EcdsaWithSHA256_X962, ELEMENTS_KEY, ExtendedKeyUsage_X509, KeyUsage_Signature_ContentCommited_X509, KeyUsage_Signature_X509, OBJECT_ID_KEY, OrganisationName_X520, PublicKeyEcPrime256v1_X962, SubjectKeyIdentifier_X509 } from "../../codec/DerCodec";
 import { TlvType } from "../../codec/TlvCodec";
-import { ArrayT, BooleanT, ByteStringT, Field, JsType, ObjectT, OptionalField, Typed, UnsignedIntT, UnsignedLongT } from "../../codec/TlvObjectCodec";
+import { ArrayT, BooleanT, ByteStringT, Field, JsType, ObjectT, OptionalField } from "../../codec/TlvObjectCodec";
 import { Crypto, KeyPair } from "../../crypto/Crypto";
 import { NodeId, NodeIdT, nodeIdToBigint } from "../common/NodeId";
 

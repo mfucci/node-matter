@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ByteStringT, Field, ObjectT, OptionalField, UnsignedIntT } from "../../../codec/TlvObjectCodec";
+import { ByteStringT, Field, ObjectT, OptionalField } from "../../../codec/TlvObjectCodec";
 
 export const KDFSR1_KEY_INFO = Buffer.from("Sigma1_Resume");
 export const KDFSR2_KEY_INFO = Buffer.from("Sigma2_Resume");

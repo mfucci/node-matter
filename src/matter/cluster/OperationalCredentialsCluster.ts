@@ -5,15 +5,17 @@
  */
 
 import { Attribute, Cluster, Command, NoResponseT } from "./Cluster";
-import { ByteStringT, Field, ObjectT, OptionalField, UnsignedIntT, UnsignedLongT, StringT, ArrayT, BooleanT, EnumT, Typed, BoundedUnsignedIntT } from "../../codec/TlvObjectCodec";
+import { ByteStringT, Field, ObjectT, OptionalField, StringT, ArrayT, BooleanT, EnumT, Typed, UInt64T, Bound, UInt8T, UInt32T } from "../../codec/TlvObjectCodec";
 import { VendorIdT } from "../common/VendorId";
 import { NodeIdT } from "../common/NodeId";
 import { SubjectId } from "../common/SubjectId";
+import { FabricIndexT } from "../common/FabricIndex";
+import { MatterCoreSpecificationV1_0 } from "../../Specifications";
 
 const FabricDescriptorT = ObjectT({
     rootPublicKey: Field(1, ByteStringT({ length: 65 })),
     vendorId: Field(2, VendorIdT),
-    fabricID: Field(3, UnsignedIntT), /* type: fabric-id */
+    fabricID: Field(3, UInt64T), /* type: fabric-id */
     nodeID: Field(4, NodeIdT),
     label: Field(5, StringT({ maxLength: 32 })), /* default: "" */
 });
@@ -59,7 +61,7 @@ export const AddNocRequestT = ObjectT({
     operationalCert: Field(0, ByteStringT({ maxLength: 400 })),
     intermediateCaCert: OptionalField(1, ByteStringT({ maxLength: 400 })),
     identityProtectionKey: Field(2, ByteStringT({ length: 16 })),
-    caseAdminNode: Field(3, Typed<SubjectId>(UnsignedLongT)),
+    caseAdminNode: Field(3, Typed<SubjectId>(UInt64T)),
     adminVendorId: Field(4, VendorIdT),
 });
 
@@ -87,14 +89,15 @@ export const enum OperationalCertStatus {
 
 export const OperationalCertificateStatusResponseT = ObjectT({
     status: Field(0, EnumT<OperationalCertStatus>()),
-    fabricIndex: OptionalField(1, BoundedUnsignedIntT({ min: 1, max: 254 })), /* type: fabric_idx */
+    fabricIndex: OptionalField(1, FabricIndexT),
     debugText: OptionalField(2, StringT({ maxLength: 128 })),
 });
 
+/** @see {@link MatterCoreSpecificationV1_0} § 11.17.5.4 */
 export const AttestationT = ObjectT({
     declaration: Field(1, ByteStringT({ maxLength: 600 })), // TODO: check actual max length in specs
     attestationNonce: Field(2, ByteStringT()),
-    timestamp: Field(3, UnsignedIntT),
+    timestamp: Field(3, UInt32T), // TODO: check actual max length in specs
     firmwareInfo: OptionalField(4, ByteStringT()),
 });
 
@@ -107,11 +110,11 @@ export const CertSigningRequestT = ObjectT({
 });
 
 export const UpdateFabricLabelRequestT = ObjectT({
-    fabricIndex: Field(0, UnsignedIntT), /* type: fabric_idx */
+    label: Field(0, StringT({ maxLength: 32})),
 });
 
 export const RemoveFabricRequestT = ObjectT({
-    fabricIndex: Field(0, UnsignedIntT), /* type: fabric_idx */
+    fabricIndex: Field(0, FabricIndexT),
 });
 
 /**
@@ -124,10 +127,10 @@ export const OperationalCredentialsCluster = Cluster({
     attributes: {
         nocs: Attribute(0, ArrayT(NocT)),
         fabrics: Attribute(1, ArrayT(FabricDescriptorT)),
-        supportedFabrics: Attribute(2, BoundedUnsignedIntT({ min: 5, max: 254 })),
-        commissionedFabrics: Attribute(3, UnsignedIntT),
+        supportedFabrics: Attribute(2, Bound(UInt8T, { min: 5, max: 254 })),
+        commissionedFabrics: Attribute(3, UInt8T),
         trustedRootCertificates: Attribute(4, ArrayT(ByteStringT(), { maxLength: 400 })),
-        currentFabricIndex: Attribute(5, UnsignedIntT),
+        currentFabricIndex: Attribute(5, UInt8T),
     },
     commands: {
         /** Sender is requesting attestation information from the receiver. */

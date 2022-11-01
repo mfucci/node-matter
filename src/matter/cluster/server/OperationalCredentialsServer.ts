@@ -72,7 +72,7 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
         return {status: OperationalCertStatus.Success};
     },
 
-    updateFabricLabel: async ({ request: {fabricIndex} }) => {
+    updateFabricLabel: async ({ request: {label} }) => {
         throw new Error("Not implemented");
 
         return {status: OperationalCertStatus.Success};

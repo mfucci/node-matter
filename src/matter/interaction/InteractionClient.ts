@@ -131,7 +131,7 @@ export class InteractionClient {
             if (result !== undefined) {
                 const resultCode = result.result.code;
                 if (resultCode !== ResultCode.Success) throw new Error(`Received non-success result: ${resultCode}`);
-                if (responseTemplate !== NoResponseT) throw new Error("A response was expected for this command");
+                if ((responseTemplate as any) !== NoResponseT) throw new Error("A response was expected for this command");
                 return undefined as unknown as ResponseType<C>; // ResponseType is void, force casting the empty result
             } if (response !== undefined) {
                 return TlvObjectCodec.decodeElement(response.response, responseTemplate);

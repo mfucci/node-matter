@@ -10,7 +10,8 @@ import { TlvType, Element, TlvCodec, TlvTag } from "./TlvCodec";
 // Type structure definitions
 export interface Template<T> {
     tlvType?: TlvType,
-    readAsBigint?: boolean,
+    postDecoding?: (value: any) => T,
+    preEncoding?: (value: T) => any,
     validator?: (value: T, name: string) => void,
 };
 export interface ArrayTemplate<T> extends Template<T> {itemTemplate: Template<T>};
@@ -19,6 +20,10 @@ export interface TaggedTemplate<T> extends Template<T> {tag?: TlvTag};
 export interface Field<T> extends TaggedTemplate<T> {optional: false};
 export interface OptionalField<T> extends TaggedTemplate<T> {optional: true};
 export type FieldTemplates = {[key: string]: Field<any> | OptionalField<any>};
+ 
+interface BitTemplate { position: number }
+type BitTemplates = {[key: string]: BitTemplate};
+type TypeFromBitTemplates<T extends BitTemplates> = {[K in keyof T]: boolean};
 
 // Type utils
 type OptionalKeys<T extends object> = {[K in keyof T]: T[K] extends OptionalField<any> ? K : never}[keyof T];
@@ -62,15 +67,33 @@ const arrayValidator = ({ minLength = 0, maxLength, length }: ArrayConstraints) 
     }
 }
 
+// Bitmap processing
+function decodeBitMap<T extends BitTemplates>(bits: T, bitmap: number): TypeFromBitTemplates<T> {
+    const result = <TypeFromBitTemplates<T>>{};
+    for (const name in bits) {
+        result[name] = (bitmap & (1 << bits[name].position)) !== 0;
+    }
+    return result;
+}
+function encodeBitMap<T extends BitTemplates>(bits: T, flags: TypeFromBitTemplates<T>): number {
+    let result = 0;
+    for (const name in bits) {
+        if (flags[name]) result |= 1 << bits[name].position;
+    }
+    return result;
+}
+
 // Template definitions
 export const Constraint = <T,>(template: Template<T>, validator: (value: T, name: string) => void): Template<T> => ({...template, validator });
 export const StringT = (constraints: ArrayConstraints = { maxLength: 256 }):Template<string> => ({ tlvType: TlvType.String, validator: arrayValidator(constraints) });
 export const BooleanT:Template<boolean> = { tlvType: TlvType.Boolean };
-export const ByteStringT = (constraints: ArrayConstraints = {}):Template<Buffer> => ({ tlvType: TlvType.ByteString, validator: arrayValidator(constraints) });
+export const Bit = (position: number) => ({ position });
+export const BitMapT = <T extends BitTemplates>(bits: T): Template<TypeFromBitTemplates<T>> => ({ tlvType: TlvType.UnsignedInt, postDecoding: (bitMap: number) => decodeBitMap(bits, bitMap), preEncoding: (flags: TypeFromBitTemplates<T>) => encodeBitMap(bits, flags)});
+export const ByteStringT = (constraints: ArrayConstraints = { maxLength: 1024 }):Template<Buffer> => ({ tlvType: TlvType.ByteString, validator: arrayValidator(constraints) });
 export const UnsignedIntT:Template<number> = { tlvType: TlvType.UnsignedInt };
 export const BoundedUnsignedIntT = ({min = 0, max}: IntConstraints = {}):Template<number> => ({ tlvType: TlvType.UnsignedInt, validator: intValidator({min: Math.max(min, 0), max })});
-export const UnsignedLongT:Template<bigint> = { tlvType: TlvType.UnsignedInt, readAsBigint: true };
-export const BoundedUnsignedLongT = ({min = 0, max}: IntConstraints = {}):Template<number> => ({ tlvType: TlvType.UnsignedInt, readAsBigint: true, validator: intValidator({min: Math.max(min, 0), max })});
+export const UnsignedLongT:Template<bigint> = { tlvType: TlvType.UnsignedInt, postDecoding: (value: number | bigint) => BigInt(value)};
+export const BoundedUnsignedLongT = ({min = 0, max}: IntConstraints = {}):Template<bigint> => ({ tlvType: TlvType.UnsignedInt, postDecoding: (value: number | bigint) => BigInt(value), validator: intValidator({min: Math.max(min, 0), max })});
 export const AnyT:Template<any> = { };
 export const ArrayT = <T,>(itemTemplate: Template<T>, constraints?: ArrayConstraints) => ({ tlvType: TlvType.Array, itemTemplate, validator: constraints ? arrayValidator(constraints) : (() => {}) } as Template<T[]>);
 export const ObjectT = <F extends FieldTemplates>(fieldTemplates: F, tlvType: TlvType = TlvType.Structure) => ({ tlvType, fieldTemplates } as Template<TypeFromFieldTemplates<F>>);
@@ -89,15 +112,17 @@ export class TlvObjectCodec {
     }
 
     private static decodeInternal(element: Element | undefined, template: TaggedTemplate<any>, name: string): any {
-        const {tlvType: expectedType, tag: expectedTag = TlvTag.Anonymous, readAsBigint, validator } = template;
+        const {tlvType: expectedType, tag: expectedTag = TlvTag.Anonymous, postDecoding = value => value, validator } = template;
         if (element === undefined) return undefined;
-        const {tag, value, type} = element;
+        const {tag, type} = element;
+        let { value } = element;
         if (!tag.equals(expectedTag)) throw new Error(`Parameter ${name}: unexpected tag ${tag}. Expected was ${expectedTag}`);
         if (expectedType === undefined) {
             // Don't process the element since it has a variable type
             return {tag: TlvTag.Anonymous, value, type};
         }
         if (type !== expectedType) throw new Error(`Parameter ${name}: unexpected type ${type}. Expected was ${expectedType}`);
+        value = postDecoding(value);
         validator?.(value, name);
 
         switch (type) {
@@ -110,7 +135,6 @@ export class TlvObjectCodec {
                 return value;
             case TlvType.UnsignedInt:
             case TlvType.SignedInt:
-                if (readAsBigint) return BigInt(value);
                 return value;
             case TlvType.EndOfContainer:
                 throw new Error("Invalid template");
@@ -153,9 +177,10 @@ export class TlvObjectCodec {
     }
 
     private static encodeInternal(value: any, template: TaggedTemplate<any>, name: string): Element | undefined {
-        const {tlvType: type, tag = TlvTag.Anonymous, validator} = template;
+        const {tlvType: type, tag = TlvTag.Anonymous, validator, preEncoding = value => value} = template;
         if (value === undefined) return undefined;
         validator?.(value, name);
+        value = preEncoding(value);
 
         switch (type) {
             case undefined: // Variable type, so this value should already be pre-processed

@@ -41,8 +41,8 @@ export const enum EventPriority {
 }
 export interface Event<T> { id: number, template: Template<T>, priority: EventPriority, optional: boolean }
 export interface OptionalEvent<T> extends Event<T> { optional: true }
-export const Event = <FT extends FieldTemplates>(id: number, priority: EventPriority, data: FieldTemplates = {}): Event<TypeFromFieldTemplates<FT>> => ({ id, template: ObjectT(data), priority, optional: false });
-export const OptionalEvent = <FT extends FieldTemplates>(id: number, priority: EventPriority, data: FieldTemplates = {}): Event<TypeFromFieldTemplates<FT>> => ({ id, template: ObjectT(data), priority, optional: true });
+export const Event = <FT extends FieldTemplates>(id: number, priority: EventPriority, data: FT = <FT>{}): Event<TypeFromFieldTemplates<FT>> => ({ id, template: ObjectT(data), priority, optional: false });
+export const OptionalEvent = <FT extends FieldTemplates>(id: number, priority: EventPriority, data: FT = <FT>{}): Event<TypeFromFieldTemplates<FT>> => ({ id, template: ObjectT(data), priority, optional: true });
 
 /* Interfaces and helper methods to define a cluster */
 export interface Attributes { [key: string]: Attribute<any> }

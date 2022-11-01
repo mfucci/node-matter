@@ -4,30 +4,30 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BooleanT, ByteStringT, Field, ObjectT, OptionalField, UnsignedIntT } from "../../../codec/TlvObjectCodec";
+import { BooleanT, ByteStringT, Field, ObjectT, OptionalField, UInt16T, UInt32T } from "../../../codec/TlvObjectCodec";
 
 export const PbkdfParamRequestT = ObjectT({
     random: Field(1, ByteStringT()),
-    sessionId: Field(2, UnsignedIntT),
-    passcodeId: Field(3, UnsignedIntT),
+    sessionId: Field(2, UInt16T),
+    passcodeId: Field(3, UInt16T),
     hasPbkdfParameters: Field(4, BooleanT),
     mrpParameters: OptionalField(5, ObjectT({
-        idleRetransTimeoutMs: OptionalField(1, UnsignedIntT),
-        activeRetransTimeoutMs: OptionalField(2, UnsignedIntT),
+        idleRetransTimeoutMs: OptionalField(1, UInt32T),
+        activeRetransTimeoutMs: OptionalField(2, UInt32T),
     })),
 });
 
 export const PbkdfParamResponseT = ObjectT({
     peerRandom: Field(1, ByteStringT()),
     random: Field(2, ByteStringT()),
-    sessionId: Field(3, UnsignedIntT),
+    sessionId: Field(3, UInt16T),
     pbkdfParameters: OptionalField(4, ObjectT({
-        iteration: Field(1, UnsignedIntT),
+        iteration: Field(1, UInt32T),
         salt: Field(2, ByteStringT()),
     })),
     mrpParameters: OptionalField(5, ObjectT({
-        idleRetransTimeoutMs: OptionalField(1, UnsignedIntT),
-        activeRetransTimeoutMs: OptionalField(2, UnsignedIntT),
+        idleRetransTimeoutMs: OptionalField(1, UInt32T),
+        activeRetransTimeoutMs: OptionalField(2, UInt32T),
     })),
 });
 

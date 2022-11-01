@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ByteStringT, Field, ObjectT, OptionalField } from "../../../codec/TlvObjectCodec";
+import { ByteStringT, Field, ObjectT, OptionalField, UInt16T, UInt32T } from "../../../codec/TlvObjectCodec";
 
 export const KDFSR1_KEY_INFO = Buffer.from("Sigma1_Resume");
 export const KDFSR2_KEY_INFO = Buffer.from("Sigma2_Resume");
@@ -17,12 +17,12 @@ export const TBE_DATA3_NONCE = Buffer.from("NCASE_Sigma3N");
 
 export const CaseSigma1T = ObjectT({
     random: Field(1, ByteStringT()),
-    sessionId: Field(2, UnsignedIntT),
+    sessionId: Field(2, UInt16T),
     destinationId: Field(3, ByteStringT()),
     ecdhPublicKey: Field(4, ByteStringT()),
     mrpParams: OptionalField(5, ObjectT({
-        idleRetransTimeoutMs: OptionalField(1, UnsignedIntT),
-        activeRetransTimeoutMs: OptionalField(2, UnsignedIntT),
+        idleRetransTimeoutMs: OptionalField(1, UInt32T),
+        activeRetransTimeoutMs: OptionalField(2, UInt32T),
     })),
     resumptionId: OptionalField(6, ByteStringT()),
     resumeMic: OptionalField(7, ByteStringT()),
@@ -30,19 +30,19 @@ export const CaseSigma1T = ObjectT({
 
 export const CaseSigma2T = ObjectT({
     random: Field(1, ByteStringT()),
-    sessionId: Field(2, UnsignedIntT),
+    sessionId: Field(2, UInt16T),
     ecdhPublicKey: Field(3, ByteStringT()),
     encrypted: Field(4, ByteStringT({ maxLength: 400 })), // TODO: check max length in specs
     mrpParams: OptionalField(5, ObjectT({
-        idleRetransTimeoutMs: OptionalField(1, UnsignedIntT),
-        activeRetransTimeoutMs: OptionalField(2, UnsignedIntT),
+        idleRetransTimeoutMs: OptionalField(1, UInt32T),
+        activeRetransTimeoutMs: OptionalField(2, UInt32T),
     })),
 });
 
 export const CaseSigma2ResumeT = ObjectT({
     resumptionId: Field(1, ByteStringT()),
     resumeMic: Field(2, ByteStringT()),
-    sessionId: Field(3, UnsignedIntT),
+    sessionId: Field(3, UInt16T),
 });
 
 export const CaseSigma3T = ObjectT({

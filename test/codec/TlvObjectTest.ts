@@ -6,19 +6,19 @@
 
 import assert from "assert";
 import { TlvTag, TlvType } from "../../src/codec/TlvCodec";
-import { BooleanT, ByteStringT, JsType, ObjectT, Field, TlvObjectCodec, UnsignedIntT, OptionalField, BitMapT, Bit } from "../../src/codec/TlvObjectCodec";
+import { BooleanT, ByteStringT, JsType, ObjectT, Field, TlvObjectCodec, OptionalField, BitMapT, Bit, UInt16T, UInt32T } from "../../src/codec/TlvObjectCodec";
 import { DataReportT } from "../../src/matter/interaction/InteractionMessages";
 import { DataReport } from "../../src/matter/interaction/InteractionMessenger";
 
 
 const TEST_TEMPLATE = ObjectT({
     initiatorRandom: Field(1, ByteStringT()),
-    initiatorSessionId: Field(2, UnsignedIntT),
-    passcodeId: OptionalField(3, UnsignedIntT),
+    initiatorSessionId: Field(2, UInt16T),
+    passcodeId: OptionalField(3, UInt32T),
     hasPbkdfParameters: Field(4, BooleanT),
     mrpParameters: OptionalField(5, ObjectT({
-        idleRetransTimeout: OptionalField(1, UnsignedIntT),
-        activeRetransTimeout: OptionalField(2, UnsignedIntT),
+        idleRetransTimeout: OptionalField(1, UInt32T),
+        activeRetransTimeout: OptionalField(2, UInt32T),
     })),
 });
 

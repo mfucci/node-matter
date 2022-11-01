@@ -23,8 +23,8 @@ import { NodeId } from "./NodeId";
 export type GroupId = { groupId: true /* Hack to force strong type checking at compile time */ };
 export const GroupId = (id: number) => id as unknown as GroupId;
 
-/** Explicitly convert a GroupId to a number */
+/** Explicitly converts a GroupId to a number. */
 export const groupIdToNumber = (groupId: GroupId) => groupId as unknown as number;
 
-/** Data model for a Vendor Identifier. */
+/** Data model for a Group ID. */
 export const GroupIdT = Typed<GroupId>(BoundedUnsignedIntT({ min: 0, max: 0xFFFF }));

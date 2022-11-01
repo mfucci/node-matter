@@ -15,5 +15,5 @@ import { MatterCoreSpecificationV1_0 } from "../../Specifications";
 export type EndpointNumber = { endpointNumber: true /* Hack to force strong type checking at compile time */ };
 export const EndpointNumber = (id: number) => id as unknown as EndpointNumber;
 
-/** Data model for a Vendor Identifier. */
+/** Data model for a Endpoint number. */
 export const EndpointNumberT = Typed<EndpointNumber>(BoundedUnsignedIntT({ min: 0, max: 0xFFFF }));

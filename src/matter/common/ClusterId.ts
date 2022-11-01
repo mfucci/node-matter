@@ -16,5 +16,5 @@ import { MatterCoreSpecificationV1_0 } from "../../Specifications";
 export type ClusterId = { clusterId: true /* Hack to force strong type checking at compile time */ };
 export const ClusterId = (id: number) => id as unknown as ClusterId;
 
-/** Data model for a Vendor Identifier. */
+/** Data model for a Cluster Identifier. */
 export const ClusterIdT = Typed<ClusterId>(UnsignedIntT);

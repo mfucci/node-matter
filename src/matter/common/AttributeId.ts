@@ -15,5 +15,5 @@ import { MatterCoreSpecificationV1_0 } from "../../Specifications";
 export type AttributeId = { attributeId: true /* Hack to force strong type checking at compile time */ };
 export const AttributeId = (id: number) => id as unknown as AttributeId;
 
-/** Data model for a Vendor Identifier. */
+/** Data model for a Attribute ID. */
 export const AttributeIdT = Typed<AttributeId>(UnsignedIntT);

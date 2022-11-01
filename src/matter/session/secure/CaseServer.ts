@@ -41,7 +41,7 @@ export class CaseServer implements ProtocolHandler<MatterDevice> {
         // Read and process sigma 1
         const { sigma1Bytes, sigma1 } = await messenger.readSigma1();
         const { sessionId: peerSessionId, resumptionId: peerResumptionId, resumeMic: peerResumeMic, destinationId, random: peerRandom, ecdhPublicKey: peerEcdhPublicKey, mrpParams } = sigma1;
-  
+
         // Try to resume a previous session
         const resumptionId = Crypto.getRandomData(16);
         let resumptionRecord;
@@ -67,13 +67,13 @@ export class CaseServer implements ProtocolHandler<MatterDevice> {
         } else {
             // Generate sigma 2
             const fabric = server.findFabricFromDestinationId(destinationId, peerRandom);
-            const { nodeId, operationalCert: newOpCert, intermediateCACert, operationalIdentityProtectionKey } = fabric;
+            const { nodeId, operationalCert: nodeOpCert, intermediateCACert, operationalIdentityProtectionKey } = fabric;
             const { publicKey: ecdhPublicKey, sharedSecret } = Crypto.ecdhGeneratePublicKeyAndSecret(peerEcdhPublicKey);
             const sigma2Salt = Buffer.concat([ operationalIdentityProtectionKey, random, ecdhPublicKey, Crypto.hash(sigma1Bytes) ]);
             const sigma2Key = await Crypto.hkdf(sharedSecret, sigma2Salt, KDFSR2_INFO);
-            const signatureData = TlvObjectCodec.encode({ newOpCert, intermediateCACert, ecdhPublicKey, peerEcdhPublicKey }, SignedDataT);
+            const signatureData = TlvObjectCodec.encode({ nodeOpCert, intermediateCACert, ecdhPublicKey, peerEcdhPublicKey }, SignedDataT);
             const signature = fabric.sign(signatureData);
-            const encryptedData = TlvObjectCodec.encode({ newOpCert, intermediateCACert, signature, resumptionId }, EncryptedDataSigma2T);
+            const encryptedData = TlvObjectCodec.encode({ nodeOpCert, intermediateCACert, signature, resumptionId }, EncryptedDataSigma2T);
             const encrypted = Crypto.encrypt(sigma2Key, encryptedData, TBE_DATA2_NONCE);
             const sigma2Bytes = await messenger.sendSigma2({ random, sessionId, ecdhPublicKey, encrypted, mrpParams });
 
@@ -82,9 +82,9 @@ export class CaseServer implements ProtocolHandler<MatterDevice> {
             const sigma3Salt = Buffer.concat([ operationalIdentityProtectionKey, Crypto.hash([ sigma1Bytes, sigma2Bytes ]) ]);
             const sigma3Key = await Crypto.hkdf(sharedSecret, sigma3Salt, KDFSR3_INFO);
             const peerEncryptedData = Crypto.decrypt(sigma3Key, peerEncrypted, TBE_DATA3_NONCE);
-            const { newOpCert: peerNewOpCert, intermediateCACert: peerIntermediateCACert, signature: peerSignature } = TlvObjectCodec.decode(peerEncryptedData, EncryptedDataSigma3T);
+            const { nodeOpCert: peerNewOpCert, intermediateCACert: peerIntermediateCACert, signature: peerSignature } = TlvObjectCodec.decode(peerEncryptedData, EncryptedDataSigma3T);
             fabric.verifyCredentials(peerNewOpCert, peerIntermediateCACert);
-            const peerSignatureData = TlvObjectCodec.encode({ newOpCert: peerNewOpCert, intermediateCACert: peerIntermediateCACert, ecdhPublicKey: peerEcdhPublicKey, peerEcdhPublicKey: ecdhPublicKey }, SignedDataT);
+            const peerSignatureData = TlvObjectCodec.encode({ nodeOpCert: peerNewOpCert, intermediateCACert: peerIntermediateCACert, ecdhPublicKey: peerEcdhPublicKey, peerEcdhPublicKey: ecdhPublicKey }, SignedDataT);
             const { ellipticCurvePublicKey: peerPublicKey, subject: { nodeId: peerNodeId } } = TlvObjectCodec.decode(peerNewOpCert, OperationalCertificateT);
             Crypto.verify(peerPublicKey, peerSignatureData, peerSignature);
 

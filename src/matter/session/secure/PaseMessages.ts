@@ -13,16 +13,19 @@ import {
     OptionalField,
     UnsignedIntT
 } from "../../../codec/TlvObjectCodec";
+import {
+    CRYPTO_HASH_LEN_BYTES,
+    CRYPTO_PUBLIC_KEY_SIZE_BYTES
+} from "../../../crypto/Crypto";
 import { MatterCoreSpecificationV1_0 } from "../../../Specifications";
 
-/** @see {@link MatterCoreSpecificationV1_0} § 3.3 */
-const CRYPTO_HASH_LEN_BYTES = 32;
-const CRYPTO_HASH_BLOCK_LEN_BYTES = 64;
-
-/** @see {@link MatterCoreSpecificationV1_0} § 3.5.1 */
-const CRYPTO_GROUP_SIZE_BITS = 256;
-const CRYPTO_GROUP_SIZE_BYTES = 32;
-const CRYPTO_PUBLIC_KEY_SIZE_BYTES = (2 * CRYPTO_GROUP_SIZE_BYTES) + 1;
+/** @see {@link MatterCoreSpecificationV1_0} § 2.12.5 */
+const SedParametersT = ObjectT({
+    /** Maximum sleep interval of node when in idle mode. */
+    idleRetransTimeoutMs: OptionalField(1, UnsignedIntT), /* default: 300ms */
+    /** Maximum sleep interval of node when in active mode. */
+    activeRetransTimeoutMs: OptionalField(2, UnsignedIntT), /* default: 300ms */
+});
 
 /** @see {@link MatterCoreSpecificationV1_0} § 4.13.1.2 */
 export const PbkdfParamRequestT = ObjectT({
@@ -30,10 +33,7 @@ export const PbkdfParamRequestT = ObjectT({
     sessionId: Field(2, BoundedUnsignedIntT({ min: 0, max: 0xFFFF })), // Specs: range: 16bits
     passcodeId: Field(3, BoundedUnsignedIntT({ min: 0, max: 0xFFFF })), // Specs: length: 16bits so min is 0x1000 ??
     hasPbkdfParameters: Field(4, BooleanT),
-    mrpParameters: OptionalField(5, ObjectT({
-        idleRetransTimeoutMs: OptionalField(1, UnsignedIntT),
-        activeRetransTimeoutMs: OptionalField(2, UnsignedIntT),
-    })),
+    mrpParameters: OptionalField(5, SedParametersT),
 });
 
 /** @see {@link MatterCoreSpecificationV1_0} § 4.13.1.2 */
@@ -45,10 +45,7 @@ export const PbkdfParamResponseT = ObjectT({
         iteration: Field(1, UnsignedIntT),
         salt: Field(2, ByteStringT({ minLength: 16, maxLength: 32 })),
     })),
-    mrpParameters: OptionalField(5, ObjectT({
-        idleRetransTimeoutMs: OptionalField(1, UnsignedIntT),
-        activeRetransTimeoutMs: OptionalField(2, UnsignedIntT),
-    })),
+    mrpParameters: OptionalField(5, SedParametersT),
 });
 
 /** @see {@link MatterCoreSpecificationV1_0} § 4.13.1.2 */

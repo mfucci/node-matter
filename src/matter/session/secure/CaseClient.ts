@@ -26,7 +26,7 @@ export class CaseClient {
         // Generate pairing info
         const random = Crypto.getRandom();
         const sessionId = client.getNextAvailableSessionId();
-        const { operationalIdentityProtectionKey, operationalCert: newOpCert, intermediateCACert, nodeId } = fabric;
+        const { operationalIdentityProtectionKey, operationalCert: nodeOpCert, intermediateCACert, nodeId } = fabric;
         const { publicKey: ecdhPublicKey, ecdh } = Crypto.ecdhGeneratePublicKey();
 
         // Send sigma1
@@ -66,22 +66,22 @@ export class CaseClient {
             const sigma2Salt = Buffer.concat([ operationalIdentityProtectionKey, peerRandom, peerEcdhPublicKey, Crypto.hash(sigma1Bytes) ]);
             const sigma2Key = await Crypto.hkdf(sharedSecret, sigma2Salt, KDFSR2_INFO);
             const peerEncryptedData = Crypto.decrypt(sigma2Key, peerEncrypted, TBE_DATA2_NONCE);
-            const { newOpCert: peerNewOpCert, intermediateCACert: peerIntermediateCACert, signature: peerSignature, resumptionId: peerResumptionId } = TlvObjectCodec.decode(peerEncryptedData, EncryptedDataSigma2T);
-            const peerSignatureData = TlvObjectCodec.encode({ newOpCert: peerNewOpCert, intermediateCACert: peerIntermediateCACert, ecdhPublicKey: peerEcdhPublicKey, peerEcdhPublicKey: ecdhPublicKey }, SignedDataT);
+            const { nodeOpCert: peerNewOpCert, intermediateCACert: peerIntermediateCACert, signature: peerSignature, resumptionId: peerResumptionId } = TlvObjectCodec.decode(peerEncryptedData, EncryptedDataSigma2T);
+            const peerSignatureData = TlvObjectCodec.encode({ nodeOpCert: peerNewOpCert, intermediateCACert: peerIntermediateCACert, ecdhPublicKey: peerEcdhPublicKey, peerEcdhPublicKey: ecdhPublicKey }, SignedDataT);
             const { ellipticCurvePublicKey: peerPublicKey, subject: { nodeId: peerNodeIdCert } } = TlvObjectCodec.decode(peerNewOpCert, OperationalCertificateT);
             if (peerNodeIdCert !== peerNodeId) throw new Error("The node ID in the peer certificate doesn't match the expected peer node ID");
             Crypto.verify(peerPublicKey, peerSignatureData, peerSignature);
-    
+
             // Generate and send sigma3
             const sigma3Salt = Buffer.concat([ operationalIdentityProtectionKey, Crypto.hash([ sigma1Bytes, sigma2Bytes ]) ]);
             const sigma3Key = await Crypto.hkdf(sharedSecret, sigma3Salt, KDFSR3_INFO);
-            const signatureData = TlvObjectCodec.encode({ newOpCert, intermediateCACert, ecdhPublicKey, peerEcdhPublicKey }, SignedDataT);
+            const signatureData = TlvObjectCodec.encode({ nodeOpCert, intermediateCACert, ecdhPublicKey, peerEcdhPublicKey }, SignedDataT);
             const signature = fabric.sign(signatureData);
-            const encryptedData = TlvObjectCodec.encode({ newOpCert, intermediateCACert, signature }, EncryptedDataSigma3T);
+            const encryptedData = TlvObjectCodec.encode({ nodeOpCert, intermediateCACert, signature }, EncryptedDataSigma3T);
             const encrypted = Crypto.encrypt(sigma3Key, encryptedData, TBE_DATA3_NONCE);
             const sigma3Bytes = await messenger.sendSigma3({ encrypted });
             await messenger.waitForSuccess();
-     
+
             // All good! Create secure session
             const secureSessionSalt = Buffer.concat([operationalIdentityProtectionKey, Crypto.hash([ sigma1Bytes, sigma2Bytes, sigma3Bytes ])]);
             secureSession = await client.createSecureSession(sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, true, false);

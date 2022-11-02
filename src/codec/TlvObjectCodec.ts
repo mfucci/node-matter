@@ -93,7 +93,7 @@ export const ByteStringT = (constraints: ArrayConstraints = { maxLength: 256 }):
 export const UInt8T: Template<number> = { tlvType: TlvType.UnsignedInt, validator: intValidator({ min: 0, max: 0xFF }) };
 export const UInt16T: Template<number> = { tlvType: TlvType.UnsignedInt, validator: intValidator({ min: 0, max: 0xFFFF }) };
 export const UInt32T: Template<number> = { tlvType: TlvType.UnsignedInt, validator: intValidator({ min: 0, max: 0xFFFFFFFF }) };
-export const UInt64T: Template<bigint> = { tlvType: TlvType.UnsignedInt, validator: intValidator({ min: 0, max: BigInt("9223372036854775807") }), postDecoding: (value: number | bigint) => BigInt(value) };
+export const UInt64T: Template<bigint> = { tlvType: TlvType.UnsignedInt, validator: intValidator({ min: 0, max: BigInt("18446744073709551616") }), postDecoding: (value: number | bigint) => BigInt(value) };
 export const Bound = <T extends number | bigint>(template: Template<T>, {min, max}: IntConstraints = {}):Template<T> => ({ ...template, validator: (value: T, name: string) => {intValidator({min, max})(value, name); template.validator?.(value, name)}});
 export const AnyT:Template<any> = { };
 export const ArrayT = <T,>(itemTemplate: Template<T>, constraints?: ArrayConstraints) => ({ tlvType: TlvType.Array, itemTemplate, validator: constraints ? arrayValidator(constraints) : (() => {}) } as Template<T[]>);

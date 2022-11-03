@@ -40,7 +40,7 @@ export class MatterController {
         const fabricBuilder = new FabricBuilder()
             .setRootCert(certificateManager.getRootCert())
             .setIdentityProtectionKey(ipkValue)
-            .setVendorId(ADMIN_VENDOR_ID);
+            .setRootVendorId(ADMIN_VENDOR_ID);
         fabricBuilder.setOperationalCert(certificateManager.generateNoc(fabricBuilder.getPublicKey(), FABRIC_ID, CONTROLLER_NODE_ID));
         const fabric = await fabricBuilder.build();
         return new MatterController(scanner, netInterface, certificateManager, fabric);

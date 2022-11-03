@@ -6,6 +6,7 @@
 
 import { TlvObjectCodec } from "../../../codec/TlvObjectCodec";
 import { Crypto } from "../../../crypto/Crypto";
+import { NodeId } from "../../common/NodeId";
 import { MatterDevice } from "../../MatterDevice";
 import { SecureSession } from "../../session/SecureSession";
 import {
@@ -55,7 +56,8 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
         const fabricBuilder = session.getContext().getFabricBuilder();
         fabricBuilder.setOperationalCert(operationalCert);
         if (intermediateCaCert && intermediateCaCert.length > 0) fabricBuilder.setIntermediateCACert(intermediateCaCert);
-        fabricBuilder.setVendorId(adminVendorId);
+        fabricBuilder.setRootVendorId(adminVendorId);
+        fabricBuilder.setRootNodeId(session.getPeerNodeId() as NodeId);
         fabricBuilder.setIdentityProtectionKey(identityProtectionKey);
 
         const fabric = await fabricBuilder.build();
@@ -68,7 +70,7 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
             label: "",
             nodeId: fabric.nodeId,
             rootPublicKey: fabric.rootPublicKey,
-            vendorId: fabric.vendorId,
+            vendorId: fabric.rootVendorId,
         }]);
 
         return {status: OperationalCertStatus.Success};

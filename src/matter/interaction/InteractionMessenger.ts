@@ -15,7 +15,7 @@ import { Logger } from "../../log/Logger";
 import { MessageExchange } from "../common/MessageExchange";
 import { MatterController } from "../MatterController";
 import { MatterDevice } from "../MatterDevice";
-import { InvokeRequestT, InvokeResponseT, ReadRequestT, DataReportT, SubscribeRequestT, SubscribeResponseT, StatusCode, StatusResponseT } from "./InteractionMessages";
+import { InvokeRequestT, InvokeResponseT, ReadRequestT, DataReportT, SubscribeRequestT, SubscribeResponseT, StatusCode, StatusResponseT, TimedRequestT } from "./InteractionMessages";
 
 export const enum MessageType {
     StatusResponse = 0x01,
@@ -36,6 +36,7 @@ export type SubscribeRequest = JsType<typeof SubscribeRequestT>;
 export type SubscribeResponse = JsType<typeof SubscribeResponseT>;
 export type InvokeRequest = JsType<typeof InvokeRequestT>;
 export type InvokeResponse = JsType<typeof InvokeResponseT>;
+export type TimedRequest = JsType<typeof TimedRequestT>;
 
 const logger = Logger.get("InteractionServerMessenger");
 
@@ -85,30 +86,41 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
         handleReadRequest: (request: ReadRequest) => DataReport,
         handleSubscribeRequest: (request: SubscribeRequest) => SubscribeResponse | undefined,
         handleInvokeRequest: (request: InvokeRequest) => Promise<InvokeResponse>,
+        handleTimedRequest: (request: TimedRequest) => Promise<void>,
     ) {
-        const message = await this.exchange.nextMessage();
+        let continueExchange = true;
         try {
-            switch (message.payloadHeader.messageType) {
-                case MessageType.ReadRequest:
-                    const readRequest = TlvObjectCodec.decode(message.payload, ReadRequestT);
-                    await this.sendDataReport(handleReadRequest(readRequest));
-                    break;
-                case MessageType.SubscribeRequest:
-                    const subscribeRequest = TlvObjectCodec.decode(message.payload, SubscribeRequestT);
-                    const subscribeResponse = handleSubscribeRequest(subscribeRequest);
-                    if (subscribeResponse === undefined) {
+            while (continueExchange) {
+                const message = await this.exchange.nextMessage();
+                continueExchange = false;
+                switch (message.payloadHeader.messageType) {
+                    case MessageType.ReadRequest:
+                        const readRequest = TlvObjectCodec.decode(message.payload, ReadRequestT);
+                        await this.sendDataReport(handleReadRequest(readRequest));
+                        break;
+                    case MessageType.SubscribeRequest:
+                        const subscribeRequest = TlvObjectCodec.decode(message.payload, SubscribeRequestT);
+                        const subscribeResponse = handleSubscribeRequest(subscribeRequest);
+                        if (subscribeResponse === undefined) {
+                            await this.sendStatus(StatusCode.Success);
+                        } else {
+                            await this.exchange.send(MessageType.SubscribeResponse, TlvObjectCodec.encode(subscribeResponse, SubscribeResponseT));
+                        }
+                        break;
+                    case MessageType.InvokeCommandRequest:
+                        const invokeRequest = TlvObjectCodec.decode(message.payload, InvokeRequestT);
+                        const invokeResponse = await handleInvokeRequest(invokeRequest);
+                        await this.exchange.send(MessageType.InvokeCommandResponse, TlvObjectCodec.encode(invokeResponse, InvokeResponseT));
+                        break;
+                    case MessageType.TimedRequest:
+                        const timedRequest = TlvObjectCodec.decode(message.payload, TimedRequestT);
+                        await handleTimedRequest(timedRequest);
                         await this.sendStatus(StatusCode.Success);
-                    } else {
-                        await this.exchange.send(MessageType.SubscribeResponse, TlvObjectCodec.encode(subscribeResponse, SubscribeResponseT));
-                    }
-                    break;
-                case MessageType.InvokeCommandRequest:
-                    const invokeRequest = TlvObjectCodec.decode(message.payload, InvokeRequestT);
-                    const invokeResponse = await handleInvokeRequest(invokeRequest);
-                    await this.exchange.send(MessageType.InvokeCommandResponse, TlvObjectCodec.encode(invokeResponse, InvokeResponseT));
-                    break;
-                default:
-                    throw new Error(`Unsupported message type ${message.payloadHeader.messageType}`);
+                        continueExchange = true;
+                        break;
+                    default:
+                        throw new Error(`Unsupported message type ${message.payloadHeader.messageType}`);
+                }
             }
         } catch (error) {
             logger.error(error);

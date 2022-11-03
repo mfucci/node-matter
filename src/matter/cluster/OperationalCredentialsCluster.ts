@@ -15,8 +15,8 @@ import { MatterCoreSpecificationV1_0 } from "../../Specifications";
 const FabricDescriptorT = ObjectT({
     rootPublicKey: Field(1, ByteStringT({ length: 65 })),
     vendorId: Field(2, VendorIdT),
-    fabricID: Field(3, UInt64T), /* type: fabric-id */
-    nodeID: Field(4, NodeIdT),
+    fabricId: Field(3, UInt64T), /* type: fabric-id */
+    nodeId: Field(4, NodeIdT),
     label: Field(5, StringT({ maxLength: 32 })), /* default: "" */
 });
 

@@ -51,7 +51,7 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
         }
     },
 
-    addOperationalCert: async ({ request: {operationalCert, intermediateCaCert, identityProtectionKey, caseAdminNode, adminVendorId}, session}) => {
+    addOperationalCert: async ({ request: {operationalCert, intermediateCaCert, identityProtectionKey, caseAdminNode, adminVendorId}, session, attributes: { fabrics }}) => {
         const fabricBuilder = session.getContext().getFabricBuilder();
         fabricBuilder.setOperationalCert(operationalCert);
         if (intermediateCaCert && intermediateCaCert.length > 0) fabricBuilder.setIntermediateCACert(intermediateCaCert);
@@ -62,6 +62,14 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
         session.getContext().setFabric(fabric);
 
         // TODO: create ACL with caseAdminNode
+
+        fabrics.set([{
+            fabricId: fabric.id,
+            label: "",
+            nodeId: fabric.nodeId,
+            rootPublicKey: fabric.rootPublicKey,
+            vendorId: fabric.vendorId,
+        }]);
 
         return {status: OperationalCertStatus.Success};
     },

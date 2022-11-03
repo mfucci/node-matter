@@ -144,3 +144,7 @@ export const InvokeResponseT = ObjectT({
     }))),
     interactionModelRevision: Field(0xFF, UInt8T),
 });
+
+export const TimedRequestT = ObjectT({
+    timeout: Field(0, UInt16T),
+});

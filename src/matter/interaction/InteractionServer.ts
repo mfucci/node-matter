@@ -7,7 +7,7 @@
 import { MatterDevice } from "../MatterDevice";
 import { ProtocolHandler } from "../common/ProtocolHandler";
 import { MessageExchange } from "../common/MessageExchange";
-import { InteractionServerMessenger, InvokeRequest, InvokeResponse, ReadRequest, DataReport, SubscribeRequest, SubscribeResponse } from "./InteractionMessenger";
+import { InteractionServerMessenger, InvokeRequest, InvokeResponse, ReadRequest, DataReport, SubscribeRequest, SubscribeResponse, TimedRequest } from "./InteractionMessenger";
 import { CommandServer, ResultCode } from "../cluster/server/CommandServer";
 import { DescriptorCluster } from "../cluster/DescriptorCluster";
 import { TlvObjectCodec } from "../../codec/TlvObjectCodec";
@@ -118,6 +118,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
             readRequest => this.handleReadRequest(exchange, readRequest),
             subscribeRequest => this.handleSubscribeRequest(exchange, subscribeRequest),
             invokeRequest => this.handleInvokeRequest(exchange, invokeRequest),
+            timedRequest => this.handleTimedRequest(exchange, timedRequest),
         );
     }
 
@@ -192,6 +193,10 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
                 }
             }),
         };
+    }
+
+    async handleTimedRequest(exchange: MessageExchange<MatterDevice>, {timeout}: TimedRequest) {
+        // TODO: implement this
     }
 
     private getAttributes(filters: Partial<Path>[] ): AttributeWithPath[] {

@@ -12,7 +12,7 @@ import { MessageChannel, MessageCounter } from "./ExchangeManager";
 import { getPromiseResolver } from "../../util/Promises";
 import { Time, Timer } from "../../time/Time";
 import { Logger } from "../../log/Logger";
-import { NodeId, nodeIdToBigint } from "./NodeId";
+import { NodeId } from "./NodeId";
 
 const logger = Logger.get("MessageExchange");
 
@@ -92,7 +92,6 @@ export class MessageExchange<ContextT> {
         const { packetHeader: { messageId }, payloadHeader: { requiresAck, ackedMessageId, protocolId, messageType } } = message;
 
         logger.debug("onMessageReceived", MessageCodec.messageToString(message));
-        logger.debug(this.exchangeId, this.sentMessageToAck !== undefined ? MessageCodec.messageToString(this.sentMessageToAck) : "no message to ack");
 
         if (messageId === this.receivedMessageToAck?.packetHeader.messageId) {
             // Received a message retransmission but the reply is not ready yet, ignoring
@@ -190,6 +189,7 @@ export class MessageExchange<ContextT> {
     }
 
     close() {
+        logger.info("close", this.exchangeId);
         if (this.receivedMessageToAck !== undefined) {
             this.send(MessageType.StandaloneAck, Buffer.alloc(0));
         }

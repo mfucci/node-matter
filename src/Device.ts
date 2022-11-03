@@ -29,8 +29,10 @@ import { MdnsScanner } from "./matter/mdns/MdnsScanner";
 import { Time } from "./time/Time";
 import { TimeNode } from "./time/TimeNode";
 import packageJson from "../package.json";
-import { Logger } from "./log/Logger";
+import { Level, Logger } from "./log/Logger";
 import { VendorId } from "./matter/common/VendorId";
+import { AdminCommissioingHandler as AdminCommissioningHandler } from "./matter/cluster/server/AdminCommissioningServer";
+import { AdminCommissioningCluster } from "./matter/cluster/AdminCommissioningCluster";
 
 // From Chip-Test-DAC-FFF1-8000-0007-Key.der
 const DevicePrivateKey = Buffer.from("727F1005CBA47ED7822A9D930943621617CFD3B79D9AF528B801ECF9F1992204", "hex");
@@ -48,6 +50,9 @@ Network.get = singleton(() => new NetworkNode());
 Time.get = singleton(() => new TimeNode());
 
 const logger = Logger.get("Device");
+
+
+Logger.defaultLogLevel = Level.DEBUG;
 
 class Device {
     async start() {
@@ -127,6 +132,7 @@ class Device {
                            certificateDeclaration: CertificateDeclaration,
                        })
                    ),
+                   new ClusterServer(AdminCommissioningCluster, {}, AdminCommissioningHandler),
                 ])
                 .addEndpoint(0x01, DEVICE.ON_OFF_LIGHT, [ onOffClusterServer ])
             )

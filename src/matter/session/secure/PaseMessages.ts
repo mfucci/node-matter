@@ -15,9 +15,9 @@ import { MatterCoreSpecificationV1_0 } from "../../../Specifications";
 /** @see {@link MatterCoreSpecificationV1_0} § 2.12.5 */
 const SedParametersT = ObjectT({
     /** Maximum sleep interval of node when in idle mode. */
-    idleRetransTimeoutMs: OptionalField(1, UInt32), /* default: 300ms */
+    idleRetransTimeoutMs: OptionalField(1, UInt32T), /* default: 300ms */
     /** Maximum sleep interval of node when in active mode. */
-    activeRetransTimeoutMs: OptionalField(2, UInt32), /* default: 300ms */
+    activeRetransTimeoutMs: OptionalField(2, UInt32T), /* default: 300ms */
 });
 
 /** @see {@link MatterCoreSpecificationV1_0} § 4.13.1.2 */
@@ -37,10 +37,6 @@ export const PbkdfParamResponseT = ObjectT({
     pbkdfParameters: OptionalField(4, ObjectT({
         iteration: Field(1, UInt32T),
         salt: Field(2, ByteStringT({ minLength: 16, maxLength: 32 })),
-    })),
-    mrpParameters: OptionalField(5, ObjectT({
-        idleRetransTimeoutMs: OptionalField(1, UInt32T),
-        activeRetransTimeoutMs: OptionalField(2, UInt32T),
     })),
     mrpParameters: OptionalField(5, SedParametersT),
 });

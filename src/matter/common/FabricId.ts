@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Typed, UnsignedLongT } from "../../codec/TlvObjectCodec";
+import { Typed, UInt64T } from "../../codec/TlvObjectCodec";
 import { MatterCoreSpecificationV1_0 } from "../../Specifications";
 
 /**
@@ -20,4 +20,4 @@ export const FabricId = (id: bigint) => id as unknown as FabricId;
 export const fabricIdToBigint = (fabricId: FabricId) => fabricId as unknown as bigint;
 
 /** Data model for a Fabric ID. */
-export const FabricIdT = Typed<FabricId>(UnsignedLongT);
+export const FabricIdT = Typed<FabricId>(UInt64T);

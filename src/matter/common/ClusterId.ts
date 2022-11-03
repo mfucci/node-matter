@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Typed, UnsignedIntT } from "../../codec/TlvObjectCodec";
+import { Typed, UInt32T } from "../../codec/TlvObjectCodec";
 import { MatterCoreSpecificationV1_0 } from "../../Specifications";
 
 /**
@@ -17,4 +17,4 @@ export type ClusterId = { clusterId: true /* Hack to force strong type checking 
 export const ClusterId = (id: number) => id as unknown as ClusterId;
 
 /** Data model for a Cluster Identifier. */
-export const ClusterIdT = Typed<ClusterId>(UnsignedIntT);
+export const ClusterIdT = Typed<ClusterId>(UInt32T);

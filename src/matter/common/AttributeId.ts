@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Typed, UnsignedIntT } from "../../codec/TlvObjectCodec";
+import { Typed, UInt32T } from "../../codec/TlvObjectCodec";
 import { MatterCoreSpecificationV1_0 } from "../../Specifications";
 
 /**
@@ -16,4 +16,4 @@ export type AttributeId = { attributeId: true /* Hack to force strong type check
 export const AttributeId = (id: number) => id as unknown as AttributeId;
 
 /** Data model for a Attribute ID. */
-export const AttributeIdT = Typed<AttributeId>(UnsignedIntT);
+export const AttributeIdT = Typed<AttributeId>(UInt32T);

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Typed, BoundedUnsignedIntT } from "../../codec/TlvObjectCodec";
+import { Typed, UInt16T } from "../../codec/TlvObjectCodec";
 import { MatterCoreSpecificationV1_0 } from "../../Specifications";
 
 /**
@@ -16,4 +16,4 @@ export type EndpointNumber = { endpointNumber: true /* Hack to force strong type
 export const EndpointNumber = (id: number) => id as unknown as EndpointNumber;
 
 /** Data model for a Endpoint number. */
-export const EndpointNumberT = Typed<EndpointNumber>(BoundedUnsignedIntT({ min: 0, max: 0xFFFF }));
+export const EndpointNumberT = Typed<EndpointNumber>(UInt16T);

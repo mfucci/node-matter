@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BoundedUnsignedIntT, Typed } from "../../codec/TlvObjectCodec";
+import { UInt16T, Typed } from "../../codec/TlvObjectCodec";
 import { MatterCoreSpecificationV1_0 } from "../../Specifications";
 import { NodeId } from "./NodeId";
 
@@ -27,4 +27,4 @@ export const GroupId = (id: number) => id as unknown as GroupId;
 export const groupIdToNumber = (groupId: GroupId) => groupId as unknown as number;
 
 /** Data model for a Group ID. */
-export const GroupIdT = Typed<GroupId>(BoundedUnsignedIntT({ min: 0, max: 0xFFFF }));
+export const GroupIdT = Typed<GroupId>(UInt16T);

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BoundedUnsignedIntT, Typed } from "../../codec/TlvObjectCodec";
+import { Bound, Typed, UInt8T } from "../../codec/TlvObjectCodec";
 import { MatterCoreSpecificationV1_0 } from "../../Specifications";
 
 /**
@@ -21,4 +21,4 @@ export type FabricIndex = { fabricIndex: true /* Hack to force strong type check
 export const FabricIndex = (id: number) => id as unknown as FabricIndex;
 
 /** Data model for a fabric-index associated with a fabric. */
-export const FabricIndexT = Typed<FabricIndex>(BoundedUnsignedIntT({ min: 1, max: 254 }));
+export const FabricIndexT = Typed<FabricIndex>(Bound(UInt8T, { min: 1, max: 254 }));

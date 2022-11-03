@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BoundedUnsignedIntT, Typed, UnsignedIntT } from "../../codec/TlvObjectCodec";
+import { Typed, UInt16T } from "../../codec/TlvObjectCodec";
 import { MatterCoreSpecificationV1_0 } from "../../Specifications";
 
 /**
@@ -18,4 +18,4 @@ export type VendorId = { vendorId: true /* Hack to force strong type checking at
 export const VendorId = (id: number) => id as unknown as VendorId;
 
 /** Data model for a Vendor Identifier. */
-export const VendorIdT = Typed<VendorId>(BoundedUnsignedIntT({ min: 0, max: 0xFFFF }));
+export const VendorIdT = Typed<VendorId>(UInt16T);

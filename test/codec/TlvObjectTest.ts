@@ -6,19 +6,19 @@
 
 import assert from "assert";
 import { TlvTag, TlvType } from "../../src/codec/TlvCodec";
-import { BooleanT, ByteStringT, JsType, ObjectT, Field, TlvObjectCodec, UnsignedIntT, OptionalField } from "../../src/codec/TlvObjectCodec";
+import { BooleanT, ByteStringT, JsType, ObjectT, Field, TlvObjectCodec, OptionalField, BitMapT, Bit, UInt16T, UInt32T } from "../../src/codec/TlvObjectCodec";
 import { DataReportT } from "../../src/matter/interaction/InteractionMessages";
 import { DataReport } from "../../src/matter/interaction/InteractionMessenger";
 
 
 const TEST_TEMPLATE = ObjectT({
     initiatorRandom: Field(1, ByteStringT()),
-    initiatorSessionId: Field(2, UnsignedIntT),
-    passcodeId: OptionalField(3, UnsignedIntT),
+    initiatorSessionId: Field(2, UInt16T),
+    passcodeId: OptionalField(3, UInt32T),
     hasPbkdfParameters: Field(4, BooleanT),
     mrpParameters: OptionalField(5, ObjectT({
-        idleRetransTimeout: OptionalField(1, UnsignedIntT),
-        activeRetransTimeout: OptionalField(2, UnsignedIntT),
+        idleRetransTimeout: OptionalField(1, UInt32T),
+        activeRetransTimeout: OptionalField(2, UInt32T),
     })),
 });
 
@@ -86,6 +86,12 @@ describe("TlvObjectCodec", () => {
 
             assert.deepEqual(result, DECODED_ARRAY_VARIABLE);
         });
+
+        it("decodes a bitmap", () => {
+            const result = TlvObjectCodec.decode(Buffer.from("040a", "hex"), BitMapT({ flag1: Bit(1), flag2: Bit(3) }));
+
+            assert.deepEqual(result, { flag1: true, flag2: true});
+        });
     });
 
     context("encode", () => {
@@ -105,6 +111,12 @@ describe("TlvObjectCodec", () => {
             const result = TlvObjectCodec.encode(DECODED_ARRAY_VARIABLE, DataReportT);
 
             assert.deepEqual(result.toString("hex"), ENCODED_ARRAY_VARIABLE.toString("hex"));
+        });
+
+        it("encodes a bitmap", () => {
+            const result = TlvObjectCodec.encode({ flag1: true, flag2: true}, BitMapT({ flag1: Bit(1), flag2: Bit(3) }));
+
+            assert.deepEqual(result.toString("hex"), "040a");
         });
     });
 });

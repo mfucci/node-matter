@@ -6,7 +6,7 @@
 
 import { AuthorityKeyIdentifier_X509, BasicConstraints_X509, BitBuffer, BYTES_KEY, ContextTagged, DerCodec, DerObject, EcdsaWithSHA256_X962, ELEMENTS_KEY, ExtendedKeyUsage_X509, KeyUsage_Signature_ContentCommited_X509, KeyUsage_Signature_X509, OBJECT_ID_KEY, OrganisationName_X520, PublicKeyEcPrime256v1_X962, SubjectKeyIdentifier_X509 } from "../../codec/DerCodec";
 import { TlvType } from "../../codec/TlvCodec";
-import { ArrayT, BooleanT, ByteStringT, Field, JsType, ObjectT, OptionalField, Typed, UnsignedIntT, UnsignedLongT } from "../../codec/TlvObjectCodec";
+import { ArrayT, BooleanT, ByteStringT, Field, JsType, ObjectT, OptionalField, UInt16T, UInt32T, UInt64T, UInt8T } from "../../codec/TlvObjectCodec";
 import { Crypto, KeyPair } from "../../crypto/Crypto";
 import { NodeId, NodeIdT, nodeIdToBigint } from "../common/NodeId";
 
@@ -27,60 +27,60 @@ function intTo16Chars(value: bigint | number) {
 
 export const FabricId_Matter = (id: bigint) => [ DerObject("2b0601040182a27c0105", {value: intTo16Chars(id)}) ];
 export const NodeId_Matter = (nodeId: NodeId) => [ DerObject("2b0601040182a27c0101", {value: intTo16Chars(nodeIdToBigint(nodeId))}) ];
-export const RcacId_Matter = (id: number) => [ DerObject("2b0601040182a27c0104", {value: intTo16Chars(id)}) ];
+export const RcacId_Matter = (id: bigint) => [ DerObject("2b0601040182a27c0104", {value: intTo16Chars(id)}) ];
 
 export const RootCertificateT = ObjectT({
-    serialNumber: Field(1, ByteStringT()),
-    signatureAlgorithm: Field(2, UnsignedIntT),
+    serialNumber: Field(1, ByteStringT({ maxLength: 20 })),
+    signatureAlgorithm: Field(2, UInt8T),
     issuer: Field(3, ObjectT({
-        issuerRcacId: OptionalField(20, UnsignedIntT),
+        issuerRcacId: OptionalField(20, UInt64T),
     }, TlvType.List)),
-    notBefore: Field(4, UnsignedIntT),
-    notAfter: Field(5, UnsignedIntT),
+    notBefore: Field(4, UInt32T),
+    notAfter: Field(5, UInt32T),
     subject: Field(6, ObjectT({
-        rcacId: Field(20, UnsignedIntT),
+        rcacId: Field(20, UInt64T),
     }, TlvType.List)),
-    publicKeyAlgorithm: Field(7, UnsignedIntT),
-    ellipticCurveIdentifier: Field(8, UnsignedIntT),
+    publicKeyAlgorithm: Field(7, UInt8T),
+    ellipticCurveIdentifier: Field(8, UInt8T),
     ellipticCurvePublicKey: Field(9, ByteStringT()),
     extensions: Field(10, ObjectT({
         basicConstraints: Field(1,  ObjectT({
             isCa: Field(1, BooleanT),
-            pathLen: OptionalField(2, UnsignedIntT),
+            pathLen: OptionalField(2, UInt8T),
         })),
-        keyUsage: Field(2, UnsignedIntT),
-        extendedKeyUsage: OptionalField(3, ArrayT(UnsignedIntT)),
-        subjectKeyIdentifier: Field(4, ByteStringT()),
-        authorityKeyIdentifier: Field(5, ByteStringT()),
+        keyUsage: Field(2, UInt16T),
+        extendedKeyUsage: OptionalField(3, ArrayT(UInt8T)),
+        subjectKeyIdentifier: Field(4, ByteStringT({ length: 20 })),
+        authorityKeyIdentifier: Field(5, ByteStringT({ length: 20 })),
         futureExtension: OptionalField(6, ByteStringT()),
     }, TlvType.List)),
     signature: Field(11, ByteStringT()),
 });
 
 export const OperationalCertificateT = ObjectT({
-    serialNumber: Field(1, ByteStringT()),
-    signatureAlgorithm: Field(2, UnsignedIntT),
+    serialNumber: Field(1, ByteStringT({ maxLength: 20 })),
+    signatureAlgorithm: Field(2, UInt8T),
     issuer: Field(3, ObjectT({
-        issuerRcacId: OptionalField(20, UnsignedIntT),
+        issuerRcacId: OptionalField(20, UInt64T),
     }, TlvType.List)),
-    notBefore: Field(4, UnsignedIntT),
-    notAfter: Field(5, UnsignedIntT),
+    notBefore: Field(4, UInt32T),
+    notAfter: Field(5, UInt32T),
     subject: Field(6, ObjectT({
-        fabricId: Field(21, UnsignedLongT),
+        fabricId: Field(21, UInt64T),
         nodeId: Field(17, NodeIdT),
     }, TlvType.List)),
-    publicKeyAlgorithm: Field(7, UnsignedIntT),
-    ellipticCurveIdentifier: Field(8, UnsignedIntT),
+    publicKeyAlgorithm: Field(7, UInt8T),
+    ellipticCurveIdentifier: Field(8, UInt8T),
     ellipticCurvePublicKey: Field(9, ByteStringT()),
     extensions: Field(10, ObjectT({
         basicConstraints: Field(1,  ObjectT({
             isCa: Field(1, BooleanT),
-            pathLen: OptionalField(2, UnsignedIntT),
+            pathLen: OptionalField(2, UInt8T),
         })),
-        keyUsage: Field(2, UnsignedIntT),
-        extendedKeyUsage: OptionalField(3, ArrayT(UnsignedIntT)),
-        subjectKeyIdentifier: Field(4, ByteStringT()),
-        authorityKeyIdentifier: Field(5, ByteStringT()),
+        keyUsage: Field(2, UInt16T),
+        extendedKeyUsage: OptionalField(3, ArrayT(UInt8T)),
+        subjectKeyIdentifier: Field(4, ByteStringT({ length: 20 })),
+        authorityKeyIdentifier: Field(5, ByteStringT({ length: 20 })),
         futureExtension: OptionalField(6, ByteStringT()),
     }, TlvType.List)),
     signature: Field(11, ByteStringT()),

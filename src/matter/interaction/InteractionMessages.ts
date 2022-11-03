@@ -5,7 +5,8 @@
  */
 
 import { TlvType } from "../../codec/TlvCodec";
-import { AnyT, ArrayT, BooleanT, EnumT, Field, ObjectT, OptionalField, UnsignedIntT, UnsignedLongT } from "../../codec/TlvObjectCodec";
+import { AnyT, ArrayT, BooleanT, EnumT, Field, ObjectT, OptionalField, UInt16T, UInt32T, UInt64T, UInt8T } from "../../codec/TlvObjectCodec";
+import { NodeIdT } from "../common/NodeId";
 
 /**
  * @see [Matter Core Specification R1.0], section 8.10
@@ -41,69 +42,69 @@ export const enum StatusCode {
 }
 export const StatusResponseT = ObjectT({
     status: Field(0, EnumT<StatusCode>()),
-    interactionModelRevision: Field(0xFF, UnsignedIntT),
+    interactionModelRevision: Field(0xFF, UInt8T),
 });
 
 const AttributePathT = ObjectT({
-    endpointId: OptionalField(2, UnsignedIntT),
-    clusterId: OptionalField(3, UnsignedIntT),
-    id: OptionalField(4, UnsignedIntT),
+    endpointId: OptionalField(2, UInt16T),
+    clusterId: OptionalField(3, UInt32T),
+    id: OptionalField(4, UInt32T),
 }, TlvType.List);
 
 export const ReadRequestT = ObjectT({
     attributes: Field(0, ArrayT(AttributePathT)),
     isFabricFiltered: Field(3, BooleanT),
-    interactionModelRevision: Field(0xFF, UnsignedIntT),
+    interactionModelRevision: Field(0xFF, UInt8T),
 });
 
 export const DataReportT = ObjectT({
-    subscriptionId: OptionalField(0, UnsignedIntT),
+    subscriptionId: OptionalField(0, UInt32T),
     values: Field(1, ArrayT(ObjectT({
         value: Field(1, ObjectT({
-            version: Field(0, UnsignedIntT),
+            version: Field(0, UInt32T),
             path: Field(1, ObjectT({
-                endpointId: Field(2, UnsignedIntT),
-                clusterId: Field(3, UnsignedIntT),
-                id: Field(4, UnsignedIntT),
+                endpointId: Field(2, UInt16T),
+                clusterId: Field(3, UInt32T),
+                id: Field(4, UInt32T),
             }, TlvType.List)),
             value: Field(2, AnyT),
         })),
     }))),
     isFabricFiltered: OptionalField(4, BooleanT),
-    interactionModelRevision: Field(0xFF, UnsignedIntT),
+    interactionModelRevision: Field(0xFF, UInt8T),
 });
 
 export const SubscribeRequestT = ObjectT({
     keepSubscriptions: Field(0, BooleanT),
-    minIntervalFloorSeconds: Field(1, UnsignedIntT),
-    maxIntervalCeilingSeconds: Field(2, UnsignedIntT),
+    minIntervalFloorSeconds: Field(1, UInt16T),
+    maxIntervalCeilingSeconds: Field(2, UInt16T),
     attributeRequests: OptionalField(3, ArrayT(AttributePathT)),
     eventRequests: OptionalField(4, ArrayT(ObjectT({
-        node: Field(0, UnsignedIntT),
-        endpoint: Field(1, UnsignedIntT),
-        cluster: Field(2, UnsignedIntT),
-        event: Field(3, UnsignedIntT),
+        node: Field(0, NodeIdT),
+        endpoint: Field(1, UInt16T),
+        cluster: Field(2, UInt32T),
+        event: Field(3, UInt32T),
         isUrgent: Field(4, BooleanT),
     }, TlvType.List))),
     eventFilters: OptionalField(5, ArrayT(ObjectT({
-        node: Field(0, UnsignedIntT),
-        eventMin: Field(1, UnsignedLongT),
+        node: Field(0, NodeIdT),
+        eventMin: Field(1, UInt64T),
     }, TlvType.List))),
     isFabricFiltered: Field(7, BooleanT),
     dataVersionFilters: OptionalField(8, ArrayT(ObjectT({
         path: Field(0, ObjectT({
-            node: Field(0, UnsignedIntT),
-            endpoint: Field(1, UnsignedIntT),
-            cluster: Field(2, UnsignedIntT),
+            node: Field(0, NodeIdT),
+            endpoint: Field(1, UInt16T),
+            cluster: Field(2, UInt32T),
         }, TlvType.List)),
-        dataVersion: Field(1, UnsignedIntT),
+        dataVersion: Field(1, UInt32T),
     }))),
 });
 
 export const SubscribeResponseT = ObjectT({
-    subscriptionId: Field(0, UnsignedIntT),
-    maxIntervalCeilingSeconds: Field(2, UnsignedIntT),
-    interactionModelRevision: Field(0xFF, UnsignedIntT),
+    subscriptionId: Field(0, UInt32T),
+    maxIntervalCeilingSeconds: Field(2, UInt16T),
+    interactionModelRevision: Field(0xFF, UInt8T),
 });
 
 export const InvokeRequestT = ObjectT({
@@ -111,9 +112,9 @@ export const InvokeRequestT = ObjectT({
     timedRequest: Field(1, BooleanT),
     invokes: Field(2, ArrayT(ObjectT({
         path: Field(0, ObjectT({
-            endpointId: Field(0, UnsignedIntT),
-            clusterId: Field(1, UnsignedIntT),
-            id: Field(2, UnsignedIntT),
+            endpointId: Field(0, UInt16T),
+            clusterId: Field(1, UInt32T),
+            id: Field(2, UInt32T),
         }, TlvType.List)),
         args: Field(1, AnyT),
     }))),
@@ -124,22 +125,22 @@ export const InvokeResponseT = ObjectT({
     responses: Field(1, ArrayT(ObjectT({
         response: OptionalField(0, ObjectT({
             path: Field(0, ObjectT({
-                endpointId: Field(0, UnsignedIntT),
-                clusterId: Field(1, UnsignedIntT),
-                id: Field(2, UnsignedIntT),
+                endpointId: Field(0, UInt16T),
+                clusterId: Field(1, UInt32T),
+                id: Field(2, UInt32T),
             }, TlvType.List)),
             response: Field(1, AnyT),
         })),
         result: OptionalField(1, ObjectT({
             path: Field(0, ObjectT({
-                endpointId: Field(0, UnsignedIntT),
-                clusterId: Field(1, UnsignedIntT),
-                id: Field(2, UnsignedIntT),
+                endpointId: Field(0, UInt16T),
+                clusterId: Field(1, UInt32T),
+                id: Field(2, UInt32T),
             }, TlvType.List)),
             result: Field(1, ObjectT({
-                code: Field(0, UnsignedIntT),
+                code: Field(0, UInt16T),
             })),
         })),
     }))),
-    interactionModelRevision: Field(0xFF, UnsignedIntT),
+    interactionModelRevision: Field(0xFF, UInt8T),
 });

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Field, JsType, ObjectT, StringT, UnsignedIntT, UnsignedLongT, BooleanT, EnumT } from "../../codec/TlvObjectCodec";
+import { Field, JsType, ObjectT, StringT, BooleanT, EnumT, UInt64T, UInt16T } from "../../codec/TlvObjectCodec";
 import { AccessLevel, Attribute, Cluster, Command, NoArgumentsT, WritableAttribute } from "./Cluster";
 
 export const enum RegulatoryLocationType {
@@ -22,8 +22,8 @@ export const enum CommissioningError {
 }
 
 const BasicCommissioningInfoT = ObjectT({
-    failSafeExpiryLengthSeconds: Field(0, UnsignedIntT),
-    maxCumulativeFailsafeSeconds: Field(1, UnsignedIntT),
+    failSafeExpiryLengthSeconds: Field(0, UInt16T),
+    maxCumulativeFailsafeSeconds: Field(1, UInt16T),
 });
 
 const CommissioningSuccessFailureResponseT = ObjectT({
@@ -33,14 +33,14 @@ const CommissioningSuccessFailureResponseT = ObjectT({
 export type CommissioningSuccessFailureResponse = JsType<typeof CommissioningSuccessFailureResponseT>;
 
 const ArmFailSafeRequestT = ObjectT({
-    expiryLengthSeconds: Field(0, UnsignedIntT), /* default: 900 */
-    breadcrumbStep: Field(1, UnsignedLongT),
+    expiryLengthSeconds: Field(0, UInt16T), /* default: 900 */
+    breadcrumbStep: Field(1, UInt64T),
 });
 
 const SetRegulatoryConfigRequestT = ObjectT({
     newRegulatoryConfig: Field(0, EnumT<RegulatoryLocationType>()),
     countryCode: Field(1, StringT({ length: 2 })),
-    breadcrumbStep: Field(2, UnsignedLongT),
+    breadcrumbStep: Field(2, UInt64T),
 });
 
 /**
@@ -50,7 +50,7 @@ export const GeneralCommissioningCluster = Cluster({
     id: 0x30,
     name: "General Commissioning",
     attributes: {
-        breadcrumb: WritableAttribute(0, UnsignedLongT, { default: BigInt(0), writeAcl: AccessLevel.Administer }),
+        breadcrumb: WritableAttribute(0, UInt64T, { default: BigInt(0), writeAcl: AccessLevel.Administer }),
         commissioningInfo: Attribute(1, BasicCommissioningInfoT),
         regulatoryConfig: Attribute(2, EnumT<RegulatoryLocationType>()), /* default: value of locationCapability */
         locationCapability: Attribute(3, EnumT<RegulatoryLocationType>(), { default: RegulatoryLocationType.IndoorOutdoor }),

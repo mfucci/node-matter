@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Typed, UnsignedLongT } from "../../codec/TlvObjectCodec";
+import { Typed, UInt16T, UInt64T } from "../../codec/TlvObjectCodec";
 import { MatterCoreSpecificationV1_0 } from "../../Specifications";
 
 /**
@@ -20,4 +20,4 @@ export const NodeId = (id: bigint) => id as unknown as NodeId;
 export const nodeIdToBigint = (nodeId: NodeId) => nodeId as unknown as bigint;
 
 /** Data model for a Node Identifier. */
-export const NodeIdT = Typed<NodeId>(UnsignedLongT);
+export const NodeIdT = Typed<NodeId>(UInt64T);

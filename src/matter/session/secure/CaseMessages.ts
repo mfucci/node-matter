@@ -4,14 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-    BoundedUnsignedIntT,
-    ByteStringT,
-    Field,
-    ObjectT,
-    OptionalField,
-    UnsignedIntT
-} from "../../../codec/TlvObjectCodec";
+import { ByteStringT, Field, ObjectT, OptionalField, UInt16T, UInt32T } from "../../../codec/TlvObjectCodec";
 import {
     CRYPTO_AEAD_MIC_LENGTH_BYTES,
     CRYPTO_GROUP_SIZE_BYTES,
@@ -32,15 +25,15 @@ export const TBE_DATA3_NONCE = Buffer.from("NCASE_Sigma3N");
 /** @see {@link MatterCoreSpecificationV1_0} § 2.12.5 */
 const SedParametersT = ObjectT({
     /** Maximum sleep interval of node when in idle mode. */
-    idleRetransTimeoutMs: OptionalField(1, UnsignedIntT), /* default: 300ms */
+    idleRetransTimeoutMs: OptionalField(1, UInt32T), /* default: 300ms */
     /** Maximum sleep interval of node when in active mode. */
-    activeRetransTimeoutMs: OptionalField(2, UnsignedIntT), /* default: 300ms */
+    activeRetransTimeoutMs: OptionalField(2, UInt32T), /* default: 300ms */
 });
 
 /** @see {@link MatterCoreSpecificationV1_0} § 4.13.2.3 */
 export const CaseSigma1T = ObjectT({
     random: Field(1, ByteStringT({ length: 32 })),
-    sessionId: Field(2, BoundedUnsignedIntT({ min: 0, max: 0xFFFF })),
+    sessionId: Field(2, UInt16T),
     destinationId: Field(3, ByteStringT({ length: CRYPTO_HASH_LEN_BYTES })),
     ecdhPublicKey: Field(4, ByteStringT({ length: CRYPTO_PUBLIC_KEY_SIZE_BYTES })),
     mrpParams: OptionalField(5, SedParametersT),
@@ -51,9 +44,9 @@ export const CaseSigma1T = ObjectT({
 /** @see {@link MatterCoreSpecificationV1_0} § 4.13.2.3 */
 export const CaseSigma2T = ObjectT({
     random: Field(1, ByteStringT({ length: 32 })),
-    sessionId: Field(2, BoundedUnsignedIntT({ min: 0, max: 0xFFFF })),
+    sessionId: Field(2, UInt16T),
     ecdhPublicKey: Field(3, ByteStringT({ length: CRYPTO_PUBLIC_KEY_SIZE_BYTES })),
-    encrypted: Field(4, ByteStringT()),
+    encrypted: Field(4, ByteStringT({ maxLength: 400 })), // TODO: check max length in specs
     mrpParams: OptionalField(5, SedParametersT),
 });
 
@@ -61,7 +54,7 @@ export const CaseSigma2T = ObjectT({
 export const CaseSigma2ResumeT = ObjectT({
     resumptionId: Field(1, ByteStringT({ length: 16 })),
     resumeMic: Field(2, ByteStringT({ length: 16 })),
-    sessionId: Field(3, BoundedUnsignedIntT({ min: 0, max: 0xFFFF })),
+    sessionId: Field(3, UInt16T),
 });
 
 /** @see {@link MatterCoreSpecificationV1_0} § 4.13.2.3 */

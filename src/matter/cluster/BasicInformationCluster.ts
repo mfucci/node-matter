@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BooleanT, StringT, UnsignedIntT, ObjectT, Field, BoundedUnsignedIntT } from "../../codec/TlvObjectCodec";
+import { BooleanT, StringT, ObjectT, Field, UInt16T, Bound, UInt32T } from "../../codec/TlvObjectCodec";
 import { FabricIndexT } from "../common/FabricIndex";
-import { VendorId, VendorIdT } from "../common/VendorId";
+import { VendorIdT } from "../common/VendorId";
 import { AccessLevel, Attribute, Cluster, Event, EventPriority, OptionalAttribute, OptionalEvent, OptionalWritableAttribute, WritableAttribute } from "./Cluster";
 import { MatterCoreSpecificationV1_0 } from "../../Specifications";
 
@@ -18,10 +18,10 @@ import { MatterCoreSpecificationV1_0 } from "../../Specifications";
  */
 const CapabilityMinimaT = ObjectT({
     /** Indicates the minimum number of concurrent CASE sessions that are supported per fabric. */
-    caseSessionsPerFabric: Field(0, BoundedUnsignedIntT({ min: 3 })),
+    caseSessionsPerFabric: Field(0, Bound(UInt16T, { min: 3 })),
 
     /** Indicate the actual minimum number of concurrent subscriptions supported per fabric. */
-    subscriptionsPerFabric: Field(1, BoundedUnsignedIntT({ min: 3 })),
+    subscriptionsPerFabric: Field(1, Bound(UInt16T, { min: 3 })),
 });
 
 /**
@@ -40,7 +40,7 @@ export const BasicInformationCluster = Cluster({
     /** @see {@link MatterCoreSpecificationV1_0} § 11.1.6.3 */
     attributes: {
         /** Revision number of the Data Model against which the Node is certified */
-        dataModelRevision: Attribute(0, BoundedUnsignedIntT({ min: 0, max: 0xFFFF })),
+        dataModelRevision: Attribute(0, UInt16T),
 
         /** Human-readable (displayable) name of the vendor for the Node. */
         vendorName: Attribute(1, StringT({ maxLength: 32 })),
@@ -52,7 +52,7 @@ export const BasicInformationCluster = Cluster({
         productName: Attribute(3, StringT({ maxLength: 32 })),
 
         /** Product ID assigned by the vendor that is unique to the specific product of the Node. */
-        productId: Attribute(4, BoundedUnsignedIntT({ min: 0, max: 0xFFFF })),
+        productId: Attribute(4, UInt16T),
 
         /** User defined name for the Node. It is set during initial commissioning and may be updated by further reconfigurations. */
         nodeLabel: WritableAttribute(5, StringT({ maxLength: 32 }), { default: "", writeAcl: AccessLevel.Manage } ),
@@ -61,13 +61,13 @@ export const BasicInformationCluster = Cluster({
         location: WritableAttribute(6, StringT({ length: 2 }), { default: "XX", writeAcl: AccessLevel.Administer } ),
 
         /** Version number of the hardware of the Node. The meaning of its value, and the versioning scheme, are vendor defined. */
-        hardwareVersion: Attribute(7, BoundedUnsignedIntT({ min: 0, max: 0xFFFF }), { default: 0 }),
+        hardwareVersion: Attribute(7, UInt16T, { default: 0 }),
 
         /** Human-readable representation of the {@link BasicInformationCluster.attributes.hardwareVersion hardwareVersion} attribute. */
         hardwareVersionString: Attribute(8, StringT({ minLength: 1, maxLength: 64 })),
 
         /** Current version number for the software running on this Node. A larger value is newer than a lower value. */
-        softwareVersion: Attribute(9, UnsignedIntT, { default: 0 }),
+        softwareVersion: Attribute(9, UInt32T, { default: 0 }),
 
         /** Human-readable representation of the {@link BasicInformationCluster.attributes.softwareVersion softwareVersion} attribute. */
         softwareVersionString: Attribute(10, StringT({ minLength: 1, maxLength: 64 })),
@@ -103,7 +103,7 @@ export const BasicInformationCluster = Cluster({
     /** @see {@link MatterCoreSpecificationV1_0} § 11.1.6.5 */
     events: {
         /** First event fired as soon as reasonable after completing a boot or reboot process. */
-        startUp: Event(0, EventPriority.Critical, { softwareVersion: Field(0, UnsignedIntT) }),
+        startUp: Event(0, EventPriority.Critical, { softwareVersion: Field(0, UInt32T) }),
 
         /** Last event fired prior to any orderly shutdown sequence on a best-effort basis. */
         shutDown: OptionalEvent(1, EventPriority.Critical),

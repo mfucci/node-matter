@@ -158,9 +158,9 @@ export class MatterController {
 }
 
 class RootCertificateManager {
-    private readonly rootCertId = 0;
+    private readonly rootCertId = BigInt(0);
     private readonly rootKeyPair = Crypto.createKeyPair();
-    private readonly rootKeyIdentifier = Crypto.hash(this.rootKeyPair.publicKey);
+    private readonly rootKeyIdentifier = Crypto.hash(this.rootKeyPair.publicKey).slice(0, 20);
     private readonly rootCertBytes = this.generateRootCert();
     private nextCertificateId = 1;
 
@@ -171,7 +171,7 @@ class RootCertificateManager {
     private generateRootCert(): Buffer {
         const now = Time.get().now();
         const unsignedCertificate = {
-            serialNumber: Buffer.alloc(1, this.rootCertId),
+            serialNumber: Buffer.alloc(1, Number(this.rootCertId)),
             signatureAlgorithm: 1 /* EcdsaWithSHA256 */ ,
             publicKeyAlgorithm: 1 /* EC */,
             ellipticCurveIdentifier: 1 /* P256v1 */,
@@ -208,7 +208,7 @@ class RootCertificateManager {
                 basicConstraints: { isCa: false },
                 keyUsage: 1,
                 extendedKeyUsage: [ 2, 1 ],
-                subjectKeyIdentifier: Crypto.hash(publicKey),
+                subjectKeyIdentifier: Crypto.hash(publicKey).slice(0, 20),
                 authorityKeyIdentifier: this.rootKeyIdentifier,
             },
         };

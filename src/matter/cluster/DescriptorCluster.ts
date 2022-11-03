@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ArrayT, Field, ObjectT, UnsignedIntT } from "../../codec/TlvObjectCodec";
+import { ArrayT, Field, ObjectT, UInt16T, UInt32T } from "../../codec/TlvObjectCodec";
 import { Attribute, Cluster } from "./Cluster";
 
 const DeviceTypeT = ObjectT({
-    type: Field(0, UnsignedIntT), /* type: devtype-id */
-    revision: Field(1, UnsignedIntT),
+    type: Field(0, UInt32T), /* type: devtype-id */
+    revision: Field(1, UInt16T),
 });
 
 /**
@@ -21,8 +21,8 @@ export const DescriptorCluster = Cluster({
     name: "Descriptor",
     attributes: {
         deviceTypeList: Attribute(0, ArrayT(DeviceTypeT, { minLength: 1 })),
-        serverList: Attribute(1, ArrayT(UnsignedIntT), { default: [] }), /* type: list[cluster-id] */
-        clientList: Attribute(3, ArrayT(UnsignedIntT), { default: [] }), /* type: list[cluster-id] */
-        partsList: Attribute(4, ArrayT(UnsignedIntT), { default: [] }), /* type: list[endpoint-no] */
+        serverList: Attribute(1, ArrayT(UInt32T), { default: [] }), /* type: list[cluster-id] */
+        clientList: Attribute(3, ArrayT(UInt32T), { default: [] }), /* type: list[cluster-id] */
+        partsList: Attribute(4, ArrayT(UInt16T), { default: [] }), /* type: list[endpoint-no] */
     },
 });

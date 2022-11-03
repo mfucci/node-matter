@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ArrayT, Field, ObjectT, UInt16T, UInt32T } from "../../codec/TlvObjectCodec";
+import { ArrayT, Field, ObjectT, UInt16T, UInt32T } from "../../codec/DataModels";
 import { Attribute, Cluster } from "./Cluster";
 
 const DeviceTypeT = ObjectT({

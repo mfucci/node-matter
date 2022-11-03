@@ -4,11 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Template, TlvObjectCodec } from "../../../codec/TlvObjectCodec";
+import { TlvObjectCodec } from "../../../codec/TlvObjectCodec";
 import { MessageExchange } from "../../common/MessageExchange";
 import { LEBufferReader } from "../../../util/LEBufferReader";
 import { LEBufferWriter } from "../../../util/LEBufferWriter";
 import { GeneralStatusCode, ProtocolStatusCode, MessageType, SECURE_CHANNEL_PROTOCOL_ID } from "./SecureChannelMessages";
+import { DataModel } from "../../../codec/DataModels";
 
 export class SecureChannelMessenger<ContextT> {
     constructor(
@@ -23,7 +24,7 @@ export class SecureChannelMessenger<ContextT> {
         return message;
     }
 
-    async nextMessageDecoded<T>(expectedMessageType: number, template: Template<T>) {
+    async nextMessageDecoded<T>(expectedMessageType: number, template: DataModel<T>) {
         return TlvObjectCodec.decode((await this.nextMessage(expectedMessageType)).payload, template);
     }
 
@@ -32,7 +33,7 @@ export class SecureChannelMessenger<ContextT> {
         await this.nextMessage(MessageType.StatusReport);
     }
 
-    async send<T>(message: T, type: number, template: Template<T>) {
+    async send<T>(message: T, type: number, template: DataModel<T>) {
         const payload = TlvObjectCodec.encode(message, template);
         await this.exchange.send(type, payload);
         return payload;

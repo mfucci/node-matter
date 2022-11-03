@@ -4,8 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { DataModel } from "../../../codec/DataModels";
 import { Element } from "../../../codec/TlvCodec";
-import { Template, TlvObjectCodec } from "../../../codec/TlvObjectCodec";
+import { TlvObjectCodec } from "../../../codec/TlvObjectCodec";
 import { MatterDevice } from "../../MatterDevice";
 import { Session } from "../../session/Session";
 
@@ -18,8 +19,8 @@ export class CommandServer<RequestT, ResponseT> {
         readonly invokeId: number,
         readonly responseId: number,
         readonly name: string,
-        protected readonly requestTemplate: Template<RequestT>,
-        protected readonly responseTemplate: Template<ResponseT>,
+        protected readonly requestTemplate: DataModel<RequestT>,
+        protected readonly responseTemplate: DataModel<ResponseT>,
         protected readonly handler: (request: RequestT, session: Session<MatterDevice>) => Promise<ResponseT> | ResponseT,
     ) {}
 

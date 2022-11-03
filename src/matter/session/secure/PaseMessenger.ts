@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { JsType, TlvObjectCodec } from "../../../codec/TlvObjectCodec";
+import { JsType } from "../../../codec/DataModels";
+import { TlvObjectCodec } from "../../../codec/TlvObjectCodec";
 import { MatterController } from "../../MatterController";
 import { MatterDevice } from "../../MatterDevice";
 import { PasePake1T, PasePake2T, PasePake3T, PbkdfParamRequestT, PbkdfParamResponseT } from "./PaseMessages";

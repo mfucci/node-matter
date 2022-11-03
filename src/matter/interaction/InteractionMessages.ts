@@ -5,7 +5,7 @@
  */
 
 import { TlvType } from "../../codec/TlvCodec";
-import { AnyT, ArrayT, BooleanT, EnumT, Field, ObjectT, OptionalField, UInt16T, UInt32T, UInt64T, UInt8T } from "../../codec/TlvObjectCodec";
+import { AnyT, ArrayT, BooleanT, EnumT, Field, ObjectT, OptionalField, UInt16T, UInt32T, UInt64T, UInt8T } from "../../codec/DataModels";
 import { NodeIdT } from "../common/NodeId";
 
 /**

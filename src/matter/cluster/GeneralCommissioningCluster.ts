@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Field, JsType, ObjectT, StringT, BooleanT, EnumT, UInt64T, UInt16T } from "../../codec/TlvObjectCodec";
+import { Field, JsType, ObjectT, StringM, BooleanT, EnumT, UInt64T, UInt16T } from "../../codec/DataModels";
 import { AccessLevel, Attribute, Cluster, Command, NoArgumentsT, WritableAttribute } from "./Cluster";
 
 export const enum RegulatoryLocationType {
@@ -28,7 +28,7 @@ const BasicCommissioningInfoT = ObjectT({
 
 const CommissioningSuccessFailureResponseT = ObjectT({
     errorCode: Field(0, EnumT<CommissioningError>()),
-    debugText: Field(1, StringT()), // TODO: find the max of this from the specs
+    debugText: Field(1, StringM()), // TODO: find the max of this from the specs
 });
 export type CommissioningSuccessFailureResponse = JsType<typeof CommissioningSuccessFailureResponseT>;
 
@@ -39,7 +39,7 @@ const ArmFailSafeRequestT = ObjectT({
 
 const SetRegulatoryConfigRequestT = ObjectT({
     newRegulatoryConfig: Field(0, EnumT<RegulatoryLocationType>()),
-    countryCode: Field(1, StringT({ length: 2 })),
+    countryCode: Field(1, StringM({ length: 2 })),
     breadcrumbStep: Field(2, UInt64T),
 });
 

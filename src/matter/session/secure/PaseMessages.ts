@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BooleanT, ByteStringT, Field, ObjectT, OptionalField, UInt16T, UInt32T } from "../../../codec/TlvObjectCodec";
+import { BooleanT, ByteStringT, Field, ObjectT, OptionalField, UInt16T, UInt32T } from "../../../codec/DataModels";
 
 export const PbkdfParamRequestT = ObjectT({
     random: Field(1, ByteStringT()),

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BooleanT } from "../../codec/TlvObjectCodec";
+import { BooleanT } from "../../codec/DataModels";
 import { Attribute, Cluster, Command, NoArgumentsT, NoResponseT } from "./Cluster";
 
 export const OnOffCluster = Cluster({

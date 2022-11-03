@@ -4,13 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-    Field,
-    JsType,
-    ObjectT,
-    Template,
-    TlvObjectCodec,
-} from "../../codec/TlvObjectCodec";
+import { JsType, DataModel } from "../../codec/DataModels";
+import { TlvObjectCodec } from "../../codec/TlvObjectCodec";
 import { Logger } from "../../log/Logger";
 import { MessageExchange } from "../common/MessageExchange";
 import { MatterController } from "../MatterController";
@@ -147,7 +142,7 @@ export class InteractionClientMessenger extends InteractionMessenger<MatterContr
         return TlvObjectCodec.decode(dataReportMessage.payload, DataReportT);
     }
 
-    private async request<RequestT, ResponseT>(requestMessageType: number, requestTemplate: Template<RequestT>, responseMessageType: number, responseTemplate: Template<ResponseT>, request: RequestT): Promise<ResponseT> {
+    private async request<RequestT, ResponseT>(requestMessageType: number, requestTemplate: DataModel<RequestT>, responseMessageType: number, responseTemplate: DataModel<ResponseT>, request: RequestT): Promise<ResponseT> {
         await this.exchange.send(requestMessageType, TlvObjectCodec.encode(request, requestTemplate));
         const responseMessage = await this.nextMessage(responseMessageType);
         return TlvObjectCodec.decode(responseMessage.payload, responseTemplate);

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Template, TlvObjectCodec } from "../../codec/TlvObjectCodec";
+import { TlvObjectCodec } from "../../codec/TlvObjectCodec";
 import { MessageExchange } from "../common/MessageExchange";
 import { MatterController } from "../MatterController";
 import { capitalize } from "../../util/String";
@@ -16,6 +16,7 @@ import { ExchangeManager, MessageChannel } from "../common/ExchangeManager";
 import { INTERACTION_PROTOCOL_ID } from "./InteractionServer";
 import { ProtocolHandler } from "../common/ProtocolHandler";
 import { StatusCode } from "./InteractionMessages";
+import { DataModel } from "../../codec/DataModels";
 
 export function ClusterClient<CommandT extends Commands, AttributeT extends Attributes>(interactionClient: InteractionClient, endpointId: number, clusterDef: Cluster<CommandT, AttributeT, any>): ClusterClient<CommandT, AttributeT> {
     const result: any = {};
@@ -117,7 +118,7 @@ export class InteractionClient {
         });
     }
 
-    async invoke<C extends Command<any, any>>(endpointId: number, clusterId: number, request: RequestType<C>, id: number, requestTemplate: Template<RequestType<C>>, responseId: number, responseTemplate: Template<ResponseType<C>>, optional: boolean): Promise<ResponseType<C>> {
+    async invoke<C extends Command<any, any>>(endpointId: number, clusterId: number, request: RequestType<C>, id: number, requestTemplate: DataModel<RequestType<C>>, responseId: number, responseTemplate: DataModel<ResponseType<C>>, optional: boolean): Promise<ResponseType<C>> {
         return this.withMessenger<ResponseType<C>>(async messenger => {
             const { responses } = await messenger.sendInvokeCommand({
                 invokes: [

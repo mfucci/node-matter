@@ -5,7 +5,7 @@
  */
 
 import { Attribute, Cluster, Command, NoResponseT } from "./Cluster";
-import { ByteStringT, Field, ObjectT, OptionalField, StringT, ArrayT, BooleanT, EnumT, Typed, UInt64T, Bound, UInt8T, UInt32T } from "../../codec/TlvObjectCodec";
+import { ByteStringT, Field, ObjectT, OptionalField, StringM, ArrayT, BooleanT, EnumT, Typed, UInt64T, Bound, UInt8T, UInt32T } from "../../codec/DataModels";
 import { VendorIdT } from "../common/VendorId";
 import { NodeIdT } from "../common/NodeId";
 import { SubjectId } from "../common/SubjectId";
@@ -17,7 +17,7 @@ const FabricDescriptorT = ObjectT({
     vendorId: Field(2, VendorIdT),
     fabricID: Field(3, UInt64T), /* type: fabric-id */
     nodeID: Field(4, NodeIdT),
-    label: Field(5, StringT({ maxLength: 32 })), /* default: "" */
+    label: Field(5, StringM({ maxLength: 32 })), /* default: "" */
 });
 
 const NocT = ObjectT({
@@ -90,7 +90,7 @@ export const enum OperationalCertStatus {
 export const OperationalCertificateStatusResponseT = ObjectT({
     status: Field(0, EnumT<OperationalCertStatus>()),
     fabricIndex: OptionalField(1, FabricIndexT),
-    debugText: OptionalField(2, StringT({ maxLength: 128 })),
+    debugText: OptionalField(2, StringM({ maxLength: 128 })),
 });
 
 /** @see {@link MatterCoreSpecificationV1_0} § 11.17.5.4 */
@@ -110,7 +110,7 @@ export const CertSigningRequestT = ObjectT({
 });
 
 export const UpdateFabricLabelRequestT = ObjectT({
-    label: Field(0, StringT({ maxLength: 32})),
+    label: Field(0, StringM({ maxLength: 32})),
 });
 
 export const RemoveFabricRequestT = ObjectT({

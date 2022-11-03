@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BooleanT, StringT, ObjectT, Field, UInt16T, Bound, UInt32T } from "../../codec/TlvObjectCodec";
+import { BooleanT, StringM, ObjectT, Field, UInt16T, Bound, UInt32T } from "../../codec/DataModels";
 import { FabricIndexT } from "../common/FabricIndex";
 import { VendorIdT } from "../common/VendorId";
 import { AccessLevel, Attribute, Cluster, Event, EventPriority, OptionalAttribute, OptionalEvent, OptionalWritableAttribute, WritableAttribute } from "./Cluster";
@@ -41,49 +41,49 @@ export const BasicInformationCluster = Cluster({
         dataModelRevision: Attribute(0, UInt16T),
 
         /** Human readable (displayable) name of the vendor for the Node. */
-        vendorName: Attribute(1, StringT({ maxLength: 32 })),
+        vendorName: Attribute(1, StringM({ maxLength: 32 })),
 
         /** Specifies the {@link VendorId}. */
         vendorId: Attribute(2, VendorIdT),
 
         /** Human readable name of the model for the Node such as the model number assigned by the vendor. */
-        productName: Attribute(3, StringT({ maxLength: 32 })),
+        productName: Attribute(3, StringM({ maxLength: 32 })),
 
         /** Product ID assigned by the vendor that is unique to the specific product of the Node. */
         productId: Attribute(4, UInt16T),
 
         /** User defined name for the Node. It is set during initial commissioning and may be updated by further reconfigurations. */
-        nodeLabel: WritableAttribute(5, StringT({ maxLength: 32 }), { default: "", writeAcl: AccessLevel.Manage } ),
+        nodeLabel: WritableAttribute(5, StringM({ maxLength: 32 }), { default: "", writeAcl: AccessLevel.Manage } ),
 
         /** ISO 3166-1 alpha-2 code where the Node is located. Might affect some regulatory aspects. */
-        location: WritableAttribute(6, StringT({ length: 2 }), { default: "XX", writeAcl: AccessLevel.Administer } ),
+        location: WritableAttribute(6, StringM({ length: 2 }), { default: "XX", writeAcl: AccessLevel.Administer } ),
 
         /** Version number of the hardware of the Node. The meaning of its value, and the versioning scheme, are vendor defined. */
         hardwareVersion: Attribute(7, UInt16T, { default: 0 }),
 
         /** Human readable representation of the {@link BasicInformationCluster.attributes.hardwareVersion hardwareVersion} attribute. */
-        hardwareVersionString: Attribute(8, StringT({ minLength: 1, maxLength: 64 })),
+        hardwareVersionString: Attribute(8, StringM({ minLength: 1, maxLength: 64 })),
 
         /** Current version number for the software running on this Node. A larger value is newer than a lower value. */
         softwareVersion: Attribute(9, UInt32T, { default: 0 }),
 
         /** Human readable representation of the {@link BasicInformationCluster.attributes.softwareVersion softwareVersion} attribute. */
-        softwareVersionString: Attribute(10, StringT({ minLength: 1, maxLength: 64 })),
+        softwareVersionString: Attribute(10, StringM({ minLength: 1, maxLength: 64 })),
 
         /** Node manufacturing date formatted with YYYYMMDD. The additional 8 characters might include other vendor related information. */
-        manufacturingDate: OptionalAttribute(11, StringT({ minLength: 8, maxLength: 16 })),
+        manufacturingDate: OptionalAttribute(11, StringM({ minLength: 8, maxLength: 16 })),
 
         /** Human-readable vendor assigned part number for the Node whose meaning and numbering scheme is vendor defined. */
-        partNumber: OptionalAttribute(12, StringT({ maxLength: 32 })),
+        partNumber: OptionalAttribute(12, StringM({ maxLength: 32 })),
 
         /** Link to a product specific web page following the syntax as specified in RFC 3986. */
-        productURL: OptionalAttribute(13, StringT({ maxLength: 256 })),
+        productURL: OptionalAttribute(13, StringM({ maxLength: 256 })),
 
         /** Vendor specific human readable product label. */
-        productLabel: OptionalAttribute(14, StringT({ maxLength: 64 })),
+        productLabel: OptionalAttribute(14, StringM({ maxLength: 64 })),
 
         /** Human readable serial number. */
-        serialNumber: OptionalAttribute(15, StringT({ maxLength: 32 })),
+        serialNumber: OptionalAttribute(15, StringM({ maxLength: 32 })),
 
         /** Allows to disable the ability to configure the Node through an on-Node user interface. */
         localConfigDisabled: OptionalWritableAttribute(16, BooleanT, { default: false, writeAcl: AccessLevel.Manage } ),
@@ -92,7 +92,7 @@ export const BasicInformationCluster = Cluster({
         reachable: OptionalAttribute(17, BooleanT, { default: true }),
 
         /** Unique identifier for the device, which is constructed in a manufacturer specific manner, updated during factory reset. */
-        uniqueId: OptionalAttribute(18, StringT({ maxLength: 32 })),
+        uniqueId: OptionalAttribute(18, StringM({ maxLength: 32 })),
 
         /** Minimum guaranteed value for some system-wide, not cluster-specific, resource capa­bilities. */
         capabilityMinima: Attribute(19, CapabilityMinimaT, { default: { caseSessionsPerFabric: 3, subscriptionsPerFabric: 3 } }),

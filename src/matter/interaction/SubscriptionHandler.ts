@@ -6,16 +6,17 @@
 
 import { MatterDevice } from "../MatterDevice";
 import { InteractionServerMessenger } from "./InteractionMessenger";
-import { Template, TlvObjectCodec } from "../../codec/TlvObjectCodec";
+import { TlvObjectCodec } from "../../codec/TlvObjectCodec";
 import { Element } from "../../codec/TlvCodec";
 import { Fabric } from "../fabric/Fabric";
 import { AttributeWithPath, Path, INTERACTION_PROTOCOL_ID } from "./InteractionServer";
 import { Time, Timer } from "../../time/Time";
 import { NodeId } from "../common/NodeId";
+import { DataModel } from "../../codec/DataModels";
 
 interface PathValueVersion<T> {
     path: Path,
-    template: Template<T>,
+    template: DataModel<T>,
     valueVersion: { value: T, version: number },
 }
 

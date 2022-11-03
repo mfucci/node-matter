@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Bound, Typed, UInt8T } from "../../codec/TlvObjectCodec";
+import { Bound, Typed, UInt8T } from "../../codec/DataModels";
 import { MatterCoreSpecificationV1_0 } from "../../Specifications";
 
 /**

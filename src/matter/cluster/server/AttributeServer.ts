@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Template } from "../../../codec/TlvObjectCodec";
+import { DataModel } from "../../../codec/DataModels";
 
 export class AttributeServer<T> {
     private value: T;
@@ -15,7 +15,7 @@ export class AttributeServer<T> {
     constructor(
         readonly id: number,
         readonly name: string,
-        readonly template: Template<T>,
+        readonly template: DataModel<T>,
         private readonly validator: (value: T, name: string) => void,
         defaultValue: T,
     ) {

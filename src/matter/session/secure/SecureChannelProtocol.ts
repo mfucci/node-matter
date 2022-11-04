@@ -15,12 +15,16 @@ import { MatterDevice } from "../../MatterDevice";
 export class SecureChannelProtocol implements ProtocolHandler<MatterDevice> {
 
     constructor(
-        private readonly paseCommissioner: PaseServer,
-        private readonly caseCommissioner: CaseServer,
+        private paseCommissioner: ProtocolHandler<MatterDevice>,
+        private readonly caseCommissioner: ProtocolHandler<MatterDevice>,
     ) {}
 
     getId(): number {
         return SECURE_CHANNEL_PROTOCOL_ID;
+    }
+
+    updatePaseCommissioner(paseServer: ProtocolHandler<MatterDevice>) {
+        this.paseCommissioner = paseServer;
     }
 
     onNewExchange(exchange: MessageExchange<MatterDevice>, message: Message) {
@@ -28,10 +32,10 @@ export class SecureChannelProtocol implements ProtocolHandler<MatterDevice> {
 
         switch (messageType) {
             case MessageType.PbkdfParamRequest:
-                this.paseCommissioner.onNewExchange(exchange);
+                this.paseCommissioner.onNewExchange(exchange, message);
                 break;
             case MessageType.Sigma1:
-                this.caseCommissioner.onNewExchange(exchange);
+                this.caseCommissioner.onNewExchange(exchange, message);
                 break;
             default:
                 throw new Error(`Unexpected initial message on secure channel protocol: ${messageType.toString(16)}`);

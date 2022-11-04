@@ -71,6 +71,7 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
             nodeId: fabric.nodeId,
             rootPublicKey: fabric.rootPublicKey,
             vendorId: fabric.rootVendorId,
+            fabricIndex: 1,
         }]);
 
         return {status: OperationalCertStatus.Success};

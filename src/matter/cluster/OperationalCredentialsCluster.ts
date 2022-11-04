@@ -18,6 +18,7 @@ const FabricDescriptorT = ObjectT({
     fabricId: Field(3, UInt64T), /* type: fabric-id */
     nodeId: Field(4, NodeIdT),
     label: Field(5, StringT({ maxLength: 32 })), /* default: "" */
+    fabricIndex: Field(0xfe, UInt8T),
 });
 
 const NocT = ObjectT({

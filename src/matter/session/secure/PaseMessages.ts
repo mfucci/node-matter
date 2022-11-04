@@ -22,7 +22,7 @@ export const PbkdfParamResponseT = ObjectT({
     random: Field(2, ByteStringT()),
     sessionId: Field(3, UInt16T),
     pbkdfParameters: OptionalField(4, ObjectT({
-        iteration: Field(1, UInt32T),
+        iterations: Field(1, UInt32T),
         salt: Field(2, ByteStringT()),
     })),
     mrpParameters: OptionalField(5, ObjectT({

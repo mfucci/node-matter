@@ -68,7 +68,10 @@ class Device {
 
         // Barebone implementation of the On/Off cluster
         const onOffClusterServer = new ClusterServer(OnOffCluster,
-            { on: false }, // Off by default
+            {   
+                on: false, // Off by default
+                featureMap: 0, // No features
+            }, 
             {
                 on: async ({attributes: {on}}) => on.set(true),
                 off: async ({attributes: {on}}) => on.set(false),
@@ -79,14 +82,15 @@ class Device {
         // We listen to the attribute update to trigger an action. This could also have been done in the method invokations in the server.
         onOffClusterServer.attributes.on.addListener(on => commandExecutor(on ? "on" : "off")?.());
 
+        const secureChannelProtocol = new SecureChannelProtocol(
+            new PaseServer(20202021, { iterations: 1000, salt: Crypto.getRandomData(32) }),
+            new CaseServer());
+
         (new MatterDevice(deviceName, deviceType, vendorId, productId, discriminator))
             .addNetInterface(await UdpInterface.create(5540))
             .addScanner(await MdnsScanner.create())
             .addBroadcaster(await MdnsBroadcaster.create())
-            .addProtocolHandler(new SecureChannelProtocol(
-                    new PaseServer(20202021, { iteration: 1000, salt: Crypto.getRandomData(32) }),
-                    new CaseServer(),
-                ))
+            .addProtocolHandler(secureChannelProtocol)
             .addProtocolHandler(new InteractionServer()
                .addEndpoint(0x00, DEVICE.ROOT, [
                    new ClusterServer(BasicInformationCluster, {
@@ -132,7 +136,7 @@ class Device {
                            certificateDeclaration: CertificateDeclaration,
                        })
                    ),
-                   new ClusterServer(AdminCommissioningCluster, {}, AdminCommissioningHandler),
+                   new ClusterServer(AdminCommissioningCluster, {}, AdminCommissioningHandler(secureChannelProtocol)),
                 ])
                 .addEndpoint(0x01, DEVICE.ON_OFF_LIGHT, [ onOffClusterServer ])
             )

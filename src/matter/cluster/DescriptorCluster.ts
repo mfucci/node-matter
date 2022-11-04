@@ -22,7 +22,7 @@ export const DescriptorCluster = Cluster({
     attributes: {
         deviceTypeList: Attribute(0, ArrayT(DeviceTypeT, { minLength: 1 })),
         serverList: Attribute(1, ArrayT(UInt32T), { default: [] }), /* type: list[cluster-id] */
-        clientList: Attribute(3, ArrayT(UInt32T), { default: [] }), /* type: list[cluster-id] */
-        partsList: Attribute(4, ArrayT(UInt16T), { default: [] }), /* type: list[endpoint-no] */
+        clientList: Attribute(2, ArrayT(UInt32T), { default: [] }), /* type: list[cluster-id] */
+        partsList: Attribute(3, ArrayT(UInt16T), { default: [] }), /* type: list[endpoint-no] */
     },
 });

@@ -19,22 +19,19 @@ export interface PbkdfParameters {
     salt: Buffer,
 }
 
-export class Spake2p {
+export class Spake2p2 {
     constructor(
         private readonly context: Buffer,
         private readonly random: BN,
         /* visible for tests */ readonly w0: BN,
-        private readonly w1: BN,
+        private readonly L: BN,
     ) {}
 
-    static async create(context: Buffer, {iterations: iteration, salt}: PbkdfParameters, pin: number) {
-        const pinBytes = Buffer.alloc(4);
-        pinBytes.writeUInt32LE(pin);
-        const ws = await Crypto.pbkdf2(pinBytes, salt, iteration, 80);
+    static async create(context: Buffer, verificationValue: Buffer) {
         const random = Crypto.getRandomBN(32, P256_CURVE.p);
-        const w0 = new BN(ws.slice(0, 40)).mod(P256_CURVE.n);
-        const w1 = new BN(ws.slice(40, 80)).mod(P256_CURVE.n);
-        return new Spake2p(context, random, w0, w1);
+        const w0 = new BN(verificationValue.slice(0, 32));
+        const L = new BN(verificationValue.slice(32, 87));
+        return new Spake2p2(context, random, w0, L);
     }
 
     computeX(): Buffer {
@@ -47,21 +44,12 @@ export class Spake2p {
         return Buffer.from(Y.encode());
     }
 
-    async computeSecretAndVerifiersFromY(X: Buffer, Y: Buffer) {
-        const YPoint = P256_CURVE.decodePoint(Y);
-        if (!YPoint.validate()) throw new Error("Y is not on the curve");
-        const yNwo = YPoint.add(N.mul(this.w0).neg());
-        const Z = yNwo.mul(this.random);
-        const V = yNwo.mul(this.w1);
-        return this.computeSecretAndVerifiers(X, Y, Buffer.from(Z.encode()), Buffer.from(V.encode()));
-    }
-
     async computeSecretAndVerifiersFromX(X: Buffer, Y: Buffer) {
         const XPoint = P256_CURVE.decodePoint(X);
         if (!XPoint.validate()) throw new Error("X is not on the curve");
         const Z = XPoint.add(M.mul(this.w0).neg()).mul(this.random);
-        const V = P256_CURVE.g.mul(this.w1).mul(this.random);
-        return this.computeSecretAndVerifiers(X, Y, Buffer.from(Z.encode()), Buffer.from(V.encode()));
+        const V = this.L.mul(this.random);
+        return this.computeSecretAndVerifiers(X, Y, Buffer.from(Z.encode()), Buffer.from(Z.encode.apply(V)));
     }
 
     private async computeSecretAndVerifiers(X: Buffer, Y: Buffer, Z: Buffer, V: Buffer) {

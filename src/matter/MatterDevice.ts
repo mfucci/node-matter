@@ -44,7 +44,7 @@ export class MatterDevice {
     }
 
     addBroadcaster(broadcaster: Broadcaster) {
-        broadcaster.setCommissionMode(this.deviceName, this.deviceType, this.vendorId, this.productId, this.discriminator);
+        broadcaster.setCommissionMode(1, this.deviceName, this.deviceType, this.vendorId, this.productId, this.discriminator);
         this.broadcasters.push(broadcaster);
         return this;
     }
@@ -106,6 +106,13 @@ export class MatterDevice {
 
     completeCommission() {
         return this.fabricManager.completeCommission();
+    }
+
+    openCommissioningModeWindow(mode: number, discriminator: number) {
+        this.broadcasters.forEach(broadcaster => {
+            broadcaster.setCommissionMode(mode, this.deviceName, this.deviceType, this.vendorId, this.productId, discriminator);
+            broadcaster.announce();
+        });
     }
 
     async findDevice(fabric: Fabric, nodeId: NodeId): Promise<undefined | {session: Session<MatterDevice>, channel: Channel<Buffer>}> {

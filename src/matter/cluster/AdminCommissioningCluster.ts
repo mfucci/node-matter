@@ -11,14 +11,14 @@ import { Cluster, Command, NoArgumentsT, NoResponseT, OptionalCommand } from "./
     id: 0x3c,
     name: "AdministratorCommissioning",
     commands: {
-        commissioningTimeoutEnhanced: Command(0, ObjectT({
+        openCommissioningWindow: Command(0, ObjectT({
             commissioningTimeout: Field(0, UInt16T),
             pakeVerifier: Field(1, ByteStringT()),
             discriminator: Field(2, UInt16T),
             iterations: Field(3, UInt32T),
             salt: Field(4, ByteStringT()),
         }), 0, NoResponseT),
-        commissioningTimeoutBasic: OptionalCommand(1, ObjectT({
+        openBasicCommissioningWindow: OptionalCommand(1, ObjectT({
             commissioningTimeout: Field(0, UInt16T),
         }), 1, NoResponseT),
         revokeCommissioning: Command(2, NoArgumentsT, 2, NoResponseT),

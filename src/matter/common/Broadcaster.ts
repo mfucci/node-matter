@@ -8,7 +8,7 @@ import { NodeId } from "./NodeId";
 import { VendorId } from "./VendorId";
 
 export interface Broadcaster {
-    setCommissionMode(deviceName: string, deviceType: number, vendorId: VendorId, productId: number, discriminator: number): void;
+    setCommissionMode(mode: number, deviceName: string, deviceType: number, vendorId: VendorId, productId: number, discriminator: number): void;
     setFabric(operationalId: Buffer, nodeId: NodeId): void;
     announce(): Promise<void>;
     close(): void;

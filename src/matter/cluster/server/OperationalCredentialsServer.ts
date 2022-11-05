@@ -67,7 +67,7 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
 
         fabrics.set([{
             fabricId: fabric.id,
-            label: "",
+            label: fabric.label,
             nodeId: fabric.nodeId,
             rootPublicKey: fabric.rootPublicKey,
             vendorId: fabric.rootVendorId,
@@ -83,8 +83,22 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
         return {status: OperationalCertStatus.Success};
     },
 
-    updateFabricLabel: async ({ request: {label} }) => {
-        throw new Error("Not implemented");
+    updateFabricLabel: async ({ request: {label}, attributes: {fabrics}, session }) => {
+        if (!session.isSecure()) throw new Error("updateOperationalCert should be called on a secure session.");
+        const secureSession = session as SecureSession<MatterDevice>;
+        const fabric = secureSession.getFabric();
+        if (fabric === undefined) throw new Error("updateOperationalCert on a session linked to a fabric.");
+
+        fabric.label = label;
+
+        fabrics.set([{
+            fabricId: fabric.id,
+            label: fabric.label,
+            nodeId: fabric.nodeId,
+            rootPublicKey: fabric.rootPublicKey,
+            vendorId: fabric.rootVendorId,
+            fabricIndex: 1,
+        }]);
 
         return {status: OperationalCertStatus.Success};
     },

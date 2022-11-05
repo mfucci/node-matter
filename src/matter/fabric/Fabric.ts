@@ -29,6 +29,7 @@ export class Fabric {
         readonly operationalIdentityProtectionKey: Buffer,
         readonly intermediateCACert: Buffer | undefined,
         readonly operationalCert: Buffer,
+        public label: string,
     ) {}
 
     getPublicKey() {
@@ -133,6 +134,7 @@ export class FabricBuilder {
             await Crypto.hkdf(this.identityProtectionKey, operationalId, GROUP_SECURITY_INFO, 16),
             this.intermediateCACert,
             this.operationalCert,
+            "",
         );
     }
 }

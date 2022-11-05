@@ -24,13 +24,13 @@ export class Spake2p2 {
         private readonly context: Buffer,
         private readonly random: BN,
         /* visible for tests */ readonly w0: BN,
-        private readonly L: BN,
+        private readonly L: Buffer,
     ) {}
 
     static async create(context: Buffer, verificationValue: Buffer) {
         const random = Crypto.getRandomBN(32, P256_CURVE.p);
         const w0 = new BN(verificationValue.slice(0, 32));
-        const L = new BN(verificationValue.slice(32, 87));
+        const L = verificationValue.slice(32, 32 + 65);
         return new Spake2p2(context, random, w0, L);
     }
 
@@ -46,10 +46,11 @@ export class Spake2p2 {
 
     async computeSecretAndVerifiersFromX(X: Buffer, Y: Buffer) {
         const XPoint = P256_CURVE.decodePoint(X);
+        const LPoint = P256_CURVE.decodePoint(this.L);
         if (!XPoint.validate()) throw new Error("X is not on the curve");
         const Z = XPoint.add(M.mul(this.w0).neg()).mul(this.random);
-        const V = this.L.mul(this.random);
-        return this.computeSecretAndVerifiers(X, Y, Buffer.from(Z.encode()), Buffer.from(Z.encode.apply(V)));
+        const V = LPoint.mul(this.random);
+        return this.computeSecretAndVerifiers(X, Y, Buffer.from(Z.encode()), Buffer.from(V.encode()));
     }
 
     private async computeSecretAndVerifiers(X: Buffer, Y: Buffer, Z: Buffer, V: Buffer) {

@@ -14,6 +14,7 @@ const ROOT_CERT = Buffer.from("1530010100240201370324140018260480125428260580152
 const NEW_OP_CERT = Buffer.from("153001010124020137032414001826048012542826058015203b370624150124110918240701240801300941049ac1dc9995e6897f2bf1420a6efdba30781ac3dcdb7bb15e993050ff0ce92c52727b029c30f11f163b177d3bfa37f015db156994801f0e0f9b64c72bf8a15153370a35012801182402013603040204011830041402cce0d7bfa29e98e454be38e27bfe6c0f162302300514e766069362d7e35b79687161644d222bdde93a6818300b4050e8183c290f438a57516faea006282d6d2b5178d5d15dfcc3ec8a9232db942894ff2d2ce941d3b42dd8a2cd51eea4f3f50b66757959368868c3a0a1b5fe665f18", "hex");
 const IPK_KEY = Buffer.from("74656d706f726172792069706b203031", "hex");
 const OPERATIONAL_ID = Buffer.from("d559af361549a9a2", "hex");
+const TEST_ROOT_NODE = NodeId(BigInt(1));
 
 const TEST_FABRIC_ID = BigInt("0x2906C908D115D362");
 const TEST_NODE_ID = NodeId(BigInt("0xCD5544AA7B13EF14"));
@@ -36,7 +37,8 @@ const EXPECTED_DESTINATION_ID_3 = Buffer.from("f7f7009606c61927af62502067581b4b0
 describe("FabricBuilder", () => {
     context("build", () => {
         const builder = new FabricBuilder();
-        builder.setVendorId(VendorId(0));
+        builder.setRootVendorId(VendorId(0));
+        builder.setRootNodeId(TEST_ROOT_NODE);
         builder.setRootCert(ROOT_CERT);
         builder.setOperationalCert(NEW_OP_CERT);
         builder.setIdentityProtectionKey(IPK_KEY);
@@ -59,7 +61,7 @@ describe("Fabric", () => {
 
     context("getDestinationId", () => {
         it("generates the correct destination ID", () => {
-            const fabric = new Fabric(TEST_FABRIC_ID, TEST_NODE_ID, Buffer.alloc(0), TEST_ROOT_PUBLIC_KEY, Crypto.createKeyPair(), VendorId(0), Buffer.alloc(0), Buffer.alloc(0), TEST_IDENTITY_PROTECTION_KEY, undefined, Buffer.alloc(0)); 
+            const fabric = new Fabric(TEST_FABRIC_ID, TEST_NODE_ID, TEST_ROOT_NODE, Buffer.alloc(0), TEST_ROOT_PUBLIC_KEY, Crypto.createKeyPair(), VendorId(0), Buffer.alloc(0), Buffer.alloc(0), TEST_IDENTITY_PROTECTION_KEY, undefined, Buffer.alloc(0)); 
 
             const result = fabric.getDestinationId(TEST_NODE_ID, TEST_RANDOM);
 
@@ -68,7 +70,8 @@ describe("Fabric", () => {
 
         it("generates the correct destination ID 2", async () => {
             const builder = new FabricBuilder();
-            builder.setVendorId(VendorId(0));
+            builder.setRootVendorId(VendorId(0));
+            builder.setRootNodeId(TEST_ROOT_NODE);
             builder.setRootCert(ROOT_CERT);
             builder.setOperationalCert(NEW_OP_CERT);
             builder.setIdentityProtectionKey(IPK_KEY);
@@ -80,7 +83,7 @@ describe("Fabric", () => {
         });
 
         it("generates the correct destination ID 3", async () => {
-            const fabric = new Fabric(TEST_FABRIC_ID_3, TEST_NODE_ID_3, Buffer.alloc(0), TEST_ROOT_PUBLIC_KEY_3, Crypto.createKeyPair(), VendorId(0), Buffer.alloc(0), Buffer.alloc(0), TEST_IDENTITY_PROTECTION_KEY_3, undefined, Buffer.alloc(0)); 
+            const fabric = new Fabric(TEST_FABRIC_ID_3, TEST_NODE_ID_3, TEST_ROOT_NODE, Buffer.alloc(0), TEST_ROOT_PUBLIC_KEY_3, Crypto.createKeyPair(), VendorId(0), Buffer.alloc(0), Buffer.alloc(0), TEST_IDENTITY_PROTECTION_KEY_3, undefined, Buffer.alloc(0)); 
 
             const result = fabric.getDestinationId(TEST_NODE_ID_3, TEST_RANDOM_3);
 

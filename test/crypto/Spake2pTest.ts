@@ -70,9 +70,9 @@ describe("Spake2p", () => {
             // Test data captured from https://github.com/project-chip/connectedhomeip/
             const pin = 20202021;
             const salt = Buffer.from("438df2ea5143215c4ec5f1bbf7a4d9b1374f62320f2c88e25cc18ff5e5d1bbf6", "hex");
-            const iteration = 1000;
+            const iterations = 1000;
 
-            const spake2p = await Spake2p.create(Buffer.alloc(0), { iteration, salt }, pin);
+            const spake2p = await Spake2p.create(Buffer.alloc(0), { iterations, salt }, pin);
             const result = spake2p.w0;
 
             assert.equal(result.toString("hex"), "987aede3f3f32756971b905820b0bbdad2a6e236838a865b043e64878b5db6d0");

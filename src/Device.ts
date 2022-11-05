@@ -33,6 +33,7 @@ import { Level, Logger } from "./log/Logger";
 import { VendorId } from "./matter/common/VendorId";
 import { AdminCommissioingHandler as AdminCommissioningHandler } from "./matter/cluster/server/AdminCommissioningServer";
 import { AdminCommissioningCluster } from "./matter/cluster/AdminCommissioningCluster";
+import { NetworkCommissioningCluster, NetworkCommissioningStatus } from "./matter/cluster/NetworkCommissioningCluster";
 
 // From Chip-Test-DAC-FFF1-8000-0007-Key.der
 const DevicePrivateKey = Buffer.from("727F1005CBA47ED7822A9D930943621617CFD3B79D9AF528B801ECF9F1992204", "hex");
@@ -109,7 +110,8 @@ class Device {
                        capabilityMinima: {
                            caseSessionsPerFabric: 3,
                            subscriptionsPerFabric: 3,
-                       }
+                       },
+                       serialNumber: "node-matter-0.0.10",
                    }, {}),
                    new ClusterServer(GeneralCommissioningCluster, {
                        breadcrumb: BigInt(0),
@@ -137,6 +139,21 @@ class Device {
                        })
                    ),
                    new ClusterServer(AdminCommissioningCluster, {}, AdminCommissioningHandler(secureChannelProtocol)),
+                   new ClusterServer(NetworkCommissioningCluster, {
+                        maxNetworks: 1,
+                        connectMaxTimeSeconds: 20,
+                        interfaceEnabled: true,
+                        lastConnectErrorValue: 0,
+                        lastNetworkId: Buffer.alloc(32),
+                        lastNetworkingStatus: NetworkCommissioningStatus.Success,
+                        networks: [{ networkId: Buffer.alloc(32), connected: true }],
+                        scanMaxTimeSeconds: 5,
+                        featureMap: {
+                            wifi: false,
+                            thread: false,
+                            ethernet: true,
+                        },
+                   }, {}),
                 ])
                 .addEndpoint(0x01, DEVICE.ON_OFF_LIGHT, [ onOffClusterServer ])
             )

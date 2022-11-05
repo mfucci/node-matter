@@ -81,7 +81,7 @@ describe("Integration", () => {
         );
 
         Network.get = () => serverNetwork;
-        onOffServer = new ClusterServer(OnOffCluster, { on: false }, 
+        onOffServer = new ClusterServer(OnOffCluster, { on: false, featureMap: 0 }, 
             {
                 on: async ({attributes: {on}}) => on.set(true),
                 off: async ({attributes: {on}}) => on.set(false),
@@ -92,7 +92,7 @@ describe("Integration", () => {
             .addNetInterface(await UdpInterface.create(matterPort, SERVER_IP))
             .addBroadcaster(await MdnsBroadcaster.create(SERVER_IP))
             .addProtocolHandler(new SecureChannelProtocol(
-                    new PaseServer(setupPin, { iteration: 1000, salt: Crypto.getRandomData(32) }),
+                    new PaseServer(setupPin, { iterations: 1000, salt: Crypto.getRandomData(32) }),
                     new CaseServer(),
                 ))
             .addProtocolHandler(new InteractionServer()

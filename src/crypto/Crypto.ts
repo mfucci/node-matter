@@ -17,6 +17,20 @@ const SYMMETRIC_KEY_LENGTH = 16;
 const EC_PRIVATE_KEY_PKCS8_HEADER = Buffer.from("308141020100301306072a8648ce3d020106082a8648ce3d030107042730250201010420", "hex");
 const EC_PUBLIC_KEY_SPKI_HEADER = Buffer.from("3059301306072a8648ce3d020106082a8648ce3d030107034200", "hex");
 
+/** @see {@link MatterCoreSpecificationV1_0} § 3.5.1 */
+export const CRYPTO_GROUP_SIZE_BITS = 256;
+export const CRYPTO_GROUP_SIZE_BYTES = 32;
+export const CRYPTO_PUBLIC_KEY_SIZE_BYTES = (2 * CRYPTO_GROUP_SIZE_BYTES) + 1;
+/** @see {@link MatterCoreSpecificationV1_0} § 3.3 */
+export const CRYPTO_HASH_LEN_BYTES = 32;
+export const CRYPTO_HASH_BLOCK_LEN_BYTES = 64;
+/** @see {@link MatterCoreSpecificationV1_0} § 3.6 */
+export const CRYPTO_SYMMETRIC_KEY_LENGTH_BITS = 128;
+export const CRYPTO_SYMMETRIC_KEY_LENGTH_BYTES = 16;
+export const CRYPTO_AEAD_MIC_LENGTH_BITS = 128;
+export const CRYPTO_AEAD_MIC_LENGTH_BYTES = 16;
+export const CRYPTO_AEAD_NONCE_LENGTH_BYTES = 13;
+
 export interface KeyPair {
     publicKey: Buffer,
     privateKey: Buffer,
@@ -127,7 +141,7 @@ export class Crypto {
         }
         return signer.sign({ key: Buffer.concat([EC_PRIVATE_KEY_PKCS8_HEADER, privateKey]), format: "der", type: "pkcs8", dsaEncoding });
     }
-    
+
     static verify(publicKey: Buffer, data: Buffer, signature: Buffer, dsaEncoding: ("ieee-p1363" | "der")  = "ieee-p1363") {
         const verifier = crypto.createVerify(HASH_ALGORITHM);
         verifier.update(data);

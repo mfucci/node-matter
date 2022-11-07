@@ -89,7 +89,7 @@ export const StringT = (constraints: ArrayConstraints = { maxLength: 256 }):Temp
 export const BooleanT:Template<boolean> = { tlvType: TlvType.Boolean };
 export const Bit = (position: number) => ({ position });
 export const BitMapT = <T extends BitTemplates>(bits: T): Template<TypeFromBitTemplates<T>> => ({ tlvType: TlvType.UnsignedInt, postDecoding: (bitMap: number) => decodeBitMap(bits, bitMap), preEncoding: (flags: TypeFromBitTemplates<T>) => encodeBitMap(bits, flags)});
-export const ByteStringT = (constraints: ArrayConstraints = { maxLength: 256 }):Template<Buffer> => ({ tlvType: TlvType.ByteString, validator: arrayValidator(constraints) });
+export const ByteStringT = (constraints: ArrayConstraints = { maxLength: 1024 }):Template<Buffer> => ({ tlvType: TlvType.ByteString, validator: arrayValidator(constraints) });
 export const UInt8T: Template<number> = { tlvType: TlvType.UnsignedInt, validator: intValidator({ min: 0, max: 0xFF }) };
 export const UInt16T: Template<number> = { tlvType: TlvType.UnsignedInt, validator: intValidator({ min: 0, max: 0xFFFF }) };
 export const UInt32T: Template<number> = { tlvType: TlvType.UnsignedInt, validator: intValidator({ min: 0, max: 0xFFFFFFFF }) };

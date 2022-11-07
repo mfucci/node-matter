@@ -9,12 +9,12 @@ import { MatterCoreSpecificationV1_0 } from "../../Specifications";
 
 /**
  * Each fabric supported on a node is referenced by fabric-index that is unique on the node. This
- * fab­ric-index enables the look-up of the full fabric information from the fabric-index. A fabric-index
+ * fabric-index enables the look-up of the full fabric information from the fabric-index. A fabric-index
  * of 0 (zero) or null SHALL indicate that there is no fabric associated with the context in which the
- * fab­ric-index is being used. If fabric-index is used in a context that is exclusively associated with
- * a fab­ric, such as fabric-scoped data model elements, then the fabric-index values SHALL NOT include 0
+ * fabric-index is being used. If fabric-index is used in a context that is exclusively associated with
+ * a fabric, such as fabric-scoped data model elements, then the fabric-index values SHALL NOT include 0
  * (zero) or null.
- * 
+ *
  * @see {@link MatterCoreSpecificationV1_0} § 7.5.2
  */
 export type FabricIndex = { fabricIndex: true /* Hack to force strong type checking at compile time */ };

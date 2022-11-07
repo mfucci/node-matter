@@ -15,7 +15,7 @@ import {
     UInt16T,
     UInt32T,
     Bound,
-    EnumT
+    EnumT, BitMapT, Bit
 } from "../../codec/TlvObjectCodec";
 import { Attribute, OptionalAttribute, Cluster, Command, OptionalCommand, NoResponseT } from "./Cluster";
 import { StatusCode } from "../interaction/InteractionMessages";
@@ -175,6 +175,11 @@ const CopySceneResponseT = ObjectT({
     sceneIdFrom: Field(2, UInt8T),
 });
 
+/** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.7.5 */
+const nameSupportBitmapT = BitMapT({
+    sceneNames: Bit(7),
+})
+
 /*
   TODO
   * Feature map:
@@ -221,9 +226,9 @@ export const ScenesCluster = Cluster({
          * Names feature is supported. The most significant bit, bit 7, SHALL be
          * equal to bit 0 of the FeatureMap attribute. All other bits SHALL be 0.
          *
-         * TODO because we support group names we need to set bit 7 to 1, rest is 0
+         * TODO because we (will) support group names we need to set bit 7 to 1, rest is 0
          */
-        nameSupport: Attribute(4, UInt8T, { default: 0x80 }), /* type: BITMAP! */
+        nameSupport: Attribute(4, nameSupportBitmapT, { default: { sceneNames: true } }),
         /** Holds the Node ID (the IEEE address in case of Zigbee) of the node that last configured the Scene Table. */
         lastConfiguredBy: OptionalAttribute(5, NodeIdT), /* nullable: true */
     },

@@ -63,16 +63,16 @@ class Device {
 
         // Barebone implementation of the On/Off cluster
         const onOffClusterServer = new ClusterServer(OnOffCluster,
-            { on: false }, // Off by default
+            { onOff: false }, // Off by default
             {
-                on: async ({attributes: {on}}) => on.set(true),
-                off: async ({attributes: {on}}) => on.set(false),
-                toggle: async ({attributes: {on}}) => on.set(!on.get()),
+                on: async ({attributes: {onOff}}) => onOff.set(true),
+                off: async ({attributes: {onOff}}) => onOff.set(false),
+                toggle: async ({attributes: {onOff}}) => onOff.set(!onOff.get()),
             }
         );
 
         // We listen to the attribute update to trigger an action. This could also have been done in the method invokations in the server.
-        onOffClusterServer.attributes.on.addListener(on => commandExecutor(on ? "on" : "off")?.());
+        onOffClusterServer.attributes.onOff.addListener(on => commandExecutor(on ? "on" : "off")?.());
 
         (new MatterDevice(deviceName, deviceType, vendorId, productId, discriminator))
             .addNetInterface(await UdpInterface.create(5540))

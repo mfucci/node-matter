@@ -10,7 +10,7 @@ import {
     StringT,
     UInt8T,
     ArrayT,
-    EnumT
+    EnumT, BitMapT, Bit
 } from "../../codec/TlvObjectCodec";
 import { Attribute, Cluster, Command, NoArgumentsT, NoResponseT } from "./Cluster";
 import { StatusCode } from "../interaction/InteractionMessages";
@@ -82,6 +82,10 @@ const AddGroupIfIdentifyingRequestT = ObjectT({
     groupName: Field(1, StringT( { maxLength: 16 })),
 });
 
+/** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.3.6.1 */
+const nameSupportBitmapT = BitMapT({
+    groupNames: Bit(7)
+});
 
 /*
   TODO
@@ -118,9 +122,9 @@ export const GroupsCluster = Cluster({
          * Names feature is supported. The most significant bit, bit 7, SHALL be
          * equal to bit 0 of the FeatureMap attribute. All other bits SHALL be 0.
          *
-         * TODO because we support group names we need to set bit 7 to 1, rest is 0
+         * TODO because we (will) support group names we need to set bit 7 to 1, rest is 0
          */
-        nameSupport: Attribute(0, UInt8T, { default: 0x80 }), /* TODO BitMap!! */
+        nameSupport: Attribute(0, nameSupportBitmapT, { default: { groupNames: true } }),
     },
     /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.3.7 */
     commands: {

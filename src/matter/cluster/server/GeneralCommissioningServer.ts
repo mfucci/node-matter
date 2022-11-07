@@ -19,6 +19,8 @@ const logger = Logger.get("GeneralCommissioningClusterHandler");
 
 export const GeneralCommissioningClusterHandler: ClusterServerHandlers<typeof GeneralCommissioningCluster> = {
     armFailSafe: async ({ request: {breadcrumbStep}, attributes: {breadcrumb}, session }) => {
+        // TODO Add handling for ExpiryLengthSeconds field and Error handling, see 11.9.7.2
+
         session.getContext().armFailSafe();
         breadcrumb.set(breadcrumbStep);
         return SuccessResponse;
@@ -51,6 +53,8 @@ export const GeneralCommissioningClusterHandler: ClusterServerHandlers<typeof Ge
     },
 
     commissioningComplete: async ({session}) => {
+        // TODO Add error handling as defined in 11.9.7.6
+
         if (!session.isSecure()) throw new Error("commissioningComplete can only be called on a secure session");
         const fabric = (session as SecureSession<MatterDevice>).getFabric();
         if (fabric === undefined) throw new Error("commissioningComplete is called but the fabric has not been defined yet");

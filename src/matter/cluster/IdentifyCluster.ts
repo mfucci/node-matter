@@ -8,7 +8,8 @@ import {
     Field,
     ObjectT,
     EnumT,
-    UInt16T
+    UInt16T,
+    Bit
 } from "../../codec/TlvObjectCodec";
 import { Attribute, WritableAttribute, Cluster, Command, OptionalCommand, NoResponseT } from "./Cluster";
 import { MatterApplicationClusterSpecificationV1_0 } from "../../Specifications";
@@ -54,28 +55,19 @@ const IdentifyQueryResponseT = ObjectT({
     timeout: Field(0, UInt16T),
 });
 
-
-/*
-  * Feature map:
-    * Bit 0: Query - Multicast query for identification state
-                     This feature supports a unicast, groupcast or multicast query
-                     of the cluster state, with a response back to query initiator,
-                     if the identification state is active. This feature is supported
-                     for underlying stacks that support a response to a multicast or
-                     groupcast command.
- */
-
 /**
  * Attributes and commands for putting a device into Identification mode (e.g. flashing a light).
- *
- * clusterRevision: 4
- * featureMap: 0 - Bit 0 (Query) not set for now because not implemented
  *
  * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.2
  */
 export const IdentifyCluster = Cluster({
     id: 0x03,
     name: "Identify",
+    revision: 4,
+    features: {
+        /** Replies to multicast / groupcast queries if the identification state is active. */
+        query: Bit(0),
+    },
 
     /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.2.5 */
     attributes: {

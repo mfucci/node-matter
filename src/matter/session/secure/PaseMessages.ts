@@ -24,7 +24,7 @@ const SedParametersT = ObjectT({
 export const PbkdfParamRequestT = ObjectT({
     random: Field(1, ByteStringT({ length: 32 })),
     sessionId: Field(2, UInt16T), // Specs: range: 16bits
-    passcodeId: Field(3, UInt16T), // Specs: length: 16bits so min is 0x1000 ??
+    passcodeId: Field(3, UInt16T), // Specs: length: 16bits so min is 0x8000?
     hasPbkdfParameters: Field(4, BooleanT),
     mrpParameters: OptionalField(5, SedParametersT),
 });

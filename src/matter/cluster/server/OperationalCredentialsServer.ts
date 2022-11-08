@@ -10,7 +10,7 @@ import { MatterDevice } from "../../MatterDevice";
 import { SecureSession } from "../../session/SecureSession";
 import {
     AttestationT,
-    CertificateType,
+    CertificateChainType,
     CertSigningRequestT,
     OperationalCredentialsCluster,
     OperationalCertStatus
@@ -42,9 +42,9 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
 
     requestCertChain: async ({ request: {type} }) => {
         switch (type) {
-            case CertificateType.DeviceAttestation:
+            case CertificateChainType.DeviceAttestation:
                 return {certificate: conf.deviceCertificate};
-            case CertificateType.ProductAttestationIntermediate:
+            case CertificateChainType.ProductAttestationIntermediate:
                 return {certificate: conf.deviceIntermediateCertificate};
             default:
                 throw new Error(`Unsupported certificate type: ${type}`);

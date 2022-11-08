@@ -12,7 +12,7 @@ import { PaseClient } from "./session/secure/PaseClient";
 import { ClusterClient, InteractionClient } from "./interaction/InteractionClient";
 import { BasicInformationCluster } from "./cluster/BasicInformationCluster";
 import { CommissioningError, GeneralCommissioningCluster, RegulatoryLocationType, CommissioningSuccessFailureResponse } from "./cluster/GeneralCommissioningCluster";
-import { CertificateType, CertSigningRequestT, OperationalCredentialsCluster } from "./cluster/OperationalCredentialsCluster";
+import { CertificateChainType, CertSigningRequestT, OperationalCredentialsCluster } from "./cluster/OperationalCredentialsCluster";
 import { Crypto } from "../crypto/Crypto";
 import { CertificateManager, jsToMatterDate, OperationalCertificateT, RootCertificateT } from "./certificate/CertificateManager";
 import { TlvObjectCodec } from "../codec/TlvObjectCodec";
@@ -83,9 +83,9 @@ export class MatterController {
         this.ensureSuccess(await generalCommissioningClusterClient.setRegulatoryConfig({ breadcrumbStep: BigInt(2), newRegulatoryConfig: RegulatoryLocationType.IndoorOutdoor, countryCode: "US"}));
 
         const operationalCredentialsClusterClient = ClusterClient(interactionClient, 0, OperationalCredentialsCluster);
-        const { certificate: deviceAttestation } = await operationalCredentialsClusterClient.requestCertChain({ type: CertificateType.DeviceAttestation });
+        const { certificate: deviceAttestation } = await operationalCredentialsClusterClient.requestCertChain({ type: CertificateChainType.DeviceAttestation });
         // TODO: extract device public key from deviceAttestation
-        const { certificate: productAttestation } = await operationalCredentialsClusterClient.requestCertChain({ type: CertificateType.ProductAttestationIntermediate });
+        const { certificate: productAttestation } = await operationalCredentialsClusterClient.requestCertChain({ type: CertificateChainType.ProductAttestationIntermediate });
         // TODO: validate deviceAttestation and productAttestation
         const { elements: attestationElements, signature: attestationSignature } = await operationalCredentialsClusterClient.requestAttestation({ attestationNonce: Crypto.getRandomData(32) });
         // TODO: validate attestationSignature using device public key

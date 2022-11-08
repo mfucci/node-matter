@@ -18,6 +18,8 @@ import { AttributeServers, AttributeInitialValues, ClusterServerHandlers } from 
 import { SecureSession } from "../session/SecureSession";
 import { SubscriptionHandler } from "./SubscriptionHandler";
 import { Logger } from "../../log/Logger";
+import { DeviceTypeId } from "../common/DeviceTypeId";
+import { ClusterId } from "../common/ClusterId";
 
 export const INTERACTION_PROTOCOL_ID = 0x0001;
 
@@ -83,13 +85,13 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
     addEndpoint(endpointId: number, device: {name: string, code: number}, clusters: ClusterServer<any>[]) {
         // Add the descriptor cluster
         const descriptorCluster = new ClusterServer(DescriptorCluster, {
-            deviceTypeList: [{revision: 1, type: device.code}],
+            deviceTypeList: [{revision: 1, type: DeviceTypeId(device.code)}],
             serverList: [],
             clientList: [],
             partsList: [],
         }, {});
         clusters.push(descriptorCluster);
-        descriptorCluster.attributes.serverList.set(clusters.map(({id}) => id));
+        descriptorCluster.attributes.serverList.set(clusters.map(({id}) => ClusterId(id)));
 
         clusters.forEach(({ id: clusterId, attributes, commands }) => {
             // Add attributes

@@ -4,9 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BitMapT, BitTemplates, FieldTemplates, ObjectT, Template, TypeFromFieldTemplates, UInt16T, UInt32T } from "../../codec/TlvObjectCodec";
+import { BitMapT, BitTemplates, FieldTemplates, ObjectT, Template, TypeFromBitTemplates, TypeFromFieldTemplates, UInt16T } from "../../codec/TlvObjectCodec";
 import { Merge } from "../../util/Type";
-import { AttributeServer } from "./server/AttributeServer";
 
 export const enum AccessLevel {
     View,
@@ -51,10 +50,18 @@ export interface Attributes { [key: string]: Attribute<any> }
 export interface Commands { [key: string]: Command<any, any> }
 export interface Events { [key: string]: Event<any> }
 
+/** @see {@link MatterCoreSpecificationV1_0} § 7.13 */
 export type GlobalAttributes<F extends BitTemplates> = {
+    /** Indicates the revision of the server cluster specification supported by the cluster instance. */
     clusterRevision: Attribute<number>,
-    featureMap: Attribute<F>,
+
+    /** Indicates whether the server supports zero or more optional clus­ter features. */
+    featureMap: Attribute<TypeFromBitTemplates<F>>,
 }
+export const GlobalAttributes = <F extends BitTemplates>(features: F) => ({
+    clusterRevision: Attribute(0xFFFD, UInt16T),
+    featureMap: Attribute(0xFFFC, BitMapT(features)),
+} as GlobalAttributes<F>);
 
 export interface Cluster<F extends BitTemplates, A extends Attributes, C extends Commands, E extends Events> {
     id: number,
@@ -87,10 +94,6 @@ export const Cluster = <F extends BitTemplates, A extends Attributes, C extends 
     revision,
     features,
     commands,
-    attributes: {
-        ...attributes,
-        clusterRevision: Attribute(0xFFFD, UInt16T),
-        featureMap: Attribute(0xFFFD, BitMapT(features)),
-    } as unknown as Merge<A, GlobalAttributes<F>>,
+    attributes: Merge(attributes, GlobalAttributes(features)),
     events,
 });

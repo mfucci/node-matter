@@ -19,6 +19,7 @@ const DeviceTypeT = ObjectT({
 export const DescriptorCluster = Cluster({
     id: 0x1d,
     name: "Descriptor",
+    revision: 1,
     attributes: {
         deviceTypeList: Attribute(0, ArrayT(DeviceTypeT, { minLength: 1 })),
         serverList: Attribute(1, ArrayT(UInt32T), { default: [] }), /* type: list[cluster-id] */

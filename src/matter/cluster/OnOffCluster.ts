@@ -4,12 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BooleanT } from "../../codec/TlvObjectCodec";
+import { Bit, BooleanT } from "../../codec/TlvObjectCodec";
 import { Attribute, Cluster, Command, NoArgumentsT, NoResponseT } from "./Cluster";
 
 export const OnOffCluster = Cluster({
     id: 0x06,
     name: "On/Off",
+    revision: 1,
+    features: {
+        lightingLevelControl: Bit(0),
+    },
     attributes: {
         on: Attribute(0, BooleanT),
     },

@@ -49,6 +49,7 @@ const SetRegulatoryConfigRequestT = ObjectT({
 export const GeneralCommissioningCluster = Cluster({
     id: 0x30,
     name: "General Commissioning",
+    revision: 1,
     attributes: {
         breadcrumb: WritableAttribute(0, UInt64T, { default: BigInt(0), writeAcl: AccessLevel.Administer }),
         commissioningInfo: Attribute(1, BasicCommissioningInfoT),

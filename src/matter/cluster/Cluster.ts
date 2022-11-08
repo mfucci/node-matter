@@ -4,7 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { FieldTemplates, ObjectT, Template, TypeFromFieldTemplates } from "../../codec/TlvObjectCodec";
+import { BitMapT, BitTemplates, FieldTemplates, ObjectT, Template, TypeFromFieldTemplates, UInt16T, UInt32T } from "../../codec/TlvObjectCodec";
+import { Merge } from "../../util/Type";
+import { AttributeServer } from "./server/AttributeServer";
 
 export const enum AccessLevel {
     View,
@@ -48,5 +50,51 @@ export const OptionalEvent = <FT extends FieldTemplates>(id: number, priority: E
 export interface Attributes { [key: string]: Attribute<any> }
 export interface Commands { [key: string]: Command<any, any> }
 export interface Events { [key: string]: Event<any> }
-export interface Cluster<C extends Commands, A extends Attributes, E extends Events> { id: number, name: string, commands: C, attributes: A, events: E }
-export const Cluster = <C extends Commands, A extends Attributes, E extends Events>({id, name, attributes = <A>{}, commands = <C>{}, events = <E>{} }: { id: number, name: string, attributes?: A, commands?: C, events?: E } ):Cluster<C, A, E> => ({ id, name, commands, attributes, events });
+
+export const GlobalAttributesw = {
+    clusterRevision: Attribute(0xFFFD, UInt16T),
+    featureMap: Attribute(0xFFFD, UInt32T),
+};
+export type GlobalAttributes<F extends BitTemplates> = {
+    clusterRevision: Attribute<number>,
+    featureMap: Attribute<F>,
+}
+
+export interface Cluster<F extends BitTemplates, A extends Attributes, C extends Commands, E extends Events> {
+    id: number,
+    name: string,
+    revision: number,
+    features: BitTemplates,
+    attributes: A,
+    commands: C,
+    events: E,
+}
+export const Cluster = <F extends BitTemplates, A extends Attributes, C extends Commands, E extends Events>({
+    id,
+    name,
+    revision,
+    features = <F>{},
+    attributes = <A>{},
+    commands = <C>{},
+    events = <E>{}
+}: {
+    id: number,
+    name: string,
+    revision: number,
+    features?: F,
+    attributes?: A,
+    commands?: C,
+    events?: E
+} ):Cluster<F, Merge<A, GlobalAttributes<F>>, C, E> => ({
+    id,
+    name,
+    revision,
+    features,
+    commands,
+    attributes: {
+        ...attributes,
+        clusterRevision: Attribute(0xFFFD, UInt16T),
+        featureMap: Attribute(0xFFFD, BitMapT(features)),
+    } as unknown as Merge<A, GlobalAttributes<F>>,
+    events
+});

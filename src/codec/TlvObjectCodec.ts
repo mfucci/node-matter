@@ -22,7 +22,7 @@ export interface OptionalField<T> extends TaggedTemplate<T> {optional: true};
 export type FieldTemplates = {[key: string]: Field<any> | OptionalField<any>};
  
 interface BitTemplate { position: number }
-type BitTemplates = {[key: string]: BitTemplate};
+export type BitTemplates = {[key: string]: BitTemplate};
 type TypeFromBitTemplates<T extends BitTemplates> = {[K in keyof T]: boolean};
 
 // Type utils

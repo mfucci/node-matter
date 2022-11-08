@@ -124,6 +124,7 @@ export const RemoveFabricRequestT = ObjectT({
 export const OperationalCredentialsCluster = Cluster({
     id: 0x3e,
     name: "Operational Credentials",
+    revision: 1,
     attributes: {
         nocs: Attribute(0, ArrayT(NocT)),
         fabrics: Attribute(1, ArrayT(FabricDescriptorT)),

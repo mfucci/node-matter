@@ -5,7 +5,7 @@
  */
 
 import { ArrayT, Field, ObjectT, StringT } from "../../codec/TlvObjectCodec";
-import { Cluster, WritableAttribute } from "./Cluster";
+import { AccessLevel, Attribute, Cluster, WritableAttribute } from "./Cluster";
 import { MatterCoreSpecificationV1_0 } from "../../Specifications";
 
 /**
@@ -22,23 +22,41 @@ const LabelT = ObjectT({
 });
 
 /**
- * This cluster provides a feature to tag an endpoint with zero or more labels. This is a base cluster that
- * requires a derived cluster to create an instance.
- *
- * TODO: Do we need it? Only if we really inherit from it.
+ * This cluster provides a feature to tag an endpoint with zero or more labels.
+ * Derived from LabelCluster ({@link MatterCoreSpecificationV1_0} § 9.7)
  *
  * clusterRevision: 1
  *
- * @see {@link MatterCoreSpecificationV1_0} § 9.7
+ * @see {@link MatterCoreSpecificationV1_0} § 9.9
  */
-export const LabelCluster = Cluster({
+export const UserLabelCluster = Cluster({
     /** Is a base cluster, so no id */
-    id: 0x00,
-    name: "Label",
+    id: 0x41,
+    name: "User Label",
 
-    /** @see {@link MatterCoreSpecificationV1_0} § 9.7.5 */
+    /** @see {@link MatterCoreSpecificationV1_0} § 9.9.4 */
     attributes: {
-        /** List of labels. */
-        labelList: WritableAttribute(0, ArrayT(LabelT), { default: [] }), /* non-volatile */
+        /** An implementation SHALL support at least 4 list entries per node for all User Label cluster instances on the node. */
+        labelList: WritableAttribute(0, ArrayT(LabelT), { default: [], writeAcl: AccessLevel.Manage }), /* non-volatile */
+    },
+});
+
+/**
+ * This cluster provides a feature for the device to tag an endpoint with zero or more read only labels.
+ * Derived from LabelCluster ({@link MatterCoreSpecificationV1_0} § 9.7)
+ *
+ * clusterRevision: 1
+ *
+ * @see {@link MatterCoreSpecificationV1_0} § 9.8
+ */
+export const FixedLabelCluster = Cluster({
+    /** Is a base cluster, so no id */
+    id: 0x40,
+    name: "Fixed Label",
+
+    /** @see {@link MatterCoreSpecificationV1_0} § 9.8.4 */
+    attributes: {
+        /** List of fixed labels. */
+        labelList: Attribute(0, ArrayT(LabelT), { default: [] }), /* non-volatile */
     },
 });

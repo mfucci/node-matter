@@ -12,6 +12,7 @@ import {
     EnumT,
     Field,
     ObjectT,
+    Template
 } from "../../codec/TlvObjectCodec";
 import {
     AccessLevel,
@@ -106,6 +107,14 @@ const AccessControlExtensionEntryT = ObjectT({
     data: Field(1, ByteStringT({ maxLength: 128 })),
 });
 
+const AccessChangeEvent = <T>(entryTemplate: Template<T>) => ({
+    /** The Node ID of the Administrator that made the change, if the change occurred via a CASE session. */
+    adminNodeID: Field(0, NodeIdT), /* nullable: true */
+    /** The Passcode ID of the Administrator that made the change, if the change occurred via a PASE session. */
+    adminPasscodeID: Field(1, Bound(UInt16T)), /* nullable: true */
+    /** The type of change as appropriate. */
+    changeType: Field(2, EnumT<ChangeTypeEnum>()),
+});
 
 /**
  * The Access Control Cluster exposes a data model view of a Node’s Access Control List (ACL),
@@ -132,11 +141,11 @@ export const AccessControlCluster = Cluster({
         /** MAY be used by Administrators to store arbitrary data related to fabric’s Access Control Entries. */
         extension: OptionalWritableAttribute(1, ArrayT(AccessControlExtensionEntryT), { default: [], writeAcl: AccessLevel.Administer, readAcl: AccessLevel.Administer }),
         /** Provide the minimum number of Subjects per entry that are supported by this server. */
-        subjectsPerAccessControlEntry: Attribute(2, Bound(UInt16T,{ min: 4, max: 0xFFFF }), { default: 4 }),
+        subjectsPerAccessControlEntry: Attribute(2, Bound(UInt16T, { min: 4 }), { default: 4 }),
         /** Provides the minimum number of Targets per entry that are supported by this server. */
-        targetsPerAccessControlEntry: Attribute(3, Bound(UInt16T,{ min: 3, max: 0xFFFF }), { default: 3 }),
+        targetsPerAccessControlEntry: Attribute(3, Bound(UInt16T, { min: 3 }), { default: 3 }),
         /** Provides the minimum number of ACL Entries per fabric that are supported by this server. */
-        accessControlEntriesPerFabric: Attribute(4, Bound(UInt16T,{ min: 3, max: 0xFFFF }), { default: 3 }),
+        accessControlEntriesPerFabric: Attribute(4, Bound(UInt16T, { min: 3 }), { default: 3 }),
     },
 
     /** @see {@link MatterCoreSpecificationV1_0} § 9.10.7 */
@@ -147,31 +156,20 @@ export const AccessControlCluster = Cluster({
          * @see {@link MatterCoreSpecificationV1_0} § 9.10.7.1
          */
         accessControlEntryChanged: Event(0, EventPriority.Info, {
-            /** The Node ID of the Administrator that made the change, if the change occurred via a CASE session. */
-            adminNodeID: Field(0, NodeIdT), /* nullable: true */
-            /** The Passcode ID of the Administrator that made the change, if the change occurred via a PASE session. */
-            adminPasscodeID: Field(1, Bound(UInt16T,{ min: 0, max: 0xFFFF })), /* nullable: true */
-            /** The type of change as appropriate. */
-            changeType: Field(2, EnumT<ChangeTypeEnum>()),
+            ... AccessChangeEvent,
             /** The latest value of the changed entry. */
             latestValue: Field(3, AccessControlEntryT), /* nullable: true */
-            /* readAcl: AccessLevel.Administer */
-        }),
+        }), /* readAcl: AccessLevel.Administer */
+
         /**
          * The cluster SHALL send AccessControlExtensionChanged events whenever its extension attribute data is changed
          * by an Administrator.
          * @see {@link MatterCoreSpecificationV1_0} § 9.10.7.2
          */
         accessControlExtensionChanged: Event(1, EventPriority.Info, {
-            /** The Node ID of the Administrator that made the change, if the change occurred via a CASE session. */
-            adminNodeID: Field(0, NodeIdT), /* nullable: true */
-            /** The Passcode ID of the Administrator that made the change, if the change occurred via a PASE session. */
-            adminPasscodeID: Field(1, Bound(UInt16T,{ min: 0, max: 0xFFFF })), /* nullable: true */
-            /** The type of change as appropriate. */
-            changeType: Field(2, EnumT<ChangeTypeEnum>()),
+            ... AccessChangeEvent,
             /** The latest value of the changed entry. */
             latestValue: Field(3, AccessControlExtensionEntryT), /* nullable: true */
-            /* readAcl: AccessLevel.Administer */
-        }),
+        }), /* readAcl: AccessLevel.Administer */
     },
 });

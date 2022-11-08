@@ -51,10 +51,6 @@ export interface Attributes { [key: string]: Attribute<any> }
 export interface Commands { [key: string]: Command<any, any> }
 export interface Events { [key: string]: Event<any> }
 
-export const GlobalAttributesw = {
-    clusterRevision: Attribute(0xFFFD, UInt16T),
-    featureMap: Attribute(0xFFFD, UInt32T),
-};
 export type GlobalAttributes<F extends BitTemplates> = {
     clusterRevision: Attribute<number>,
     featureMap: Attribute<F>,
@@ -76,7 +72,7 @@ export const Cluster = <F extends BitTemplates, A extends Attributes, C extends 
     features = <F>{},
     attributes = <A>{},
     commands = <C>{},
-    events = <E>{}
+    events = <E>{},
 }: {
     id: number,
     name: string,
@@ -84,7 +80,7 @@ export const Cluster = <F extends BitTemplates, A extends Attributes, C extends 
     features?: F,
     attributes?: A,
     commands?: C,
-    events?: E
+    events?: E,
 } ):Cluster<F, Merge<A, GlobalAttributes<F>>, C, E> => ({
     id,
     name,
@@ -96,5 +92,5 @@ export const Cluster = <F extends BitTemplates, A extends Attributes, C extends 
         clusterRevision: Attribute(0xFFFD, UInt16T),
         featureMap: Attribute(0xFFFD, BitMapT(features)),
     } as unknown as Merge<A, GlobalAttributes<F>>,
-    events
+    events,
 });

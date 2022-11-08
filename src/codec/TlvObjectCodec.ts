@@ -96,7 +96,7 @@ export const UInt32T: Template<number> = { tlvType: TlvType.UnsignedInt, validat
 export const UInt64T: Template<bigint> = { tlvType: TlvType.UnsignedInt, validator: intValidator({ min: 0, max: BigInt("18446744073709551616") }), postDecoding: (value: number | bigint) => BigInt(value) };
 export const Bound = <T extends number | bigint>(template: Template<T>, {min, max}: IntConstraints = {}):Template<T> => ({ ...template, validator: (value: T, name: string) => {intValidator({min, max})(value, name); template.validator?.(value, name)}});
 export const AnyT:Template<any> = { };
-export const ArrayT = <T,>(itemTemplate: Template<T>, constraints?: ArrayConstraints) => ({ tlvType: TlvType.Array, itemTemplate, validator: constraints ? arrayValidator(constraints) : (() => {}) } as Template<T[]>);
+export const ArrayT = <T,>(itemTemplate: Template<T>, constraints: ArrayConstraints = { maxLength: 65535 }) => ({ tlvType: TlvType.Array, itemTemplate, validator: constraints ? arrayValidator(constraints) : (() => {}) } as Template<T[]>);
 export const ObjectT = <F extends FieldTemplates>(fieldTemplates: F, tlvType: TlvType = TlvType.Structure) => ({ tlvType, fieldTemplates } as Template<TypeFromFieldTemplates<F>>);
 export const EnumT = <T,>() => ({ tlvType: TlvType.UnsignedInt } as Template<T>);
 export const Typed = <T,>(template: Template<any>) => template as Template<T>;

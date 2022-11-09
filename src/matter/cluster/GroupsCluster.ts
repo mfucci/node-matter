@@ -50,7 +50,7 @@ const GetGroupMembershipRequestT = ObjectT({
 const GetGroupMembershipResponseT = ObjectT({
     /** contain the remaining capacity of the Group Table of the node. */
     capacity: Field(0, UInt8T), /* nullable: true */
-    groupList: Field(1, ArrayT(GroupIdT)),
+    groupList: Field(1, ArrayT(GroupIdT)), /* groupId min: 1 */
 });
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.3.7.4 */

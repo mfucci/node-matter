@@ -25,13 +25,6 @@ import { NodeIdT } from "../common/NodeId";
 import { AttributeIdT } from "../common/AttributeId";
 import { MatterApplicationClusterSpecificationV1_0 } from "../../Specifications";
 
-/* TODO
-<bitmap name="ScenesCopyMode" type="BITMAP8">
-    <cluster code="0x0005"/>
-    <field name="CopyAllScenes" mask="0x01"/>
-  </bitmap>
- */
-
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.6.1 */
 const AttributeValuePairT = ObjectT({
     /**
@@ -104,10 +97,15 @@ const GetSceneMembershipRequestT = ObjectT({
     groupId: Field(0, GroupIdT),
 });
 
+/** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.11.1 */
+const ScenesCopyModeT = BitMapT({
+    copyAllScenes: Bit(0),
+});
+
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.11 */
 const CopySceneRequestT = ObjectT({
     /** Contains information of how the scene copy is to proceed. Bitmap: see 1.4.9.11.1 */
-    mode: Field(0, UInt8T), /* type BitMap!! SceneCopyMode */
+    mode: Field(0, ScenesCopyModeT),
     /** Specifies the identifier of the group from which the scene is to be copied. */
     groupIdFrom: Field(1, GroupIdT),
     /** Specifies the identifier of the scene from which the scene is to be copied. */
@@ -178,7 +176,7 @@ const CopySceneResponseT = ObjectT({
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.7.5 */
 const nameSupportBitmapT = BitMapT({
     sceneNames: Bit(7),
-})
+});
 
 /*
   TODO
@@ -236,59 +234,59 @@ export const ScenesCluster = Cluster({
     /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9 */
     commands: {
         /**
-         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.2
          * Add a scene to the scene table.
          * Extension field sets are supported, and are inputed as
          * '{"ClusterID": VALUE, "AttributeValueList":[{"AttributeId": VALUE, "AttributeValue": VALUE}]}'
+         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.2
          */
         addScene: Command(0, AddSceneRequestT, 0, AddSceneResponseT),
         /**
-         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.3
          * Retrieves the requested scene entry from its Scene table.
+         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.3
          */
         viewScene: Command(1, ViewSceneRequestT, 1, ViewSceneResponseT),
         /**
-         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.4
          * Removes the requested scene entry, corresponding to the value of the GroupID field, from its Scene Table
+         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.4
          */
         removeScene: Command(2, RemoveSceneRequestT, 2, RemoveSceneResponseT),
         /**
-         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.5
          * Remove all scenes, corresponding to the value of the GroupID field, from its Scene Table
+         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.5
          */
         removeAllScenes: Command(3, RemoveAllScenesRequestT, 3, RemoveAllScenesResponseT),
         /**
-         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.6
          * Adds the scene entry into its Scene Table along with all extension field sets corresponding to the current
          * state of other clusters on the same endpoint
+         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.6
          */
         storeScenes: Command(4, StoreSceneRequestT, 4, StoreSceneResponseT),
         /**
-         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.7
          * Set the attributes and corresponding state for each other cluster implemented on the endpoint accordingly to
          * the requested scene entry in the Scene Table
+         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.7
          */
         recallScene: Command(5, RecallSceneRequestT, 5, NoResponseT),
         /**
-         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.8
          * Get an unused scene identifier when no commissioning tool is in the network, or for a commissioning tool to
          * get the used scene identifiers within a certain group
+         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.8
          */
         getSceneMembership: Command(6, GetSceneMembershipRequestT, 6, GetSceneMembershipResponseT),
         /**
-         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.9
          * Allows a scene to be added using a finer scene transition time than the AddScene command.
+         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.9
          */
         enhancedAddScene: OptionalCommand(0x40, AddSceneRequestT, 0x40, AddSceneResponseT),
         /**
-         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.10
          * Allows a scene to be retrieved using a finer scene transition time than the ViewScene command
+         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.10
          */
         enhancedViewScene: OptionalCommand(0x41, ViewSceneRequestT, 0x41, ViewSceneResponseT),
         /**
-         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.11
          * Allows a client to efficiently copy scenes from one group/scene identifier pair to another group/scene
          * identifier pair.
+         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.11
          */
         copyScene: OptionalCommand(0x42, CopySceneRequestT, 0x42, CopySceneResponseT),
     },

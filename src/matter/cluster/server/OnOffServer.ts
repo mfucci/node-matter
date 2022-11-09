@@ -25,10 +25,10 @@ export const OnOffClusterHandler: () => ClusterServerHandlers<typeof OnOffCluste
     on: async ({ attributes: { onOff } }) => {
         onOff.set(true);
     },
-    off: async ({ attributes: { onOff} }) => {
+    off: async ({ attributes: { onOff } }) => {
         onOff.set(false);
     },
-    toggle: async ({ attributes: { onOff} }) => {
+    toggle: async ({ attributes: { onOff } }) => {
         if (onOff.get()) {
             onOff.set(false);
         } else {

@@ -30,7 +30,6 @@ const LabelT = ObjectT({
  * @see {@link MatterCoreSpecificationV1_0} § 9.9
  */
 export const UserLabelCluster = Cluster({
-    /** Is a base cluster, so no id */
     id: 0x41,
     name: "User Label",
 
@@ -50,7 +49,6 @@ export const UserLabelCluster = Cluster({
  * @see {@link MatterCoreSpecificationV1_0} § 9.8
  */
 export const FixedLabelCluster = Cluster({
-    /** Is a base cluster, so no id */
     id: 0x40,
     name: "Fixed Label",
 

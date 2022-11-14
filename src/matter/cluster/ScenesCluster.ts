@@ -15,7 +15,7 @@ import {
     UInt16T,
     UInt32T,
     Bound,
-    EnumT, BitMapT, Bit
+    EnumT, BitMapT, Bit, AnyT
 } from "../../codec/TlvObjectCodec";
 import { Attribute, OptionalAttribute, Cluster, Command, OptionalCommand, NoResponseT } from "./Cluster";
 import { StatusCode } from "../interaction/InteractionMessages";
@@ -33,10 +33,10 @@ const AttributeValuePairT = ObjectT({
      * in the cluster specification. Otherwise the data type of AttributeValue SHALL be the data type of the
      * attribute indicated by AttributeID.
      */
-    attributeId: OptionalField(0, AttributeIdT),
+    attributeId: Field(0, AttributeIdT),
 
     /** This is the attribute value as part of an extension field set. */
-    attributeValue: Field(1, ArrayT(UInt32T)), /* TODO: type wise would be "ArrayT(unknown)", but ... :-) */
+    attributeValue: Field(1, ArrayT(AnyT)),
 });
 
 /**

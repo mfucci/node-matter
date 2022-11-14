@@ -62,7 +62,7 @@ describe("InteractionProtocol", () => {
         it("replies with attribute values", () => {
             const interactionProtocol = new InteractionServer()
                 .addEndpoint(0, DEVICE.ROOT, [
-                    new ClusterServer(BasicInformationCluster, {
+                    new ClusterServer(BasicInformationCluster, {}, {
                         dataModelRevision: 1,
                         vendorName: "vendor",
                         vendorId: VendorId(1),

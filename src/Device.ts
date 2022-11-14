@@ -62,7 +62,9 @@ class Device {
         const discriminator = 3840;
 
         // Barebone implementation of the On/Off cluster
-        const onOffClusterServer = new ClusterServer(OnOffCluster,
+        const onOffClusterServer = new ClusterServer(
+            OnOffCluster,
+            { lightingLevelControl: false },
             { on: false }, // Off by default
             {
                 on: async ({attributes: {on}}) => on.set(true),
@@ -84,7 +86,7 @@ class Device {
                 ))
             .addProtocolHandler(new InteractionServer()
                .addEndpoint(0x00, DEVICE.ROOT, [
-                   new ClusterServer(BasicInformationCluster, {
+                   new ClusterServer(BasicInformationCluster, {}, {
                        dataModelRevision: 1,
                        vendorName,
                        vendorId,
@@ -102,7 +104,7 @@ class Device {
                            subscriptionsPerFabric: 3,
                        }
                    }, {}),
-                   new ClusterServer(GeneralCommissioningCluster, {
+                   new ClusterServer(GeneralCommissioningCluster, {}, {
                        breadcrumb: BigInt(0),
                        commissioningInfo: {
                            failSafeExpiryLengthSeconds: 60 /* 1min */,
@@ -112,7 +114,7 @@ class Device {
                        locationCapability: RegulatoryLocationType.IndoorOutdoor,
                        supportsConcurrentConnections: true,
                    }, GeneralCommissioningClusterHandler),
-                   new ClusterServer(OperationalCredentialsCluster, {
+                   new ClusterServer(OperationalCredentialsCluster, {}, {
                            nocs: [],
                            fabrics: [],
                            supportedFabrics: 254,

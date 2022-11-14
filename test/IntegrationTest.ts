@@ -32,6 +32,7 @@ import { Level, Logger } from "../src/log/Logger";
 import { getPromiseResolver } from "../src/util/Promises";
 import { VendorId } from "../src/matter/common/VendorId";
 import { NodeId } from "../src/matter/common/NodeId";
+import { OnOffClusterHandler } from "../src/matter/cluster/server/OnOffServer";
 
 const SERVER_IP = "192.168.200.1";
 const SERVER_MAC = "00:B0:D0:63:C2:26";
@@ -81,12 +82,8 @@ describe("Integration", () => {
         );
 
         Network.get = () => serverNetwork;
-        onOffServer = new ClusterServer(OnOffCluster, { on: false }, 
-            {
-                on: async ({attributes: {on}}) => on.set(true),
-                off: async ({attributes: {on}}) => on.set(false),
-                toggle: async ({attributes: {on}}) => on.set(!on.get()),
-            }
+        onOffServer = new ClusterServer(OnOffCluster, { onOff: false },
+            OnOffClusterHandler()
         );
         server = new MatterDevice(deviceName, deviceType, vendorId, productId, discriminator)
             .addNetInterface(await UdpInterface.create(matterPort, SERVER_IP))
@@ -187,14 +184,14 @@ describe("Integration", () => {
             const onOffClient = ClusterClient(interactionClient, 1, OnOffCluster);
             const startTime = Time.nowMs();
             let callback = (value: boolean, version: number) => {};
-            await onOffClient.subscribeOn((value, version) => callback(value, version), 0, 5);
+            await onOffClient.subscribeOnOff((value, version) => callback(value, version), 0, 5);
             await fakeTime.advanceTime(0);
 
             const { promise, resolver } = await getPromiseResolver<{value: boolean, version: number, time: number}>();
             callback = (value: boolean, version: number) => resolver({ value, version, time: Time.nowMs() });
 
             await fakeTime.advanceTime(2 * 1000);
-            onOffServer.attributes.on.set(true);
+            onOffServer.attributes.onOff.set(true);
             const lastReport = await promise;
 
             assert.deepEqual(lastReport, { value: true, version: 1, time: startTime + 2 * 1000});

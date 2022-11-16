@@ -51,8 +51,7 @@ export const ExtensionFieldSetT = ObjectT({
     attributeValueList: Field(1, ArrayT(AttributeValuePairT)),
 });
 
-/** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.2 */
-/** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.9 */
+/** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.2 and 1.4.9.9 */
 const AddSceneRequestT = ObjectT({
     groupId: Field(0, GroupIdT),
     sceneId: Field(1, UInt8T),

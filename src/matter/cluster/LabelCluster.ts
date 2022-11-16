@@ -25,13 +25,12 @@ const LabelT = ObjectT({
  * This cluster provides a feature to tag an endpoint with zero or more labels.
  * Derived from LabelCluster ({@link MatterCoreSpecificationV1_0} § 9.7)
  *
- * clusterRevision: 1
- *
  * @see {@link MatterCoreSpecificationV1_0} § 9.9
  */
 export const UserLabelCluster = Cluster({
     id: 0x41,
     name: "User Label",
+    revision: 1,
 
     /** @see {@link MatterCoreSpecificationV1_0} § 9.9.4 */
     attributes: {
@@ -44,13 +43,12 @@ export const UserLabelCluster = Cluster({
  * This cluster provides a feature for the device to tag an endpoint with zero or more read only labels.
  * Derived from LabelCluster ({@link MatterCoreSpecificationV1_0} § 9.7)
  *
- * clusterRevision: 1
- *
  * @see {@link MatterCoreSpecificationV1_0} § 9.8
  */
 export const FixedLabelCluster = Cluster({
     id: 0x40,
     name: "Fixed Label",
+    revision: 1,
 
     /** @see {@link MatterCoreSpecificationV1_0} § 9.8.4 */
     attributes: {

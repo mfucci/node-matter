@@ -13,7 +13,6 @@ import {
     StringT,
     UInt8T,
     UInt16T,
-    UInt32T,
     Bound,
     EnumT, BitMapT, Bit, AnyT
 } from "../../codec/TlvObjectCodec";
@@ -174,36 +173,21 @@ const nameSupportBitmapT = BitMapT({
     sceneNames: Bit(7),
 });
 
-/*
-  TODO
-  * Feature map:
-    * Bit 0: Scene Names - The ability to store a name for a scene.
-  * Dependencies:
-    * Any endpoint that implements the Scenes server cluster SHALL also implement the Groups server cluster.
-    * Note that the RemoveGroup command and the RemoveAllGroups command of the Groups cluster also remove scenes.
- */
-
-/*
-<bitmap name="SceneFeatures" type="BITMAP32">
-<cluster code="0x0006" />
-<field name="SceneNames" mask="0x01" />
-    </bitmap>
-*/
-
 /**
- * From [Matter Application Cluster Specification R1.0], section 1.4
  * The Scenes cluster provides attributes and commands for setting up and recalling scenes.
  * Each scene corresponds to a set of stored values of specified attributes for one or more
  * clusters on the same end point as the Scenes cluster.
- *
- * clusterRevision: 4
- * featureMap: 1 - Bit 0 (Scene Names) is set
  *
  * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4
  */
 export const ScenesCluster = Cluster({
     id: 0x05,
     name: "Scenes",
+    revision: 4,
+    features: {
+        /** The ability to store a name for a scene. */
+        sceneNames: Bit(0), 
+    },
 
     /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.7 */
     attributes: {

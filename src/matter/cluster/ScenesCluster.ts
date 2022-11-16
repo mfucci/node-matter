@@ -60,8 +60,7 @@ const AddSceneRequestT = ObjectT({
     extensionFieldSets: Field(4, ArrayT(ExtensionFieldSetT)),
 });
 
-/** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.3 */
-/** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.10 */
+/** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.3 and § 1.4.9.10 */
 const ViewSceneRequestT = ObjectT({
     groupId: Field(0, GroupIdT),
     sceneId: Field(1, UInt8T),

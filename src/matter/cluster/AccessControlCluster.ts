@@ -5,16 +5,6 @@
  */
 
 import {
-    ArrayT,
-    Bound,
-    UInt16T,
-    ByteStringT,
-    EnumT,
-    Field,
-    ObjectT,
-    Template
-} from "../../codec/TlvObjectCodec";
-import {
     AccessLevel,
     Cluster,
     WritableAttribute,
@@ -28,6 +18,7 @@ import { EndpointNumberT } from "../common/EndpointNumber";
 import { DeviceTypeIdT } from "../common/DeviceTypeId";
 import { NodeIdT } from "../common/NodeId";
 import { SubjectIdT } from "../common/SubjectId";
+import { tlv } from "@project-chip/matter.js";
 
 /**
  * List of privileges that can be granted to a subject.
@@ -37,12 +28,16 @@ import { SubjectIdT } from "../common/SubjectId";
 export const enum Privilege {
     /** Can read and observe all (except Access Control Cluster and as seen by a non-Proxy). */
     View = 1,
+
     /** An read and observe all (as seen by a Proxy). */
     ProxyView = 2,
+
     /** View privileges, and can perform the primary function of this Node (except Access Control Cluster). */
     Operate = 3,
+
     /** Operate privileges, and can modify persistent configuration of this Node (except Access Control Cluster). */
     Manage = 4,
+
     /** Manage privileges, and can observe and modify the Access Control Cluster. */
     Administer = 5,
 }
@@ -55,8 +50,10 @@ export const enum Privilege {
 export const enum AuthMode {
     /** Passcode authenticated session. */
     PASE = 1,
+
     /** Certificate authenticated session. */
     CASE = 2,
+
     /** Group authenticated session. */
     Group = 3,
 }
@@ -65,12 +62,15 @@ export const enum AuthMode {
 export const enum ChangeTypeEnum {
     /** Entry or extension was changed. */
     Changed = 0,
+
     /** Entry or extension was added. */
     Added = 1,
+
     /** Entry or extension was removed. */
     Removed = 2,
 }
 
+const { Object, Field, Nullable } = tlv;
 /**
  *
  * Defines the clusters on this Node to which this Access Control Entry grants access.
@@ -80,40 +80,50 @@ export const enum ChangeTypeEnum {
  *
  * @see {@link MatterCoreSpecificationV1_0} § 9.10.5.3
  */
-const TargetT = ObjectT({
+const TlvTarget = Object({
     /** Cluster to grant access on. */
-    cluster: Field(0, ClusterIdT), /* nullable: true */
+    cluster: Field(0, Nullable(ClusterIdT)),
+
     /** Endpoint to grant access on. */
-    endpoint: Field(1, EndpointNumberT), /* nullable: true */
+    endpoint: Field(1, Nullable(EndpointNumberT)),
+
     /** Device type to grant access on. */
-    deviceType: Field(1, DeviceTypeIdT), /* nullable: true */
+    deviceType: Field(1, Nullable(DeviceTypeIdT)),
 });
 
 /** @see {@link MatterCoreSpecificationV1_0} § 9.10.5.3 */
-const AccessControlEntryT = ObjectT({
+const TlvAccessControlEntry = tlv.Object({
     /** Specifies the level of privilege granted by this Access Control Entry. */
-    privilege: Field(1, EnumT<Privilege>()),
+    privilege: tlv.Field(1, tlv.Enum<Privilege>()),
+
     /** Specifies the authentication mode required by this Access Control Entry. */
-    authMode: Field(2, EnumT<AuthMode>()),
+    authMode: tlv.Field(2, tlv.Enum<AuthMode>()),
+
     /** Specifies a list of Subject IDs, to which this Access Control Entry grants access. */
-    subjects: Field(3, ArrayT(SubjectIdT)), /* nullable: true, maxArrayLength: subjectsPerAccessControlEntry */
+    subjects: tlv.Field(3, tlv.Nullable(tlv.Array(SubjectIdT))), /* maxArrayLength: subjectsPerAccessControlEntry */
+
     /** Specifies a list of TargetStruct, which define the clusters on this Node to which this Access Control Entry grants access. */
-    targets: Field(4, ArrayT(TargetT)), /* nullable: true, maxArrayLength: targetsPerAccessControlEntry */
+    targets: tlv.Field(4, tlv.Nullable(tlv.Array(TlvTarget))), /* maxArrayLength: targetsPerAccessControlEntry */
 });
 
 /** @see {@link MatterCoreSpecificationV1_0} § 9.10.5.4 */
-const AccessControlExtensionEntryT = ObjectT({
+const TlvAccessControlExtensionEntry = tlv.Object({
     /** Used by manufacturers to store arbitrary TLV-encoded data related to a fabric’s Access Control Entries. */
-    data: Field(1, ByteStringT({ maxLength: 128 })),
+    data: tlv.Field(1, tlv.ByteString({ maxLength: 128 })),
 });
 
-const AccessChangeEvent = <T>(entryTemplate: Template<T>) => ({
+const AccessChangeEvent = <T>(entrySchema: tlv.TlvSchema<T>) => ({
     /** The Node ID of the Administrator that made the change, if the change occurred via a CASE session. */
-    adminNodeID: Field(0, NodeIdT), /* nullable: true */
+    adminNodeID: tlv.Field(0, tlv.Nullable(NodeIdT)),
+
     /** The Passcode ID of the Administrator that made the change, if the change occurred via a PASE session. */
-    adminPasscodeID: Field(1, Bound(UInt16T)), /* nullable: true */
+    adminPasscodeID: tlv.Field(1, tlv.Nullable(tlv.UInt16)),
+
     /** The type of change as appropriate. */
-    changeType: Field(2, EnumT<ChangeTypeEnum>()),
+    changeType: tlv.Field(2, tlv.Enum<ChangeTypeEnum>()),
+
+    /** The latest value of the changed entry. */
+    latestValue: tlv.Field(3, tlv.Nullable(entrySchema)),
 });
 
 /**
@@ -128,7 +138,6 @@ const AccessChangeEvent = <T>(entryTemplate: Template<T>) => ({
  * @see {@link MatterCoreSpecificationV1_0} § 9.10
  */
 export const AccessControlCluster = Cluster({
-    /** Is a base cluster, so no id */
     id: 0x1f,
     name: "Access Control",
     revision: 1,
@@ -136,15 +145,19 @@ export const AccessControlCluster = Cluster({
     /** @see {@link MatterCoreSpecificationV1_0} § 9.10.5 */
     attributes: {
         /** Codifies a single grant of privilege on this Node. */
-        acl: WritableAttribute(0, ArrayT(AccessControlEntryT), { default: [], writeAcl: AccessLevel.Administer, readAcl: AccessLevel.Administer }),
+        acl: WritableAttribute(0, tlv.Array(TlvAccessControlEntry), { default: [], writeAcl: AccessLevel.Administer, readAcl: AccessLevel.Administer }),
+
         /** MAY be used by Administrators to store arbitrary data related to fabric’s Access Control Entries. */
-        extension: OptionalWritableAttribute(1, ArrayT(AccessControlExtensionEntryT), { default: [], writeAcl: AccessLevel.Administer, readAcl: AccessLevel.Administer }),
+        extension: OptionalWritableAttribute(1, tlv.Array(TlvAccessControlExtensionEntry), { default: [], writeAcl: AccessLevel.Administer, readAcl: AccessLevel.Administer }),
+
         /** Provide the minimum number of Subjects per entry that are supported by this server. */
-        subjectsPerAccessControlEntry: Attribute(2, Bound(UInt16T, { min: 4 }), { default: 4 }),
+        subjectsPerAccessControlEntry: Attribute(2, tlv.UInt({ min: 4 , max: tlv.UInt16.max }), { default: 4 }),
+
         /** Provides the minimum number of Targets per entry that are supported by this server. */
-        targetsPerAccessControlEntry: Attribute(3, Bound(UInt16T, { min: 3 }), { default: 3 }),
+        targetsPerAccessControlEntry: Attribute(3, tlv.UInt({ min: 3 , max: tlv.UInt16.max }), { default: 3 }),
+
         /** Provides the minimum number of ACL Entries per fabric that are supported by this server. */
-        accessControlEntriesPerFabric: Attribute(4, Bound(UInt16T, { min: 3 }), { default: 3 }),
+        accessControlEntriesPerFabric: Attribute(4, tlv.UInt({ min: 3 , max: tlv.UInt16.max }), { default: 3 }),
     },
 
     /** @see {@link MatterCoreSpecificationV1_0} § 9.10.7 */
@@ -152,23 +165,13 @@ export const AccessControlCluster = Cluster({
         /**
          * The cluster SHALL send AccessControlEntryChanged events whenever its ACL attribute data is changed by an
          * Administrator.
-         * @see {@link MatterCoreSpecificationV1_0} § 9.10.7.1
          */
-        accessControlEntryChanged: Event(0, EventPriority.Info, {
-            ... AccessChangeEvent,
-            /** The latest value of the changed entry. */
-            latestValue: Field(3, AccessControlEntryT), /* nullable: true */
-        }), /* readAcl: AccessLevel.Administer */
+        accessControlEntryChanged: Event(0, EventPriority.Info, AccessChangeEvent(TlvAccessControlEntry)), /* readAcl: AccessLevel.Administer */
 
         /**
          * The cluster SHALL send AccessControlExtensionChanged events whenever its extension attribute data is changed
          * by an Administrator.
-         * @see {@link MatterCoreSpecificationV1_0} § 9.10.7.2
          */
-        accessControlExtensionChanged: Event(1, EventPriority.Info, {
-            ... AccessChangeEvent,
-            /** The latest value of the changed entry. */
-            latestValue: Field(3, AccessControlExtensionEntryT), /* nullable: true */
-        }), /* readAcl: AccessLevel.Administer */
+        accessControlExtensionChanged: Event(1, EventPriority.Info, AccessChangeEvent(TlvAccessControlExtensionEntry)), /* readAcl: AccessLevel.Administer */
     },
 });

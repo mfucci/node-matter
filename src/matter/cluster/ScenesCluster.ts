@@ -114,8 +114,7 @@ const CopySceneRequestT = ObjectT({
     sceneIdTo: Field(4, UInt8T),
 });
 
-/** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.12 */
-/** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.18 */
+/** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.12 and § 1.4.9.18 */
 const AddSceneResponseT = ObjectT({
     status: Field(0, EnumT<StatusCode>()),
     groupId: Field(1, GroupIdT),

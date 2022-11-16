@@ -31,6 +31,7 @@ import { TimeNode } from "./time/TimeNode";
 import packageJson from "../package.json";
 import { Logger } from "./log/Logger";
 import { VendorId } from "./matter/common/VendorId";
+import { OnOffClusterHandler } from "./matter/cluster/server/OnOffServer";
 
 // From Chip-Test-DAC-FFF1-8000-0007-Key.der
 const DevicePrivateKey = Buffer.from("727F1005CBA47ED7822A9D930943621617CFD3B79D9AF528B801ECF9F1992204", "hex");
@@ -65,16 +66,12 @@ class Device {
         const onOffClusterServer = new ClusterServer(
             OnOffCluster,
             { lightingLevelControl: false },
-            { on: false }, // Off by default
-            {
-                on: async ({attributes: {on}}) => on.set(true),
-                off: async ({attributes: {on}}) => on.set(false),
-                toggle: async ({attributes: {on}}) => on.set(!on.get()),
-            }
+            { onOff: false }, // Off by default
+            OnOffClusterHandler()
         );
 
         // We listen to the attribute update to trigger an action. This could also have been done in the method invokations in the server.
-        onOffClusterServer.attributes.on.addListener(on => commandExecutor(on ? "on" : "off")?.());
+        onOffClusterServer.attributes.onOff.addListener(on => commandExecutor(on ? "on" : "off")?.());
 
         (new MatterDevice(deviceName, deviceType, vendorId, productId, discriminator))
             .addNetInterface(await UdpInterface.create(5540))

@@ -20,7 +20,7 @@ import {
     NoArgumentsT,
     NoResponseT,
 } from "./Cluster";
-//import { MatterApplicationClusterSpecificationV1_0 } from "../../Specifications";
+import { MatterApplicationClusterSpecificationV1_0 } from "../../Specifications";
 
 /**
  * Defined how the devices should behave when it is powered on.

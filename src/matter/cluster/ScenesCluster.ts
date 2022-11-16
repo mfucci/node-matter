@@ -121,8 +121,7 @@ const AddSceneResponseT = ObjectT({
     sceneId: Field(2, UInt8T),
 });
 
-/** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.13 */
-/** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.19 */
+/** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.13 and § 1.4.9.19 */
 const ViewSceneResponseT = ObjectT({
     status: Field(0, EnumT<StatusCode>()),
     groupId: Field(1, GroupIdT),

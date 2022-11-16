@@ -19,13 +19,12 @@ import { MatterCoreSpecificationV1_0 } from "../../Specifications";
  *
  * This cluster is Derived from Basic Information Cluster.
  *
- * clusterRevision: 1
- *
  * @see {@link MatterCoreSpecificationV1_0} § 9.13
  */
 export const BasicInformationCluster = Cluster({
     id: 0x39,
     name: "Bridged Device Basic Information",
+    revision: 1,
 
     /** @see {@link MatterCoreSpecificationV1_0} § 9.13.6 */
     attributes: {

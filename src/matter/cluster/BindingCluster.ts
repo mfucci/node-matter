@@ -37,13 +37,12 @@ const TargetT = ObjectT({
  * remote endpoints. A binding does not require that the relationship exists. It is up to the node
  * application to set up the relationship.
  *
- * clusterRevision: 1
- *
  * @see {@link MatterCoreSpecificationV1_0} § 9.6
  */
 export const BindingCluster = Cluster({
     id: 0x1e,
     name: "Binding",
+    revision: 1,
 
     /** @see {@link MatterCoreSpecificationV1_0} § 9.6.5 */
     attributes: {

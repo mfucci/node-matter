@@ -87,13 +87,12 @@ const SetRegulatoryConfigRequestT = ObjectT({
 /**
  * This cluster is used to manage global aspects of the Commissioning flow.
  *
- * clusterRevision: 1
- *
  * @see {@link MatterCoreSpecificationV1_0} § 11.9
  */
 export const GeneralCommissioningCluster = Cluster({
     id: 0x30,
     name: "General Commissioning",
+    revision: 1,
 
     /** @see {@link MatterCoreSpecificationV1_0} § 11.9.6 */
     attributes: {

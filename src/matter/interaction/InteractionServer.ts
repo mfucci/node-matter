@@ -10,7 +10,7 @@ import { MessageExchange } from "../common/MessageExchange";
 import { InteractionServerMessenger, InvokeRequest, InvokeResponse, ReadRequest, DataReport, SubscribeRequest, SubscribeResponse } from "./InteractionMessenger";
 import { CommandServer, ResultCode } from "../cluster/server/CommandServer";
 import { DescriptorCluster } from "../cluster/DescriptorCluster";
-import { TlvObjectCodec } from "../../codec/TlvObjectCodec";
+import { TlvObjectCodec, TypeFromBitTemplates } from "../../codec/TlvObjectCodec";
 import { Element } from "../../codec/TlvCodec";
 import { AttributeServer } from "../cluster/server/AttributeServer";
 import { Cluster } from "../cluster/Cluster";
@@ -23,16 +23,21 @@ import { ClusterId } from "../common/ClusterId";
 
 export const INTERACTION_PROTOCOL_ID = 0x0001;
 
-export class ClusterServer<ClusterT extends Cluster<any, any, any>> {
+export class ClusterServer<ClusterT extends Cluster<any, any, any, any>> {
     readonly id: number;
     readonly attributes = <AttributeServers<ClusterT["attributes"]>>{};
     readonly commands = new Array<CommandServer<any, any>>();
 
-    constructor(clusterDef: ClusterT, attributesInitialValues: AttributeInitialValues<ClusterT["attributes"]>, handlers: ClusterServerHandlers<ClusterT>) {
+    constructor(clusterDef: ClusterT, features: TypeFromBitTemplates<ClusterT["features"]>, attributesInitialValues: AttributeInitialValues<ClusterT["attributes"]>, handlers: ClusterServerHandlers<ClusterT>) {
         const { id, attributes: attributeDefs, commands: commandDefs } = clusterDef;
         this.id = id;
 
         // Create attributes
+        attributesInitialValues = {
+            ...attributesInitialValues,
+            clusterRevision: clusterDef.revision,
+            featureMap: features,
+        };
         for (const name in attributesInitialValues) {
             const { id, template, validator } = attributeDefs[name];
             (this.attributes as any)[name] = new AttributeServer(id, name, template, validator ?? (() => {}), (attributesInitialValues as any)[name]);
@@ -79,7 +84,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
 
     addEndpoint(endpointId: number, device: {name: string, code: number}, clusters: ClusterServer<any>[]) {
         // Add the descriptor cluster
-        const descriptorCluster = new ClusterServer(DescriptorCluster, {
+        const descriptorCluster = new ClusterServer(DescriptorCluster, {}, {
             deviceTypeList: [{revision: 1, type: DeviceTypeId(device.code)}],
             serverList: [],
             clientList: [],

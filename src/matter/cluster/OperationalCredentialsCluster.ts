@@ -205,13 +205,12 @@ export const RemoveFabricRequestT = ObjectT({
  * This cluster is used to add or remove Operational Credentials on a Commissionee or Node, as well as manage the
  * associated Fabrics.
  *
- * clusterRevision: 1
- *
  * @see {@link MatterCoreSpecificationV1_0} § 11.17
  */
 export const OperationalCredentialsCluster = Cluster({
     id: 0x3e,
     name: "Operational Credentials",
+    revision: 1,
 
     /** @see {@link MatterCoreSpecificationV1_0} § 11.17.6 */
     attributes: {

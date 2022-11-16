@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
+import { Bit,
     BooleanT,
     EnumT,
     Field,
     ObjectT,
     Template,
     UInt8T,
-    Bound, BitMapT, Bit
+    Bound, BitMapT,
 } from "../../codec/TlvObjectCodec";
 import {
     Attribute,
@@ -20,7 +20,7 @@ import {
     NoArgumentsT,
     NoResponseT,
 } from "./Cluster";
-//import { MatterApplicationClusterSpecificationV1_0 } from "../../Specifications";
+import { MatterApplicationClusterSpecificationV1_0 } from "../../Specifications";
 
 /**
  * Defined how the devices should behave when it is powered on.
@@ -86,33 +86,19 @@ const OnWithTimedOffRequestT = ObjectT({
     offWaitTime: Field(2, Bound(UInt8T, { min: 0, max: 254 })), /* nullable: true */
 });
 
-/*
-  TODO
-  * Feature map:
-    * Bit 0: Level Control for Lighting - Behavior that supports lighting applications.
- */
-/*
-Features:
-  <bitmap name="OnOffFeature" type="BITMAP32">
-    <cluster code="0x0006" />
-    <field name="Lighting" mask="0x01" />
-  </bitmap>
-
- */
-
-
 /**
- * From [Matter Application Cluster Specification R1.0], section 1.5
  * Attributes and commands for switching devices between 'On' and 'Off' states.
- *
- * clusterRevision: 4,
- * featureMap: 0, // Bit 0 NOT set because no "Level Control for Lighting" support initially in implementation
  *
  * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.5
  */
 export const OnOffCluster = Cluster({
     id: 0x06,
     name: "On/Off",
+    revision: 4,
+    features: {
+        /** Level Control for Lighting - Behavior that supports lighting applications */
+        lightingLevelControl: Bit(0),
+    },
 
     /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.5.6 */
     attributes: {

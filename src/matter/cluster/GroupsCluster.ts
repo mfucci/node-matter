@@ -87,33 +87,20 @@ const nameSupportBitmapT = BitMapT({
     groupNames: Bit(7)
 });
 
-/*
-  TODO
-  * Feature map:
-    * Bit 0: Group Names - The ability to store a name for a group.
-  * Dependencies:
-    * For correct operation of the AddGroupIfIdentifying command, any endpoint
-      that supports the Groups server cluster SHALL also support the Identify
-      server cluster.
-    * For RemoveGroup: Additionally, if the Scenes cluster is supported on the same endpoint,
-      scenes associated with the indicated group SHALL be removed on that endpoint.
-    * For RemoveAllGroups: Additionally, if the Scenes cluster is supported on the same
-      endpoint, all scenes, except for scenes associated with group ID 0, SHALL be removed
-      on that endpoint.
- */
-
 /**
  * The Groups cluster manages, per endpoint, the content of the node-wide Group
  * Table that is part of the underlying interaction layer.
- *
- * clusterRevision: 4
- * featureMap: 1 - Bit 0 (Group Names) is set
  *
  * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.3
  */
 export const GroupsCluster = Cluster({
     id: 0x04,
     name: "Groups",
+    revision: 4,
+    features: {
+        /** The ability to store a name for a group. */
+        groupNames: Bit(0),
+    },
 
     /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.3.6 */
     attributes: {

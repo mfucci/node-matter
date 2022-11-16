@@ -29,13 +29,12 @@ const DeviceTypeT = ObjectT({
  * This Cluster is also meant to replace the support from the Zigbee Device Object (ZDO) for describing a node,
  * its endpoints and clusters.
  *
- * clusterRevision: 1
- *
  * @see {@link MatterCoreSpecificationV1_0} § 9.5
  */
 export const DescriptorCluster = Cluster({
     id: 0x1d,
     name: "Descriptor",
+    revision: 1,
 
     /** @see {@link MatterCoreSpecificationV1_0} § 9.5.4 */
     attributes: {

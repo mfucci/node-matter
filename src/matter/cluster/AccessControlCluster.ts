@@ -125,14 +125,13 @@ const AccessChangeEvent = <T>(entryTemplate: Template<T>) => ({
  * The Access Control Cluster SHALL be present on the root node endpoint of each Node, and SHALL
  * NOT be present on any other Endpoint of any Node.
  *
- * clusterRevision: 1
- *
  * @see {@link MatterCoreSpecificationV1_0} § 9.10
  */
 export const AccessControlCluster = Cluster({
     /** Is a base cluster, so no id */
     id: 0x1f,
     name: "Access Control",
+    revision: 1,
 
     /** @see {@link MatterCoreSpecificationV1_0} § 9.10.5 */
     attributes: {

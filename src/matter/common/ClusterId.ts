@@ -4,17 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Typed, UInt32T } from "../../codec/TlvObjectCodec";
-import { MatterCoreSpecificationV1_0 } from "../../Specifications";
+import { tlv, spec } from "@project-chip/matter.js";
 
 /**
  * A Cluster Identifier is a 32 bit number and SHALL reference a single cluster specification and
  * SHALL define conformance to that specification.
  *
- * @see {@link MatterCoreSpecificationV1_0} § 7.10
+ * @see {@link spec.MatterCoreSpecificationV1_0} § 7.10
  */
-export type ClusterId = { clusterId: true /* Hack to force strong type checking at compile time */ };
-export const ClusterId = (id: number) => id as unknown as ClusterId;
+export class ClusterId {
+    constructor(
+        readonly id: number
+    ) {}
+}
 
-/** Data model for a Cluster Identifier. */
-export const ClusterIdT = Typed<ClusterId>(UInt32T);
+/** Tlv schema for a cluster Id. */
+export const TlvClusterId = new tlv.Wrapper(
+    tlv.UInt32,
+    (clusterId: ClusterId) => clusterId.id,
+    value => new ClusterId(value),
+);

@@ -4,15 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-    AccessLevel,
-    Cluster,
-    WritableAttribute,
-    Attribute,
-    Event,
-    EventPriority,
-    OptionalWritableAttribute
-} from "./Cluster";
+import { AccessLevel, Cluster, WritableAttribute, Attribute, Event, EventPriority, OptionalWritableAttribute } from "./Cluster";
 import { TlvClusterId } from "../common/ClusterId";
 import { TlvEndpointNumber } from "../common/EndpointNumber";
 import { TlvDeviceTypeId } from "../common/DeviceTypeId";
@@ -108,10 +100,10 @@ const TlvAccessControlEntry = tlv.Object({
 /** @see {@link spec.MatterCoreSpecificationV1_0} § 9.10.5.4 */
 const TlvAccessControlExtensionEntry = tlv.Object({
     /** Used by manufacturers to store arbitrary TLV-encoded data related to a fabric’s Access Control Entries. */
-    data: tlv.Field(1, tlv.ByteString({ maxLength: 128 })),
+    data: tlv.Field(1, tlv.ByteString.bound({ maxLength: 128 })),
 });
 
-const AccessChangeEvent = <T>(entrySchema: tlv.TlvSchema<T>) => ({
+const AccessChangeEvent = <T>(entrySchema: tlv.Schema<T>) => ({
     /** The Node ID of the Administrator that made the change, if the change occurred via a CASE session. */
     adminNodeID: tlv.Field(0, tlv.Nullable(TlvNodeId)),
 

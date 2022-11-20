@@ -18,8 +18,8 @@ export class DeviceTypeId {
 }
 
 /** Tlv schema for a Device type ID. */
-export const TlvDeviceTypeId = new tlv.Wrapper(
+export const TlvDeviceTypeId = new tlv.Wrapper<DeviceTypeId, number>(
     tlv.UInt32,
-    (deviceTypeId: DeviceTypeId) => deviceTypeId.id,
+    deviceTypeId => deviceTypeId.id,
     value => new DeviceTypeId(value),
 );

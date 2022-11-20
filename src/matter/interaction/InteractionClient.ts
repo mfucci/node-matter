@@ -8,7 +8,7 @@ import { Template, TlvObjectCodec } from "../../codec/TlvObjectCodec";
 import { MessageExchange } from "../common/MessageExchange";
 import { MatterController } from "../MatterController";
 import { capitalize } from "../../util/String";
-import { Attribute, AttributeJsType, Attributes, Cluster, Command, Commands, NoResponseT, RequestType, ResponseType } from "../cluster/Cluster";
+import { Attribute, AttributeJsType, Attributes, Cluster, Command, Commands, TlvNoResponse, RequestType, ResponseType } from "../cluster/Cluster";
 import { DataReport, InteractionClientMessenger } from "./InteractionMessenger";
 import { ResultCode } from "../cluster/server/CommandServer";
 import { ClusterClient } from "../cluster/client/ClusterClient";
@@ -32,7 +32,7 @@ export function ClusterClient<CommandT extends Commands, AttributeT extends Attr
 
     // Add command calls
     for (const commandName in commands) {
-        const { requestId, requestTemplate, responseId, responseTemplate, optional } = commands[commandName];
+        const { requestId, requestSchema: requestTemplate, responseId, responseSchema: responseTemplate, optional } = commands[commandName];
         result[commandName] = async <RequestT, ResponseT>(request: RequestT) => interactionClient.invoke<Command<RequestT, ResponseT>>(endpointId, clusterId, request, requestId, requestTemplate, responseId, responseTemplate, optional);
     }
 
@@ -69,7 +69,7 @@ export class InteractionClient {
         this.exchangeManager.addProtocolHandler(new SubscriptionClient(this.subscriptionListeners));
     }
 
-    async get<A extends Attribute<any>>(endpointId: number, clusterId: number, { id, template, optional, default: conformanceValue }: A): Promise<AttributeJsType<A>> {
+    async get<A extends Attribute<any>>(endpointId: number, clusterId: number, { id, schema: template, optional, default: conformanceValue }: A): Promise<AttributeJsType<A>> {
         return this.withMessenger<AttributeJsType<A>>(async messenger => {
             const response = await messenger.sendReadRequest({
                 attributes: [ {endpointId , clusterId, id} ],
@@ -87,14 +87,14 @@ export class InteractionClient {
         });
     }
 
-    async set<T>(endpointId: number, clusterId: number, { id, template, default: conformanceValue }: Attribute<T>, value: T): Promise<void> {
+    async set<T>(endpointId: number, clusterId: number, { id, schema: template, default: conformanceValue }: Attribute<T>, value: T): Promise<void> {
         throw new Error("not implemented");
     }
 
     async subscribe<A extends Attribute<any>>(
         endpointId: number,
         clusterId: number,
-        { id, template, default: conformanceValue }: A,
+        { id, schema: template, default: conformanceValue }: A,
         listener: (value: AttributeJsType<A>, version: number) => void,
         minIntervalFloorSeconds: number,  
         maxIntervalCeilingSeconds: number, 
@@ -131,7 +131,7 @@ export class InteractionClient {
             if (result !== undefined) {
                 const resultCode = result.result.code;
                 if (resultCode !== ResultCode.Success) throw new Error(`Received non-success result: ${resultCode}`);
-                if ((responseTemplate as any) !== NoResponseT) throw new Error("A response was expected for this command");
+                if ((responseTemplate as any) !== TlvNoResponse) throw new Error("A response was expected for this command");
                 return undefined as unknown as ResponseType<C>; // ResponseType is void, force casting the empty result
             } if (response !== undefined) {
                 return TlvObjectCodec.decodeElement(response.response, responseTemplate);

@@ -12,7 +12,7 @@ import { PaseClient } from "./session/secure/PaseClient";
 import { ClusterClient, InteractionClient } from "./interaction/InteractionClient";
 import { BasicInformationCluster } from "./cluster/BasicInformationCluster";
 import { CommissioningError, GeneralCommissioningCluster, RegulatoryLocationType, CommissioningSuccessFailureResponse } from "./cluster/GeneralCommissioningCluster";
-import { CertificateChainType, CertSigningRequestT, OperationalCredentialsCluster } from "./cluster/OperationalCredentialsCluster";
+import { CertificateChainType, TlvCertSigningRequest, OperationalCredentialsCluster } from "./cluster/OperationalCredentialsCluster";
 import { Crypto } from "../crypto/Crypto";
 import { CertificateManager, jsToMatterDate, OperationalCertificateT, RootCertificateT } from "./certificate/CertificateManager";
 import { TlvObjectCodec } from "../codec/TlvObjectCodec";
@@ -91,7 +91,7 @@ export class MatterController {
         // TODO: validate attestationSignature using device public key
         const { elements: csrElements, signature: csrSignature } = await operationalCredentialsClusterClient.requestCertSigning({ certSigningRequestNonce: Crypto.getRandomData(32) });
         // TOTO: validate csrSignature using device public key
-        const { certSigningRequest } = TlvObjectCodec.decode(csrElements, CertSigningRequestT);
+        const { certSigningRequest } = TlvObjectCodec.decode(csrElements, TlvCertSigningRequest);
         const operationalPublicKey = CertificateManager.getPublicKeyFromCsr(certSigningRequest);
 
         await operationalCredentialsClusterClient.addRootCert({ certificate: this.certificateManager.getRootCert() });

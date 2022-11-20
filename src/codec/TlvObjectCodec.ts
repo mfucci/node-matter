@@ -86,13 +86,13 @@ function encodeBitMap<T extends BitTemplates>(bits: T, flags: TypeFromBitTemplat
 // Template definitions
 export const Constraint = <T,>(template: Template<T>, validator: (value: T, name: string) => void): Template<T> => ({...template, validator });
 export const StringT = (constraints: ArrayConstraints = { maxLength: 256 }):Template<string> => ({ tlvType: TlvType.String, validator: arrayValidator(constraints) });
-export const BooleanT:Template<boolean> = { tlvType: TlvType.Boolean };
+export const  tlv.Boolean:Template<boolean> = { tlvType: TlvType.Boolean };
 export const Bit = (position: number) => ({ position });
 export const BitMapT = <T extends BitTemplates>(bits: T): Template<TypeFromBitTemplates<T>> => ({ tlvType: TlvType.UnsignedInt, postDecoding: (bitMap: number) => decodeBitMap(bits, bitMap), preEncoding: (flags: TypeFromBitTemplates<T>) => encodeBitMap(bits, flags)});
 export const ByteStringT = (constraints: ArrayConstraints = { maxLength: 1024 }):Template<Buffer> => ({ tlvType: TlvType.ByteString, validator: arrayValidator(constraints) });
-export const UInt8T: Template<number> = { tlvType: TlvType.UnsignedInt, validator: intValidator({ min: 0, max: 0xFF }) };
-export const UInt16T: Template<number> = { tlvType: TlvType.UnsignedInt, validator: intValidator({ min: 0, max: 0xFFFF }) };
-export const UInt32T: Template<number> = { tlvType: TlvType.UnsignedInt, validator: intValidator({ min: 0, max: 0xFFFFFFFF }) };
+export const tlv.UInt8: Template<number> = { tlvType: TlvType.UnsignedInt, validator: intValidator({ min: 0, max: 0xFF }) };
+export const tlv.UInt16: Template<number> = { tlvType: TlvType.UnsignedInt, validator: intValidator({ min: 0, max: 0xFFFF }) };
+export const tlv.UInt32: Template<number> = { tlvType: TlvType.UnsignedInt, validator: intValidator({ min: 0, max: 0xFFFFFFFF }) };
 export const UInt64T: Template<bigint> = { tlvType: TlvType.UnsignedInt, validator: intValidator({ min: 0, max: BigInt("18446744073709551616") }), postDecoding: (value: number | bigint) => BigInt(value) };
 export const Bound = <T extends number | bigint>(template: Template<T>, {min, max}: IntConstraints = {}):Template<T> => ({ ...template, validator: (value: T, name: string) => {intValidator({min, max})(value, name); template.validator?.(value, name)}});
 export const AnyT:Template<any> = { };
@@ -101,7 +101,7 @@ export const ObjectT = <F extends FieldTemplates>(fieldTemplates: F, tlvType: Tl
 export const EnumT = <T,>() => ({ tlvType: TlvType.UnsignedInt } as Template<T>);
 export const Typed = <T,>(template: Template<any>) => template as Template<T>;
 export const Field = <T,>(id: number, type: Template<T>):Field<T> =>  ({...type, tag: TlvTag.contextual(id), optional: false});
-export const OptionalField = <T,>(id: number, type: Template<T>):OptionalField<T> =>  ({...Field(id, type), optional: true});
+export const OptionalField = <T,>(id: number, type: Template<T>):OptionalField<T> =>  ({...tlv.Field(id, type), optional: true});
 
 export class TlvObjectCodec {
     static decode<T>(bytes: Buffer, template: TaggedTemplate<T>): T {

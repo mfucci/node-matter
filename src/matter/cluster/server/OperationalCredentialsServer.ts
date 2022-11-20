@@ -9,9 +9,9 @@ import { Crypto } from "../../../crypto/Crypto";
 import { MatterDevice } from "../../MatterDevice";
 import { SecureSession } from "../../session/SecureSession";
 import {
-    AttestationT,
+    TlvAttestation,
     CertificateChainType,
-    CertSigningRequestT,
+    TlvCertSigningRequest,
     OperationalCredentialsCluster,
     OperationalCertStatus
 } from "../OperationalCredentialsCluster";
@@ -30,13 +30,13 @@ function signWithDeviceKey(conf: OperationalCredentialsServerConf,session: Secur
 
 export const OperationalCredentialsClusterHandler: (conf: OperationalCredentialsServerConf) => ClusterServerHandlers<typeof OperationalCredentialsCluster> = (conf) => ({
     requestAttestation: async ({ request: {attestationNonce}, session }) => {
-        const elements = TlvObjectCodec.encode({ declaration: conf.certificateDeclaration, attestationNonce, timestamp: 0 }, AttestationT);
+        const elements = TlvObjectCodec.encode({ declaration: conf.certificateDeclaration, attestationNonce, timestamp: 0 }, TlvAttestation);
         return {elements: elements, signature: signWithDeviceKey(conf, session as SecureSession<MatterDevice>, elements)};
     },
 
     requestCertSigning: async ({ request: {certSigningRequestNonce}, session }) => {
         const certSigningRequest = session.getContext().getFabricBuilder().createCertificateSigningRequest();
-        const elements = TlvObjectCodec.encode({ certSigningRequest, certSigningRequestNonce }, CertSigningRequestT);
+        const elements = TlvObjectCodec.encode({ certSigningRequest, certSigningRequestNonce }, TlvCertSigningRequest);
         return {elements, signature: signWithDeviceKey(conf, session as SecureSession<MatterDevice>, elements)};
     },
 

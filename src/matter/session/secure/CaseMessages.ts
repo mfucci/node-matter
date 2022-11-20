@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ByteStringT, Field, ObjectT, OptionalField, UInt16T, UInt32T } from "../../../codec/TlvObjectCodec";
+import { ByteStringT, Field, ObjectT, OptionalField, tlv.UInt16, tlv.UInt32 } from "../../../codec/TlvObjectCodec";
 import {
     CRYPTO_AEAD_MIC_LENGTH_BYTES,
     CRYPTO_GROUP_SIZE_BYTES,
@@ -22,65 +22,65 @@ export const KDFSR3_INFO = Buffer.from("Sigma3");
 export const TBE_DATA2_NONCE = Buffer.from("NCASE_Sigma2N");
 export const TBE_DATA3_NONCE = Buffer.from("NCASE_Sigma3N");
 
-/** @see {@link MatterCoreSpecificationV1_0} § 2.12.5 */
-const SedParametersT = ObjectT({
+/** @see {@link spec.MatterCoreSpecificationV1_0} § 2.12.5 */
+const SedParametersT = tlv.Object({
     /** Maximum sleep interval of node when in idle mode. */
-    idleRetransTimeoutMs: OptionalField(1, UInt32T), /* default: 300ms */
+    idleRetransTimeoutMs: tlv.OptionalField(1, tlv.UInt32), /* default: 300ms */
     /** Maximum sleep interval of node when in active mode. */
-    activeRetransTimeoutMs: OptionalField(2, UInt32T), /* default: 300ms */
+    activeRetransTimeoutMs: tlv.OptionalField(2, tlv.UInt32), /* default: 300ms */
 });
 
-/** @see {@link MatterCoreSpecificationV1_0} § 4.13.2.3 */
-export const CaseSigma1T = ObjectT({
-    random: Field(1, ByteStringT({ length: 32 })),
-    sessionId: Field(2, UInt16T),
-    destinationId: Field(3, ByteStringT({ length: CRYPTO_HASH_LEN_BYTES })),
-    ecdhPublicKey: Field(4, ByteStringT({ length: CRYPTO_PUBLIC_KEY_SIZE_BYTES })),
-    mrpParams: OptionalField(5, SedParametersT),
-    resumptionId: OptionalField(6, ByteStringT({ length: 16 })),
-    resumeMic: OptionalField(7, ByteStringT({ length: CRYPTO_AEAD_MIC_LENGTH_BYTES})),
+/** @see {@link spec.MatterCoreSpecificationV1_0} § 4.13.2.3 */
+export const CaseSigma1T = tlv.Object({
+    random: tlv.Field(1, tlv.ByteString.bound({ length: 32 })),
+    sessionId: tlv.Field(2, tlv.UInt16),
+    destinationId: tlv.Field(3, tlv.ByteString.bound({ length: CRYPTO_HASH_LEN_BYTES })),
+    ecdhPublicKey: tlv.Field(4, tlv.ByteString.bound({ length: CRYPTO_PUBLIC_KEY_SIZE_BYTES })),
+    mrpParams: tlv.OptionalField(5, SedParametersT),
+    resumptionId: tlv.OptionalField(6, tlv.ByteString.bound({ length: 16 })),
+    resumeMic: tlv.OptionalField(7, tlv.ByteString.bound({ length: CRYPTO_AEAD_MIC_LENGTH_BYTES})),
 });
 
-/** @see {@link MatterCoreSpecificationV1_0} § 4.13.2.3 */
-export const CaseSigma2T = ObjectT({
-    random: Field(1, ByteStringT({ length: 32 })),
-    sessionId: Field(2, UInt16T),
-    ecdhPublicKey: Field(3, ByteStringT({ length: CRYPTO_PUBLIC_KEY_SIZE_BYTES })),
-    encrypted: Field(4, ByteStringT({ maxLength: 400 })), // TODO: check max length in specs
-    mrpParams: OptionalField(5, SedParametersT),
+/** @see {@link spec.MatterCoreSpecificationV1_0} § 4.13.2.3 */
+export const CaseSigma2T = tlv.Object({
+    random: tlv.Field(1, tlv.ByteString.bound({ length: 32 })),
+    sessionId: tlv.Field(2, tlv.UInt16),
+    ecdhPublicKey: tlv.Field(3, tlv.ByteString.bound({ length: CRYPTO_PUBLIC_KEY_SIZE_BYTES })),
+    encrypted: tlv.Field(4, tlv.ByteString.bound({ maxLength: 400 })), // TODO: check max length in specs
+    mrpParams: tlv.OptionalField(5, SedParametersT),
 });
 
-/** @see {@link MatterCoreSpecificationV1_0} § 4.13.2.3 */
-export const CaseSigma2ResumeT = ObjectT({
-    resumptionId: Field(1, ByteStringT({ length: 16 })),
-    resumeMic: Field(2, ByteStringT({ length: 16 })),
-    sessionId: Field(3, UInt16T),
+/** @see {@link spec.MatterCoreSpecificationV1_0} § 4.13.2.3 */
+export const CaseSigma2ResumeT = tlv.Object({
+    resumptionId: tlv.Field(1, tlv.ByteString.bound({ length: 16 })),
+    resumeMic: tlv.Field(2, tlv.ByteString.bound({ length: 16 })),
+    sessionId: tlv.Field(3, tlv.UInt16),
 });
 
-/** @see {@link MatterCoreSpecificationV1_0} § 4.13.2.3 */
-export const CaseSigma3T = ObjectT({
-    encrypted: Field(1, ByteStringT()),
+/** @see {@link spec.MatterCoreSpecificationV1_0} § 4.13.2.3 */
+export const CaseSigma3T = tlv.Object({
+    encrypted: tlv.Field(1, tlv.ByteString),
 });
 
-/** @see {@link MatterCoreSpecificationV1_0} § 4.13.2.3 */
-export const SignedDataT = ObjectT({
-    nodeOpCert: Field(1, ByteStringT()),
-    intermediateCACert: OptionalField(2, ByteStringT()),
-    ecdhPublicKey: Field(3, ByteStringT({ length: CRYPTO_PUBLIC_KEY_SIZE_BYTES })),
-    peerEcdhPublicKey: Field(4, ByteStringT({ length: CRYPTO_PUBLIC_KEY_SIZE_BYTES })),
+/** @see {@link spec.MatterCoreSpecificationV1_0} § 4.13.2.3 */
+export const SignedDataT = tlv.Object({
+    nodeOpCert: tlv.Field(1, tlv.ByteString),
+    intermediateCACert: tlv.OptionalField(2, tlv.ByteString),
+    ecdhPublicKey: tlv.Field(3, tlv.ByteString.bound({ length: CRYPTO_PUBLIC_KEY_SIZE_BYTES })),
+    peerEcdhPublicKey: tlv.Field(4, tlv.ByteString.bound({ length: CRYPTO_PUBLIC_KEY_SIZE_BYTES })),
 });
 
-/** @see {@link MatterCoreSpecificationV1_0} § 4.13.2.3 */
-export const EncryptedDataSigma2T = ObjectT({
-    nodeOpCert: Field(1, ByteStringT()),
-    intermediateCACert: OptionalField(2, ByteStringT()),
-    signature: Field(3, ByteStringT({length: CASE_SIGNATURE_LENGTH })),
-    resumptionId: Field(4, ByteStringT({ length: 16 })),
+/** @see {@link spec.MatterCoreSpecificationV1_0} § 4.13.2.3 */
+export const EncryptedDataSigma2T = tlv.Object({
+    nodeOpCert: tlv.Field(1, tlv.ByteString),
+    intermediateCACert: tlv.OptionalField(2, tlv.ByteString),
+    signature: tlv.Field(3, tlv.ByteString.bound({length: CASE_SIGNATURE_LENGTH })),
+    resumptionId: tlv.Field(4, tlv.ByteString.bound({ length: 16 })),
 });
 
-/** @see {@link MatterCoreSpecificationV1_0} § 4.13.2.3 */
-export const EncryptedDataSigma3T = ObjectT({
-    nodeOpCert: Field(1, ByteStringT()),
-    intermediateCACert: OptionalField(2, ByteStringT()),
-    signature: Field(3, ByteStringT({ length: CASE_SIGNATURE_LENGTH })),
+/** @see {@link spec.MatterCoreSpecificationV1_0} § 4.13.2.3 */
+export const EncryptedDataSigma3T = tlv.Object({
+    nodeOpCert: tlv.Field(1, tlv.ByteString),
+    intermediateCACert: tlv.OptionalField(2, tlv.ByteString),
+    signature: tlv.Field(3, tlv.ByteString.bound({ length: CASE_SIGNATURE_LENGTH })),
 });

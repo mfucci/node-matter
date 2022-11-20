@@ -6,19 +6,19 @@
 
 import assert from "assert";
 import { TlvTag, TlvType } from "../../src/codec/TlvCodec";
-import { BooleanT, ByteStringT, JsType, ObjectT, Field, TlvObjectCodec, OptionalField, BitMapT, Bit, UInt16T, UInt32T } from "../../src/codec/TlvObjectCodec";
+import {  tlv.Boolean, ByteStringT, JsType, ObjectT, Field, TlvObjectCodec, OptionalField, BitMapT, Bit, tlv.UInt16, tlv.UInt32 } from "../../src/codec/TlvObjectCodec";
 import { DataReportT } from "../../src/matter/interaction/InteractionMessages";
 import { DataReport } from "../../src/matter/interaction/InteractionMessenger";
 
 
-const TEST_TEMPLATE = ObjectT({
-    initiatorRandom: Field(1, ByteStringT()),
-    initiatorSessionId: Field(2, UInt16T),
-    passcodeId: OptionalField(3, UInt32T),
-    hasPbkdfParameters: Field(4, BooleanT),
-    mrpParameters: OptionalField(5, ObjectT({
-        idleRetransTimeout: OptionalField(1, UInt32T),
-        activeRetransTimeout: OptionalField(2, UInt32T),
+const TEST_TEMPLATE = tlv.Object({
+    initiatorRandom: tlv.Field(1, tlv.ByteString),
+    initiatorSessionId: tlv.Field(2, tlv.UInt16),
+    passcodeId: tlv.OptionalField(3, tlv.UInt32),
+    hasPbkdfParameters: tlv.Field(4,  tlv.Boolean),
+    mrpParameters: tlv.OptionalField(5, tlv.Object({
+        idleRetransTimeout: tlv.OptionalField(1, tlv.UInt32),
+        activeRetransTimeout: tlv.OptionalField(2, tlv.UInt32),
     })),
 });
 
@@ -88,7 +88,7 @@ describe("TlvObjectCodec", () => {
         });
 
         it("decodes a bitmap", () => {
-            const result = TlvObjectCodec.decode(Buffer.from("040a", "hex"), BitMapT({ flag1: Bit(1), flag2: Bit(3) }));
+            const result = TlvObjectCodec.decode(Buffer.from("040a", "hex"), tlv.Bitmap({ flag1: schema.BitFlag(1), flag2: schema.BitFlag(3) }));
 
             assert.deepEqual(result, { flag1: true, flag2: true});
         });
@@ -114,7 +114,7 @@ describe("TlvObjectCodec", () => {
         });
 
         it("encodes a bitmap", () => {
-            const result = TlvObjectCodec.encode({ flag1: true, flag2: true}, BitMapT({ flag1: Bit(1), flag2: Bit(3) }));
+            const result = TlvObjectCodec.encode({ flag1: true, flag2: true}, tlv.Bitmap({ flag1: schema.BitFlag(1), flag2: schema.BitFlag(3) }));
 
             assert.deepEqual(result.toString("hex"), "040a");
         });

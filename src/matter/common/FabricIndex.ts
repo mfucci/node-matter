@@ -4,8 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Bound, Typed, UInt8T } from "../../codec/TlvObjectCodec";
-import { MatterCoreSpecificationV1_0 } from "../../Specifications";
+import { tlv, spec } from "@project-chip/matter.js";
 
 /**
  * Each fabric supported on a node is referenced by fabric-index that is unique on the node. This
@@ -15,10 +14,17 @@ import { MatterCoreSpecificationV1_0 } from "../../Specifications";
  * a fabric, such as fabric-scoped data model elements, then the fabric-index values SHALL NOT include 0
  * (zero) or null.
  *
- * @see {@link MatterCoreSpecificationV1_0} § 7.5.2
+ * @see {@link spec.MatterCoreSpecificationV1_0} § 7.5.2
  */
-export type FabricIndex = { fabricIndex: true /* Hack to force strong type checking at compile time */ };
-export const FabricIndex = (id: number) => id as unknown as FabricIndex;
+ export class FabricIndex {
+    constructor(
+        readonly index: number,
+    ) {}
+}
 
-/** Data model for a fabric-index associated with a fabric. */
-export const FabricIndexT = Typed<FabricIndex>(Bound(UInt8T, { min: 1, max: 254 }));
+/** Tlv Schema for a Fabric Index. */
+export const TlvFabricIndex = new tlv.Wrapper<FabricIndex, number>(
+    tlv.UInt8.bound({ min: 1, max: 254 }),
+    farbricIndex => farbricIndex.index,
+    value => new FabricIndex(value),
+);

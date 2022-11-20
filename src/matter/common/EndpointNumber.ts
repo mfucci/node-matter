@@ -18,8 +18,8 @@ export class EndpointNumber {
 }
 
 /** Tlv schema for an Endpoint number. */
-export const TlvEndpointNumber = new tlv.Wrapper(
+export const TlvEndpointNumber = new tlv.Wrapper<EndpointNumber, number>(
     tlv.UInt16,
-    (endpointNumber: EndpointNumber) => endpointNumber.number,
+    endpointNumber => endpointNumber.number,
     value => new EndpointNumber(value),
 );

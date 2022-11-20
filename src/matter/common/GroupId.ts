@@ -4,9 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { UInt16T, Typed } from "../../codec/TlvObjectCodec";
-import { MatterCoreSpecificationV1_0 } from "../../Specifications";
-import { NodeId } from "./NodeId";
+ import { tlv, spec } from "@project-chip/matter.js";
 
 /**
  * A Group Identifier (Group ID or GID) is a 16-bit number that identifies a set of Nodes across a
@@ -18,13 +16,17 @@ import { NodeId } from "./NodeId";
  * 0x0001 - 0xFEFF: Application Group ID, assigned by fabric Administrator
  * 0xFF00 - 0xFFFF: Universal Group ID range reserved for static multicast and anycast identifiers
  *
- * @see {@link MatterCoreSpecificationV1_0} § 2.5.4
+ * @see {@link spec.MatterCoreSpecificationV1_0} § 2.5.4
  */
-export type GroupId = { groupId: true /* Hack to force strong type checking at compile time */ };
-export const GroupId = (id: number) => id as unknown as GroupId;
+export class GroupId {
+    constructor(
+        readonly id: number,
+    ) {}
+}
 
-/** Explicitly converts a GroupId to a number. */
-export const groupIdToNumber = (groupId: GroupId) => groupId as unknown as number;
-
-/** Data model for a Group ID. */
-export const GroupIdT = Typed<GroupId>(UInt16T);
+/** Tlv Schema for a Group Id. */
+export const TlvGroupId = new tlv.Wrapper<GroupId, number>(
+    tlv.UInt16,
+    groupId => groupId.id,
+    value => new GroupId(value),
+);

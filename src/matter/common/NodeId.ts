@@ -19,8 +19,8 @@ export class NodeId {
 }
 
 /** Tlv schema for a Node Identifier. */
-export const TlvNodeId = new tlv.Wrapper(
+export const TlvNodeId = new tlv.Wrapper<NodeId, number | bigint>(
     tlv.UInt64,
-    (nodeId: NodeId) => nodeId.id,
+    nodeId => nodeId.id,
     value => new NodeId(BigInt(value)),
 );

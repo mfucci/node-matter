@@ -19,8 +19,8 @@ export class ClusterId {
 }
 
 /** Tlv schema for a cluster Id. */
-export const TlvClusterId = new tlv.Wrapper(
+export const TlvClusterId = new tlv.Wrapper<ClusterId, number>(
     tlv.UInt32,
-    (clusterId: ClusterId) => clusterId.id,
+    clusterId => clusterId.id,
     value => new ClusterId(value),
 );

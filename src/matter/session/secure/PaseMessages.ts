@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BooleanT, ByteStringT, Field, ObjectT, OptionalField, UInt16T, UInt32T } from "../../../codec/TlvObjectCodec";
+import {  tlv.Boolean, ByteStringT, Field, ObjectT, OptionalField, tlv.UInt16, tlv.UInt32 } from "../../../codec/TlvObjectCodec";
 
 import {
     CRYPTO_HASH_LEN_BYTES,
@@ -12,47 +12,47 @@ import {
 } from "../../../crypto/Crypto";
 import { MatterCoreSpecificationV1_0 } from "../../../Specifications";
 
-/** @see {@link MatterCoreSpecificationV1_0} § 2.12.5 */
-const SedParametersT = ObjectT({
+/** @see {@link spec.MatterCoreSpecificationV1_0} § 2.12.5 */
+const SedParametersT = tlv.Object({
     /** Maximum sleep interval of node when in idle mode. */
-    idleRetransTimeoutMs: OptionalField(1, UInt32T), /* default: 300ms */
+    idleRetransTimeoutMs: tlv.OptionalField(1, tlv.UInt32), /* default: 300ms */
     /** Maximum sleep interval of node when in active mode. */
-    activeRetransTimeoutMs: OptionalField(2, UInt32T), /* default: 300ms */
+    activeRetransTimeoutMs: tlv.OptionalField(2, tlv.UInt32), /* default: 300ms */
 });
 
-/** @see {@link MatterCoreSpecificationV1_0} § 4.13.1.2 */
-export const PbkdfParamRequestT = ObjectT({
-    random: Field(1, ByteStringT({ length: 32 })),
-    sessionId: Field(2, UInt16T), // Specs: range: 16bits
-    passcodeId: Field(3, UInt16T), // Specs: length: 16bits so min is 0x8000?
-    hasPbkdfParameters: Field(4, BooleanT),
-    mrpParameters: OptionalField(5, SedParametersT),
+/** @see {@link spec.MatterCoreSpecificationV1_0} § 4.13.1.2 */
+export const PbkdfParamRequestT = tlv.Object({
+    random: tlv.Field(1, tlv.ByteString.bound({ length: 32 })),
+    sessionId: tlv.Field(2, tlv.UInt16), // Specs: range: 16bits
+    passcodeId: tlv.Field(3, tlv.UInt16), // Specs: length: 16bits so min is 0x8000?
+    hasPbkdfParameters: tlv.Field(4,  tlv.Boolean),
+    mrpParameters: tlv.OptionalField(5, SedParametersT),
 });
 
-/** @see {@link MatterCoreSpecificationV1_0} § 4.13.1.2 */
-export const PbkdfParamResponseT = ObjectT({
-    peerRandom: Field(1, ByteStringT({ length: 32 })),
-    random: Field(2, ByteStringT({ length: 32 })),
-    sessionId: Field(3, UInt16T),
-    pbkdfParameters: OptionalField(4, ObjectT({
-        iteration: Field(1, UInt32T),
-        salt: Field(2, ByteStringT({ minLength: 16, maxLength: 32 })),
+/** @see {@link spec.MatterCoreSpecificationV1_0} § 4.13.1.2 */
+export const PbkdfParamResponseT = tlv.Object({
+    peerRandom: tlv.Field(1, tlv.ByteString.bound({ length: 32 })),
+    random: tlv.Field(2, tlv.ByteString.bound({ length: 32 })),
+    sessionId: tlv.Field(3, tlv.UInt16),
+    pbkdfParameters: tlv.OptionalField(4, tlv.Object({
+        iteration: tlv.Field(1, tlv.UInt32),
+        salt: tlv.Field(2, tlv.ByteString.bound({ minLength: 16, maxLength: 32 })),
     })),
-    mrpParameters: OptionalField(5, SedParametersT),
+    mrpParameters: tlv.OptionalField(5, SedParametersT),
 });
 
-/** @see {@link MatterCoreSpecificationV1_0} § 4.13.1.2 */
-export const PasePake1T = ObjectT({
-    x: Field(1, ByteStringT({ length: CRYPTO_PUBLIC_KEY_SIZE_BYTES })),
+/** @see {@link spec.MatterCoreSpecificationV1_0} § 4.13.1.2 */
+export const PasePake1T = tlv.Object({
+    x: tlv.Field(1, tlv.ByteString.bound({ length: CRYPTO_PUBLIC_KEY_SIZE_BYTES })),
 });
 
-/** @see {@link MatterCoreSpecificationV1_0} § 4.13.1.2 */
-export const PasePake2T = ObjectT({
-    y: Field(1, ByteStringT({ length: CRYPTO_PUBLIC_KEY_SIZE_BYTES })),
-    verifier: Field(2, ByteStringT({ length: CRYPTO_HASH_LEN_BYTES })),
+/** @see {@link spec.MatterCoreSpecificationV1_0} § 4.13.1.2 */
+export const PasePake2T = tlv.Object({
+    y: tlv.Field(1, tlv.ByteString.bound({ length: CRYPTO_PUBLIC_KEY_SIZE_BYTES })),
+    verifier: tlv.Field(2, tlv.ByteString.bound({ length: CRYPTO_HASH_LEN_BYTES })),
 });
 
-/** @see {@link MatterCoreSpecificationV1_0} § 4.13.1.2 */
-export const PasePake3T = ObjectT({
-    verifier: Field(1, ByteStringT({ length: CRYPTO_HASH_LEN_BYTES })),
+/** @see {@link spec.MatterCoreSpecificationV1_0} § 4.13.1.2 */
+export const PasePake3T = tlv.Object({
+    verifier: tlv.Field(1, tlv.ByteString.bound({ length: CRYPTO_HASH_LEN_BYTES })),
 });

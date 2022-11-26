@@ -7,6 +7,7 @@
 import BN from "bn.js";
 import { ec } from "elliptic";
 import { Crypto } from "./Crypto";
+import { util } from "@project-chip/matter.js";
 
 const P256_CURVE = new ec("p256").curve;
 
@@ -16,60 +17,60 @@ const N = P256_CURVE.decodePoint("03d8bbd6c639c62937b04d997f38c3770719c629d7014d
 
 export interface PbkdfParameters {
     iteration: number,
-    salt: Buffer,
+    salt: util.ByteArray,
 }
 
 export class Spake2p {
     constructor(
-        private readonly context: Buffer,
+        private readonly context: util.ByteArray,
         private readonly random: BN,
         /* visible for tests */ readonly w0: BN,
         private readonly w1: BN,
     ) {}
 
-    static async create(context: Buffer, {iteration, salt}: PbkdfParameters, pin: number) {
-        const pinBytes = Buffer.alloc(4);
-        pinBytes.writeUInt32LE(pin);
-        const ws = await Crypto.pbkdf2(pinBytes, salt, iteration, 80);
+    static async create(context: util.ByteArray, {iteration, salt}: PbkdfParameters, pin: number) {
+        const pinWriter = new util.DataWriter(util.Endian.Little);
+        pinWriter.writeUInt32(pin);
+        const ws = await Crypto.pbkdf2(pinWriter.toByteArray(), salt, iteration, 80);
         const random = Crypto.getRandomBN(32, P256_CURVE.p);
         const w0 = new BN(ws.slice(0, 40)).mod(P256_CURVE.n);
         const w1 = new BN(ws.slice(40, 80)).mod(P256_CURVE.n);
         return new Spake2p(context, random, w0, w1);
     }
 
-    computeX(): Buffer {
+    computeX(): util.ByteArray {
         const X = P256_CURVE.g.mul(this.random).add(M.mul(this.w0));
-        return Buffer.from(X.encode());
+        return util.ByteArray.from(X.encode());
     }
 
-    computeY(): Buffer {
+    computeY(): util.ByteArray {
         const Y = P256_CURVE.g.mul(this.random).add(N.mul(this.w0));
-        return Buffer.from(Y.encode());
+        return util.ByteArray.from(Y.encode());
     }
 
-    async computeSecretAndVerifiersFromY(X: Buffer, Y: Buffer) {
+    async computeSecretAndVerifiersFromY(X: util.ByteArray, Y: util.ByteArray) {
         const YPoint = P256_CURVE.decodePoint(Y);
         if (!YPoint.validate()) throw new Error("Y is not on the curve");
         const yNwo = YPoint.add(N.mul(this.w0).neg());
         const Z = yNwo.mul(this.random);
         const V = yNwo.mul(this.w1);
-        return this.computeSecretAndVerifiers(X, Y, Buffer.from(Z.encode()), Buffer.from(V.encode()));
+        return this.computeSecretAndVerifiers(X, Y, util.ByteArray.from(Z.encode()), util.ByteArray.from(V.encode()));
     }
 
-    async computeSecretAndVerifiersFromX(X: Buffer, Y: Buffer) {
+    async computeSecretAndVerifiersFromX(X: util.ByteArray, Y: util.ByteArray) {
         const XPoint = P256_CURVE.decodePoint(X);
         if (!XPoint.validate()) throw new Error("X is not on the curve");
         const Z = XPoint.add(M.mul(this.w0).neg()).mul(this.random);
         const V = P256_CURVE.g.mul(this.w1).mul(this.random);
-        return this.computeSecretAndVerifiers(X, Y, Buffer.from(Z.encode()), Buffer.from(V.encode()));
+        return this.computeSecretAndVerifiers(X, Y, util.ByteArray.from(Z.encode()), util.ByteArray.from(V.encode()));
     }
 
-    private async computeSecretAndVerifiers(X: Buffer, Y: Buffer, Z: Buffer, V: Buffer) {
+    private async computeSecretAndVerifiers(X: util.ByteArray, Y: util.ByteArray, Z: util.ByteArray, V: util.ByteArray) {
         const TT_HASH = this.computeTranscriptHash(X, Y, Z, V);
         const Ka = TT_HASH.slice(0, 16);
         const Ke = TT_HASH.slice(16, 32);
 
-        const KcAB = await Crypto.hkdf(Ka, Buffer.alloc(0), Buffer.from("ConfirmationKeys"), 32);
+        const KcAB = await Crypto.hkdf(Ka, new util.ByteArray(0), util.ByteArray.fromString("ConfirmationKeys"), 32);
         const KcA = KcAB.slice(0, 16);
         const KcB = KcAB.slice(16, 32);
 
@@ -79,25 +80,23 @@ export class Spake2p {
         return { Ke, hAY, hBX };
     }
 
-    private computeTranscriptHash(X: Buffer, Y: Buffer, Z: Buffer, V: Buffer) {
-        const TT = new Array<Buffer>();
-        this.addToContext(TT, this.context);
-        this.addToContext(TT, Buffer.from(""));
-        this.addToContext(TT, Buffer.from(""));
-        this.addToContext(TT, Buffer.from(M.encode()));
-        this.addToContext(TT, Buffer.from(N.encode()));
-        this.addToContext(TT, X);
-        this.addToContext(TT, Y);
-        this.addToContext(TT, Z);
-        this.addToContext(TT, V);
-        this.addToContext(TT, this.w0.toBuffer());
-        return Crypto.hash(TT);
+    private computeTranscriptHash(X: util.ByteArray, Y: util.ByteArray, Z: util.ByteArray, V: util.ByteArray) {
+        const TTwriter = new util.DataWriter(util.Endian.Little);
+        this.addToContext(TTwriter, this.context);
+        this.addToContext(TTwriter, util.ByteArray.fromString(""));
+        this.addToContext(TTwriter, util.ByteArray.fromString(""));
+        this.addToContext(TTwriter, util.ByteArray.from(M.encode()));
+        this.addToContext(TTwriter, util.ByteArray.from(N.encode()));
+        this.addToContext(TTwriter, X);
+        this.addToContext(TTwriter, Y);
+        this.addToContext(TTwriter, Z);
+        this.addToContext(TTwriter, V);
+        this.addToContext(TTwriter, this.w0.toBuffer());
+        return Crypto.hash(TTwriter.toByteArray());
     }
 
-    private addToContext(spakeContext: Buffer[], data: Buffer) {
-        const sizeBuffer = Buffer.alloc(8);
-        sizeBuffer.writeBigUInt64LE(BigInt(data.length));
-        spakeContext.push(sizeBuffer);
-        spakeContext.push(data);
+    private addToContext(TTwriter: util.DataWriter, data: util.ByteArray) {
+        TTwriter.writeUInt64(data.length);
+        TTwriter.writeByteArray(data);
     }
 }

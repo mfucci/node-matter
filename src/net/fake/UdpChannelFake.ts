@@ -7,6 +7,7 @@
 import { UdpChannel, UdpChannelOptions } from "../UdpChannel";
 import { NetListener } from "../NetInterface";
 import { SimulatedNetwork } from "./SimulatedNetwork";
+import { util } from "@project-chip/matter.js";
 
 export class UdpChannelFake implements UdpChannel {
     static async create({listeningAddress: address, listeningPort: port, multicastInterface}: UdpChannelOptions) {
@@ -23,13 +24,13 @@ export class UdpChannelFake implements UdpChannel {
         private readonly multicastInterface?: string) {
     }
 
-    onData(listener: (peerAddress: string, peerPort: number, data: Buffer) => void) {
+    onData(listener: (peerAddress: string, peerPort: number, data: util.ByteArray) => void) {
         const netListener = this.network.onUdpData(this.address, this.port, listener);
         this.netListeners.push(netListener);
         return netListener;
     }
 
-    async send(address: string, port: number, data: Buffer) {
+    async send(address: string, port: number, data: util.ByteArray) {
         if (this.multicastInterface === undefined) throw new Error("Device interface should be specified to send data with a fake UdpSocket");
         this.network.sendUdp(this.multicastInterface, this.port, address, port, data);
     }

@@ -7,6 +7,7 @@
 import { Cache } from "../util/Cache";
 import { Network } from "./Network";
 import { UdpChannel, UdpChannelOptions } from "./UdpChannel";
+import { util } from "@project-chip/matter.js";
 
 export interface UdpMulticastServerOptions extends UdpChannelOptions {
     broadcastAddress: string,
@@ -29,11 +30,11 @@ export class UdpMulticastServer {
         private readonly restrictToInterfaceIp?: string,
     ) {}
 
-    onMessage(listener: (message: Buffer, peerAddress: string) => void) {
+    onMessage(listener: (message: util.ByteArray, peerAddress: string) => void) {
        this.server.onData((peerAddress, port, message) => listener(message, peerAddress));
     }
 
-    async send(message: Buffer, interfaceIp?: string) {
+    async send(message: util.ByteArray, interfaceIp?: string) {
         const interfaceIps = interfaceIp !== undefined ? [ interfaceIp ] : this.restrictToInterfaceIp !== undefined ? [ this.restrictToInterfaceIp ] : this.network.getIpMacAddresses().map(({ip}) => ip);
         await Promise.all(interfaceIps.map(async ip => await (await this.broadcastChannels.get(ip)).send(this.broadcastAddress, this.broadcastPort, message)));
     }

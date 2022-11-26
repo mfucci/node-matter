@@ -27,7 +27,7 @@ export const OptionalWritableAttribute = <T, V extends T>(id: number, schema: tl
 
 /* Interfaces and helper methods to define a cluster command */
 export const TlvNoArguments = tlv.Object({});
-export const TlvNoResponse = <tlv.Schema<void>>{};
+export const TlvNoResponse = tlv.Void;
 export interface Command<RequestT, ResponseT> { optional: boolean, requestId: number, requestSchema: tlv.Schema<RequestT>, responseId: number, responseSchema: tlv.Schema<ResponseT> };
 export interface OptionalCommand<RequestT, ResponseT> extends Command<RequestT, ResponseT> { optional: true };
 export type ResponseType<T extends Command<any, any>> = T extends OptionalCommand<any, infer ResponseT> ? ResponseT | undefined : (T extends Command<any, infer ResponseT> ? ResponseT : never);
@@ -60,7 +60,7 @@ export type GlobalAttributes<F extends schema.BitSchema> = {
 }
 export const GlobalAttributes = <F extends schema.BitSchema>(features: F) => ({
     clusterRevision: Attribute(0xFFFD, tlv.UInt16),
-    featureMap: Attribute(0xFFFC, tlv.Bitmap(features)),
+    featureMap: Attribute(0xFFFC, tlv.Bitmap(tlv.UInt32, features)),
 } as GlobalAttributes<F>);
 
 export interface Cluster<F extends schema.BitSchema, A extends Attributes, C extends Commands, E extends Events> {

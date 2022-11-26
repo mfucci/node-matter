@@ -8,5 +8,5 @@
     "declaration": true,
     "strict": true
   },
-  "include": ["**/*.ts", "../src/**/*.ts"],
+  "include": ["**/*.ts", "../src/**/*.ts", "IntegrationTest.sts"],
 }

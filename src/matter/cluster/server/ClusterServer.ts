@@ -29,7 +29,6 @@ type OptionalAttributeConf<T extends Attributes> = { [K in OptionalAttributeName
 type MakeAttributeMandatory<A extends Attribute<any>> = A extends OptionalWritableAttribute<infer T> ? WritableAttribute<T> : (A extends OptionalAttribute<infer T> ? Attribute<T> : A);
 type MakeAttributesMandatory<T extends Attributes, C extends OptionalAttributeConf<T>> = {[K in keyof T]: K extends keyof C ? MakeAttributeMandatory<T[K]> : T[K]};
 
-/* Merge<Omit<T, keyof C>, { [ K in Extract<keyof T, keyof C>]: Attribute<AttributeJsType<T[K]>> }>; */
 const MakeAttributesMandatory = <T extends Attributes, C extends OptionalAttributeConf<T>>(attributes: T, conf: C): MakeAttributesMandatory<T, C> => {
     const result = <Attributes>{ ...attributes };
     for (const key in conf) {

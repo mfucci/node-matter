@@ -6,16 +6,15 @@
 
 import { MatterDevice } from "../MatterDevice";
 import { InteractionServerMessenger } from "./InteractionMessenger";
-import { Template, TlvObjectCodec } from "../../codec/TlvObjectCodec";
-import { Element } from "../../codec/TlvCodec";
 import { Fabric } from "../fabric/Fabric";
 import { AttributeWithPath, Path, INTERACTION_PROTOCOL_ID } from "./InteractionServer";
 import { Time, Timer } from "../../time/Time";
 import { NodeId } from "../common/NodeId";
+import { tlv } from "@project-chip/matter.js";
 
 interface PathValueVersion<T> {
     path: Path,
-    template: Template<T>,
+    schema: tlv.Schema<T>,
     valueVersion: { value: T, version: number },
 }
 
@@ -49,7 +48,7 @@ export class SubscriptionHandler {
             return;
         }
 
-        const values = this.attributes.map(({ attribute, path }) => ({ path, valueVersion: attribute.getWithVersion(), template: attribute.template }));
+        const values = this.attributes.map(({ attribute, path }) => ({ path, valueVersion: attribute.getWithVersion(), schema: attribute.schema }));
         await this.sendUpdateMessage(values);
         this.lastUpdateTimeMs = now;
 
@@ -69,11 +68,11 @@ export class SubscriptionHandler {
         await messenger.sendDataReport({
             subscriptionId: this.subscriptionId,
             interactionModelRevision: 1,
-            values: values.map(({ path, template, valueVersion: { value, version } }) => ({
+            values: values.map(({ path, schema, valueVersion: { value, version } }) => ({
                 value: {
                     path,
                     version,
-                    value: TlvObjectCodec.encodeElement(value, template) as Element,
+                    value: schema.encodeTlv(value),
                 },
             })),
         });

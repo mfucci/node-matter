@@ -4,39 +4,39 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { TlvObjectCodec } from "../../../codec/TlvObjectCodec";
 import { Crypto } from "../../../crypto/Crypto";
 import { MatterDevice } from "../../MatterDevice";
 import { SecureSession } from "../../session/SecureSession";
 import {
     TlvAttestation,
     CertificateChainType,
-    TlvCertSigningRequest,
     OperationalCredentialsCluster,
-    OperationalCertStatus
+    OperationalCertStatus,
+    TlvCertSigningRequest
 } from "../OperationalCredentialsCluster";
 import { ClusterServerHandlers } from "./ClusterServer";
+import { util } from "@project-chip/matter.js";
 
 interface OperationalCredentialsServerConf {
-    devicePrivateKey: Buffer,
-    deviceCertificate: Buffer,
-    deviceIntermediateCertificate: Buffer,
-    certificateDeclaration: Buffer,
+    devicePrivateKey: util.ByteArray,
+    deviceCertificate: util.ByteArray,
+    deviceIntermediateCertificate: util.ByteArray,
+    certificateDeclaration: util.ByteArray,
 }
 
-function signWithDeviceKey(conf: OperationalCredentialsServerConf,session: SecureSession<MatterDevice>, data: Buffer) {
+function signWithDeviceKey(conf: OperationalCredentialsServerConf,session: SecureSession<MatterDevice>, data: util.ByteArray) {
     return Crypto.sign(conf.devicePrivateKey, [data, session.getAttestationChallengeKey()]);
 }
 
 export const OperationalCredentialsClusterHandler: (conf: OperationalCredentialsServerConf) => ClusterServerHandlers<typeof OperationalCredentialsCluster> = (conf) => ({
     requestAttestation: async ({ request: {attestationNonce}, session }) => {
-        const elements = TlvObjectCodec.encode({ declaration: conf.certificateDeclaration, attestationNonce, timestamp: 0 }, TlvAttestation);
+        const elements = TlvAttestation.encode({ declaration: conf.certificateDeclaration, attestationNonce, timestamp: 0 });
         return {elements: elements, signature: signWithDeviceKey(conf, session as SecureSession<MatterDevice>, elements)};
     },
 
     requestCertSigning: async ({ request: {certSigningRequestNonce}, session }) => {
         const certSigningRequest = session.getContext().getFabricBuilder().createCertificateSigningRequest();
-        const elements = TlvObjectCodec.encode({ certSigningRequest, certSigningRequestNonce }, TlvCertSigningRequest);
+        const elements = TlvCertSigningRequest.encode({ certSigningRequest, certSigningRequestNonce });
         return {elements, signature: signWithDeviceKey(conf, session as SecureSession<MatterDevice>, elements)};
     },
 
@@ -68,20 +68,14 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
 
     updateOperationalCert: async ({ request: {operationalCert, intermediateCaCert, }, session}) => {
         throw new Error("Not implemented");
-
-        return {status: OperationalCertStatus.Success};
     },
 
     updateFabricLabel: async ({ request: {label} }) => {
         throw new Error("Not implemented");
-
-        return {status: OperationalCertStatus.Success};
     },
 
     removeFabric: async ({ request: {fabricIndex} }) => {
         throw new Error("Not implemented");
-
-        return {status: OperationalCertStatus.Success};
     },
 
     addRootCert: async ({ request: {certificate}, session} ) => {

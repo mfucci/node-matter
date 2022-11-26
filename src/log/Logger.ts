@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { util } from "@project-chip/matter.js";
 import { Time } from "../time/Time";
 
 export enum Level {
@@ -17,8 +18,8 @@ export enum Level {
 function logFormater(now: Date, level: Level, logger: string, values: any[]) {
     const formattedNow = `${now.getFullYear()}-${now.getMonth()}-${now.getDay()} ${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}.${now.getMilliseconds().toString().padStart(3, "0")}`;
     const formattedValues = values.map(value => {
-        if (Buffer.isBuffer(value)) {
-            return value.toString("hex");
+        if (value instanceof util.ByteArray) {
+            return value.toHex();
         }
         return value.toString()
     });

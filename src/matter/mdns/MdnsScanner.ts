@@ -10,11 +10,11 @@ import { MDNS_BROADCAST_IP, MDNS_BROADCAST_PORT } from "../../net/MdnsServer";
 import { getDeviceMatterQname, MATTER_SERVICE_QNAME } from "./MdnsConsts";
 import { getPromiseResolver } from "../../util/Promises";
 import { Network } from "../../net/Network";
-import { bigintToBuffer } from "../../util/BigInt";
 import { MatterServer, Scanner } from "../common/Scanner";
 import { Fabric } from "../fabric/Fabric";
 import { Time, Timer } from "../../time/Time";
-import { NodeId, nodeIdToBigint } from "../common/NodeId";
+import { NodeId } from "../common/NodeId";
+import { util } from "@project-chip/matter.js";
 
 type MatterServerRecordWithExpire = MatterServer & { expires: number };
 
@@ -36,9 +36,8 @@ export class MdnsScanner implements Scanner {
     }
 
     async findDevice({operationalId}: Fabric, nodeId: NodeId): Promise<MatterServer | undefined> {
-        const nodeIdString = bigintToBuffer(nodeIdToBigint(nodeId)).toString("hex").toUpperCase();
-        const operationalIdString = operationalId.toString("hex").toUpperCase();
-        const deviceMatterQname = getDeviceMatterQname(operationalIdString, nodeIdString);
+        const operationalIdString = operationalId.toHex().toUpperCase();
+        const deviceMatterQname = getDeviceMatterQname(operationalIdString, nodeId.toString());
 
         const record = this.matterDeviceRecords.get(deviceMatterQname);
         if (record !== undefined) return { ip: record.ip, port: record.port };
@@ -61,7 +60,7 @@ export class MdnsScanner implements Scanner {
         [...this.recordWaiters.values()].forEach(waiter => waiter(undefined));
     }
 
-    private handleDnsMessage(messageBytes: Buffer, remoteIp: string) {
+    private handleDnsMessage(messageBytes: util.ByteArray, remoteIp: string) {
         const message = DnsCodec.decode(messageBytes);
         if (message === undefined) return; // The message cannot be parsed
         if (message.messageType !== MessageType.Response) return;

@@ -74,8 +74,8 @@ const TlvAddGroupIfIdentifyingRequest = tlv.Object({
 });
 
 /** @see {@link spec.MatterApplicationClusterSpecificationV1_0} § 1.3.6.1 */
-const TlvNameSupportBitmap = tlv.Bitmap({
-    groupNames: schema.BitFlag(7)
+const TlvNameSupportBitmap = tlv.Bitmap(tlv.UInt8, {
+    groupNames: schema.BitFlag(7),
 });
 
 /**

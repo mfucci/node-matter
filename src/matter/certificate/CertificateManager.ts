@@ -4,11 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { AuthorityKeyIdentifier_X509, BasicConstraints_X509, BitBuffer, BYTES_KEY, ContextTagged, DerCodec, DerObject, EcdsaWithSHA256_X962, ELEMENTS_KEY, ExtendedKeyUsage_X509, KeyUsage_Signature_ContentCommited_X509, KeyUsage_Signature_X509, OBJECT_ID_KEY, OrganisationName_X520, PublicKeyEcPrime256v1_X962, SubjectKeyIdentifier_X509 } from "../../codec/DerCodec";
-import { TlvType } from "../../codec/TlvCodec";
-import { ArrayT,  tlv.Boolean, ByteStringT, Field, JsType, ObjectT, OptionalField, tlv.UInt16, tlv.UInt32, UInt64T, tlv.UInt8 } from "../../codec/TlvObjectCodec";
+import { AuthorityKeyIdentifier_X509, BasicConstraints_X509, BitByteArray, BYTES_KEY, ContextTagged, DerCodec, DerObject, EcdsaWithSHA256_X962, ELEMENTS_KEY, ExtendedKeyUsage_X509, KeyUsage_Signature_ContentCommited_X509, KeyUsage_Signature_X509, OBJECT_ID_KEY, OrganisationName_X520, PublicKeyEcPrime256v1_X962, SubjectKeyIdentifier_X509 } from "../../codec/DerCodec";
 import { Crypto, KeyPair } from "../../crypto/Crypto";
-import { NodeId, NodeIdT, nodeIdToBigint } from "../common/NodeId";
+import { NodeId, TlvNodeId } from "../common/NodeId";
+import { tlv, util } from "@project-chip/matter.js";
 
 const YEAR_S = 365 * 24 * 60 * 60;
 const EPOCH_OFFSET_S = 10957 * 24 * 60 * 60;
@@ -20,30 +19,31 @@ export function jsToMatterDate(date: Date, addYears: number = 0) {
 }
 
 function intTo16Chars(value: bigint | number) {
-    const buffer = Buffer.alloc(8);
-    buffer.writeBigUInt64BE(typeof value === "bigint" ? value : BigInt(value));
-    return buffer.toString("hex").toUpperCase();
+    const byteArray = new util.ByteArray(8);
+    const dataView = byteArray.getDataView();
+    dataView.setBigUint64(0, typeof value === "bigint" ? value : BigInt(value));
+    return byteArray.toHex().toUpperCase();
 }
 
-export const FabricId_Matter = (id: bigint) => [ DerObject("2b0601040182a27c0105", {value: intTo16Chars(id)}) ];
-export const NodeId_Matter = (nodeId: NodeId) => [ DerObject("2b0601040182a27c0101", {value: intTo16Chars(nodeIdToBigint(nodeId))}) ];
-export const RcacId_Matter = (id: bigint) => [ DerObject("2b0601040182a27c0104", {value: intTo16Chars(id)}) ];
+export const FabricId_Matter = (id: bigint | number) => [ DerObject("2b0601040182a27c0105", {value: intTo16Chars(id)}) ];
+export const NodeId_Matter = (nodeId: NodeId) => [ DerObject("2b0601040182a27c0101", {value: intTo16Chars(nodeId.id)}) ];
+export const RcacId_Matter = (id: bigint | number) => [ DerObject("2b0601040182a27c0104", {value: intTo16Chars(id)}) ];
 
-export const RootCertificateT = tlv.Object({
+export const TlvRootCertificate = tlv.Object({
     serialNumber: tlv.Field(1, tlv.ByteString.bound({ maxLength: 20 })),
     signatureAlgorithm: tlv.Field(2, tlv.UInt8),
-    issuer: tlv.Field(3, tlv.Object({
-        issuerRcacId: tlv.OptionalField(20, UInt64T),
-    }, TlvType.List)),
+    issuer: tlv.Field(3, tlv.List({
+        issuerRcacId: tlv.OptionalField(20, tlv.UInt64),
+    })),
     notBefore: tlv.Field(4, tlv.UInt32),
     notAfter: tlv.Field(5, tlv.UInt32),
-    subject: tlv.Field(6, tlv.Object({
-        rcacId: tlv.Field(20, UInt64T),
-    }, TlvType.List)),
+    subject: tlv.Field(6, tlv.List({
+        rcacId: tlv.Field(20, tlv.UInt64),
+    })),
     publicKeyAlgorithm: tlv.Field(7, tlv.UInt8),
     ellipticCurveIdentifier: tlv.Field(8, tlv.UInt8),
     ellipticCurvePublicKey: tlv.Field(9, tlv.ByteString),
-    extensions: tlv.Field(10, tlv.Object({
+    extensions: tlv.Field(10, tlv.List({
         basicConstraints: tlv.Field(1,  tlv.Object({
             isCa: tlv.Field(1,  tlv.Boolean),
             pathLen: tlv.OptionalField(2, tlv.UInt8),
@@ -53,26 +53,26 @@ export const RootCertificateT = tlv.Object({
         subjectKeyIdentifier: tlv.Field(4, tlv.ByteString.bound({ length: 20 })),
         authorityKeyIdentifier: tlv.Field(5, tlv.ByteString.bound({ length: 20 })),
         futureExtension: tlv.OptionalField(6, tlv.ByteString),
-    }, TlvType.List)),
+    })),
     signature: tlv.Field(11, tlv.ByteString),
 });
 
-export const OperationalCertificateT = tlv.Object({
+export const TlvOperationalCertificate = tlv.Object({
     serialNumber: tlv.Field(1, tlv.ByteString.bound({ maxLength: 20 })),
     signatureAlgorithm: tlv.Field(2, tlv.UInt8),
-    issuer: tlv.Field(3, tlv.Object({
-        issuerRcacId: tlv.OptionalField(20, UInt64T),
-    }, TlvType.List)),
+    issuer: tlv.Field(3, tlv.List({
+        issuerRcacId: tlv.OptionalField(20, tlv.UInt64),
+    })),
     notBefore: tlv.Field(4, tlv.UInt32),
     notAfter: tlv.Field(5, tlv.UInt32),
-    subject: tlv.Field(6, tlv.Object({
-        fabricId: tlv.Field(21, UInt64T),
-        nodeId: tlv.Field(17, NodeIdT),
-    }, TlvType.List)),
+    subject: tlv.Field(6, tlv.List({
+        fabricId: tlv.Field(21, tlv.UInt64),
+        nodeId: tlv.Field(17, TlvNodeId),
+    })),
     publicKeyAlgorithm: tlv.Field(7, tlv.UInt8),
     ellipticCurveIdentifier: tlv.Field(8, tlv.UInt8),
     ellipticCurvePublicKey: tlv.Field(9, tlv.ByteString),
-    extensions: tlv.Field(10, tlv.Object({
+    extensions: tlv.Field(10, tlv.List({
         basicConstraints: tlv.Field(1,  tlv.Object({
             isCa: tlv.Field(1,  tlv.Boolean),
             pathLen: tlv.OptionalField(2, tlv.UInt8),
@@ -82,19 +82,19 @@ export const OperationalCertificateT = tlv.Object({
         subjectKeyIdentifier: tlv.Field(4, tlv.ByteString.bound({ length: 20 })),
         authorityKeyIdentifier: tlv.Field(5, tlv.ByteString.bound({ length: 20 })),
         futureExtension: tlv.OptionalField(6, tlv.ByteString),
-    }, TlvType.List)),
+    })),
     signature: tlv.Field(11, tlv.ByteString),
 });
 
-export type RootCertificate = JsType<typeof RootCertificateT>;
-export type OperationalCertificate = JsType<typeof OperationalCertificateT>;
+export type RootCertificate = tlv.TypeFromSchema<typeof TlvRootCertificate>;
+export type OperationalCertificate = tlv.TypeFromSchema<typeof TlvOperationalCertificate>;
 type Unsigned<Type> = { [Property in keyof Type as Exclude<Property, "signature">]: Type[Property] };
 
 export class CertificateManager {
     static rootCertToAsn1({ serialNumber, notBefore, notAfter, issuer: { issuerRcacId }, subject: { rcacId }, ellipticCurvePublicKey, extensions: { subjectKeyIdentifier, authorityKeyIdentifier } }: Unsigned<RootCertificate>) {
         return DerCodec.encode({
             version: ContextTagged(0, 2),
-            serialNumber: serialNumber.readUInt8(),
+            serialNumber: serialNumber[0],
             signatureAlgorithm: EcdsaWithSHA256_X962,
             issuer: {
                 issuerRcacId: issuerRcacId === undefined ? undefined : RcacId_Matter(issuerRcacId),
@@ -119,7 +119,7 @@ export class CertificateManager {
     static nocCertToAsn1({ serialNumber, notBefore, notAfter, issuer: { issuerRcacId }, subject: { fabricId, nodeId }, ellipticCurvePublicKey, extensions: { subjectKeyIdentifier, authorityKeyIdentifier } }: Unsigned<OperationalCertificate>) {
         return DerCodec.encode({
             version: ContextTagged(0, 2),
-            serialNumber: serialNumber.readUInt8(),
+            serialNumber: serialNumber[0],
             signatureAlgorithm: EcdsaWithSHA256_X962,
             issuer: {
                 issuerRcacId: issuerRcacId === undefined ? undefined : RcacId_Matter(issuerRcacId),
@@ -162,11 +162,11 @@ export class CertificateManager {
         return DerCodec.encode({
             request,
             signAlgorithm: EcdsaWithSHA256_X962,
-            signature: BitBuffer(Crypto.sign(keys.privateKey, DerCodec.encode(request), "der")),
+            signature: BitByteArray(Crypto.sign(keys.privateKey, DerCodec.encode(request), "der")),
         });
     }
 
-    static getPublicKeyFromCsr(csr: Buffer) {
+    static getPublicKeyFromCsr(csr: util.ByteArray) {
         const { [ELEMENTS_KEY]: rootElements } = DerCodec.decode(csr);
         if (rootElements?.length !== 3) throw new Error("Invalid CSR data");
         const [ requestNode, signAlgorithmNode, signatureNode ] = rootElements;
@@ -175,7 +175,7 @@ export class CertificateManager {
         const { [ELEMENTS_KEY]: requestElements } = requestNode;
         if (requestElements?.length !== 4) throw new Error("Invalid CSR data");
         const [ versionNode, subjectNode, publicKeyNode ] = requestElements;
-        const requestVersion = versionNode[BYTES_KEY].readUint8();
+        const requestVersion = versionNode[BYTES_KEY][0];
         if (requestVersion !== 0) throw new Error(`Unsupported request version${requestVersion}`);
         // TODO: verify subject = { OrganisationName: "CSR" }
 

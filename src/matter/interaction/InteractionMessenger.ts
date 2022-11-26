@@ -4,18 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-    Field,
-    JsType,
-    ObjectT,
-    Template,
-    TlvObjectCodec,
-} from "../../codec/TlvObjectCodec";
 import { Logger } from "../../log/Logger";
 import { MessageExchange } from "../common/MessageExchange";
 import { MatterController } from "../MatterController";
 import { MatterDevice } from "../MatterDevice";
-import { InvokeRequestT, InvokeResponseT, ReadRequestT, DataReportT, SubscribeRequestT, SubscribeResponseT, StatusCode, StatusResponseT } from "./InteractionMessages";
+import { TlvInvokeRequest, TlvInvokeResponse, TlvReadRequest, TlvDataReport, TlvSubscribeRequest, TlvSubscribeResponse, StatusCode, TlvStatusResponse } from "./InteractionMessages";
+import { tlv, util } from "@project-chip/matter.js";
 
 export const enum MessageType {
     StatusResponse = 0x01,
@@ -30,12 +24,12 @@ export const enum MessageType {
     TimedRequest = 0x0a,
 }
 
-export type ReadRequest = JsType<typeof ReadRequestT>;
-export type DataReport = JsType<typeof DataReportT>;
-export type SubscribeRequest = JsType<typeof SubscribeRequestT>;
-export type SubscribeResponse = JsType<typeof SubscribeResponseT>;
-export type InvokeRequest = JsType<typeof InvokeRequestT>;
-export type InvokeResponse = JsType<typeof InvokeResponseT>;
+export type ReadRequest = tlv.TypeFromSchema<typeof TlvReadRequest>;
+export type DataReport = tlv.TypeFromSchema<typeof TlvDataReport>;
+export type SubscribeRequest = tlv.TypeFromSchema<typeof TlvSubscribeRequest>;
+export type SubscribeResponse = tlv.TypeFromSchema<typeof TlvSubscribeResponse>;
+export type InvokeRequest = tlv.TypeFromSchema<typeof TlvInvokeRequest>;
+export type InvokeResponse = tlv.TypeFromSchema<typeof TlvInvokeResponse>;
 
 const logger = Logger.get("InteractionServerMessenger");
 
@@ -46,7 +40,7 @@ class InteractionMessenger<ContextT> {
     ) {}
 
     sendStatus(status: StatusCode) {
-        return this.exchangeBase.send(MessageType.StatusResponse, TlvObjectCodec.encode({status, interactionModelRevision: 1}, StatusResponseT));
+        return this.exchangeBase.send(MessageType.StatusResponse, TlvStatusResponse.encode({status, interactionModelRevision: 1}));
     }
 
     async waitForSuccess() {
@@ -66,9 +60,9 @@ class InteractionMessenger<ContextT> {
         this.exchangeBase.close();
     }
 
-    protected throwIfError(messageType: number, payload: Buffer) {
+    protected throwIfError(messageType: number, payload: util.ByteArray) {
         if (messageType !== MessageType.StatusResponse) return;
-        const {status} = TlvObjectCodec.decode(payload, StatusResponseT);
+        const {status} = TlvStatusResponse.decode(payload);
         if (status !== StatusCode.Success) new Error(`Received error status: ${status}`);
     }
 }
@@ -90,22 +84,22 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
         try {
             switch (message.payloadHeader.messageType) {
                 case MessageType.ReadRequest:
-                    const readRequest = TlvObjectCodec.decode(message.payload, ReadRequestT);
+                    const readRequest = TlvReadRequest.decode(message.payload);
                     await this.sendDataReport(handleReadRequest(readRequest));
                     break;
                 case MessageType.SubscribeRequest:
-                    const subscribeRequest = TlvObjectCodec.decode(message.payload, SubscribeRequestT);
+                    const subscribeRequest = TlvSubscribeRequest.decode(message.payload);
                     const subscribeResponse = handleSubscribeRequest(subscribeRequest);
                     if (subscribeResponse === undefined) {
                         await this.sendStatus(StatusCode.Success);
                     } else {
-                        await this.exchange.send(MessageType.SubscribeResponse, TlvObjectCodec.encode(subscribeResponse, SubscribeResponseT));
+                        await this.exchange.send(MessageType.SubscribeResponse, TlvSubscribeResponse.encode(subscribeResponse));
                     }
                     break;
                 case MessageType.InvokeCommandRequest:
-                    const invokeRequest = TlvObjectCodec.decode(message.payload, InvokeRequestT);
+                    const invokeRequest = TlvInvokeRequest.decode(message.payload);
                     const invokeResponse = await handleInvokeRequest(invokeRequest);
-                    await this.exchange.send(MessageType.InvokeCommandResponse, TlvObjectCodec.encode(invokeResponse, InvokeResponseT));
+                    await this.exchange.send(MessageType.InvokeCommandResponse, TlvInvokeResponse.encode(invokeResponse));
                     break;
                 default:
                     throw new Error(`Unsupported message type ${message.payloadHeader.messageType}`);
@@ -119,7 +113,7 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
     }
 
     async sendDataReport(dataReport: DataReport) {
-        await this.exchange.send(MessageType.ReportData, TlvObjectCodec.encode(dataReport, DataReportT));
+        await this.exchange.send(MessageType.ReportData, TlvDataReport.encode(dataReport));
     }
 }
 
@@ -131,25 +125,25 @@ export class InteractionClientMessenger extends InteractionMessenger<MatterContr
     }
 
     sendReadRequest(readRequest: ReadRequest) {
-        return this.request(MessageType.ReadRequest, ReadRequestT, MessageType.ReportData, DataReportT, readRequest);
+        return this.request(MessageType.ReadRequest, TlvReadRequest, MessageType.ReportData, TlvDataReport, readRequest);
     }
 
     sendSubscribeRequest(subscribeRequest: SubscribeRequest) {
-        return this.request(MessageType.SubscribeRequest, SubscribeRequestT, MessageType.SubscribeResponse, SubscribeResponseT, subscribeRequest);
+        return this.request(MessageType.SubscribeRequest, TlvSubscribeRequest, MessageType.SubscribeResponse, TlvSubscribeResponse, subscribeRequest);
     }
 
     sendInvokeCommand(invokeRequest: InvokeRequest) {
-        return this.request(MessageType.InvokeCommandRequest, InvokeRequestT, MessageType.InvokeCommandResponse, InvokeResponseT, invokeRequest);
+        return this.request(MessageType.InvokeCommandRequest, TlvInvokeRequest, MessageType.InvokeCommandResponse, TlvInvokeResponse, invokeRequest);
     }
 
     async readDataReport(): Promise<DataReport> {
         const dataReportMessage = await this.exchange.waitFor(MessageType.ReportData);
-        return TlvObjectCodec.decode(dataReportMessage.payload, DataReportT);
+        return TlvDataReport.decode(dataReportMessage.payload);
     }
 
-    private async request<RequestT, ResponseT>(requestMessageType: number, requestTemplate: Template<RequestT>, responseMessageType: number, responseTemplate: Template<ResponseT>, request: RequestT): Promise<ResponseT> {
-        await this.exchange.send(requestMessageType, TlvObjectCodec.encode(request, requestTemplate));
+    private async request<RequestT, ResponseT>(requestMessageType: number, requestSchema: tlv.Schema<RequestT>, responseMessageType: number, responseSchema: tlv.Schema<ResponseT>, request: RequestT): Promise<ResponseT> {
+        await this.exchange.send(requestMessageType, requestSchema.encode(request));
         const responseMessage = await this.nextMessage(responseMessageType);
-        return TlvObjectCodec.decode(responseMessage.payload, responseTemplate);
+        return responseSchema.decode(responseMessage.payload);
     }
 }

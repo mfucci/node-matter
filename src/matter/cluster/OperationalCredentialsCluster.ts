@@ -205,7 +205,7 @@ export const TlvAttestation = tlv.Object({
 });
 
 /** @see {@link spec.MatterCoreSpecificationV1_0} § 11.17.5.6 */
-const TlvCertSigningRequest = tlv.Object({
+export const TlvCertSigningRequest = tlv.Object({
     certSigningRequest: tlv.Field(1, tlv.ByteString),
     certSigningRequestNonce: tlv.Field(2, tlv.ByteString.bound({ length: 32})),
     vendorReserved1: tlv.OptionalField(3, tlv.ByteString),

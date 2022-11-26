@@ -4,9 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { NodeId, nodeIdToBigint } from "../matter/common/NodeId";
-import { LEBufferReader } from "../util/LEBufferReader";
-import { LEBufferWriter } from "../util/LEBufferWriter";
+import { NodeId } from "../matter/common/NodeId";
+import { util } from "@project-chip/matter.js";
 
 export interface PacketHeader {
     sessionId: number,
@@ -28,13 +27,13 @@ export interface PayloadHeader {
 
 export interface Packet {
     header: PacketHeader,
-    bytes: Buffer,
+    bytes: util.ByteArray,
 }
 
 export interface Message {
     packetHeader: PacketHeader,
     payloadHeader: PayloadHeader,
-    payload: Buffer,
+    payload: util.ByteArray,
 }
 
 const HEADER_VERSION = 0x00;
@@ -64,8 +63,8 @@ const enum PayloadHeaderFlag {
 
 export class MessageCodec {
 
-    static decodePacket(data: Buffer): Packet {
-        const reader = new LEBufferReader(data);
+    static decodePacket(data: util.ByteArray): Packet {
+        const reader = new util.DataReader(data, util.Endian.Little);
         const header = this.decodePacketHeader(reader);
 
         return {
@@ -75,7 +74,7 @@ export class MessageCodec {
     }
 
     static decodePayload({header, bytes}: Packet): Message {
-        const reader = new LEBufferReader(bytes);
+        const reader = new util.DataReader(bytes, util.Endian.Little);
         return {
             packetHeader: header,
             payloadHeader: this.decodePayloadHeader(reader),
@@ -86,21 +85,21 @@ export class MessageCodec {
     static encodePayload({packetHeader, payloadHeader, payload}: Message): Packet {
         return {
             header: packetHeader,
-            bytes: Buffer.concat([
+            bytes: util.ByteArray.concat(
                 this.encodePayloadHeader(payloadHeader),
                 payload,
-            ]),
+            ),
         };
     }
 
-    static encodePacket({header, bytes}: Packet): Buffer {
-        return Buffer.concat([
+    static encodePacket({header, bytes}: Packet): util.ByteArray {
+        return util.ByteArray.concat(
             this.encodePacketHeader(header),
             bytes,
-        ]);
+        );
     }
 
-    private static decodePacketHeader(reader: LEBufferReader) {
+    private static decodePacketHeader(reader: util.DataReader) {
         // Read and parse flags
         const flags = reader.readUInt8();
         const version = (flags & PacketHeaderFlag.VersionMask) >> 4;
@@ -114,8 +113,8 @@ export class MessageCodec {
         const sessionId = reader.readUInt16();
         const securityFlags = reader.readUInt8();
         const messageId = reader.readUInt32();
-        const sourceNodeId = hasSourceNodeId ? NodeId(reader.readUInt64()) : undefined;
-        const destNodeId = hasDestNodeId ? NodeId(reader.readUInt64()) : undefined;
+        const sourceNodeId = hasSourceNodeId ? new NodeId(reader.readUInt64()) : undefined;
+        const destNodeId = hasDestNodeId ? new NodeId(reader.readUInt64()) : undefined;
         const destGroupId = hasDestGroupId ? reader.readUInt16() : undefined;
 
         const sessionType = securityFlags & 0b00000011;
@@ -124,7 +123,7 @@ export class MessageCodec {
         return { sessionId, sourceNodeId, messageId, destGroupId, destNodeId, sessionType };
     }
 
-    private static decodePayloadHeader(reader: LEBufferReader): PayloadHeader {
+    private static decodePayloadHeader(reader: util.DataReader): PayloadHeader {
         const exchangeFlags = reader.readUInt8();
         const isInitiatorMessage = (exchangeFlags & PayloadHeaderFlag.IsInitiatorMessage) !== 0;
         const isAckMessage = (exchangeFlags & PayloadHeaderFlag.IsAckMessage) !== 0;
@@ -143,7 +142,7 @@ export class MessageCodec {
     }
 
     static encodePacketHeader({messageId: messageCounter, sessionId, destGroupId, destNodeId, sourceNodeId, sessionType}: PacketHeader) {
-        const writer = new LEBufferWriter();
+        const writer = new util.DataWriter(util.Endian.Little);
         const flags = (HEADER_VERSION << 4)
             | (destGroupId !== undefined ? PacketHeaderFlag.HasDestGroupId : 0)
             | (destNodeId !== undefined ? PacketHeaderFlag.HasDestNodeId : 0)
@@ -154,18 +153,18 @@ export class MessageCodec {
         writer.writeUInt16(sessionId);
         writer.writeUInt8(securityFlags);
         writer.writeUInt32(messageCounter);
-        if (sourceNodeId !== undefined) writer.writeUInt64(nodeIdToBigint(sourceNodeId));
-        if (destNodeId !== undefined) writer.writeUInt64(nodeIdToBigint(destNodeId));
+        if (sourceNodeId !== undefined) writer.writeUInt64(sourceNodeId.id);
+        if (destNodeId !== undefined) writer.writeUInt64(destNodeId.id);
         if (destGroupId !== undefined) writer.writeUInt32(destGroupId);
-        return writer.toBuffer();
+        return writer.toByteArray();
     }
 
     static messageToString({packetHeader: {messageId, sessionId}, payloadHeader: {exchangeId, messageType, protocolId, ackedMessageId, requiresAck}, payload}: Message) {
-        return `id:${sessionId}/${exchangeId}/${messageId} t:${protocolId}/${messageType}${ackedMessageId !== undefined ? ` acked:${ackedMessageId}` : ''} reqAck:${requiresAck} payload: ${payload.toString("hex")}`;
+        return `id:${sessionId}/${exchangeId}/${messageId} t:${protocolId}/${messageType}${ackedMessageId !== undefined ? ` acked:${ackedMessageId}` : ''} reqAck:${requiresAck} payload: ${payload.toHex()}`;
     }
 
     private static encodePayloadHeader({exchangeId, isInitiatorMessage, messageType, protocolId, requiresAck, ackedMessageId: ackedMessageCounter}: PayloadHeader) {
-        const writer = new LEBufferWriter();
+        const writer = new util.DataWriter(util.Endian.Little);
         const vendorId = (protocolId & 0xFFFF0000) >> 16;
         const flags = (isInitiatorMessage ? PayloadHeaderFlag.IsInitiatorMessage : 0)
             | (ackedMessageCounter !== undefined ? PayloadHeaderFlag.IsAckMessage : 0)
@@ -177,6 +176,6 @@ export class MessageCodec {
         writer.writeUInt16(exchangeId);
         (vendorId !== COMMON_VENDOR_ID) ? writer.writeUInt32(protocolId) : writer.writeUInt16(protocolId);
         if (ackedMessageCounter !== undefined) writer.writeUInt32(ackedMessageCounter);
-        return writer.toBuffer();
+        return writer.toByteArray();
     }
 }

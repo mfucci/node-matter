@@ -23,7 +23,7 @@ const TlvAttributeValuePair = tlv.Object({
     attributeId: tlv.Field(0, TlvAttributeId),
 
     /** This is the attribute value as part of an extension field set. */
-    attributeValue: tlv.Field(1, tlv.Array(AnyT)),
+    attributeValue: tlv.Field(1, tlv.Array(tlv.Any)),
 });
 
 /**
@@ -83,7 +83,7 @@ const TlvGetSceneMembershipRequest = tlv.Object({
 });
 
 /** @see {@link spec.MatterApplicationClusterSpecificationV1_0} § 1.4.9.11.1 */
-const TlvScenesCopyMode = tlv.Bitmap({
+const TlvScenesCopyMode = tlv.Bitmap(tlv.UInt8, {
     copyAllScenes: schema.BitFlag(0),
 });
 
@@ -163,7 +163,7 @@ const TlvCopySceneResponse = tlv.Object({
 });
 
 /** @see {@link spec.MatterApplicationClusterSpecificationV1_0} § 1.4.7.5 */
-const TlvNameSupportBitmap = tlv.Bitmap({
+const TlvNameSupportBitmap = tlv.Bitmap(tlv.UInt8, {
     sceneNames: schema.BitFlag(7),
 });
 

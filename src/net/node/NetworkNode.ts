@@ -8,14 +8,15 @@ import { networkInterfaces, NetworkInterfaceInfo } from "os";
 import { UdpChannelOptions, UdpChannel } from "../UdpChannel";
 import { UdpChannelNode } from "./UdpChannelNode";
 import { Network } from "../Network";
+import { util } from "@project-chip/matter.js";
 
 function ipToNumber(ip: string) {
-    const buffer = Buffer.alloc(4);
+    const dataView = new util.ByteArray(4).getDataView();
     const ipParts = ip.split(".");
     for (var i = 0; i < 4; i++) {
-        buffer.writeUInt8(parseInt(ipParts[i]), i);
+        dataView.setUint8(i, parseInt(ipParts[i]));
     }
-    return buffer.readUInt32BE();
+    return dataView.getUint32(0);
 }
 
 export class NetworkNode extends Network {

@@ -10,6 +10,7 @@ import { SecureSession } from "../session/SecureSession";
 import { Session } from "../session/Session";
 import { MessageChannel } from "./ExchangeManager";
 import { NodeId } from "./NodeId";
+import { util } from "@project-chip/matter.js";
 
 export class ChannelManager {
     private readonly channels = new Map<string, MessageChannel<any>>();
@@ -24,16 +25,16 @@ export class ChannelManager {
         return result;
     }
 
-    getOrCreateChannel(bufferChannel: Channel<Buffer>, session: Session<any>) {
-        if (!session.isSecure()) return new MessageChannel(bufferChannel, session);
+    getOrCreateChannel(byteArrayChannel: Channel<util.ByteArray>, session: Session<any>) {
+        if (!session.isSecure()) return new MessageChannel(byteArrayChannel, session);
         const secureSession = session as SecureSession<any>;
         const fabric = secureSession.getFabric();
         const nodeId = secureSession.getPeerNodeId();
-        if (fabric === undefined) return new MessageChannel(bufferChannel, session);
+        if (fabric === undefined) return new MessageChannel(byteArrayChannel, session);
 
         let result = this.channels.get(`${fabric.id}/${nodeId}`);
         if (result === undefined || result.session.getId() !== session.getId()) {
-            result = new MessageChannel(bufferChannel, session);
+            result = new MessageChannel(byteArrayChannel, session);
             this.setChannel(fabric, nodeId, result);
         }
         return result;

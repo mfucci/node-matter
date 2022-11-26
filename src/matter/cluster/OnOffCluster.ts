@@ -65,7 +65,7 @@ const TlvOffWithEffectRequest = tlv.Object({
     >;
 
 /** @see {@link spec.MatterApplicationClusterSpecificationV1_0} § 1.5.7.4.2 */
-const TlvOnOffControlBitmap = tlv.Bitmap({
+const TlvOnOffControlBitmap = tlv.Bitmap(tlv.UInt8, {
     acceptOnlyWhenOn: schema.BitFlag(1),
 })
 

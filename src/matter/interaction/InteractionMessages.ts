@@ -5,10 +5,10 @@
  */
 
 import { TlvNodeId } from "../common/NodeId";
-import { spec, tlv } from "@project-chip/matter.js";
+import { MatterCoreSpecificationV1_0, TlvAny, TlvArray, TlvBoolean, TlvEnum, TlvField, TlvList, TlvObject, TlvOptionalField, TlvUInt16, TlvUInt32, TlvUInt64, TlvUInt8 } from "@project-chip/matter.js";
 
 /**
- * @see {@link spec.MatterCoreSpecificationV1_0}, section 8.10
+ * @see {@link MatterCoreSpecificationV1_0}, section 8.10
  */
 export const enum StatusCode {
     Success = 0x00,
@@ -39,107 +39,107 @@ export const enum StatusCode {
     TimedRequestMismatch = 0xc9,
     FailsafeRequired = 0xca,
 }
-export const TlvStatusResponse = tlv.Object({
-    status: tlv.Field(0, tlv.Enum<StatusCode>()),
-    interactionModelRevision: tlv.Field(0xFF, tlv.UInt8),
+export const TlvStatusResponse = TlvObject({
+    status: TlvField(0, TlvEnum<StatusCode>()),
+    interactionModelRevision: TlvField(0xFF, TlvUInt8),
 });
 
-const TlvAttributePath = tlv.List({
-    endpointId: tlv.OptionalField(2, tlv.UInt16),
-    clusterId: tlv.OptionalField(3, tlv.UInt32),
-    id: tlv.OptionalField(4, tlv.UInt32),
+const TlvAttributePath = TlvList({
+    endpointId: TlvOptionalField(2, TlvUInt16),
+    clusterId: TlvOptionalField(3, TlvUInt32),
+    id: TlvOptionalField(4, TlvUInt32),
 });
 
-export const TlvReadRequest = tlv.Object({
-    attributes: tlv.Field(0, tlv.Array(TlvAttributePath)),
-    isFabricFiltered: tlv.Field(3,  tlv.Boolean),
-    interactionModelRevision: tlv.Field(0xFF, tlv.UInt8),
+export const TlvReadRequest = TlvObject({
+    attributes: TlvField(0, TlvArray(TlvAttributePath)),
+    isFabricFiltered: TlvField(3,  TlvBoolean),
+    interactionModelRevision: TlvField(0xFF, TlvUInt8),
 });
 
-export const TlvDataReport = tlv.Object({
-    subscriptionId: tlv.OptionalField(0, tlv.UInt32),
-    values: tlv.Field(1, tlv.Array(tlv.Object({
-        value: tlv.Field(1, tlv.Object({
-            version: tlv.Field(0, tlv.UInt32),
-            path: tlv.Field(1, tlv.List({
-                endpointId: tlv.Field(2, tlv.UInt16),
-                clusterId: tlv.Field(3, tlv.UInt32),
-                id: tlv.Field(4, tlv.UInt32),
+export const TlvDataReport = TlvObject({
+    subscriptionId: TlvOptionalField(0, TlvUInt32),
+    values: TlvField(1, TlvArray(TlvObject({
+        value: TlvField(1, TlvObject({
+            version: TlvField(0, TlvUInt32),
+            path: TlvField(1, TlvList({
+                endpointId: TlvField(2, TlvUInt16),
+                clusterId: TlvField(3, TlvUInt32),
+                id: TlvField(4, TlvUInt32),
             })),
-            value: tlv.Field(2, tlv.Any),
+            value: TlvField(2, TlvAny),
         })),
     }))),
-    isFabricFiltered: tlv.OptionalField(4,  tlv.Boolean),
-    interactionModelRevision: tlv.Field(0xFF, tlv.UInt8),
+    isFabricFiltered: TlvOptionalField(4,  TlvBoolean),
+    interactionModelRevision: TlvField(0xFF, TlvUInt8),
 });
 
-export const TlvSubscribeRequest = tlv.Object({
-    keepSubscriptions: tlv.Field(0,  tlv.Boolean),
-    minIntervalFloorSeconds: tlv.Field(1, tlv.UInt16),
-    maxIntervalCeilingSeconds: tlv.Field(2, tlv.UInt16),
-    attributeRequests: tlv.OptionalField(3, tlv.Array(TlvAttributePath)),
-    eventRequests: tlv.OptionalField(4, tlv.Array(tlv.List({
-        node: tlv.Field(0, TlvNodeId),
-        endpoint: tlv.Field(1, tlv.UInt16),
-        cluster: tlv.Field(2, tlv.UInt32),
-        event: tlv.Field(3, tlv.UInt32),
-        isUrgent: tlv.Field(4,  tlv.Boolean),
+export const TlvSubscribeRequest = TlvObject({
+    keepSubscriptions: TlvField(0,  TlvBoolean),
+    minIntervalFloorSeconds: TlvField(1, TlvUInt16),
+    maxIntervalCeilingSeconds: TlvField(2, TlvUInt16),
+    attributeRequests: TlvOptionalField(3, TlvArray(TlvAttributePath)),
+    eventRequests: TlvOptionalField(4, TlvArray(TlvList({
+        node: TlvField(0, TlvNodeId),
+        endpoint: TlvField(1, TlvUInt16),
+        cluster: TlvField(2, TlvUInt32),
+        event: TlvField(3, TlvUInt32),
+        isUrgent: TlvField(4,  TlvBoolean),
     }))),
-    eventFilters: tlv.OptionalField(5, tlv.Array(tlv.List({
-        node: tlv.Field(0, TlvNodeId),
-        eventMin: tlv.Field(1, tlv.UInt64),
+    eventFilters: TlvOptionalField(5, TlvArray(TlvList({
+        node: TlvField(0, TlvNodeId),
+        eventMin: TlvField(1, TlvUInt64),
     }))),
-    isFabricFiltered: tlv.Field(7,  tlv.Boolean),
-    dataVersionFilters: tlv.OptionalField(8, tlv.Array(tlv.Object({
-        path: tlv.Field(0, tlv.List({
-            node: tlv.Field(0, TlvNodeId),
-            endpoint: tlv.Field(1, tlv.UInt16),
-            cluster: tlv.Field(2, tlv.UInt32),
+    isFabricFiltered: TlvField(7,  TlvBoolean),
+    dataVersionFilters: TlvOptionalField(8, TlvArray(TlvObject({
+        path: TlvField(0, TlvList({
+            node: TlvField(0, TlvNodeId),
+            endpoint: TlvField(1, TlvUInt16),
+            cluster: TlvField(2, TlvUInt32),
         })),
-        dataVersion: tlv.Field(1, tlv.UInt32),
+        dataVersion: TlvField(1, TlvUInt32),
     }))),
 });
 
-export const TlvSubscribeResponse = tlv.Object({
-    subscriptionId: tlv.Field(0, tlv.UInt32),
-    maxIntervalCeilingSeconds: tlv.Field(2, tlv.UInt16),
-    interactionModelRevision: tlv.Field(0xFF, tlv.UInt8),
+export const TlvSubscribeResponse = TlvObject({
+    subscriptionId: TlvField(0, TlvUInt32),
+    maxIntervalCeilingSeconds: TlvField(2, TlvUInt16),
+    interactionModelRevision: TlvField(0xFF, TlvUInt8),
 });
 
-export const TlvInvokeRequest = tlv.Object({
-    suppressResponse: tlv.Field(0,  tlv.Boolean),
-    timedRequest: tlv.Field(1,  tlv.Boolean),
-    invokes: tlv.Field(2, tlv.Array(tlv.Object({
-        path: tlv.Field(0, tlv.List({
-            endpointId: tlv.Field(0, tlv.UInt16),
-            clusterId: tlv.Field(1, tlv.UInt32),
-            id: tlv.Field(2, tlv.UInt32),
+export const TlvInvokeRequest = TlvObject({
+    suppressResponse: TlvField(0,  TlvBoolean),
+    timedRequest: TlvField(1,  TlvBoolean),
+    invokes: TlvField(2, TlvArray(TlvObject({
+        path: TlvField(0, TlvList({
+            endpointId: TlvField(0, TlvUInt16),
+            clusterId: TlvField(1, TlvUInt32),
+            id: TlvField(2, TlvUInt32),
         })),
-        args: tlv.Field(1, tlv.Any),
+        args: TlvField(1, TlvAny),
     }))),
 });
 
-export const TlvInvokeResponse = tlv.Object({
-    suppressResponse: tlv.Field(0,  tlv.Boolean),
-    responses: tlv.Field(1, tlv.Array(tlv.Object({
-        response: tlv.OptionalField(0, tlv.Object({
-            path: tlv.Field(0, tlv.List({
-                endpointId: tlv.Field(0, tlv.UInt16),
-                clusterId: tlv.Field(1, tlv.UInt32),
-                id: tlv.Field(2, tlv.UInt32),
+export const TlvInvokeResponse = TlvObject({
+    suppressResponse: TlvField(0,  TlvBoolean),
+    responses: TlvField(1, TlvArray(TlvObject({
+        response: TlvOptionalField(0, TlvObject({
+            path: TlvField(0, TlvList({
+                endpointId: TlvField(0, TlvUInt16),
+                clusterId: TlvField(1, TlvUInt32),
+                id: TlvField(2, TlvUInt32),
             })),
-            response: tlv.Field(1, tlv.Any),
+            response: TlvField(1, TlvAny),
         })),
-        result: tlv.OptionalField(1, tlv.Object({
-            path: tlv.Field(0, tlv.List({
-                endpointId: tlv.Field(0, tlv.UInt16),
-                clusterId: tlv.Field(1, tlv.UInt32),
-                id: tlv.Field(2, tlv.UInt32),
+        result: TlvOptionalField(1, TlvObject({
+            path: TlvField(0, TlvList({
+                endpointId: TlvField(0, TlvUInt16),
+                clusterId: TlvField(1, TlvUInt32),
+                id: TlvField(2, TlvUInt32),
             })),
-            result: tlv.Field(1, tlv.Object({
-                code: tlv.Field(0, tlv.UInt16),
+            result: TlvField(1, TlvObject({
+                code: TlvField(0, TlvUInt16),
             })),
         })),
     }))),
-    interactionModelRevision: tlv.Field(0xFF, tlv.UInt8),
+    interactionModelRevision: TlvField(0xFF, TlvUInt8),
 });

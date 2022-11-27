@@ -9,16 +9,16 @@ import { MatterDevice } from "../../MatterDevice";
 import { TlvPasePake1, TlvPasePake2, TlvPasePake3, TlvPbkdfParamRequest, TlvPbkdfParamResponse } from "./PaseMessages";
 import { MessageType } from "./SecureChannelMessages";
 import { SecureChannelMessenger } from "./SecureChannelMessenger";
-import { tlv, util } from "@project-chip/matter.js";
+import { ByteArray, TypeFromSchema } from "@project-chip/matter.js";
 
 export const DEFAULT_PASSCODE_ID = 0;
-export const SPAKE_CONTEXT = util.ByteArray.fromString("CHIP PAKE V1 Commissioning");
+export const SPAKE_CONTEXT = ByteArray.fromString("CHIP PAKE V1 Commissioning");
 
-type PbkdfParamRequest = tlv.TypeFromSchema<typeof TlvPbkdfParamRequest>;
-type PbkdfParamResponse = tlv.TypeFromSchema<typeof TlvPbkdfParamResponse>;
-type PasePake1 = tlv.TypeFromSchema<typeof TlvPasePake1>;
-type PasePake2 = tlv.TypeFromSchema<typeof TlvPasePake2>;
-type PasePake3 = tlv.TypeFromSchema<typeof TlvPasePake3>;
+type PbkdfParamRequest = TypeFromSchema<typeof TlvPbkdfParamRequest>;
+type PbkdfParamResponse = TypeFromSchema<typeof TlvPbkdfParamResponse>;
+type PasePake1 = TypeFromSchema<typeof TlvPasePake1>;
+type PasePake2 = TypeFromSchema<typeof TlvPasePake2>;
+type PasePake3 = TypeFromSchema<typeof TlvPasePake3>;
 
 export class PaseServerMessenger extends SecureChannelMessenger<MatterDevice> {
     async readPbkdfParamRequest() {

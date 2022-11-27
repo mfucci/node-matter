@@ -18,7 +18,7 @@ import { SubscriptionHandler } from "./SubscriptionHandler";
 import { Logger } from "../../log/Logger";
 import { DeviceTypeId } from "../common/DeviceTypeId";
 import { ClusterId } from "../common/ClusterId";
-import { tlv, schema } from "@project-chip/matter.js";
+import { TlvStream, TypeFromBitSchema } from "@project-chip/matter.js";
 
 export const INTERACTION_PROTOCOL_ID = 0x0001;
 
@@ -27,7 +27,7 @@ export class ClusterServer<ClusterT extends Cluster<any, any, any, any>> {
     readonly attributes = <AttributeServers<ClusterT["attributes"]>>{};
     readonly commands = new Array<CommandServer<any, any>>();
 
-    constructor(clusterDef: ClusterT, features: schema.TypeFromBitSchema<ClusterT["features"]>, attributesInitialValues: AttributeInitialValues<ClusterT["attributes"]>, handlers: ClusterServerHandlers<ClusterT>) {
+    constructor(clusterDef: ClusterT, features: TypeFromBitSchema<ClusterT["features"]>, attributesInitialValues: AttributeInitialValues<ClusterT["attributes"]>, handlers: ClusterServerHandlers<ClusterT>) {
         const { id, attributes: attributeDefs, commands: commandDefs } = clusterDef;
         this.id = id;
 
@@ -178,7 +178,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
     async handleInvokeRequest(exchange: MessageExchange<MatterDevice>, {invokes}: InvokeRequest): Promise<InvokeResponse> {
         logger.debug(`Received invoke request from ${exchange.channel.getName()}: ${invokes.map(({path: {endpointId, clusterId, id}}) => `${endpointId}/${clusterId}/${id}`).join(", ")}`);
 
-        const results = new Array<{path: Path, code: ResultCode, response: tlv.Stream, responseId: number }>();
+        const results = new Array<{path: Path, code: ResultCode, response: TlvStream, responseId: number }>();
 
         await Promise.all(invokes.map(async ({ path, args }) => {
             const command = this.commands.get(pathToId(path));

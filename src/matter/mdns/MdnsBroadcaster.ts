@@ -11,7 +11,7 @@ import { getDeviceMatterQname, getFabricQname, MATTER_COMMISSION_SERVICE_QNAME, 
 import { MdnsServer } from "../../net/MdnsServer";
 import { VendorId } from "../common/VendorId";
 import { NodeId } from "../common/NodeId";
-import { util } from "@project-chip/matter.js";
+import { ByteArray } from "@project-chip/matter.js";
 
 export class MdnsBroadcaster implements Broadcaster {
     static async create(multicastInterface?: string) {
@@ -65,7 +65,7 @@ export class MdnsBroadcaster implements Broadcaster {
         });
     }
 
-    setFabric(operationalId: util.ByteArray, nodeId: NodeId) {
+    setFabric(operationalId: ByteArray, nodeId: NodeId) {
         const operationalIdString = operationalId.toHex().toUpperCase();
         const fabricQname = getFabricQname(operationalIdString);
         const deviceMatterQname = getDeviceMatterQname(operationalIdString, nodeId.toString());

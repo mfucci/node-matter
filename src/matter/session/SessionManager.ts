@@ -10,15 +10,15 @@ import { Fabric } from "../fabric/Fabric";
 import { SecureSession } from "./SecureSession";
 import { Session } from "./Session";
 import { UnsecureSession } from "./UnsecureSession";
-import { util } from "@project-chip/matter.js";
+import { ByteArray } from "@project-chip/matter.js";
 
 export const UNDEFINED_NODE_ID = new NodeId(BigInt(0));
 
 export const UNICAST_UNSECURE_SESSION_ID = 0x0000;
 
 export interface ResumptionRecord {
-    sharedSecret: util.ByteArray,
-    resumptionId: util.ByteArray,
+    sharedSecret: ByteArray,
+    resumptionId: ByteArray,
     fabric: Fabric,
     peerNodeId: NodeId,
 }
@@ -36,7 +36,7 @@ export class SessionManager<ContextT> {
         this.sessions.set(UNICAST_UNSECURE_SESSION_ID, this.unsecureSession);
     }
 
-    async createSecureSession(sessionId: number, fabric: Fabric | undefined, peerNodeId: NodeId, peerSessionId: number, sharedSecret: util.ByteArray, salt: util.ByteArray, isInitiator: boolean, isResumption: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
+    async createSecureSession(sessionId: number, fabric: Fabric | undefined, peerNodeId: NodeId, peerSessionId: number, sharedSecret: ByteArray, salt: ByteArray, isInitiator: boolean, isResumption: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
         const session = await SecureSession.create(this.context, sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, salt, isInitiator, isResumption, idleRetransTimeoutMs, activeRetransTimeoutMs);
         this.sessions.set(sessionId, session);
 
@@ -72,7 +72,7 @@ export class SessionManager<ContextT> {
         return this.unsecureSession;
     }
 
-    findResumptionRecordById(resumptionId: util.ByteArray) {
+    findResumptionRecordById(resumptionId: ByteArray) {
         return [...this.resumptionRecords.values()].find(record => record.resumptionId.equals(resumptionId));
     }
 

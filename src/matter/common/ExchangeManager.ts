@@ -16,13 +16,13 @@ import { ChannelManager } from "./ChannelManager";
 import { Fabric } from "../fabric/Fabric";
 import { Logger } from "../../log/Logger";
 import { NodeId } from "./NodeId";
-import { util } from "@project-chip/matter.js";
+import { ByteArray } from "@project-chip/matter.js";
 
 const logger = Logger.get("MessageChannel");
 
 export class MessageChannel<ContextT> implements Channel<Message> {
     constructor(
-        readonly channel: Channel<util.ByteArray>,
+        readonly channel: Channel<ByteArray>,
         readonly session: Session<ContextT>,
     ) {}
 
@@ -78,7 +78,7 @@ export class ExchangeManager<ContextT> {
         this.exchanges.clear();
     }
 
-    private onMessage(channel: Channel<util.ByteArray>, messageBytes: util.ByteArray) {
+    private onMessage(channel: Channel<ByteArray>, messageBytes: ByteArray) {
         var packet = MessageCodec.decodePacket(messageBytes);
         if (packet.header.sessionType === SessionType.Group) throw new Error("Group messages are not supported");
 

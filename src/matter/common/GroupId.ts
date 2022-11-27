@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- import { tlv, spec } from "@project-chip/matter.js";
+ import { MatterCoreSpecificationV1_0, TlvUInt16, TlvWrapper } from "@project-chip/matter.js";
 
 /**
  * A Group Identifier (Group ID or GID) is a 16-bit number that identifies a set of Nodes across a
@@ -16,7 +16,7 @@
  * 0x0001 - 0xFEFF: Application Group ID, assigned by fabric Administrator
  * 0xFF00 - 0xFFFF: Universal Group ID range reserved for static multicast and anycast identifiers
  *
- * @see {@link spec.MatterCoreSpecificationV1_0} § 2.5.4
+ * @see {@link MatterCoreSpecificationV1_0} § 2.5.4
  */
 export class GroupId {
     constructor(
@@ -25,8 +25,8 @@ export class GroupId {
 }
 
 /** Tlv Schema for a Group Id. */
-export const TlvGroupId = new tlv.Wrapper<GroupId, number>(
-    tlv.UInt16,
+export const TlvGroupId = new TlvWrapper<GroupId, number>(
+    TlvUInt16,
     groupId => groupId.id,
     value => new GroupId(value),
 );

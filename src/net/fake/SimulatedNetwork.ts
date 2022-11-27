@@ -7,9 +7,9 @@
 import { NetListener } from "../NetInterface";
 import { singleton } from "../../util/Singleton";
 import { Logger } from "../../log/Logger";
-import { util } from "@project-chip/matter.js";
+import { ByteArray } from "@project-chip/matter.js";
 
-export type Listener = (peerAddress: string, peerPort: number, data: util.ByteArray) => void;
+export type Listener = (peerAddress: string, peerPort: number, data: ByteArray) => void;
 
 const logger = Logger.get("SimulatedNetwork");
 
@@ -43,7 +43,7 @@ export class SimulatedNetwork {
         this.listenersMap.set(ipPort, newListeners);
     }
 
-    async sendUdp(localAddress: string, localPort: number, remoteAddress: string, remotePort: number, data: util.ByteArray) {
+    async sendUdp(localAddress: string, localPort: number, remoteAddress: string, remotePort: number, data: ByteArray) {
         const ipPort = `${remoteAddress}:${remotePort}`;
         this.listenersMap.get(ipPort)?.forEach(listener => {
             try {

@@ -7,7 +7,7 @@
 import { AuthorityKeyIdentifier_X509, BasicConstraints_X509, BitByteArray, BYTES_KEY, ContextTagged, DerCodec, DerObject, EcdsaWithSHA256_X962, ELEMENTS_KEY, ExtendedKeyUsage_X509, KeyUsage_Signature_ContentCommited_X509, KeyUsage_Signature_X509, OBJECT_ID_KEY, OrganisationName_X520, PublicKeyEcPrime256v1_X962, SubjectKeyIdentifier_X509 } from "../../codec/DerCodec";
 import { Crypto, KeyPair } from "../../crypto/Crypto";
 import { NodeId, TlvNodeId } from "../common/NodeId";
-import { tlv, util } from "@project-chip/matter.js";
+import { ByteArray, TlvArray, TlvBoolean, TlvByteString, TlvField, TlvList, TlvObject, TlvOptionalField, TlvUInt16, TlvUInt32, TlvUInt64, TlvUInt8, TypeFromSchema } from "@project-chip/matter.js";
 
 const YEAR_S = 365 * 24 * 60 * 60;
 const EPOCH_OFFSET_S = 10957 * 24 * 60 * 60;
@@ -19,7 +19,7 @@ export function jsToMatterDate(date: Date, addYears: number = 0) {
 }
 
 function intTo16Chars(value: bigint | number) {
-    const byteArray = new util.ByteArray(8);
+    const byteArray = new ByteArray(8);
     const dataView = byteArray.getDataView();
     dataView.setBigUint64(0, typeof value === "bigint" ? value : BigInt(value));
     return byteArray.toHex().toUpperCase();
@@ -29,65 +29,65 @@ export const FabricId_Matter = (id: bigint | number) => [ DerObject("2b060104018
 export const NodeId_Matter = (nodeId: NodeId) => [ DerObject("2b0601040182a27c0101", {value: intTo16Chars(nodeId.id)}) ];
 export const RcacId_Matter = (id: bigint | number) => [ DerObject("2b0601040182a27c0104", {value: intTo16Chars(id)}) ];
 
-export const TlvRootCertificate = tlv.Object({
-    serialNumber: tlv.Field(1, tlv.ByteString.bound({ maxLength: 20 })),
-    signatureAlgorithm: tlv.Field(2, tlv.UInt8),
-    issuer: tlv.Field(3, tlv.List({
-        issuerRcacId: tlv.OptionalField(20, tlv.UInt64),
+export const TlvRootCertificate = TlvObject({
+    serialNumber: TlvField(1, TlvByteString.bound({ maxLength: 20 })),
+    signatureAlgorithm: TlvField(2, TlvUInt8),
+    issuer: TlvField(3, TlvList({
+        issuerRcacId: TlvOptionalField(20, TlvUInt64),
     })),
-    notBefore: tlv.Field(4, tlv.UInt32),
-    notAfter: tlv.Field(5, tlv.UInt32),
-    subject: tlv.Field(6, tlv.List({
-        rcacId: tlv.Field(20, tlv.UInt64),
+    notBefore: TlvField(4, TlvUInt32),
+    notAfter: TlvField(5, TlvUInt32),
+    subject: TlvField(6, TlvList({
+        rcacId: TlvField(20, TlvUInt64),
     })),
-    publicKeyAlgorithm: tlv.Field(7, tlv.UInt8),
-    ellipticCurveIdentifier: tlv.Field(8, tlv.UInt8),
-    ellipticCurvePublicKey: tlv.Field(9, tlv.ByteString),
-    extensions: tlv.Field(10, tlv.List({
-        basicConstraints: tlv.Field(1,  tlv.Object({
-            isCa: tlv.Field(1,  tlv.Boolean),
-            pathLen: tlv.OptionalField(2, tlv.UInt8),
+    publicKeyAlgorithm: TlvField(7, TlvUInt8),
+    ellipticCurveIdentifier: TlvField(8, TlvUInt8),
+    ellipticCurvePublicKey: TlvField(9, TlvByteString),
+    extensions: TlvField(10, TlvList({
+        basicConstraints: TlvField(1,  TlvObject({
+            isCa: TlvField(1, TlvBoolean),
+            pathLen: TlvOptionalField(2, TlvUInt8),
         })),
-        keyUsage: tlv.Field(2, tlv.UInt16),
-        extendedKeyUsage: tlv.OptionalField(3, tlv.Array(tlv.UInt8)),
-        subjectKeyIdentifier: tlv.Field(4, tlv.ByteString.bound({ length: 20 })),
-        authorityKeyIdentifier: tlv.Field(5, tlv.ByteString.bound({ length: 20 })),
-        futureExtension: tlv.OptionalField(6, tlv.ByteString),
+        keyUsage: TlvField(2, TlvUInt16),
+        extendedKeyUsage: TlvOptionalField(3, TlvArray(TlvUInt8)),
+        subjectKeyIdentifier: TlvField(4, TlvByteString.bound({ length: 20 })),
+        authorityKeyIdentifier: TlvField(5, TlvByteString.bound({ length: 20 })),
+        futureExtension: TlvOptionalField(6, TlvByteString),
     })),
-    signature: tlv.Field(11, tlv.ByteString),
+    signature: TlvField(11, TlvByteString),
 });
 
-export const TlvOperationalCertificate = tlv.Object({
-    serialNumber: tlv.Field(1, tlv.ByteString.bound({ maxLength: 20 })),
-    signatureAlgorithm: tlv.Field(2, tlv.UInt8),
-    issuer: tlv.Field(3, tlv.List({
-        issuerRcacId: tlv.OptionalField(20, tlv.UInt64),
+export const TlvOperationalCertificate = TlvObject({
+    serialNumber: TlvField(1, TlvByteString.bound({ maxLength: 20 })),
+    signatureAlgorithm: TlvField(2, TlvUInt8),
+    issuer: TlvField(3, TlvList({
+        issuerRcacId: TlvOptionalField(20, TlvUInt64),
     })),
-    notBefore: tlv.Field(4, tlv.UInt32),
-    notAfter: tlv.Field(5, tlv.UInt32),
-    subject: tlv.Field(6, tlv.List({
-        fabricId: tlv.Field(21, tlv.UInt64),
-        nodeId: tlv.Field(17, TlvNodeId),
+    notBefore: TlvField(4, TlvUInt32),
+    notAfter: TlvField(5, TlvUInt32),
+    subject: TlvField(6, TlvList({
+        fabricId: TlvField(21, TlvUInt64),
+        nodeId: TlvField(17, TlvNodeId),
     })),
-    publicKeyAlgorithm: tlv.Field(7, tlv.UInt8),
-    ellipticCurveIdentifier: tlv.Field(8, tlv.UInt8),
-    ellipticCurvePublicKey: tlv.Field(9, tlv.ByteString),
-    extensions: tlv.Field(10, tlv.List({
-        basicConstraints: tlv.Field(1,  tlv.Object({
-            isCa: tlv.Field(1,  tlv.Boolean),
-            pathLen: tlv.OptionalField(2, tlv.UInt8),
+    publicKeyAlgorithm: TlvField(7, TlvUInt8),
+    ellipticCurveIdentifier: TlvField(8, TlvUInt8),
+    ellipticCurvePublicKey: TlvField(9, TlvByteString),
+    extensions: TlvField(10, TlvList({
+        basicConstraints: TlvField(1,  TlvObject({
+            isCa: TlvField(1,  TlvBoolean),
+            pathLen: TlvOptionalField(2, TlvUInt8),
         })),
-        keyUsage: tlv.Field(2, tlv.UInt16),
-        extendedKeyUsage: tlv.OptionalField(3, tlv.Array(tlv.UInt8)),
-        subjectKeyIdentifier: tlv.Field(4, tlv.ByteString.bound({ length: 20 })),
-        authorityKeyIdentifier: tlv.Field(5, tlv.ByteString.bound({ length: 20 })),
-        futureExtension: tlv.OptionalField(6, tlv.ByteString),
+        keyUsage: TlvField(2, TlvUInt16),
+        extendedKeyUsage: TlvOptionalField(3, TlvArray(TlvUInt8)),
+        subjectKeyIdentifier: TlvField(4, TlvByteString.bound({ length: 20 })),
+        authorityKeyIdentifier: TlvField(5, TlvByteString.bound({ length: 20 })),
+        futureExtension: TlvOptionalField(6, TlvByteString),
     })),
-    signature: tlv.Field(11, tlv.ByteString),
+    signature: TlvField(11, TlvByteString),
 });
 
-export type RootCertificate = tlv.TypeFromSchema<typeof TlvRootCertificate>;
-export type OperationalCertificate = tlv.TypeFromSchema<typeof TlvOperationalCertificate>;
+export type RootCertificate = TypeFromSchema<typeof TlvRootCertificate>;
+export type OperationalCertificate = TypeFromSchema<typeof TlvOperationalCertificate>;
 type Unsigned<Type> = { [Property in keyof Type as Exclude<Property, "signature">]: Type[Property] };
 
 export class CertificateManager {
@@ -166,7 +166,7 @@ export class CertificateManager {
         });
     }
 
-    static getPublicKeyFromCsr(csr: util.ByteArray) {
+    static getPublicKeyFromCsr(csr: ByteArray) {
         const { [ELEMENTS_KEY]: rootElements } = DerCodec.decode(csr);
         if (rootElements?.length !== 3) throw new Error("Invalid CSR data");
         const [ requestNode, signAlgorithmNode, signatureNode ] = rootElements;

@@ -15,7 +15,7 @@ import { Network } from "../../src/net/Network";
 import { MdnsScanner } from "../../src/matter/mdns/MdnsScanner";
 import { Fabric } from "../../src/matter/fabric/Fabric";
 import { NodeId } from "../../src/matter/common/NodeId";
-import { util } from "@project-chip/matter.js";
+import { ByteArray } from "@project-chip/matter.js";
 
 const SERVER_IP = "192.168.200.1";
 const SERVER_MAC = "00:B0:D0:63:C2:26";
@@ -25,7 +25,7 @@ const CLIENT_MAC = "CA:FE:00:00:BE:EF";
 const serverNetwork = new NetworkFake([ {ip: SERVER_IP, mac: SERVER_MAC} ]);
 const clientNetwork = new NetworkFake([ {ip: CLIENT_IP, mac: CLIENT_MAC} ]);
 
-const OPERATIONAL_ID = util.ByteArray.fromHex("0000000000000018")
+const OPERATIONAL_ID = ByteArray.fromHex("0000000000000018")
 const NODE_ID = new NodeId(BigInt(1));
 
 describe("MDNS", () => {
@@ -52,7 +52,7 @@ describe("MDNS", () => {
 
     context("broadcaster", () => {
         it("it broadcasts the device fabric", async () => {
-            const { promise, resolver } = await getPromiseResolver<util.ByteArray>();
+            const { promise, resolver } = await getPromiseResolver<ByteArray>();
             channel.onData((peerAddress, peerPort, data) => resolver(data));
 
             broadcaster.setFabric(OPERATIONAL_ID, NODE_ID);

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { tlv } from "@project-chip/matter.js";
+import { TlvSchema } from "@project-chip/matter.js";
 
 export class AttributeServer<T> {
     private value: T;
@@ -15,7 +15,7 @@ export class AttributeServer<T> {
     constructor(
         readonly id: number,
         readonly name: string,
-        readonly schema: tlv.Schema<T>,
+        readonly schema: TlvSchema<T>,
         private readonly validator: (value: T, name: string) => void,
         defaultValue: T,
     ) {

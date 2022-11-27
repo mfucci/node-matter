@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { tlv, spec, util } from "@project-chip/matter.js";
+import { DataWriter, Endian, MatterCoreSpecificationV1_0, TlvUInt64, TlvWrapper } from "@project-chip/matter.js";
 
 /**
  * A Node Identifier (Node ID) is a 64-bit number that uniquely identifies an individual Node or a
  * group of Nodes on a Fabric.
  * 
- * @see {@link spec.MatterCoreSpecificationV1_0} § 2.5.5
+ * @see {@link MatterCoreSpecificationV1_0} § 2.5.5
  */
 export class NodeId {
     constructor(
@@ -18,15 +18,15 @@ export class NodeId {
     ) {}
 
     toString() {
-        const writer = new util.DataWriter(util.Endian.Big);
+        const writer = new DataWriter(Endian.Big);
         writer.writeUInt64(this.id);
         return writer.toByteArray().toHex().toUpperCase();
     }
 }
 
 /** Tlv schema for a Node Identifier. */
-export const TlvNodeId = new tlv.Wrapper<NodeId, number | bigint>(
-    tlv.UInt64,
+export const TlvNodeId = new TlvWrapper<NodeId, number | bigint>(
+    TlvUInt64,
     nodeId => nodeId.id,
     value => new NodeId(BigInt(value)),
 );

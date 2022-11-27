@@ -14,7 +14,7 @@ import { MatterServer, Scanner } from "../common/Scanner";
 import { Fabric } from "../fabric/Fabric";
 import { Time, Timer } from "../../time/Time";
 import { NodeId } from "../common/NodeId";
-import { util } from "@project-chip/matter.js";
+import { ByteArray } from "@project-chip/matter.js";
 
 type MatterServerRecordWithExpire = MatterServer & { expires: number };
 
@@ -60,7 +60,7 @@ export class MdnsScanner implements Scanner {
         [...this.recordWaiters.values()].forEach(waiter => waiter(undefined));
     }
 
-    private handleDnsMessage(messageBytes: util.ByteArray, remoteIp: string) {
+    private handleDnsMessage(messageBytes: ByteArray, remoteIp: string) {
         const message = DnsCodec.decode(messageBytes);
         if (message === undefined) return; // The message cannot be parsed
         if (message.messageType !== MessageType.Response) return;

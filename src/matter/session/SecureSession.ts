@@ -11,16 +11,16 @@ import { SubscriptionHandler } from "../interaction/SubscriptionHandler";
 import { DEFAULT_ACTIVE_RETRANSMISSION_TIMEOUT_MS, DEFAULT_IDLE_RETRANSMISSION_TIMEOUT_MS, DEFAULT_RETRANSMISSION_RETRIES, Session } from "./Session";
 import { UNDEFINED_NODE_ID } from "./SessionManager";
 import { NodeId } from "../common/NodeId";
-import { util } from "@project-chip/matter.js";
+import { ByteArray, DataWriter, Endian } from "@project-chip/matter.js";
 
-const SESSION_KEYS_INFO = util.ByteArray.fromString("SessionKeys");
-const SESSION_RESUMPTION_KEYS_INFO = util.ByteArray.fromString("SessionResumptionKeys");
+const SESSION_KEYS_INFO = ByteArray.fromString("SessionKeys");
+const SESSION_RESUMPTION_KEYS_INFO = ByteArray.fromString("SessionResumptionKeys");
 
 export class SecureSession<T> implements Session<T> {
     private nextSubscriptionId = 0;
     private readonly subscriptions = new Array<SubscriptionHandler>();
 
-    static async create<T>(context: T, id: number, fabric: Fabric | undefined, peerNodeId: NodeId, peerSessionId: number, sharedSecret: util.ByteArray, salt: util.ByteArray, isInitiator: boolean, isResumption: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
+    static async create<T>(context: T, id: number, fabric: Fabric | undefined, peerNodeId: NodeId, peerSessionId: number, sharedSecret: ByteArray, salt: ByteArray, isInitiator: boolean, isResumption: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
         const keys = await Crypto.hkdf(sharedSecret, salt, isResumption ? SESSION_RESUMPTION_KEYS_INFO : SESSION_KEYS_INFO, 16 * 3);
         const decryptKey = isInitiator ? keys.slice(16, 32) : keys.slice(0, 16);
         const encryptKey = isInitiator ? keys.slice(0, 16) : keys.slice(16, 32);
@@ -34,10 +34,10 @@ export class SecureSession<T> implements Session<T> {
         private readonly fabric: Fabric | undefined,
         private readonly peerNodeId: NodeId,
         private readonly peerSessionId: number,
-        private readonly sharedSecret: util.ByteArray,
-        private readonly decryptKey: util.ByteArray,
-        private readonly encryptKey: util.ByteArray,
-        private readonly attestationKey: util.ByteArray,
+        private readonly sharedSecret: ByteArray,
+        private readonly decryptKey: ByteArray,
+        private readonly encryptKey: ByteArray,
+        private readonly attestationKey: ByteArray,
         private readonly idleRetransmissionTimeoutMs: number = DEFAULT_IDLE_RETRANSMISSION_TIMEOUT_MS,
         private readonly activeRetransmissionTimeoutMs: number = DEFAULT_ACTIVE_RETRANSMISSION_TIMEOUT_MS,
         private readonly retransmissionRetries: number = DEFAULT_RETRANSMISSION_RETRIES,
@@ -63,7 +63,7 @@ export class SecureSession<T> implements Session<T> {
         return { header, bytes: Crypto.encrypt(this.encryptKey, bytes, nonce, headerBytes)};
     }
 
-    getAttestationChallengeKey(): util.ByteArray {
+    getAttestationChallengeKey(): ByteArray {
         return this.attestationKey;
     }
 
@@ -113,7 +113,7 @@ export class SecureSession<T> implements Session<T> {
     }
 
     private generateNonce(securityFlags: number, messageId: number, nodeId: NodeId) {
-        const writer = new util.DataWriter(util.Endian.Little);
+        const writer = new DataWriter(Endian.Little);
         writer.writeUInt8(securityFlags);
         writer.writeUInt32(messageId);
         writer.writeUInt64(nodeId.id);

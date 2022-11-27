@@ -6,7 +6,7 @@
 
 import { MatterDevice } from "../../MatterDevice";
 import { Session } from "../../session/Session";
-import { tlv } from "@project-chip/matter.js";
+import { TlvSchema, TlvStream } from "@project-chip/matter.js";
 
 export const enum ResultCode {
     Success = 0x00,
@@ -17,12 +17,12 @@ export class CommandServer<RequestT, ResponseT> {
         readonly invokeId: number,
         readonly responseId: number,
         readonly name: string,
-        protected readonly requestSchema: tlv.Schema<RequestT>,
-        protected readonly responseSchema: tlv.Schema<ResponseT>,
+        protected readonly requestSchema: TlvSchema<RequestT>,
+        protected readonly responseSchema: TlvSchema<ResponseT>,
         protected readonly handler: (request: RequestT, session: Session<MatterDevice>) => Promise<ResponseT> | ResponseT,
     ) {}
 
-    async invoke(session: Session<MatterDevice>, args: tlv.Stream): Promise<{ code: ResultCode, responseId: number, response: tlv.Stream }> {
+    async invoke(session: Session<MatterDevice>, args: TlvStream): Promise<{ code: ResultCode, responseId: number, response: TlvStream }> {
         const request = this.requestSchema.decodeTlv(args);
         const response = await this.handler(request, session);
         return { code: ResultCode.Success, responseId: this.responseId, response: this.responseSchema.encodeTlv(response) };

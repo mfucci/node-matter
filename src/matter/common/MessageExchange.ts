@@ -13,7 +13,7 @@ import { getPromiseResolver } from "../../util/Promises";
 import { Time, Timer } from "../../time/Time";
 import { Logger } from "../../log/Logger";
 import { NodeId } from "./NodeId";
-import { util } from "@project-chip/matter.js";
+import { ByteArray } from "@project-chip/matter.js";
 
 const logger = Logger.get("MessageExchange");
 
@@ -98,7 +98,7 @@ export class MessageExchange<ContextT> {
         if (messageId === this.receivedMessageToAck?.packetHeader.messageId) {
             // Received a message retransmission but the reply is not ready yet, ignoring
             if (requiresAck) {
-                this.send(MessageType.StandaloneAck, new util.ByteArray(0));
+                this.send(MessageType.StandaloneAck, new ByteArray(0));
             }
             return;
         }
@@ -130,7 +130,7 @@ export class MessageExchange<ContextT> {
         this.messagesQueue.write(message);
     }
 
-    async send(messageType: number, payload: util.ByteArray) {
+    async send(messageType: number, payload: ByteArray) {
         if (this.sentMessageToAck !== undefined) throw new Error("The previous message has not been acked yet, cannot send a new message");
         const message = {
             packetHeader: {
@@ -192,7 +192,7 @@ export class MessageExchange<ContextT> {
 
     close() {
         if (this.receivedMessageToAck !== undefined) {
-            this.send(MessageType.StandaloneAck, new util.ByteArray(0));
+            this.send(MessageType.StandaloneAck, new ByteArray(0));
         }
         Time.getTimer(this.activeRetransmissionTimeoutMs * (this.retransmissionRetries + 1), () => this.closeInternal())
             .start();

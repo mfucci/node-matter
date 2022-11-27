@@ -15,7 +15,7 @@ import { ExchangeManager, MessageChannel } from "../common/ExchangeManager";
 import { INTERACTION_PROTOCOL_ID } from "./InteractionServer";
 import { ProtocolHandler } from "../common/ProtocolHandler";
 import { StatusCode } from "./InteractionMessages";
-import { tlv } from "@project-chip/matter.js";
+import { TlvSchema } from "@project-chip/matter.js";
 
 export function ClusterClient<CommandT extends Commands, AttributeT extends Attributes>(interactionClient: InteractionClient, endpointId: number, clusterDef: Cluster<any, AttributeT, CommandT, any>): ClusterClient<CommandT, AttributeT> {
     const result: any = {};
@@ -117,7 +117,7 @@ export class InteractionClient {
         });
     }
 
-    async invoke<C extends Command<any, any>>(endpointId: number, clusterId: number, request: RequestType<C>, id: number, requestSchema: tlv.Schema<RequestType<C>>, responseId: number, responseSchema: tlv.Schema<ResponseType<C>>, optional: boolean): Promise<ResponseType<C>> {
+    async invoke<C extends Command<any, any>>(endpointId: number, clusterId: number, request: RequestType<C>, id: number, requestSchema: TlvSchema<RequestType<C>>, responseId: number, responseSchema: TlvSchema<ResponseType<C>>, optional: boolean): Promise<ResponseType<C>> {
         return this.withMessenger<ResponseType<C>>(async messenger => {
             const { responses } = await messenger.sendInvokeCommand({
                 invokes: [

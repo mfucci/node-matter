@@ -5,9 +5,9 @@
  */
 
 import { Attribute, WritableAttribute, Cluster, Command, OptionalCommand, TlvNoResponse } from "./Cluster";
-import { tlv, spec, schema } from "@project-chip/matter.js";
+import { BitFlag, MatterApplicationClusterSpecificationV1_0, TlvEnum, TlvField, TlvObject, TlvUInt16 } from "@project-chip/matter.js";
 
-/** @see {@link spec.MatterApplicationClusterSpecificationV1_0} § 1.2.5.2 */
+/** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.2.5.2 */
 export const enum IdentifyType {
     None = 0,
     VisibleLight = 1,
@@ -17,7 +17,7 @@ export const enum IdentifyType {
     Actuator = 5,
 }
 
-/** @see {@link spec.MatterApplicationClusterSpecificationV1_0} § 1.2.6.3.1 */
+/** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.2.6.3.1 */
 export const enum EffectIdentifier {
     Blink = 0,
     Breathe = 1,
@@ -27,31 +27,31 @@ export const enum EffectIdentifier {
     StopEffect = 0xff,
 }
 
-/** @see {@link spec.MatterApplicationClusterSpecificationV1_0} § 1.2.6.3.2 */
+/** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.2.6.3.2 */
 export const enum EffectVariant {
     Default = 0,
 }
 
-/** @see {@link spec.MatterApplicationClusterSpecificationV1_0} § 1.2.6.1 */
-const TlvIdentifyRequest = tlv.Object({
-    identifyTime: tlv.Field(0, tlv.UInt16),
+/** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.2.6.1 */
+const TlvIdentifyRequest = TlvObject({
+    identifyTime: TlvField(0, TlvUInt16),
 });
 
-/** @see {@link spec.MatterApplicationClusterSpecificationV1_0} § 1.2.6.3 */
-const TlvTriggerEffectRequest = tlv.Object({
-    effectIdentifier: tlv.Field(0, tlv.Enum<EffectIdentifier>()),
-    effectVariant: tlv.Field(1, tlv.Enum<EffectVariant>()),
+/** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.2.6.3 */
+const TlvTriggerEffectRequest = TlvObject({
+    effectIdentifier: TlvField(0, TlvEnum<EffectIdentifier>()),
+    effectVariant: TlvField(1, TlvEnum<EffectVariant>()),
 });
 
-/** @see {@link spec.MatterApplicationClusterSpecificationV1_0} § 1.2.6.4 */
-const TlvIdentifyQueryResponse = tlv.Object({
-    timeout: tlv.Field(0, tlv.UInt16),
+/** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.2.6.4 */
+const TlvIdentifyQueryResponse = TlvObject({
+    timeout: TlvField(0, TlvUInt16),
 });
 
 /**
  * Attributes and commands for putting a device into Identification mode (e.g. flashing a light).
  *
- * @see {@link spec.MatterApplicationClusterSpecificationV1_0} § 1.2
+ * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.2
  */
 export const IdentifyCluster = Cluster({
     id: 0x03,
@@ -59,19 +59,19 @@ export const IdentifyCluster = Cluster({
     revision: 4,
     features: {
         /** Replies to multicast / groupcast queries if the identification state is active. */
-        query: schema.BitFlag(0),
+        query: BitFlag(0),
     },
 
-    /** @see {@link spec.MatterApplicationClusterSpecificationV1_0} § 1.2.5 */
+    /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.2.5 */
     attributes: {
         /** Specifies the remaining length of time, in seconds, that the endpoint will continue to identify itself. */
-        identifyTime: WritableAttribute(0, tlv.UInt16, { default: 0 }), /* unit: seconds */
+        identifyTime: WritableAttribute(0, TlvUInt16, { default: 0 }), /* unit: seconds */
 
         /** Specifies how the identification state is presented to the user. */
-        identifyType: Attribute(1, tlv.Enum<IdentifyType>(), { default: 0 }),
+        identifyType: Attribute(1, TlvEnum<IdentifyType>(), { default: 0 }),
     },
 
-    /** @see {@link spec.MatterApplicationClusterSpecificationV1_0} § 1.2.6 */
+    /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.2.6 */
     commands: {
         /** Starts or stops the receiving device identifying itself. */
         identify: Command(0, TlvIdentifyRequest, 0, TlvNoResponse),

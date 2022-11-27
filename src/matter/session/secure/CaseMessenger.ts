@@ -9,7 +9,7 @@ import { MatterDevice } from "../../MatterDevice";
 import { TlvCaseSigma1, TlvCaseSigma2Resume, TlvCaseSigma2, TlvCaseSigma3 } from "./CaseMessages";
 import { MessageType } from "./SecureChannelMessages";
 import { SecureChannelMessenger } from "./SecureChannelMessenger";
-import { tlv } from "@project-chip/matter.js";
+import { TypeFromSchema } from "@project-chip/matter.js";
 
 export class CaseServerMessenger extends SecureChannelMessenger<MatterDevice> {
     async readSigma1() {
@@ -17,11 +17,11 @@ export class CaseServerMessenger extends SecureChannelMessenger<MatterDevice> {
         return { sigma1Bytes: payload, sigma1: TlvCaseSigma1.decode(payload) } ;
     }
 
-    sendSigma2(sigma2: tlv.TypeFromSchema<typeof TlvCaseSigma2>) {
+    sendSigma2(sigma2: TypeFromSchema<typeof TlvCaseSigma2>) {
         return this.send(sigma2, MessageType.Sigma2, TlvCaseSigma2);
     }
 
-    sendSigma2Resume(sigma2Resume: tlv.TypeFromSchema<typeof TlvCaseSigma2Resume>) {
+    sendSigma2Resume(sigma2Resume: TypeFromSchema<typeof TlvCaseSigma2Resume>) {
         return this.send(sigma2Resume, MessageType.Sigma2Resume, TlvCaseSigma2Resume);
     }
 
@@ -32,7 +32,7 @@ export class CaseServerMessenger extends SecureChannelMessenger<MatterDevice> {
 }
 
 export class CaseClientMessenger extends SecureChannelMessenger<MatterController> {
-    sendSigma1(sigma1: tlv.TypeFromSchema<typeof TlvCaseSigma1>) {
+    sendSigma1(sigma1: TypeFromSchema<typeof TlvCaseSigma1>) {
         return this.send(sigma1, MessageType.Sigma1, TlvCaseSigma1);
     }
 
@@ -48,7 +48,7 @@ export class CaseClientMessenger extends SecureChannelMessenger<MatterController
         }
     }
 
-    sendSigma3(sigma3: tlv.TypeFromSchema<typeof TlvCaseSigma3>) {
+    sendSigma3(sigma3: TypeFromSchema<typeof TlvCaseSigma3>) {
         return this.send(sigma3, MessageType.Sigma3, TlvCaseSigma3);
     }
 }

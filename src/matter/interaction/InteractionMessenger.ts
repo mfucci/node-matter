@@ -9,7 +9,7 @@ import { MessageExchange } from "../common/MessageExchange";
 import { MatterController } from "../MatterController";
 import { MatterDevice } from "../MatterDevice";
 import { TlvInvokeRequest, TlvInvokeResponse, TlvReadRequest, TlvDataReport, TlvSubscribeRequest, TlvSubscribeResponse, StatusCode, TlvStatusResponse } from "./InteractionMessages";
-import { tlv, util } from "@project-chip/matter.js";
+import { ByteArray, TlvSchema, TypeFromSchema } from "@project-chip/matter.js";
 
 export const enum MessageType {
     StatusResponse = 0x01,
@@ -24,12 +24,12 @@ export const enum MessageType {
     TimedRequest = 0x0a,
 }
 
-export type ReadRequest = tlv.TypeFromSchema<typeof TlvReadRequest>;
-export type DataReport = tlv.TypeFromSchema<typeof TlvDataReport>;
-export type SubscribeRequest = tlv.TypeFromSchema<typeof TlvSubscribeRequest>;
-export type SubscribeResponse = tlv.TypeFromSchema<typeof TlvSubscribeResponse>;
-export type InvokeRequest = tlv.TypeFromSchema<typeof TlvInvokeRequest>;
-export type InvokeResponse = tlv.TypeFromSchema<typeof TlvInvokeResponse>;
+export type ReadRequest = TypeFromSchema<typeof TlvReadRequest>;
+export type DataReport = TypeFromSchema<typeof TlvDataReport>;
+export type SubscribeRequest = TypeFromSchema<typeof TlvSubscribeRequest>;
+export type SubscribeResponse = TypeFromSchema<typeof TlvSubscribeResponse>;
+export type InvokeRequest = TypeFromSchema<typeof TlvInvokeRequest>;
+export type InvokeResponse = TypeFromSchema<typeof TlvInvokeResponse>;
 
 const logger = Logger.get("InteractionServerMessenger");
 
@@ -60,7 +60,7 @@ class InteractionMessenger<ContextT> {
         this.exchangeBase.close();
     }
 
-    protected throwIfError(messageType: number, payload: util.ByteArray) {
+    protected throwIfError(messageType: number, payload: ByteArray) {
         if (messageType !== MessageType.StatusResponse) return;
         const {status} = TlvStatusResponse.decode(payload);
         if (status !== StatusCode.Success) new Error(`Received error status: ${status}`);
@@ -141,7 +141,7 @@ export class InteractionClientMessenger extends InteractionMessenger<MatterContr
         return TlvDataReport.decode(dataReportMessage.payload);
     }
 
-    private async request<RequestT, ResponseT>(requestMessageType: number, requestSchema: tlv.Schema<RequestT>, responseMessageType: number, responseSchema: tlv.Schema<ResponseT>, request: RequestT): Promise<ResponseT> {
+    private async request<RequestT, ResponseT>(requestMessageType: number, requestSchema: TlvSchema<RequestT>, responseMessageType: number, responseSchema: TlvSchema<ResponseT>, request: RequestT): Promise<ResponseT> {
         await this.exchange.send(requestMessageType, requestSchema.encode(request));
         const responseMessage = await this.nextMessage(responseMessageType);
         return responseSchema.decode(responseMessage.payload);

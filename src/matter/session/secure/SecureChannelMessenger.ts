@@ -6,7 +6,7 @@
 
 import { MessageExchange } from "../../common/MessageExchange";
 import { GeneralStatusCode, ProtocolStatusCode, MessageType, SECURE_CHANNEL_PROTOCOL_ID } from "./SecureChannelMessages";
-import { tlv, util } from "@project-chip/matter.js";
+import { ByteArray, DataReader, DataWriter, Endian, TlvSchema } from "@project-chip/matter.js";
 
 export class SecureChannelMessenger<ContextT> {
     constructor(
@@ -21,7 +21,7 @@ export class SecureChannelMessenger<ContextT> {
         return message;
     }
 
-    async nextMessageDecoded<T>(expectedMessageType: number, schema: tlv.Schema<T>) {
+    async nextMessageDecoded<T>(expectedMessageType: number, schema: TlvSchema<T>) {
         return schema.decode((await this.nextMessage(expectedMessageType)).payload);
     }
 
@@ -30,7 +30,7 @@ export class SecureChannelMessenger<ContextT> {
         await this.nextMessage(MessageType.StatusReport);
     }
 
-    async send<T>(message: T, type: number, schema: tlv.Schema<T>) {
+    async send<T>(message: T, type: number, schema: TlvSchema<T>) {
         const payload = schema.encode(message);
         await this.exchange.send(type, payload);
         return payload;
@@ -53,16 +53,16 @@ export class SecureChannelMessenger<ContextT> {
     }
 
     private async sendStatusReport(generalStatus: GeneralStatusCode, protocolStatus: ProtocolStatusCode) {
-        const writer = new util.DataWriter(util.Endian.Little);
+        const writer = new DataWriter(Endian.Little);
         writer.writeUInt16(generalStatus);
         writer.writeUInt32(SECURE_CHANNEL_PROTOCOL_ID);
         writer.writeUInt16(protocolStatus);
         await this.exchange.send(MessageType.StatusReport, writer.toByteArray());
     }
 
-    protected throwIfError(messageType: number, payload: util.ByteArray) {
+    protected throwIfError(messageType: number, payload: ByteArray) {
         if (messageType !== MessageType.StatusReport) return;
-        const reader = new util.DataReader(payload, util.Endian.Little);
+        const reader = new DataReader(payload, Endian.Little);
         const generalStatus = reader.readUInt16();
         if (generalStatus === GeneralStatusCode.Success) return;
         const protocolId = reader.readUInt32();

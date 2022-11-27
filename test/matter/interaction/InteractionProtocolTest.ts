@@ -12,7 +12,7 @@ import { DEVICE } from "../../../src/matter/common/DeviceTypes";
 import { MatterDevice } from "../../../src/matter/MatterDevice";
 import { BasicInformationCluster } from "../../../src/matter/cluster/BasicInformationCluster";
 import { VendorId } from "../../../src/matter/common/VendorId";
-import { tlv } from "@project-chip/matter.js";
+import { TlvUInt8 } from "@project-chip/matter.js";
 import { Time } from "../../../src/time/Time";
 import { TimeFake } from "../../../src/time/TimeFake";
 
@@ -37,7 +37,7 @@ const READ_RESPONSE: DataReport = {
                 clusterId: 0x28,
                 id: 2,
             },
-            value: tlv.UInt8.encodeTlv(1),
+            value: TlvUInt8.encodeTlv(1),
             version: 0,
         }},
         { value: {
@@ -46,7 +46,7 @@ const READ_RESPONSE: DataReport = {
                 clusterId: 0x28,
                 id: 4,
             },
-            value: tlv.UInt8.encodeTlv(2),
+            value: TlvUInt8.encodeTlv(2),
             version: 0,
         }},
     ]

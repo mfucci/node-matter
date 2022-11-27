@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { tlv, spec } from "@project-chip/matter.js";
+import { MatterCoreSpecificationV1_0, TlvUInt16, TlvWrapper } from "@project-chip/matter.js";
 
 /**
  * A Endpoint Number is a 16-bit number that that indicates an instance of a device type.
  *
- * @see {@link spec.MatterCoreSpecificationV1_0} § 7.18.2.11
+ * @see {@link MatterCoreSpecificationV1_0} § 7.18.2.11
  */
 export class EndpointNumber {
     constructor(
@@ -18,8 +18,8 @@ export class EndpointNumber {
 }
 
 /** Tlv schema for an Endpoint number. */
-export const TlvEndpointNumber = new tlv.Wrapper<EndpointNumber, number>(
-    tlv.UInt16,
+export const TlvEndpointNumber = new TlvWrapper<EndpointNumber, number>(
+    TlvUInt16,
     endpointNumber => endpointNumber.number,
     value => new EndpointNumber(value),
 );

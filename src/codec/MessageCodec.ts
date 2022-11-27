@@ -5,7 +5,7 @@
  */
 
 import { NodeId } from "../matter/common/NodeId";
-import { util } from "@project-chip/matter.js";
+import { ByteArray, DataReader, DataWriter, Endian } from "@project-chip/matter.js";
 
 export interface PacketHeader {
     sessionId: number,
@@ -27,13 +27,13 @@ export interface PayloadHeader {
 
 export interface Packet {
     header: PacketHeader,
-    bytes: util.ByteArray,
+    bytes: ByteArray,
 }
 
 export interface Message {
     packetHeader: PacketHeader,
     payloadHeader: PayloadHeader,
-    payload: util.ByteArray,
+    payload: ByteArray,
 }
 
 const HEADER_VERSION = 0x00;
@@ -63,8 +63,8 @@ const enum PayloadHeaderFlag {
 
 export class MessageCodec {
 
-    static decodePacket(data: util.ByteArray): Packet {
-        const reader = new util.DataReader(data, util.Endian.Little);
+    static decodePacket(data: ByteArray): Packet {
+        const reader = new DataReader(data, Endian.Little);
         const header = this.decodePacketHeader(reader);
 
         return {
@@ -74,7 +74,7 @@ export class MessageCodec {
     }
 
     static decodePayload({header, bytes}: Packet): Message {
-        const reader = new util.DataReader(bytes, util.Endian.Little);
+        const reader = new DataReader(bytes, Endian.Little);
         return {
             packetHeader: header,
             payloadHeader: this.decodePayloadHeader(reader),
@@ -85,21 +85,21 @@ export class MessageCodec {
     static encodePayload({packetHeader, payloadHeader, payload}: Message): Packet {
         return {
             header: packetHeader,
-            bytes: util.ByteArray.concat(
+            bytes: ByteArray.concat(
                 this.encodePayloadHeader(payloadHeader),
                 payload,
             ),
         };
     }
 
-    static encodePacket({header, bytes}: Packet): util.ByteArray {
-        return util.ByteArray.concat(
+    static encodePacket({header, bytes}: Packet): ByteArray {
+        return ByteArray.concat(
             this.encodePacketHeader(header),
             bytes,
         );
     }
 
-    private static decodePacketHeader(reader: util.DataReader) {
+    private static decodePacketHeader(reader: DataReader) {
         // Read and parse flags
         const flags = reader.readUInt8();
         const version = (flags & PacketHeaderFlag.VersionMask) >> 4;
@@ -123,7 +123,7 @@ export class MessageCodec {
         return { sessionId, sourceNodeId, messageId, destGroupId, destNodeId, sessionType };
     }
 
-    private static decodePayloadHeader(reader: util.DataReader): PayloadHeader {
+    private static decodePayloadHeader(reader: DataReader): PayloadHeader {
         const exchangeFlags = reader.readUInt8();
         const isInitiatorMessage = (exchangeFlags & PayloadHeaderFlag.IsInitiatorMessage) !== 0;
         const isAckMessage = (exchangeFlags & PayloadHeaderFlag.IsAckMessage) !== 0;
@@ -142,7 +142,7 @@ export class MessageCodec {
     }
 
     static encodePacketHeader({messageId: messageCounter, sessionId, destGroupId, destNodeId, sourceNodeId, sessionType}: PacketHeader) {
-        const writer = new util.DataWriter(util.Endian.Little);
+        const writer = new DataWriter(Endian.Little);
         const flags = (HEADER_VERSION << 4)
             | (destGroupId !== undefined ? PacketHeaderFlag.HasDestGroupId : 0)
             | (destNodeId !== undefined ? PacketHeaderFlag.HasDestNodeId : 0)
@@ -164,7 +164,7 @@ export class MessageCodec {
     }
 
     private static encodePayloadHeader({exchangeId, isInitiatorMessage, messageType, protocolId, requiresAck, ackedMessageId: ackedMessageCounter}: PayloadHeader) {
-        const writer = new util.DataWriter(util.Endian.Little);
+        const writer = new DataWriter(Endian.Little);
         const vendorId = (protocolId & 0xFFFF0000) >> 16;
         const flags = (isInitiatorMessage ? PayloadHeaderFlag.IsInitiatorMessage : 0)
             | (ackedMessageCounter !== undefined ? PayloadHeaderFlag.IsAckMessage : 0)

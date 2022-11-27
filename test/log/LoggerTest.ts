@@ -8,7 +8,7 @@ import assert from "assert";
 import { Level, Logger } from "../../src/log/Logger";
 import { Time } from "../../src/time/Time";
 import { TimeFake } from "../../src/time/TimeFake";
-import { util } from "@project-chip/matter.js";
+import { ByteArray } from "@project-chip/matter.js";
 
 const fakeTime = new TimeFake(1262679233478);
     
@@ -145,7 +145,7 @@ describe("Logger", () => {
         });
 
         it("converts Buffer to hex strings", () => {
-            logger.debug(util.ByteArray.fromHex("00deadbeef"));
+            logger.debug(ByteArray.fromHex("00deadbeef"));
             const result = fakeLogSink.pop();
 
             assert.equal(result?.log, "2010-0-2 8:13:53.478 DEBUG UnitTest 00deadbeef");

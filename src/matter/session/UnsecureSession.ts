@@ -8,7 +8,7 @@ import { Packet, Message, MessageCodec } from "../../codec/MessageCodec";
 import { Fabric } from "../fabric/Fabric";
 import { DEFAULT_ACTIVE_RETRANSMISSION_TIMEOUT_MS, DEFAULT_IDLE_RETRANSMISSION_TIMEOUT_MS, DEFAULT_RETRANSMISSION_RETRIES, Session } from "./Session";
 import { UNICAST_UNSECURE_SESSION_ID } from "./SessionManager";
-import { util } from "@project-chip/matter.js";
+import { ByteArray } from "@project-chip/matter.js";
 
 export class UnsecureSession<T> implements Session<T> {
     constructor(
@@ -27,7 +27,7 @@ export class UnsecureSession<T> implements Session<T> {
         return MessageCodec.encodePayload(message);
     }
 
-    getAttestationChallengeKey(): util.ByteArray {
+    getAttestationChallengeKey(): ByteArray {
         throw new Error("Not supported on an unsecure session");
     }
 

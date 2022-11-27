@@ -8,42 +8,42 @@ import { Crypto, KeyPair } from "../../crypto/Crypto";
 import { CertificateManager, TlvOperationalCertificate, TlvRootCertificate } from "../certificate/CertificateManager";
 import { NodeId } from "../common/NodeId";
 import { VendorId } from "../common/VendorId";
-import { util } from "@project-chip/matter.js";
+import { ByteArray, DataWriter, Endian } from "@project-chip/matter.js";
 
-const COMPRESSED_FABRIC_ID_INFO = util.ByteArray.fromString("CompressedFabric");
-const GROUP_SECURITY_INFO = util.ByteArray.fromString("GroupKey v1.0");
+const COMPRESSED_FABRIC_ID_INFO = ByteArray.fromString("CompressedFabric");
+const GROUP_SECURITY_INFO = ByteArray.fromString("GroupKey v1.0");
 
 export class Fabric {
 
     constructor(
         readonly id: bigint | number,
         readonly nodeId: NodeId,
-        readonly operationalId: util.ByteArray,
-        readonly rootPublicKey: util.ByteArray,
+        readonly operationalId: ByteArray,
+        readonly rootPublicKey: ByteArray,
         private readonly keyPair: KeyPair,
         private readonly vendorId: VendorId,
-        private readonly rootCert: util.ByteArray,
-        readonly identityProtectionKey: util.ByteArray,
-        readonly operationalIdentityProtectionKey: util.ByteArray,
-        readonly intermediateCACert: util.ByteArray | undefined,
-        readonly operationalCert: util.ByteArray,
+        private readonly rootCert: ByteArray,
+        readonly identityProtectionKey: ByteArray,
+        readonly operationalIdentityProtectionKey: ByteArray,
+        readonly intermediateCACert: ByteArray | undefined,
+        readonly operationalCert: ByteArray,
     ) {}
 
     getPublicKey() {
         return this.keyPair.publicKey;
     }
 
-    sign(data: util.ByteArray) {
+    sign(data: ByteArray) {
         return Crypto.sign(this.keyPair.privateKey, data);
     }
 
-    verifyCredentials(operationalCert: util.ByteArray, intermediateCACert: util.ByteArray | undefined) {
+    verifyCredentials(operationalCert: ByteArray, intermediateCACert: ByteArray | undefined) {
         // TODO: implement verification
         return;
     }
 
-    getDestinationId(nodeId: NodeId, random: util.ByteArray) {
-        const writer = new util.DataWriter(util.Endian.Little);
+    getDestinationId(nodeId: NodeId, random: ByteArray) {
+        const writer = new DataWriter(Endian.Little);
         writer.writeByteArray(random);
         writer.writeByteArray(this.rootPublicKey);
         writer.writeUInt64(this.id);
@@ -55,13 +55,13 @@ export class Fabric {
 export class FabricBuilder {
     private keyPair = Crypto.createKeyPair();
     private vendorId?: VendorId;
-    private rootCert?: util.ByteArray;
-    private intermediateCACert?: util.ByteArray;
-    private operationalCert?: util.ByteArray;
+    private rootCert?: ByteArray;
+    private intermediateCACert?: ByteArray;
+    private operationalCert?: ByteArray;
     private fabricId?: bigint | number;
     private nodeId?: NodeId;
-    private rootPublicKey?: util.ByteArray;
-    private identityProtectionKey?: util.ByteArray;
+    private rootPublicKey?: ByteArray;
+    private identityProtectionKey?: ByteArray;
 
     getPublicKey() {
         return this.keyPair.publicKey;
@@ -71,13 +71,13 @@ export class FabricBuilder {
         return CertificateManager.createCertificateSigningRequest(this.keyPair);
     }
 
-    setRootCert(rootCert: util.ByteArray) {
+    setRootCert(rootCert: ByteArray) {
         this.rootCert = rootCert;
         this.rootPublicKey = TlvRootCertificate.decode(rootCert).ellipticCurvePublicKey;
         return this;
     }
 
-    setOperationalCert(operationalCert: util.ByteArray) {
+    setOperationalCert(operationalCert: ByteArray) {
         this.operationalCert = operationalCert;
         const {subject: {nodeId, fabricId} } = TlvOperationalCertificate.decode(operationalCert);
         this.fabricId = fabricId;
@@ -85,7 +85,7 @@ export class FabricBuilder {
         return this;
     }
 
-    setIntermediateCACert(certificate: util.ByteArray) {
+    setIntermediateCACert(certificate: ByteArray) {
         this.intermediateCACert = certificate;
         return this;
     }
@@ -95,7 +95,7 @@ export class FabricBuilder {
         return this;
     }
 
-    setIdentityProtectionKey(key: util.ByteArray) {
+    setIdentityProtectionKey(key: ByteArray) {
         this.identityProtectionKey = key;
         return this;
     }
@@ -106,7 +106,7 @@ export class FabricBuilder {
         if (this.identityProtectionKey === undefined) throw new Error("identityProtectionKey needs to be set");
         if (this.operationalCert === undefined || this.fabricId === undefined || this.nodeId === undefined) throw new Error("operationalCert needs to be set");
 
-        const saltWriter = new util.DataWriter(util.Endian.Big);
+        const saltWriter = new DataWriter(Endian.Big);
         saltWriter.writeUInt64(this.fabricId);
         const operationalId = await Crypto.hkdf(this.rootPublicKey.slice(1), saltWriter.toByteArray(), COMPRESSED_FABRIC_ID_INFO, 8);
 

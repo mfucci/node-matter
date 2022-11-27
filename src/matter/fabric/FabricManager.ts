@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { util } from "@project-chip/matter.js";
+import { ByteArray } from "@project-chip/matter.js";
 import { Fabric, FabricBuilder } from "./Fabric";
 
 export class FabricManager {
@@ -19,7 +19,7 @@ export class FabricManager {
         return this.fabrics;
     }
 
-    findFabricFromDestinationId(destinationId: util.ByteArray, initiatorRandom: util.ByteArray) {
+    findFabricFromDestinationId(destinationId: ByteArray, initiatorRandom: ByteArray) {
         for (var fabric of this.fabrics) {
             const candidateDestinationId = fabric.getDestinationId(fabric.nodeId, initiatorRandom);
             if (!candidateDestinationId.equals(destinationId)) continue;

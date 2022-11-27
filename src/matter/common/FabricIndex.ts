@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { tlv, spec } from "@project-chip/matter.js";
+import { MatterCoreSpecificationV1_0, TlvUInt8, TlvWrapper } from "@project-chip/matter.js";
 
 /**
  * Each fabric supported on a node is referenced by fabric-index that is unique on the node. This
@@ -14,7 +14,7 @@ import { tlv, spec } from "@project-chip/matter.js";
  * a fabric, such as fabric-scoped data model elements, then the fabric-index values SHALL NOT include 0
  * (zero) or null.
  *
- * @see {@link spec.MatterCoreSpecificationV1_0} § 7.5.2
+ * @see {@link MatterCoreSpecificationV1_0} § 7.5.2
  */
  export class FabricIndex {
     constructor(
@@ -23,8 +23,8 @@ import { tlv, spec } from "@project-chip/matter.js";
 }
 
 /** Tlv Schema for a Fabric Index. */
-export const TlvFabricIndex = new tlv.Wrapper<FabricIndex, number>(
-    tlv.UInt8.bound({ min: 1, max: 254 }),
+export const TlvFabricIndex = new TlvWrapper<FabricIndex, number>(
+    TlvUInt8.bound({ min: 1, max: 254 }),
     farbricIndex => farbricIndex.index,
     value => new FabricIndex(value),
 );

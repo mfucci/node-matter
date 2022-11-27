@@ -10,11 +10,11 @@ import { Fabric } from "../fabric/Fabric";
 import { AttributeWithPath, Path, INTERACTION_PROTOCOL_ID } from "./InteractionServer";
 import { Time, Timer } from "../../time/Time";
 import { NodeId } from "../common/NodeId";
-import { tlv } from "@project-chip/matter.js";
+import { TlvSchema } from "@project-chip/matter.js";
 
 interface PathValueVersion<T> {
     path: Path,
-    schema: tlv.Schema<T>,
+    schema: TlvSchema<T>,
     valueVersion: { value: T, version: number },
 }
 

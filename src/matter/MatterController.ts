@@ -20,11 +20,11 @@ import { Fabric, FabricBuilder } from "./fabric/Fabric";
 import { CaseClient } from "./session/secure/CaseClient";
 import { requireMinNodeVersion } from "../util/Node";
 import { ChannelManager } from "./common/ChannelManager";
-import { Level, Logger } from "../log/Logger";
+import { Logger } from "../log/Logger";
 import { Time } from "../time/Time";
 import { NodeId } from "./common/NodeId";
 import { VendorId } from "./common/VendorId";
-import { util } from "@project-chip/matter.js";
+import { ByteArray } from "@project-chip/matter.js";
 
 requireMinNodeVersion(16);
 
@@ -101,7 +101,7 @@ export class MatterController {
         const peerOperationalCert = this.certificateManager.generateNoc(operationalPublicKey, FABRIC_ID, peerNodeId);
         await operationalCredentialsClusterClient.addOperationalCert({
             operationalCert: peerOperationalCert,
-            intermediateCaCert: new util.ByteArray(0),
+            intermediateCaCert: new ByteArray(0),
             identityProtectionKey: this.fabric.identityProtectionKey,
             adminVendorId: ADMIN_VENDOR_ID,
             caseAdminNode: CONTROLLER_NODE_ID,
@@ -137,11 +137,11 @@ export class MatterController {
         return this.sessionManager.getNextAvailableSessionId();
     }
 
-    createSecureSession(sessionId: number, fabric: Fabric | undefined,  peerNodeId: NodeId, peerSessionId: number, sharedSecret: util.ByteArray, salt: util.ByteArray, isInitiator: boolean, isResumption: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
+    createSecureSession(sessionId: number, fabric: Fabric | undefined,  peerNodeId: NodeId, peerSessionId: number, sharedSecret: ByteArray, salt: ByteArray, isInitiator: boolean, isResumption: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
         return this.sessionManager.createSecureSession(sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, salt, isInitiator, isResumption, idleRetransTimeoutMs, activeRetransTimeoutMs);
     }
 
-    getResumptionRecord(resumptionId: util.ByteArray) {
+    getResumptionRecord(resumptionId: ByteArray) {
         return this.sessionManager.findResumptionRecordById(resumptionId);
     }
 
@@ -173,7 +173,7 @@ class RootCertificateManager {
     private generateRootCert() {
         const now = Time.get().now();
         const unsignedCertificate = {
-            serialNumber: util.ByteArray.of(Number(this.rootCertId)),
+            serialNumber: ByteArray.of(Number(this.rootCertId)),
             signatureAlgorithm: 1 /* EcdsaWithSHA256 */ ,
             publicKeyAlgorithm: 1 /* EC */,
             ellipticCurveIdentifier: 1 /* P256v1 */,
@@ -193,11 +193,11 @@ class RootCertificateManager {
         return TlvRootCertificate.encode({ ...unsignedCertificate, signature });
     }
 
-    generateNoc(publicKey: util.ByteArray, fabricId: bigint, nodeId: NodeId) {
+    generateNoc(publicKey: ByteArray, fabricId: bigint, nodeId: NodeId) {
         const now = Time.get().now();
         const certId = this.nextCertificateId++;
         const unsignedCertificate = {
-            serialNumber: util.ByteArray.of(certId), // TODO: figure out what should happen if certId > 255
+            serialNumber: ByteArray.of(certId), // TODO: figure out what should happen if certId > 255
             signatureAlgorithm: 1 /* EcdsaWithSHA256 */ ,
             publicKeyAlgorithm: 1 /* EC */,
             ellipticCurveIdentifier: 1 /* P256v1 */,

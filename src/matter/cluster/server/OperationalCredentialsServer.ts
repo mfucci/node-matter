@@ -15,16 +15,16 @@ import {
     TlvCertSigningRequest
 } from "../OperationalCredentialsCluster";
 import { ClusterServerHandlers } from "./ClusterServer";
-import { util } from "@project-chip/matter.js";
+import { ByteArray } from "@project-chip/matter.js";
 
 interface OperationalCredentialsServerConf {
-    devicePrivateKey: util.ByteArray,
-    deviceCertificate: util.ByteArray,
-    deviceIntermediateCertificate: util.ByteArray,
-    certificateDeclaration: util.ByteArray,
+    devicePrivateKey: ByteArray,
+    deviceCertificate: ByteArray,
+    deviceIntermediateCertificate: ByteArray,
+    certificateDeclaration: ByteArray,
 }
 
-function signWithDeviceKey(conf: OperationalCredentialsServerConf,session: SecureSession<MatterDevice>, data: util.ByteArray) {
+function signWithDeviceKey(conf: OperationalCredentialsServerConf,session: SecureSession<MatterDevice>, data: ByteArray) {
     return Crypto.sign(conf.devicePrivateKey, [data, session.getAttestationChallengeKey()]);
 }
 

@@ -79,9 +79,7 @@ export class MatterController {
 
         // Do the commissioning
         let generalCommissioningClusterClient = ClusterClient(interactionClient, 0, GeneralCommissioningCluster);
-        console.log("a");
         this.ensureSuccess(await generalCommissioningClusterClient.armFailSafe({ breadcrumbStep: BigInt(1), expiryLengthSeconds: 60 }));
-        console.log("b");
         this.ensureSuccess(await generalCommissioningClusterClient.setRegulatoryConfig({ breadcrumbStep: BigInt(2), newRegulatoryConfig: RegulatoryLocationType.IndoorOutdoor, countryCode: "US"}));
 
         const operationalCredentialsClusterClient = ClusterClient(interactionClient, 0, OperationalCredentialsCluster);

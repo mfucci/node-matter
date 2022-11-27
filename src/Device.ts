@@ -32,7 +32,7 @@ import packageJson from "../package.json";
 import { Logger } from "./log/Logger";
 import { VendorId } from "./matter/common/VendorId";
 import { OnOffClusterHandler } from "./matter/cluster/server/OnOffServer";
-import { util } from "@project-chip/matter.js";
+import { ByteArray } from "@project-chip/matter.js";
 
 // From Chip-Test-DAC-FFF1-8000-0007-Key.der
 const DevicePrivateKey = ByteArray.fromHex("727F1005CBA47ED7822A9D930943621617CFD3B79D9AF528B801ECF9F1992204");

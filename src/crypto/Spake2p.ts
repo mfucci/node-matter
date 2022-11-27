@@ -95,7 +95,7 @@ export class Spake2p {
         return Crypto.hash(TTwriter.toByteArray());
     }
 
-    private addToContext(TTwriter: DataWriter, data: ByteArray) {
+    private addToContext(TTwriter: DataWriter<Endian.Little>, data: ByteArray) {
         TTwriter.writeUInt64(data.length);
         TTwriter.writeByteArray(data);
     }

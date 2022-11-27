@@ -93,14 +93,14 @@ export class DnsCodec {
         }
     }
 
-    private static decodeQuery(reader: DataReader, message: ByteArray) {
+    private static decodeQuery(reader: DataReader<Endian.Big>, message: ByteArray) {
         const name = this.decodeQName(reader, message);
         const recordType = reader.readUInt16();
         const recordClass = reader.readUInt16();
         return { name, recordType, recordClass };
     }
 
-    private static decodeRecord(reader: DataReader, message: ByteArray) {
+    private static decodeRecord(reader: DataReader<Endian.Big>, message: ByteArray) {
         const name = this.decodeQName(reader, message);
         const recordType = reader.readUInt16();
         const recordClass = reader.readUInt16();
@@ -111,7 +111,7 @@ export class DnsCodec {
         return { name, recordType, recordClass, ttl, value };
     }
 
-    private static decodeQName(reader: DataReader, message: ByteArray) {
+    private static decodeQName(reader: DataReader<Endian.Big>, message: ByteArray) {
         const qNameItems = new Array<string>();
         while (true) {
             const itemLength = reader.readUInt8();

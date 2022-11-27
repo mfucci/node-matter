@@ -139,7 +139,7 @@ export class DerCodec {
         return this.decodeRec(new DataReader(data, Endian.Big));
     }
 
-    private static decodeRec(reader: DataReader): DerNode {
+    private static decodeRec(reader: DataReader<Endian.Big>): DerNode {
         const { tag, bytes } = this.decodeAnsi1(reader);
         if (tag === DerType.BitString) return { [TAG_ID_KEY]: tag, [BYTES_KEY]: bytes.slice(1), [BITS_PADDING]: bytes[0] };
         if ((tag & CONSTRUCTED) === 0) return { [TAG_ID_KEY]: tag, [BYTES_KEY]: bytes };
@@ -151,7 +151,7 @@ export class DerCodec {
         return { [TAG_ID_KEY]: tag, [BYTES_KEY]: bytes, [ELEMENTS_KEY]: elements };
     }
 
-    private static decodeAnsi1(reader: DataReader): { tag: number, bytes: ByteArray } {
+    private static decodeAnsi1(reader: DataReader<Endian.Big>): { tag: number, bytes: ByteArray } {
         const tag = reader.readUInt8();
         let length = reader.readUInt8();
         if ((length & 0x80) !== 0) {

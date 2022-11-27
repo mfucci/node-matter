@@ -99,7 +99,7 @@ export class MessageCodec {
         );
     }
 
-    private static decodePacketHeader(reader: DataReader) {
+    private static decodePacketHeader(reader: DataReader<Endian.Little>) {
         // Read and parse flags
         const flags = reader.readUInt8();
         const version = (flags & PacketHeaderFlag.VersionMask) >> 4;
@@ -123,7 +123,7 @@ export class MessageCodec {
         return { sessionId, sourceNodeId, messageId, destGroupId, destNodeId, sessionType };
     }
 
-    private static decodePayloadHeader(reader: DataReader): PayloadHeader {
+    private static decodePayloadHeader(reader: DataReader<Endian.Little>): PayloadHeader {
         const exchangeFlags = reader.readUInt8();
         const isInitiatorMessage = (exchangeFlags & PayloadHeaderFlag.IsInitiatorMessage) !== 0;
         const isAckMessage = (exchangeFlags & PayloadHeaderFlag.IsAckMessage) !== 0;

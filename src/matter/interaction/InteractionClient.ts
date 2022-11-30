@@ -125,6 +125,7 @@ export class InteractionClient {
                 ],
                 timedRequest: false,
                 suppressResponse: false,
+                interactionModelRevision: 1,
             });
             if (responses.length === 0) throw new Error("No response received");
             const { response, result } = responses[0];

@@ -117,6 +117,7 @@ export const TlvInvokeRequest = TlvObject({
         })),
         args: TlvField(1, TlvAny),
     }))),
+    interactionModelRevision: TlvField(0xFF, TlvUInt8),
 });
 
 export const TlvInvokeResponse = TlvObject({

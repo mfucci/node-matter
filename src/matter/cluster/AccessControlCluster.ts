@@ -103,18 +103,19 @@ const TlvAccessControlExtensionEntry = TlvObject({
     data: TlvField(1, TlvByteString.bound({ maxLength: 128 })),
 });
 
+/** @see {@link MatterCoreSpecificationV1_0} § 9.10.7.1 */
 const AccessChangeEvent = <T>(entrySchema: TlvSchema<T>) => ({
     /** The Node ID of the Administrator that made the change, if the change occurred via a CASE session. */
-    adminNodeID: TlvField(0, TlvNullable(TlvNodeId)),
+    adminNodeID: TlvField(1, TlvNullable(TlvNodeId)),
 
     /** The Passcode ID of the Administrator that made the change, if the change occurred via a PASE session. */
-    adminPasscodeID: TlvField(1, TlvNullable(TlvUInt16)),
+    adminPasscodeID: TlvField(2, TlvNullable(TlvUInt16)),
 
     /** The type of change as appropriate. */
-    changeType: TlvField(2, TlvEnum<ChangeTypeEnum>()),
+    changeType: TlvField(3, TlvEnum<ChangeTypeEnum>()),
 
     /** The latest value of the changed entry. */
-    latestValue: TlvField(3, TlvNullable(entrySchema)),
+    latestValue: TlvField(4, TlvNullable(entrySchema)),
 });
 
 /**

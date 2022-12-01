@@ -4,38 +4,26 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-    ArrayT,
-    BooleanT,
-    Field,
-    OptionalField,
-    ObjectT,
-    StringT,
-    UInt8T,
-    UInt16T,
-    Bound,
-    EnumT, BitMapT, Bit, AnyT
-} from "../../codec/TlvObjectCodec";
-import { Attribute, OptionalAttribute, Cluster, Command, OptionalCommand, NoResponseT } from "./Cluster";
+import { Attribute, OptionalAttribute, Cluster, Command, OptionalCommand, TlvNoResponse } from "./Cluster";
 import { StatusCode } from "../interaction/InteractionMessages";
-import { GroupIdT } from "../common/GroupId";
-import { ClusterIdT } from "../common/ClusterId";
-import { NodeIdT } from "../common/NodeId";
-import { AttributeIdT } from "../common/AttributeId";
-import { MatterApplicationClusterSpecificationV1_0 } from "../../Specifications";
+import { TlvGroupId } from "../common/GroupId";
+import { TlvClusterId } from "../common/ClusterId";
+import { TlvNodeId } from "../common/NodeId";
+import { TlvAttributeId } from "../common/AttributeId";
+import { BitFlag, MatterApplicationClusterSpecificationV1_0, TlvAny, TlvArray, TlvBitmap, TlvBoolean, TlvEnum, TlvField, TlvNullable, TlvObject, TlvOptionalField, TlvString, TlvUInt16, TlvUInt8 } from "@project-chip/matter.js";
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.6.1 */
-const AttributeValuePairT = ObjectT({
+const TlvAttributeValuePair = TlvObject({
     /**
      * This field SHALL be present or not present, for all instances in the Scenes cluster. If this field is
      * not present, then the data type of AttributeValue SHALL be determined by the order and data type defined
      * in the cluster specification. Otherwise the data type of AttributeValue SHALL be the data type of the
      * attribute indicated by AttributeID.
      */
-    attributeId: Field(0, AttributeIdT),
+    attributeId: TlvField(0, TlvAttributeId),
 
     /** This is the attribute value as part of an extension field set. */
-    attributeValue: Field(1, ArrayT(AnyT)),
+    attributeValue: TlvField(1, TlvArray(TlvAny)),
 });
 
 /**
@@ -45,132 +33,138 @@ const AttributeValuePairT = ObjectT({
  *
  * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.6.2
  */
-export const ExtensionFieldSetT = ObjectT({
-    clusterId: Field(0, ClusterIdT),
-    attributeValueList: Field(1, ArrayT(AttributeValuePairT)),
+export const TlvExtensionFieldSet = TlvObject({
+    clusterId: TlvField(0, TlvClusterId),
+    attributeValueList: TlvField(1, TlvArray(TlvAttributeValuePair)),
 });
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.2 and 1.4.9.9 */
-const AddSceneRequestT = ObjectT({
-    groupId: Field(0, GroupIdT),
-    sceneId: Field(1, UInt8T),
-    transitionTime: Field(2, UInt16T),
-    sceneName: Field(3, StringT( { maxLength: 16 })),
-    extensionFieldSets: Field(4, ArrayT(ExtensionFieldSetT)),
+const TlvAddSceneRequest = TlvObject({
+    groupId: TlvField(0, TlvGroupId),
+    sceneId: TlvField(1, TlvUInt8),
+    transitionTime: TlvField(2, TlvUInt16),
+    sceneName: TlvField(3, TlvString.bound( { maxLength: 16 })),
+    extensionFieldSets: TlvField(4, TlvArray(TlvExtensionFieldSet)),
 });
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.3 and § 1.4.9.10 */
-const ViewSceneRequestT = ObjectT({
-    groupId: Field(0, GroupIdT),
-    sceneId: Field(1, UInt8T),
+const TlvViewSceneRequest = TlvObject({
+    groupId: TlvField(0, TlvGroupId),
+    sceneId: TlvField(1, TlvUInt8),
 });
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.4 */
-const RemoveSceneRequestT = ObjectT({
-    groupId: Field(0, GroupIdT),
-    sceneId: Field(1, UInt8T),
+const TlvRemoveSceneRequest = TlvObject({
+    groupId: TlvField(0, TlvGroupId),
+    sceneId: TlvField(1, TlvUInt8),
 });
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.5 */
-const RemoveAllScenesRequestT = ObjectT({
-    groupId: Field(0, GroupIdT),
+const TlvRemoveAllScenesRequest = TlvObject({
+    groupId: TlvField(0, TlvGroupId),
 });
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.6 */
-const StoreSceneRequestT = ObjectT({
-    groupId: Field(0, GroupIdT),
-    sceneId: Field(1, UInt8T),
+const TlvStoreSceneRequest = TlvObject({
+    groupId: TlvField(0, TlvGroupId),
+    sceneId: TlvField(1, TlvUInt8),
 });
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.7 */
-const RecallSceneRequestT = ObjectT({
-    groupId: Field(0, GroupIdT),
-    sceneId: Field(1, UInt8T),
-    transitionTime: OptionalField(2, UInt16T), /* nullable: true */
+const TlvRecallSceneRequest = TlvObject({
+    groupId: TlvField(0, TlvGroupId),
+    sceneId: TlvField(1, TlvUInt8),
+    transitionTime: TlvOptionalField(2, TlvNullable(TlvUInt16)),
 });
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.8 */
-const GetSceneMembershipRequestT = ObjectT({
-    groupId: Field(0, GroupIdT),
+const TlvGetSceneMembershipRequest = TlvObject({
+    groupId: TlvField(0, TlvGroupId),
 });
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.11.1 */
-const ScenesCopyModeT = BitMapT({
-    copyAllScenes: Bit(0),
+const TlvScenesCopyMode = TlvBitmap(TlvUInt8, {
+    copyAllScenes: BitFlag(0),
 });
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.11 */
-const CopySceneRequestT = ObjectT({
+const TlvCopySceneRequest = TlvObject({
     /** Contains information of how the scene copy is to proceed. Bitmap: see 1.4.9.11.1 */
-    mode: Field(0, ScenesCopyModeT),
+    mode: TlvField(0, TlvScenesCopyMode),
+
     /** Specifies the identifier of the group from which the scene is to be copied. */
-    groupIdFrom: Field(1, GroupIdT),
+    groupIdFrom: TlvField(1, TlvGroupId),
+
     /** Specifies the identifier of the scene from which the scene is to be copied. */
-    sceneIdFrom: Field(2, UInt8T),
+    sceneIdFrom: TlvField(2, TlvUInt8),
+
     /** Specifies the identifier of the group to which the scene is to be copied. */
-    groupIdTo: Field(3, GroupIdT),
+    TlvGroupIdo: TlvField(3, TlvGroupId),
+
     /** Specifies the identifier of the scene to which the scene is to be copied. */
-    sceneIdTo: Field(4, UInt8T),
+    sceneIdTo: TlvField(4, TlvUInt8),
 });
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.12 and § 1.4.9.18 */
-const AddSceneResponseT = ObjectT({
-    status: Field(0, EnumT<StatusCode>()),
-    groupId: Field(1, GroupIdT),
-    sceneId: Field(2, UInt8T),
+const TlvAddSceneResponse = TlvObject({
+    status: TlvField(0, TlvEnum<StatusCode>()),
+    groupId: TlvField(1, TlvGroupId),
+    sceneId: TlvField(2, TlvUInt8),
 });
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.13 and § 1.4.9.19 */
-const ViewSceneResponseT = ObjectT({
-    status: Field(0, EnumT<StatusCode>()),
-    groupId: Field(1, GroupIdT),
-    sceneId: Field(2, UInt8T),
-    transitionTime: OptionalField(3, UInt16T),
-    sceneName: OptionalField(4, StringT( { maxLength: 16 })),
-    extensionFieldSets: OptionalField(5, ArrayT(ExtensionFieldSetT)),
+const TlvViewSceneResponse = TlvObject({
+    status: TlvField(0, TlvEnum<StatusCode>()),
+    groupId: TlvField(1, TlvGroupId),
+    sceneId: TlvField(2, TlvUInt8),
+    transitionTime: TlvOptionalField(3, TlvUInt16),
+    sceneName: TlvOptionalField(4, TlvString.bound( { maxLength: 16 })),
+    extensionFieldSets: TlvOptionalField(5, TlvArray(TlvExtensionFieldSet)),
 });
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.14 */
-const RemoveSceneResponseT = ObjectT({
-    status: Field(0, EnumT<StatusCode>()),
-    groupId: Field(1, GroupIdT),
-    sceneId: Field(2, UInt8T),
+const TlvRemoveSceneResponse = TlvObject({
+    status: TlvField(0, TlvEnum<StatusCode>()),
+    groupId: TlvField(1, TlvGroupId),
+    sceneId: TlvField(2, TlvUInt8),
 });
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.15 */
-const RemoveAllScenesResponseT = ObjectT({
-    status: Field(0, EnumT<StatusCode>()),
-    groupId: Field(1, GroupIdT),
+const TlvRemoveAllScenesResponse = TlvObject({
+    status: TlvField(0, TlvEnum<StatusCode>()),
+    groupId: TlvField(1, TlvGroupId),
 });
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.16 */
-const StoreSceneResponseT = ObjectT({
-    status: Field(0, EnumT<StatusCode>()),
-    groupId: Field(1, GroupIdT),
-    sceneId: Field(2, UInt8T),
+const TlvStoreSceneResponse = TlvObject({
+    status: TlvField(0, TlvEnum<StatusCode>()),
+    groupId: TlvField(1, TlvGroupId),
+    sceneId: TlvField(2, TlvUInt8),
 });
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.17 */
-const GetSceneMembershipResponseT = ObjectT({
-    status: Field(0, EnumT<StatusCode>()),
-    capacity: Field(1, UInt8T), /* nullable: true */
-    groupId: Field(2, GroupIdT),
-    sceneList: OptionalField(3, ArrayT(UInt8T)),
+const TlvGetSceneMembershipResponse = TlvObject({
+    status: TlvField(0, TlvEnum<StatusCode>()),
+    capacity: TlvField(1, TlvNullable(TlvUInt8)),
+    groupId: TlvField(2, TlvGroupId),
+    sceneList: TlvOptionalField(3, TlvArray(TlvUInt8)),
 });
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.20 */
-const CopySceneResponseT = ObjectT({
+const TlvCopySceneResponse = TlvObject({
     /** Contains the status of the copy scene attempt. */
-    status: Field(0, EnumT<StatusCode>()),
+    status: TlvField(0, TlvEnum<StatusCode>()),
+
     /** Specifies the identifier of the group from which the scene was copied. */
-    groupIdFrom: Field(1, GroupIdT),
+    groupIdFrom: TlvField(1, TlvGroupId),
+
     /** Specifies the identifier of the scene from which the scene was copied. */
-    sceneIdFrom: Field(2, UInt8T),
+    sceneIdFrom: TlvField(2, TlvUInt8),
 });
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.7.5 */
-const nameSupportBitmapT = BitMapT({
-    sceneNames: Bit(7),
+const TlvNameSupportBitmap = TlvBitmap(TlvUInt8, {
+    sceneNames: BitFlag(7),
 });
 
 /**
@@ -186,19 +180,23 @@ export const ScenesCluster = Cluster({
     revision: 4,
     features: {
         /** The ability to store a name for a scene. */
-        sceneNames: Bit(0), 
+        sceneNames: BitFlag(0), 
     },
 
     /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.7 */
     attributes: {
         /** Specifies the number of scenes currently in the server’s Scene Table. */
-        sceneCount: Attribute(0, UInt8T, { default: 0 }),
+        sceneCount: Attribute(0, TlvUInt8, { default: 0 }),
+
         /** Holds the scene identifier of the scene last invoked. */
-        currentScene: Attribute(1, UInt8T, { default: 0 }),
+        currentScene: Attribute(1, TlvUInt8, { default: 0 }),
+
         /** Holds the group identifier of the scene last invoked, or 0 if the scene last invoked is not associated with a group. */
-        currentGroup: Attribute(2, Bound(UInt16T,{ min: 0, max: 0xfff7 }), { default: 0 }), /* formally type: groupId but limited range */
+        currentGroup: Attribute(2, TlvUInt16.bound({ min: 0, max: 0xfff7 }), { default: 0 }), /* formally type: groupId but limited range */
+
         /** Indicates whether the state of the server corresponds to that associated with the CurrentScene and CurrentGroup attributes. */
-        sceneValid: Attribute(3, BooleanT, { default: false }),
+        sceneValid: Attribute(3,  TlvBoolean, { default: false }),
+
         /**
          * This attribute provides legacy, read-only access to whether the Scene
          * Names feature is supported. The most significant bit, bit 7, SHALL be
@@ -206,9 +204,10 @@ export const ScenesCluster = Cluster({
          *
          * TODO because we (will) support group names we need to set bit 7 to 1, rest is 0
          */
-        nameSupport: Attribute(4, nameSupportBitmapT, { default: { sceneNames: true } }),
+        nameSupport: Attribute(4, TlvNameSupportBitmap, { default: { sceneNames: true } }),
+
         /** Holds the Node ID (the IEEE address in case of Zigbee) of the node that last configured the Scene Table. */
-        lastConfiguredBy: OptionalAttribute(5, NodeIdT), /* nullable: true */
+        lastConfiguredBy: OptionalAttribute(5, TlvNullable(TlvNodeId)),
     },
 
     /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9 */
@@ -217,57 +216,56 @@ export const ScenesCluster = Cluster({
          * Add a scene to the scene table.
          * Extension field sets are supported, and are inputed as
          * '{"ClusterID": VALUE, "AttributeValueList":[{"AttributeId": VALUE, "AttributeValue": VALUE}]}'
-         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.2
          */
-        addScene: Command(0, AddSceneRequestT, 0, AddSceneResponseT),
+        addScene: Command(0, TlvAddSceneRequest, 0, TlvAddSceneResponse),
+
         /**
          * Retrieves the requested scene entry from its Scene table.
-         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.3
          */
-        viewScene: Command(1, ViewSceneRequestT, 1, ViewSceneResponseT),
+        viewScene: Command(1, TlvViewSceneRequest, 1, TlvViewSceneResponse),
+
         /**
          * Removes the requested scene entry, corresponding to the value of the GroupID field, from its Scene Table
-         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.4
          */
-        removeScene: Command(2, RemoveSceneRequestT, 2, RemoveSceneResponseT),
+        removeScene: Command(2, TlvRemoveSceneRequest, 2, TlvRemoveSceneResponse),
+
         /**
          * Remove all scenes, corresponding to the value of the GroupID field, from its Scene Table
-         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.5
          */
-        removeAllScenes: Command(3, RemoveAllScenesRequestT, 3, RemoveAllScenesResponseT),
+        removeAllScenes: Command(3, TlvRemoveAllScenesRequest, 3, TlvRemoveAllScenesResponse),
+
         /**
          * Adds the scene entry into its Scene Table along with all extension field sets corresponding to the current
          * state of other clusters on the same endpoint
-         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.6
          */
-        storeScenes: Command(4, StoreSceneRequestT, 4, StoreSceneResponseT),
+        storeScenes: Command(4, TlvStoreSceneRequest, 4, TlvStoreSceneResponse),
+
         /**
          * Set the attributes and corresponding state for each other cluster implemented on the endpoint accordingly to
          * the requested scene entry in the Scene Table
-         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.7
          */
-        recallScene: Command(5, RecallSceneRequestT, 5, NoResponseT),
+        recallScene: Command(5, TlvRecallSceneRequest, 5, TlvNoResponse),
+
         /**
          * Get an unused scene identifier when no commissioning tool is in the network, or for a commissioning tool to
          * get the used scene identifiers within a certain group
-         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.8
          */
-        getSceneMembership: Command(6, GetSceneMembershipRequestT, 6, GetSceneMembershipResponseT),
+        getSceneMembership: Command(6, TlvGetSceneMembershipRequest, 6, TlvGetSceneMembershipResponse),
+
         /**
          * Allows a scene to be added using a finer scene transition time than the AddScene command.
-         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.9
          */
-        enhancedAddScene: OptionalCommand(0x40, AddSceneRequestT, 0x40, AddSceneResponseT),
+        enhancedAddScene: OptionalCommand(0x40, TlvAddSceneRequest, 0x40, TlvAddSceneResponse),
+
         /**
          * Allows a scene to be retrieved using a finer scene transition time than the ViewScene command
-         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.10
          */
-        enhancedViewScene: OptionalCommand(0x41, ViewSceneRequestT, 0x41, ViewSceneResponseT),
+        enhancedViewScene: OptionalCommand(0x41, TlvViewSceneRequest, 0x41, TlvViewSceneResponse),
+
         /**
          * Allows a client to efficiently copy scenes from one group/scene identifier pair to another group/scene
          * identifier pair.
-         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9.11
          */
-        copyScene: OptionalCommand(0x42, CopySceneRequestT, 0x42, CopySceneResponseT),
+        copyScene: OptionalCommand(0x42, TlvCopySceneRequest, 0x42, TlvCopySceneResponse),
     },
 });

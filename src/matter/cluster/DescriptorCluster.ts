@@ -4,23 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ArrayT, Field, ObjectT, UInt16T, Bound } from "../../codec/TlvObjectCodec";
 import { Attribute, Cluster } from "./Cluster";
-import { DeviceTypeIdT } from "../common/DeviceTypeId";
-import { ClusterIdT } from "../common/ClusterId";
-import { EndpointNumberT } from "../common/EndpointNumber";
-import { MatterCoreSpecificationV1_0 } from "../../Specifications";
+import { TlvDeviceTypeId } from "../common/DeviceTypeId";
+import { TlvClusterId } from "../common/ClusterId";
+import { TlvEndpointNumber } from "../common/EndpointNumber";
+import { MatterCoreSpecificationV1_0, TlvArray, TlvField, TlvObject, TlvUInt16 } from "@project-chip/matter.js";
 
 /**
  * Provides information about endpoint conformance to a release of a device type definition.
  *
  * @see {@link MatterCoreSpecificationV1_0} § 9.5.5.1
  */
-const DeviceTypeT = ObjectT({
+const TlvDeviceType = TlvObject({
     /** Indicates the device type definition */
-    type: Field(0, DeviceTypeIdT),
+    type: TlvField(0, TlvDeviceTypeId),
+
     /** Indicates the implemented revision of the device type definition */
-    revision: Field(1, Bound(UInt16T, {min: 1})),
+    revision: TlvField(1, TlvUInt16.bound({ min: 1 })),
 });
 
 /**
@@ -39,15 +39,18 @@ export const DescriptorCluster = Cluster({
     /** @see {@link MatterCoreSpecificationV1_0} § 9.5.4 */
     attributes: {
         /** List of device types and corresponding revisions declaring endpoint conformance. */
-        deviceTypeList: Attribute(0, ArrayT(DeviceTypeT, { minLength: 1 })),
+        deviceTypeList: Attribute(0, TlvArray(TlvDeviceType, { minLength: 1 })),
+
         /** List containing each cluster ID for the server clusters present on the endpoint instance. */
-        serverList: Attribute(1, ArrayT(ClusterIdT), { default: [] }),
+        serverList: Attribute(1, TlvArray(TlvClusterId), { default: [] }),
+
         /** List containing each cluster ID for the client clusters present on the endpoint instance. */
-        clientList: Attribute(3, ArrayT(ClusterIdT), { default: [] }),
+        clientList: Attribute(3, TlvArray(TlvClusterId), { default: [] }),
+
         /**
          * This indicates composition of the device type instance. Device type instance composition SHALL
          * include the endpoints in this list.
          */
-        partsList: Attribute(4, ArrayT(EndpointNumberT), { default: [] }),
+        partsList: Attribute(4, TlvArray(TlvEndpointNumber), { default: [] }),
     },
 });

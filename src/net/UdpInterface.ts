@@ -8,6 +8,7 @@ import { UdpChannel } from './UdpChannel';
 import { Channel } from "./Channel";
 import { NetInterface, NetListener } from "./NetInterface";
 import { Network } from './Network';
+import { ByteArray } from "@project-chip/matter.js";
 
 export class UdpInterface implements NetInterface {
 
@@ -23,19 +24,19 @@ export class UdpInterface implements NetInterface {
         return Promise.resolve(new UdpConnection(this.server, address, port));
     }
 
-    onData(listener: (channel: Channel<Buffer>, messageBytes: Buffer) => void): NetListener {
+    onData(listener: (channel: Channel<ByteArray>, messageBytes: ByteArray) => void): NetListener {
         return this.server.onData((peerAddress, peerPort, data) => listener(new UdpConnection(this.server, peerAddress, peerPort), data));
     }
 }
 
-class UdpConnection implements Channel<Buffer> {
+class UdpConnection implements Channel<ByteArray> {
     constructor(
         private readonly server: UdpChannel,
         private readonly peerAddress: string,
         private readonly peerPort: number,
     ) {}
 
-    send(data: Buffer) {
+    send(data: ByteArray) {
         return this.server.send(this.peerAddress, this.peerPort, data);
     }
 

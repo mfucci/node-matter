@@ -4,55 +4,51 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BooleanT, ByteStringT, Field, ObjectT, OptionalField, UInt16T, UInt32T } from "../../../codec/TlvObjectCodec";
-
-import {
-    CRYPTO_HASH_LEN_BYTES,
-    CRYPTO_PUBLIC_KEY_SIZE_BYTES
-} from "../../../crypto/Crypto";
-import { MatterCoreSpecificationV1_0 } from "../../../Specifications";
+import { CRYPTO_HASH_LEN_BYTES, CRYPTO_PUBLIC_KEY_SIZE_BYTES } from "../../../crypto/Crypto";
+import { MatterCoreSpecificationV1_0, TlvBoolean, TlvByteString, TlvField, TlvObject, TlvOptionalField, TlvUInt16, TlvUInt32 } from "@project-chip/matter.js";
 
 /** @see {@link MatterCoreSpecificationV1_0} § 2.12.5 */
-const SedParametersT = ObjectT({
+const TlvSedParameters = TlvObject({
     /** Maximum sleep interval of node when in idle mode. */
-    idleRetransTimeoutMs: OptionalField(1, UInt32T), /* default: 300ms */
+    idleRetransTimeoutMs: TlvOptionalField(1, TlvUInt32), /* default: 300ms */
+
     /** Maximum sleep interval of node when in active mode. */
-    activeRetransTimeoutMs: OptionalField(2, UInt32T), /* default: 300ms */
+    activeRetransTimeoutMs: TlvOptionalField(2, TlvUInt32), /* default: 300ms */
 });
 
 /** @see {@link MatterCoreSpecificationV1_0} § 4.13.1.2 */
-export const PbkdfParamRequestT = ObjectT({
-    random: Field(1, ByteStringT({ length: 32 })),
-    sessionId: Field(2, UInt16T), // Specs: range: 16bits
-    passcodeId: Field(3, UInt16T), // Specs: length: 16bits so min is 0x8000?
-    hasPbkdfParameters: Field(4, BooleanT),
-    mrpParameters: OptionalField(5, SedParametersT),
+export const TlvPbkdfParamRequest = TlvObject({
+    random: TlvField(1, TlvByteString.bound({ length: 32 })),
+    sessionId: TlvField(2, TlvUInt16), // Specs: range: 16bits
+    passcodeId: TlvField(3, TlvUInt16), // Specs: length: 16bits so min is 0x8000?
+    hasPbkdfParameters: TlvField(4,  TlvBoolean),
+    mrpParameters: TlvOptionalField(5, TlvSedParameters),
 });
 
 /** @see {@link MatterCoreSpecificationV1_0} § 4.13.1.2 */
-export const PbkdfParamResponseT = ObjectT({
-    peerRandom: Field(1, ByteStringT({ length: 32 })),
-    random: Field(2, ByteStringT({ length: 32 })),
-    sessionId: Field(3, UInt16T),
-    pbkdfParameters: OptionalField(4, ObjectT({
-        iteration: Field(1, UInt32T),
-        salt: Field(2, ByteStringT({ minLength: 16, maxLength: 32 })),
+export const TlvPbkdfParamResponse = TlvObject({
+    peerRandom: TlvField(1, TlvByteString.bound({ length: 32 })),
+    random: TlvField(2, TlvByteString.bound({ length: 32 })),
+    sessionId: TlvField(3, TlvUInt16),
+    pbkdfParameters: TlvOptionalField(4, TlvObject({
+        iteration: TlvField(1, TlvUInt32),
+        salt: TlvField(2, TlvByteString.bound({ minLength: 16, maxLength: 32 })),
     })),
-    mrpParameters: OptionalField(5, SedParametersT),
+    mrpParameters: TlvOptionalField(5, TlvSedParameters),
 });
 
 /** @see {@link MatterCoreSpecificationV1_0} § 4.13.1.2 */
-export const PasePake1T = ObjectT({
-    x: Field(1, ByteStringT({ length: CRYPTO_PUBLIC_KEY_SIZE_BYTES })),
+export const TlvPasePake1 = TlvObject({
+    x: TlvField(1, TlvByteString.bound({ length: CRYPTO_PUBLIC_KEY_SIZE_BYTES })),
 });
 
 /** @see {@link MatterCoreSpecificationV1_0} § 4.13.1.2 */
-export const PasePake2T = ObjectT({
-    y: Field(1, ByteStringT({ length: CRYPTO_PUBLIC_KEY_SIZE_BYTES })),
-    verifier: Field(2, ByteStringT({ length: CRYPTO_HASH_LEN_BYTES })),
+export const TlvPasePake2 = TlvObject({
+    y: TlvField(1, TlvByteString.bound({ length: CRYPTO_PUBLIC_KEY_SIZE_BYTES })),
+    verifier: TlvField(2, TlvByteString.bound({ length: CRYPTO_HASH_LEN_BYTES })),
 });
 
 /** @see {@link MatterCoreSpecificationV1_0} § 4.13.1.2 */
-export const PasePake3T = ObjectT({
-    verifier: Field(1, ByteStringT({ length: CRYPTO_HASH_LEN_BYTES })),
+export const TlvPasePake3 = TlvObject({
+    verifier: TlvField(1, TlvByteString.bound({ length: CRYPTO_HASH_LEN_BYTES })),
 });

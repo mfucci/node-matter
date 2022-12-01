@@ -4,9 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Field, JsType, ObjectT, StringT, BooleanT, EnumT, UInt64T, UInt16T } from "../../codec/TlvObjectCodec";
-import { AccessLevel, Attribute, Cluster, Command, NoArgumentsT, WritableAttribute } from "./Cluster";
-import { MatterCoreSpecificationV1_0 } from "../../Specifications";
+import { AccessLevel, Attribute, Cluster, Command, TlvNoArguments, WritableAttribute } from "./Cluster";
+import { MatterCoreSpecificationV1_0, TlvBoolean, TlvEnum, TlvField, TlvObject, TlvString, TlvUInt16, TlvUInt64, TypeFromSchema } from "@project-chip/matter.js";
 
 /**
  * This enumeration is used by the RegulatoryConfig and LocationCapability attributes to indicate possible radio usage.
@@ -16,8 +15,10 @@ import { MatterCoreSpecificationV1_0 } from "../../Specifications";
 export const enum RegulatoryLocationType {
     /** Indoor only */
     Indoor = 0,
+
     /** Outdoor only */
     Outdoor = 1,
+
     /** Indoor/Outdoor */
     IndoorOutdoor = 2,
 }
@@ -30,12 +31,16 @@ export const enum RegulatoryLocationType {
 export const enum CommissioningError {
     /** No error. */
     Ok = 0,
+
     /** Attempting to set regulatory configuration to a region or indoor/outdoor mode for which the server does not have proper configuration. */
     ValueOutsideRange = 1,
+
     /** Executed CommissioningComplete outside CASE session. */
     InvalidAuthentication = 2,
+
     /** Executed CommissioningComplete when there was no active Fail-Safe context. */
     NoFailSafe = 3,
+
     /** Attempting to arm fail-safe or execute CommissioningComplete from a fabric different than the one associated with the current fail-safe context. */
     BusyWithOtherAdmin = 4,
 }
@@ -45,11 +50,12 @@ export const enum CommissioningError {
  *
  * @see {@link MatterCoreSpecificationV1_0} § 11.9.5.2
  */
-const BasicCommissioningInfoT = ObjectT({
+const TlvBasicCommissioningInfo = TlvObject({
     /** Contains a conservative initial duration (in seconds) to set in the FailSafe for the commissioning flow to complete successfully. */
-    failSafeExpiryLengthSeconds: Field(0, UInt16T),
+    failSafeExpiryLengthSeconds: TlvField(0, TlvUInt16),
+
     /** Contain a conservative value in seconds denoting the maximum total duration for which a fail-safe timer can be re-armed. */
-    maxCumulativeFailsafeSeconds: Field(1, UInt16T),
+    maxCumulativeFailsafeSeconds: TlvField(1, TlvUInt16),
 });
 
 /**
@@ -58,30 +64,34 @@ const BasicCommissioningInfoT = ObjectT({
  * CommissioningCompleteResponse, @see {@link MatterCoreSpecificationV1_0} § 11.9.7.7
  * CommissioningCompleteResponse, @see {@link MatterCoreSpecificationV1_0} § 11.9.7.7
  */
-const CommissioningSuccessFailureResponseT = ObjectT({
+const TlvCommissioningSuccessFailureResponse = TlvObject({
     /** Contain the result of the operation. */
-    errorCode: Field(0, EnumT<CommissioningError>()),
+    errorCode: TlvField(0, TlvEnum<CommissioningError>()),
+
     /** Should help developers in troubleshooting errors. The value MAY go into logs or crash reports, not User UIs. */
-    debugText: Field(1, StringT({ maxLength: 128 })),
+    debugText: TlvField(1, TlvString.bound({ maxLength: 128 })),
 });
-export type CommissioningSuccessFailureResponse = JsType<typeof CommissioningSuccessFailureResponseT>;
+export type CommissioningSuccessFailureResponse = TypeFromSchema<typeof TlvCommissioningSuccessFailureResponse>;
 
 /** @see {@link MatterCoreSpecificationV1_0} § 11.9.7.3. */
-const ArmFailSafeRequestT = ObjectT({
+const TlvArmFailSafeRequest = TlvObject({
     /** Contains timeframe for fail-safe timer actions. */
-    expiryLengthSeconds: Field(0, UInt16T), /* default: 900 */
+    expiryLengthSeconds: TlvField(0, TlvUInt16), /* default: 900 */
+
     /** Value to atomically set the Breadcrumb attribute on success of this command. */
-    breadcrumbStep: Field(1, UInt64T),
+    breadcrumbStep: TlvField(1, TlvUInt64),
 });
 
 /** @see {@link MatterCoreSpecificationV1_0} § 11.9.7.4 */
-const SetRegulatoryConfigRequestT = ObjectT({
+const TlvSetRegulatoryConfigRequest = TlvObject({
     /** Contains the new regulatory location to be set. */
-    newRegulatoryConfig: Field(0, EnumT<RegulatoryLocationType>()),
+    newRegulatoryConfig: TlvField(0, TlvEnum<RegulatoryLocationType>()),
+
     /** Contains a ISO 3166-1 alpha-2 country code*/
-    countryCode: Field(1, StringT({ length: 2 })),
+    countryCode: TlvField(1, TlvString.bound({ length: 2 })),
+
     /** Value to atomically set the Breadcrumb attribute on success of this command. */
-    breadcrumbStep: Field(2, UInt64T),
+    breadcrumbStep: TlvField(2, TlvUInt64),
 });
 
 /**
@@ -99,28 +109,33 @@ export const GeneralCommissioningCluster = Cluster({
         /** Allows for the storage of a client-provided small payload which Administrators and Commissioners MAY write
          * and then subsequently read, to keep track of their own progress.
          */
-        breadcrumb: WritableAttribute(0, UInt64T, { default: BigInt(0), writeAcl: AccessLevel.Administer }),
+        breadcrumb: WritableAttribute(0, TlvUInt64, { default: BigInt(0), writeAcl: AccessLevel.Administer }),
+
         /** Describe critical parameters needed at the beginning of commissioning flow. */
-        commissioningInfo: Attribute(1, BasicCommissioningInfoT),
+        commissioningInfo: Attribute(1, TlvBasicCommissioningInfo),
+
         /** Indicates the regulatory configuration for the product. */
-        regulatoryConfig: Attribute(2, EnumT<RegulatoryLocationType>()), /* default: value of locationCapability */
+        regulatoryConfig: Attribute(2, TlvEnum<RegulatoryLocationType>()), /* default: value of locationCapability */
+
         /** Indicates if this Node needs to be told an exact RegulatoryLocation. */
-        locationCapability: Attribute(3, EnumT<RegulatoryLocationType>(), { default: RegulatoryLocationType.IndoorOutdoor }),
+        locationCapability: Attribute(3, TlvEnum<RegulatoryLocationType>(), { default: RegulatoryLocationType.IndoorOutdoor }),
+
         /** Indicates whether this device supports "concurrent connection flow" commissioning mode */
-        supportsConcurrentConnections: Attribute(4, BooleanT, { default: true }),
+        supportsConcurrentConnections: Attribute(4, TlvBoolean, { default: true }),
     },
+
     /** @see {@link MatterCoreSpecificationV1_0} § 11.9.7 */
     commands: {
         /** Arms the persistent fail-safe timer with an expiry time of now + ExpiryLengthSeconds using device clock. */
-        armFailSafe: Command(0, ArmFailSafeRequestT, 1, CommissioningSuccessFailureResponseT),
+        armFailSafe: Command(0, TlvArmFailSafeRequest, 1, TlvCommissioningSuccessFailureResponse),
 
         /** Sets or Updates the regulatory configuration to be used during commissioning. */
-        setRegulatoryConfig: Command(2, SetRegulatoryConfigRequestT, 3, CommissioningSuccessFailureResponseT),
+        setRegulatoryConfig: Command(2, TlvSetRegulatoryConfigRequest, 3, TlvCommissioningSuccessFailureResponse),
 
         /**
          * Informs that all steps of Commissioning/Reconfiguration needed during the fail-safe period have been
          * completed.
          */
-        commissioningComplete: Command(4, NoArgumentsT, 5, CommissioningSuccessFailureResponseT),
+        commissioningComplete: Command(4, TlvNoArguments, 5, TlvCommissioningSuccessFailureResponse),
     },
 });

@@ -7,11 +7,11 @@
 import { ARecord, PtrRecord, SrvRecord, TxtRecord } from "../../codec/DnsCodec";
 import { Crypto } from "../../crypto/Crypto";
 import { Broadcaster } from "../common/Broadcaster";
-import { bigintToBuffer } from "../../util/BigInt";
 import { getDeviceMatterQname, getFabricQname, MATTER_COMMISSION_SERVICE_QNAME, MATTER_SERVICE_QNAME, SERVICE_DISCOVERY_QNAME } from "./MdnsConsts";
 import { MdnsServer } from "../../net/MdnsServer";
 import { VendorId } from "../common/VendorId";
-import { NodeId, nodeIdToBigint } from "../common/NodeId";
+import { NodeId } from "../common/NodeId";
+import { ByteArray } from "@project-chip/matter.js";
 
 export class MdnsBroadcaster implements Broadcaster {
     static async create(multicastInterface?: string) {
@@ -24,7 +24,7 @@ export class MdnsBroadcaster implements Broadcaster {
 
     setCommissionMode(deviceName: string, deviceType: number, vendorId: VendorId, productId: number, discriminator: number) {
         const shortDiscriminator = (discriminator >> 8) & 0x0F;
-        const instanceId = Crypto.getRandomData(8).toString("hex").toUpperCase();
+        const instanceId = Crypto.getRandomData(8).toHex().toUpperCase();
         const vendorQname = `_V${vendorId}._sub.${MATTER_COMMISSION_SERVICE_QNAME}`;
         const deviceTypeQname = `_T${deviceType}._sub.${MATTER_COMMISSION_SERVICE_QNAME}`;
         const shortDiscriminatorQname = `_S${shortDiscriminator}._sub.${MATTER_COMMISSION_SERVICE_QNAME}`;
@@ -65,11 +65,10 @@ export class MdnsBroadcaster implements Broadcaster {
         });
     }
 
-    setFabric(operationalId: Buffer, nodeId: NodeId) {
-        const nodeIdString = bigintToBuffer(nodeIdToBigint(nodeId)).toString("hex").toUpperCase();
-        const operationalIdString = operationalId.toString("hex").toUpperCase();
+    setFabric(operationalId: ByteArray, nodeId: NodeId) {
+        const operationalIdString = operationalId.toHex().toUpperCase();
         const fabricQname = getFabricQname(operationalIdString);
-        const deviceMatterQname = getDeviceMatterQname(operationalIdString, nodeIdString);
+        const deviceMatterQname = getDeviceMatterQname(operationalIdString, nodeId.toString());
 
         this.mdnsServer.setRecordsGenerator((ip, mac) => {
             const hostname = mac.replace(/:/g, "").toUpperCase() + "0000.local";

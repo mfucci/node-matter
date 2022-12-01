@@ -12,10 +12,9 @@ import { PaseClient } from "./session/secure/PaseClient";
 import { ClusterClient, InteractionClient } from "./interaction/InteractionClient";
 import { BasicInformationCluster } from "./cluster/BasicInformationCluster";
 import { CommissioningError, GeneralCommissioningCluster, RegulatoryLocationType, CommissioningSuccessFailureResponse } from "./cluster/GeneralCommissioningCluster";
-import { CertificateChainType, CertSigningRequestT, OperationalCredentialsCluster } from "./cluster/OperationalCredentialsCluster";
+import { CertificateChainType, TlvCertSigningRequest, OperationalCredentialsCluster } from "./cluster/OperationalCredentialsCluster";
 import { Crypto } from "../crypto/Crypto";
-import { CertificateManager, jsToMatterDate, OperationalCertificateT, RootCertificateT } from "./certificate/CertificateManager";
-import { TlvObjectCodec } from "../codec/TlvObjectCodec";
+import { CertificateManager, jsToMatterDate, TlvOperationalCertificate, TlvRootCertificate } from "./certificate/CertificateManager";
 import { Scanner } from "./common/Scanner";
 import { Fabric, FabricBuilder } from "./fabric/Fabric";
 import { CaseClient } from "./session/secure/CaseClient";
@@ -25,12 +24,13 @@ import { Logger } from "../log/Logger";
 import { Time } from "../time/Time";
 import { NodeId } from "./common/NodeId";
 import { VendorId } from "./common/VendorId";
+import { ByteArray } from "@project-chip/matter.js";
 
 requireMinNodeVersion(16);
 
 const FABRIC_ID = BigInt(1);
-const CONTROLLER_NODE_ID = NodeId(BigInt(0));
-const ADMIN_VENDOR_ID = VendorId(752);
+const CONTROLLER_NODE_ID = new NodeId(BigInt(0));
+const ADMIN_VENDOR_ID = new VendorId(752);
 const logger = Logger.get("MatterController");
 
 export class MatterController {
@@ -91,15 +91,15 @@ export class MatterController {
         // TODO: validate attestationSignature using device public key
         const { elements: csrElements, signature: csrSignature } = await operationalCredentialsClusterClient.requestCertSigning({ certSigningRequestNonce: Crypto.getRandomData(32) });
         // TOTO: validate csrSignature using device public key
-        const { certSigningRequest } = TlvObjectCodec.decode(csrElements, CertSigningRequestT);
+        const { certSigningRequest } = TlvCertSigningRequest.decode(csrElements);
         const operationalPublicKey = CertificateManager.getPublicKeyFromCsr(certSigningRequest);
 
         await operationalCredentialsClusterClient.addRootCert({ certificate: this.certificateManager.getRootCert() });
-        const peerNodeId = NodeId(BigInt(1));
+        const peerNodeId = new NodeId(BigInt(1));
         const peerOperationalCert = this.certificateManager.generateNoc(operationalPublicKey, FABRIC_ID, peerNodeId);
         await operationalCredentialsClusterClient.addOperationalCert({
             operationalCert: peerOperationalCert,
-            intermediateCaCert: Buffer.alloc(0),
+            intermediateCaCert: new ByteArray(0),
             identityProtectionKey: this.fabric.identityProtectionKey,
             adminVendorId: ADMIN_VENDOR_ID,
             caseAdminNode: CONTROLLER_NODE_ID,
@@ -135,11 +135,11 @@ export class MatterController {
         return this.sessionManager.getNextAvailableSessionId();
     }
 
-    createSecureSession(sessionId: number, fabric: Fabric | undefined,  peerNodeId: NodeId, peerSessionId: number, sharedSecret: Buffer, salt: Buffer, isInitiator: boolean, isResumption: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
+    createSecureSession(sessionId: number, fabric: Fabric | undefined,  peerNodeId: NodeId, peerSessionId: number, sharedSecret: ByteArray, salt: ByteArray, isInitiator: boolean, isResumption: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
         return this.sessionManager.createSecureSession(sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, salt, isInitiator, isResumption, idleRetransTimeoutMs, activeRetransTimeoutMs);
     }
 
-    getResumptionRecord(resumptionId: Buffer) {
+    getResumptionRecord(resumptionId: ByteArray) {
         return this.sessionManager.findResumptionRecordById(resumptionId);
     }
 
@@ -168,10 +168,10 @@ class RootCertificateManager {
         return this.rootCertBytes;
     }
 
-    private generateRootCert(): Buffer {
+    private generateRootCert() {
         const now = Time.get().now();
         const unsignedCertificate = {
-            serialNumber: Buffer.alloc(1, Number(this.rootCertId)),
+            serialNumber: ByteArray.of(Number(this.rootCertId)),
             signatureAlgorithm: 1 /* EcdsaWithSHA256 */ ,
             publicKeyAlgorithm: 1 /* EC */,
             ellipticCurveIdentifier: 1 /* P256v1 */,
@@ -188,14 +188,14 @@ class RootCertificateManager {
             },
         };
         const signature = Crypto.sign(this.rootKeyPair.privateKey, CertificateManager.rootCertToAsn1(unsignedCertificate));
-        return TlvObjectCodec.encode({ ...unsignedCertificate, signature }, RootCertificateT);
+        return TlvRootCertificate.encode({ ...unsignedCertificate, signature });
     }
 
-    generateNoc(publicKey: Buffer, fabricId: bigint, nodeId: NodeId): Buffer {
+    generateNoc(publicKey: ByteArray, fabricId: bigint, nodeId: NodeId) {
         const now = Time.get().now();
         const certId = this.nextCertificateId++;
         const unsignedCertificate = {
-            serialNumber: Buffer.alloc(1, certId), // TODO: figure out what should happen if certId > 255
+            serialNumber: ByteArray.of(certId), // TODO: figure out what should happen if certId > 255
             signatureAlgorithm: 1 /* EcdsaWithSHA256 */ ,
             publicKeyAlgorithm: 1 /* EC */,
             ellipticCurveIdentifier: 1 /* P256v1 */,
@@ -213,6 +213,6 @@ class RootCertificateManager {
             },
         };
         const signature = Crypto.sign(this.rootKeyPair.privateKey, CertificateManager.nocCertToAsn1(unsignedCertificate));
-        return TlvObjectCodec.encode({ ...unsignedCertificate, signature }, OperationalCertificateT);
+        return TlvOperationalCertificate.encode({ ...unsignedCertificate, signature });
     }
 }

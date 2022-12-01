@@ -4,11 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Template, TlvObjectCodec } from "../../../codec/TlvObjectCodec";
 import { MessageExchange } from "../../common/MessageExchange";
-import { LEBufferReader } from "../../../util/LEBufferReader";
-import { LEBufferWriter } from "../../../util/LEBufferWriter";
 import { GeneralStatusCode, ProtocolStatusCode, MessageType, SECURE_CHANNEL_PROTOCOL_ID } from "./SecureChannelMessages";
+import { ByteArray, DataReader, DataWriter, Endian, TlvSchema } from "@project-chip/matter.js";
 
 export class SecureChannelMessenger<ContextT> {
     constructor(
@@ -23,8 +21,8 @@ export class SecureChannelMessenger<ContextT> {
         return message;
     }
 
-    async nextMessageDecoded<T>(expectedMessageType: number, template: Template<T>) {
-        return TlvObjectCodec.decode((await this.nextMessage(expectedMessageType)).payload, template);
+    async nextMessageDecoded<T>(expectedMessageType: number, schema: TlvSchema<T>) {
+        return schema.decode((await this.nextMessage(expectedMessageType)).payload);
     }
 
     async waitForSuccess() {
@@ -32,8 +30,8 @@ export class SecureChannelMessenger<ContextT> {
         await this.nextMessage(MessageType.StatusReport);
     }
 
-    async send<T>(message: T, type: number, template: Template<T>) {
-        const payload = TlvObjectCodec.encode(message, template);
+    async send<T>(message: T, type: number, schema: TlvSchema<T>) {
+        const payload = schema.encode(message);
         await this.exchange.send(type, payload);
         return payload;
     }
@@ -55,20 +53,20 @@ export class SecureChannelMessenger<ContextT> {
     }
 
     private async sendStatusReport(generalStatus: GeneralStatusCode, protocolStatus: ProtocolStatusCode) {
-        const buffer = new LEBufferWriter();
-        buffer.writeUInt16(generalStatus);
-        buffer.writeUInt32(SECURE_CHANNEL_PROTOCOL_ID);
-        buffer.writeUInt16(protocolStatus);
-        await this.exchange.send(MessageType.StatusReport, buffer.toBuffer());
+        const writer = new DataWriter(Endian.Little);
+        writer.writeUInt16(generalStatus);
+        writer.writeUInt32(SECURE_CHANNEL_PROTOCOL_ID);
+        writer.writeUInt16(protocolStatus);
+        await this.exchange.send(MessageType.StatusReport, writer.toByteArray());
     }
 
-    protected throwIfError(messageType: number, payload: Buffer) {
+    protected throwIfError(messageType: number, payload: ByteArray) {
         if (messageType !== MessageType.StatusReport) return;
-        const buffer = new LEBufferReader(payload);
-        const generalStatus = buffer.readUInt16();
+        const reader = new DataReader(payload, Endian.Little);
+        const generalStatus = reader.readUInt16();
         if (generalStatus === GeneralStatusCode.Success) return;
-        const protocolId = buffer.readUInt32();
-        const protocolStatus = buffer.readUInt16();
+        const protocolId = reader.readUInt32();
+        const protocolStatus = reader.readUInt16();
         throw new Error(`Received error status: ${generalStatus} ${protocolId} ${protocolStatus}`);
     }
 }

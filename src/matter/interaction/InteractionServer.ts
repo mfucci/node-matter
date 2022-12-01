@@ -10,8 +10,6 @@ import { MessageExchange } from "../common/MessageExchange";
 import { InteractionServerMessenger, InvokeRequest, InvokeResponse, ReadRequest, DataReport, SubscribeRequest, SubscribeResponse } from "./InteractionMessenger";
 import { CommandServer, ResultCode } from "../cluster/server/CommandServer";
 import { DescriptorCluster } from "../cluster/DescriptorCluster";
-import { TlvObjectCodec, TypeFromBitTemplates } from "../../codec/TlvObjectCodec";
-import { Element } from "../../codec/TlvCodec";
 import { AttributeServer } from "../cluster/server/AttributeServer";
 import { Cluster } from "../cluster/Cluster";
 import { AttributeServers, AttributeInitialValues, ClusterServerHandlers } from "../cluster/server/ClusterServer";
@@ -20,6 +18,7 @@ import { SubscriptionHandler } from "./SubscriptionHandler";
 import { Logger } from "../../log/Logger";
 import { DeviceTypeId } from "../common/DeviceTypeId";
 import { ClusterId } from "../common/ClusterId";
+import { TlvStream, TypeFromBitSchema } from "@project-chip/matter.js";
 
 export const INTERACTION_PROTOCOL_ID = 0x0001;
 
@@ -28,7 +27,7 @@ export class ClusterServer<ClusterT extends Cluster<any, any, any, any>> {
     readonly attributes = <AttributeServers<ClusterT["attributes"]>>{};
     readonly commands = new Array<CommandServer<any, any>>();
 
-    constructor(clusterDef: ClusterT, features: TypeFromBitTemplates<ClusterT["features"]>, attributesInitialValues: AttributeInitialValues<ClusterT["attributes"]>, handlers: ClusterServerHandlers<ClusterT>) {
+    constructor(clusterDef: ClusterT, features: TypeFromBitSchema<ClusterT["features"]>, attributesInitialValues: AttributeInitialValues<ClusterT["attributes"]>, handlers: ClusterServerHandlers<ClusterT>) {
         const { id, attributes: attributeDefs, commands: commandDefs } = clusterDef;
         this.id = id;
 
@@ -39,16 +38,16 @@ export class ClusterServer<ClusterT extends Cluster<any, any, any, any>> {
             featureMap: features,
         };
         for (const name in attributesInitialValues) {
-            const { id, template, validator } = attributeDefs[name];
-            (this.attributes as any)[name] = new AttributeServer(id, name, template, validator ?? (() => {}), (attributesInitialValues as any)[name]);
+            const { id, schema, validator } = attributeDefs[name];
+            (this.attributes as any)[name] = new AttributeServer(id, name, schema, validator ?? (() => {}), (attributesInitialValues as any)[name]);
         }
 
         // Create commands
         for (const name in commandDefs) {
             const handler = (handlers as any)[name];
             if (handler === undefined) continue;
-            const { requestId, requestTemplate, responseId, responseTemplate } = commandDefs[name];
-            this.commands.push(new CommandServer(requestId, responseId, name, requestTemplate, responseTemplate, (request, session) => handler({request, attributes: this.attributes, session})));
+            const { requestId, requestSchema, responseId, responseSchema } = commandDefs[name];
+            this.commands.push(new CommandServer(requestId, responseId, name, requestSchema, responseSchema, (request, session) => handler({request, attributes: this.attributes, session})));
         }
     }
 }
@@ -85,13 +84,13 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
     addEndpoint(endpointId: number, device: {name: string, code: number}, clusters: ClusterServer<any>[]) {
         // Add the descriptor cluster
         const descriptorCluster = new ClusterServer(DescriptorCluster, {}, {
-            deviceTypeList: [{revision: 1, type: DeviceTypeId(device.code)}],
+            deviceTypeList: [{revision: 1, type: new DeviceTypeId(device.code)}],
             serverList: [],
             clientList: [],
             partsList: [],
         }, {});
         clusters.push(descriptorCluster);
-        descriptorCluster.attributes.serverList.set(clusters.map(({id}) => ClusterId(id)));
+        descriptorCluster.attributes.serverList.set(clusters.map(({id}) => new ClusterId(id)));
 
         clusters.forEach(({ id: clusterId, attributes, commands }) => {
             // Add attributes
@@ -134,17 +133,17 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
         const values = this.getAttributes(attributePaths)
             .map(({ path, attribute }) => {
                 const { value, version } = attribute.getWithVersion();
-                return { path, value, version, template: attribute.template };
+                return { path, value, version, schema: attribute.schema };
             });
 
         return {
             isFabricFiltered: true,
             interactionModelRevision: 1,
-            values: values.map(({ path, value, version, template }) => ({
+            values: values.map(({ path, value, version, schema }) => ({
                 value: {
                     path,
                     version,
-                    value: TlvObjectCodec.encodeElement(value, template),
+                    value: schema.encodeTlv(value),
                 },
             })),
         };
@@ -179,7 +178,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
     async handleInvokeRequest(exchange: MessageExchange<MatterDevice>, {invokes}: InvokeRequest): Promise<InvokeResponse> {
         logger.debug(`Received invoke request from ${exchange.channel.getName()}: ${invokes.map(({path: {endpointId, clusterId, id}}) => `${endpointId}/${clusterId}/${id}`).join(", ")}`);
 
-        const results = new Array<{path: Path, code: ResultCode, response?: Element, responseId: number }>();
+        const results = new Array<{path: Path, code: ResultCode, response: TlvStream, responseId: number }>();
 
         await Promise.all(invokes.map(async ({ path, args }) => {
             const command = this.commands.get(pathToId(path));
@@ -192,7 +191,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
             suppressResponse: false,
             interactionModelRevision: 1,
             responses: results.map(({path, responseId, code, response}) => {
-                if (response === undefined) {
+                if (response.length === 0) {
                     return { result: { path, result: { code }} };
                 } else {
                     return { response: { path: { ...path, id: responseId }, response} };

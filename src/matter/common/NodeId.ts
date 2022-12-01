@@ -4,8 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Typed, UInt16T, UInt64T } from "../../codec/TlvObjectCodec";
-import { MatterCoreSpecificationV1_0 } from "../../Specifications";
+import { DataWriter, Endian, MatterCoreSpecificationV1_0, TlvUInt64, TlvWrapper } from "@project-chip/matter.js";
 
 /**
  * A Node Identifier (Node ID) is a 64-bit number that uniquely identifies an individual Node or a
@@ -13,11 +12,21 @@ import { MatterCoreSpecificationV1_0 } from "../../Specifications";
  * 
  * @see {@link MatterCoreSpecificationV1_0} § 2.5.5
  */
-export type NodeId = { nodeId: true /* Hack to force strong type checking at compile time */ };
-export const NodeId = (id: bigint) => id as unknown as NodeId;
+export class NodeId {
+    constructor(
+        readonly id: bigint,
+    ) {}
 
-/** Explicitly convert a NodeId to a bigint */
-export const nodeIdToBigint = (nodeId: NodeId) => nodeId as unknown as bigint;
+    toString() {
+        const writer = new DataWriter(Endian.Big);
+        writer.writeUInt64(this.id);
+        return writer.toByteArray().toHex().toUpperCase();
+    }
+}
 
-/** Data model for a Node Identifier. */
-export const NodeIdT = Typed<NodeId>(UInt64T);
+/** Tlv schema for a Node Identifier. */
+export const TlvNodeId = new TlvWrapper<NodeId, number | bigint>(
+    TlvUInt64,
+    nodeId => nodeId.id,
+    value => new NodeId(BigInt(value)),
+);

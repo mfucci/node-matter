@@ -5,8 +5,7 @@
  */
 
 import net from "net";
-import { BEBufferWriter } from "../util/BEBufferWriter";
-import { BEBufferReader } from "../util/BEBufferReader";
+import { ByteArray, DataReader, DataWriter, Endian } from "@project-chip/matter.js";
 
 export const PtrRecord = (name: string, ptr: string):Record<string> => ({ name, value: ptr, ttl: 120, recordType: RecordType.PTR, recordClass: RecordClass.IN });
 export const ARecord = (name: string, ip: string):Record<string> => ({ name, value: ip, ttl: 120, recordType: RecordType.A, recordClass: RecordClass.IN });
@@ -63,9 +62,9 @@ export const enum RecordClass {
 }
 
 export class DnsCodec {
-    static decode(message: Buffer): DnsMessage | undefined {
+    static decode(message: ByteArray): DnsMessage | undefined {
         try {
-            const reader = new BEBufferReader(message);
+            const reader = new DataReader(message, Endian.Big);
             const transactionId = reader.readUInt16();
             const messageType = reader.readUInt16();
             const queriesCount = reader.readUInt16();
@@ -94,25 +93,25 @@ export class DnsCodec {
         }
     }
 
-    private static decodeQuery(reader: BEBufferReader, message: Buffer) {
+    private static decodeQuery(reader: DataReader<Endian.Big>, message: ByteArray) {
         const name = this.decodeQName(reader, message);
         const recordType = reader.readUInt16();
         const recordClass = reader.readUInt16();
         return { name, recordType, recordClass };
     }
 
-    private static decodeRecord(reader: BEBufferReader, message: Buffer) {
+    private static decodeRecord(reader: DataReader<Endian.Big>, message: ByteArray) {
         const name = this.decodeQName(reader, message);
         const recordType = reader.readUInt16();
         const recordClass = reader.readUInt16();
         const ttl = reader.readUInt32();
         const valueLength = reader.readUInt16();
-        const valueBytes = reader.readBytes(valueLength);
+        const valueBytes = reader.readByteArray(valueLength);
         const value = this.decodeRecordValue(valueBytes, recordType, message);
         return { name, recordType, recordClass, ttl, value };
     }
 
-    private static decodeQName(reader: BEBufferReader, message: Buffer) {
+    private static decodeQName(reader: DataReader<Endian.Big>, message: ByteArray) {
         const qNameItems = new Array<string>();
         while (true) {
             const itemLength = reader.readUInt8();
@@ -120,18 +119,18 @@ export class DnsCodec {
             if ((itemLength & 0xC0) !== 0) {
                 // Compressed Qname
                 const indexInMessage = reader.readUInt8() | ((itemLength & 0x3F) << 8);
-                qNameItems.push(this.decodeQName(new BEBufferReader(message.slice(indexInMessage)), message));
+                qNameItems.push(this.decodeQName(new DataReader(message.slice(indexInMessage), Endian.Big), message));
                 break;
             }
-            qNameItems.push(reader.readString(itemLength));
+            qNameItems.push(reader.readUtf8String(itemLength));
         }
         return qNameItems.join(".");
     }
 
-    private static decodeRecordValue(valueBytes: Buffer, recordType: RecordType, message: Buffer) {
+    private static decodeRecordValue(valueBytes: ByteArray, recordType: RecordType, message: ByteArray) {
         switch (recordType) {
             case RecordType.PTR:
-                return this.decodeQName(new BEBufferReader(valueBytes), message);
+                return this.decodeQName(new DataReader(valueBytes, Endian.Big), message);
             case RecordType.SRV:
                 return this.decodeSrvRecord(valueBytes, message);
             case RecordType.TXT:
@@ -146,8 +145,8 @@ export class DnsCodec {
         }
     }
 
-    private static decodeSrvRecord(valueBytes: Buffer, message: Buffer): SrvRecordValue {
-        const reader = new BEBufferReader(valueBytes);
+    private static decodeSrvRecord(valueBytes: ByteArray, message: ByteArray): SrvRecordValue {
+        const reader = new DataReader(valueBytes, Endian.Big);
         const priority = reader.readUInt16();
         const weight = reader.readUInt16();
         const port = reader.readUInt16();
@@ -155,20 +154,20 @@ export class DnsCodec {
         return { priority, weight, port, target };
     }
 
-    private static decodeTxtRecord(valueBytes: Buffer): string[] {
-        const reader = new BEBufferReader(valueBytes);
+    private static decodeTxtRecord(valueBytes: ByteArray): string[] {
+        const reader = new DataReader(valueBytes, Endian.Big);
         const result = new Array<string>();
         var bytesRead = 0;
         while (bytesRead < valueBytes.length) {
             const length = reader.readUInt8();
-            result.push(reader.readString(length));
+            result.push(reader.readUtf8String(length));
             bytesRead += length + 1;
         }
         return result;
     }
 
-    private static decodeAaaaRecord(valueBytes: Buffer): string {
-        const reader = new BEBufferReader(valueBytes);
+    private static decodeAaaaRecord(valueBytes: ByteArray): string {
+        const reader = new DataReader(valueBytes, Endian.Big);
         const ipItems = new Array<string>();
         for (var i = 0; i < 8; i++) {
             ipItems.push(reader.readUInt16().toString(16));
@@ -192,8 +191,8 @@ export class DnsCodec {
         return ipItems.join(":");
     }
 
-    private static decodeARecord(valueBytes: Buffer): string {
-        const reader = new BEBufferReader(valueBytes);
+    private static decodeARecord(valueBytes: ByteArray): string {
+        const reader = new DataReader(valueBytes, Endian.Big);
         const ipItems = new Array<string>();
         for (var i = 0; i < 4; i++) {
             ipItems.push(reader.readUInt8().toString());
@@ -201,32 +200,32 @@ export class DnsCodec {
         return ipItems.join(".");
     }
 
-    static encode({transactionId = 0, queries = [], answers = [], authorities = [], additionalRecords = []}: Partial<DnsMessage>): Buffer {
-        const buffer = new BEBufferWriter();
-        buffer.writeUInt16(transactionId);
-        buffer.writeUInt16(queries.length > 0 ? MessageType.Query : MessageType.Response);
-        buffer.writeUInt16(queries.length);
-        buffer.writeUInt16(answers.length);
-        buffer.writeUInt16(0); // No authority answers
-        buffer.writeUInt16(additionalRecords.length);
+    static encode({transactionId = 0, queries = [], answers = [], authorities = [], additionalRecords = []}: Partial<DnsMessage>): ByteArray {
+        const writer = new DataWriter(Endian.Big);
+        writer.writeUInt16(transactionId);
+        writer.writeUInt16(queries.length > 0 ? MessageType.Query : MessageType.Response);
+        writer.writeUInt16(queries.length);
+        writer.writeUInt16(answers.length);
+        writer.writeUInt16(0); // No authority answers
+        writer.writeUInt16(additionalRecords.length);
         queries.forEach(({name, recordClass, recordType}) => {
-            buffer.writeBytes(this.encodeQName(name));
-            buffer.writeUInt16(recordType);
-            buffer.writeUInt16(recordClass);
+            writer.writeByteArray(this.encodeQName(name));
+            writer.writeUInt16(recordType);
+            writer.writeUInt16(recordClass);
         });
         [...answers, ...authorities, ...additionalRecords].forEach(({name, recordType, recordClass, ttl, value}) => {
-            buffer.writeBytes(this.encodeQName(name));
-            buffer.writeUInt16(recordType);
-            buffer.writeUInt16(recordClass);
-            buffer.writeUInt32(ttl);
+            writer.writeByteArray(this.encodeQName(name));
+            writer.writeUInt16(recordType);
+            writer.writeUInt16(recordClass);
+            writer.writeUInt32(ttl);
             const encodedValue = this.encodeRecordValue(value, recordType);
-            buffer.writeUInt16(encodedValue.length);
-            buffer.writeBytes(encodedValue);
+            writer.writeUInt16(encodedValue.length);
+            writer.writeByteArray(encodedValue);
         });
-        return buffer.toBuffer();
+        return writer.toByteArray();
     }
 
-    private static encodeRecordValue(value: any, recordType: RecordType): Buffer {
+    private static encodeRecordValue(value: any, recordType: RecordType): ByteArray {
         switch (recordType) {
             case RecordType.PTR:
                 return this.encodeQName(value as string);
@@ -245,54 +244,54 @@ export class DnsCodec {
 
     private static encodeARecord(ip: string) {
         if (!net.isIPv4(ip)) throw new Error(`Invalid A Record value: ${ip}`);
-        const buffer = new BEBufferWriter();
+        const writer = new DataWriter(Endian.Big);
         ip.split(".").forEach(part => {
-            buffer.writeUInt8(parseInt(part));
+            writer.writeUInt8(parseInt(part));
         });
-        return buffer.toBuffer();
+        return writer.toByteArray();
     }
 
     private static encodeAaaaRecord(ip: string) {
         if (!net.isIPv6(ip)) throw new Error(`Invalid AAAA Record value: ${ip}`);
-        const buffer = new BEBufferWriter();
+        const writer = new DataWriter(Endian.Big);
         const parts = ip.split(":");
         parts.forEach(part => {
             if (part === "") {
                 const compressedParts = 8 - parts.length;
                 for (var i = 0; i < compressedParts; i++) {
-                    buffer.writeUInt16(0);
+                    writer.writeUInt16(0);
                 }
             }
-            buffer.writeUInt16(parseInt(part, 16));
+            writer.writeUInt16(parseInt(part, 16));
         });
-        return buffer.toBuffer();
+        return writer.toByteArray();
     }
 
     private static encodeTxtRecord(entries: string[]) {
-        const buffer = new BEBufferWriter();
+        const writer = new DataWriter(Endian.Big);
         entries.forEach(entry => {
-            buffer.writeUInt8(entry.length);
-            buffer.writeString(entry);
+            writer.writeUInt8(entry.length);
+            writer.writeUtf8String(entry);
         });
-        return buffer.toBuffer();
+        return writer.toByteArray();
     }
 
     private static encodeSrvRecord({priority, weight, port, target}: SrvRecordValue) {
-        const buffer = new BEBufferWriter();
-        buffer.writeUInt16(priority);
-        buffer.writeUInt16(weight);
-        buffer.writeUInt16(port);
-        buffer.writeBytes(this.encodeQName(target));
-        return buffer.toBuffer();
+        const writer = new DataWriter(Endian.Big);
+        writer.writeUInt16(priority);
+        writer.writeUInt16(weight);
+        writer.writeUInt16(port);
+        writer.writeByteArray(this.encodeQName(target));
+        return writer.toByteArray();
     }
 
     private static encodeQName(qname: string) {
-        const buffer = new BEBufferWriter();
+        const writer = new DataWriter(Endian.Big);
         qname.split(".").forEach(label => {
-            buffer.writeUInt8(label.length);
-            buffer.writeString(label);
+            writer.writeUInt8(label.length);
+            writer.writeUtf8String(label);
         });
-        buffer.writeUInt8(0);
-        return buffer.toBuffer();
+        writer.writeUInt8(0);
+        return writer.toByteArray();
     }
 }

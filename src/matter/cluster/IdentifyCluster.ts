@@ -4,15 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-    Field,
-    ObjectT,
-    EnumT,
-    UInt16T,
-    Bit
-} from "../../codec/TlvObjectCodec";
-import { Attribute, WritableAttribute, Cluster, Command, OptionalCommand, NoResponseT } from "./Cluster";
-import { MatterApplicationClusterSpecificationV1_0 } from "../../Specifications";
+import { Attribute, WritableAttribute, Cluster, Command, OptionalCommand, TlvNoResponse } from "./Cluster";
+import { BitFlag, MatterApplicationClusterSpecificationV1_0, TlvEnum, TlvField, TlvObject, TlvUInt16 } from "@project-chip/matter.js";
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.2.5.2 */
 export const enum IdentifyType {
@@ -40,19 +33,19 @@ export const enum EffectVariant {
 }
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.2.6.1 */
-const IdentifyRequestT = ObjectT({
-    identifyTime: Field(0, UInt16T),
+const TlvIdentifyRequest = TlvObject({
+    identifyTime: TlvField(0, TlvUInt16),
 });
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.2.6.3 */
-const TriggerEffectRequestT = ObjectT({
-    effectIdentifier: Field(0, EnumT<EffectIdentifier>()),
-    effectVariant: Field(1, EnumT<EffectVariant>()),
+const TlvTriggerEffectRequest = TlvObject({
+    effectIdentifier: TlvField(0, TlvEnum<EffectIdentifier>()),
+    effectVariant: TlvField(1, TlvEnum<EffectVariant>()),
 });
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.2.6.4 */
-const IdentifyQueryResponseT = ObjectT({
-    timeout: Field(0, UInt16T),
+const TlvIdentifyQueryResponse = TlvObject({
+    timeout: TlvField(0, TlvUInt16),
 });
 
 /**
@@ -66,38 +59,31 @@ export const IdentifyCluster = Cluster({
     revision: 4,
     features: {
         /** Replies to multicast / groupcast queries if the identification state is active. */
-        query: Bit(0),
+        query: BitFlag(0),
     },
 
     /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.2.5 */
     attributes: {
         /** Specifies the remaining length of time, in seconds, that the endpoint will continue to identify itself. */
-        identifyTime: WritableAttribute(0, UInt16T, { default: 0 }), /* unit: seconds */
+        identifyTime: WritableAttribute(0, TlvUInt16, { default: 0 }), /* unit: seconds */
+
         /** Specifies how the identification state is presented to the user. */
-        identifyType: Attribute(1, EnumT<IdentifyType>(), { default: 0 }),
+        identifyType: Attribute(1, TlvEnum<IdentifyType>(), { default: 0 }),
     },
 
     /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.2.6 */
     commands: {
-        /**
-         * Starts or stops the receiving device identifying itself.
-         *
-         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.2.6.1
-         */
-        identify: Command(0, IdentifyRequestT, 0, NoResponseT),
+        /** Starts or stops the receiving device identifying itself. */
+        identify: Command(0, TlvIdentifyRequest, 0, TlvNoResponse),
+
         /**
          * Allows the sending device to request the target or targets to respond if they are currently identifying themselves.
          *
-         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.2.6.2
-         *
          * TODO: Add when adding support for the Query Feature
          */
-        //identifyQuery: Command(1, NoArgumentsT, 0, IdentifyQueryResponseT),
-        /**
-         * Allows the support of feedback to the user, such as a certain light effect when identifying.
-         *
-         * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.2.6.3
-         */
-        triggerEffect: OptionalCommand(0x40, TriggerEffectRequestT, 0, NoResponseT),
+        //identifyQuery: Command(1, NoArgumentsT, 0, TlvIdentifyQueryResponse),
+
+        /** Allows the support of feedback to the user, such as a certain light effect when identifying. */
+        triggerEffect: OptionalCommand(0x40, TlvTriggerEffectRequest, 0, TlvNoResponse),
     },
 });

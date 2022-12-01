@@ -8,6 +8,7 @@ import { DnsCodec, MessageType, Record, RecordType } from "../codec/DnsCodec";
 import { Network } from "./Network";
 import { UdpMulticastServer } from "./UdpMulticastServer";
 import { Cache } from "../util/Cache";
+import { ByteArray } from "@project-chip/matter.js";
 
 export const MDNS_BROADCAST_IP = "224.0.0.251";
 export const MDNS_BROADCAST_PORT = 5353;
@@ -28,7 +29,7 @@ export class MdnsServer {
         multicastServer.onMessage((message, remoteIp) => this.handleDnsMessage(message, remoteIp));
     }
 
-    private handleDnsMessage(messageBytes: Buffer, remoteIp: string) {
+    private handleDnsMessage(messageBytes: ByteArray, remoteIp: string) {
         const ipMac = this.network.getIpMacOnInterface(remoteIp);
         // This message was on a subnet not supported by this device
         if (ipMac === undefined) return;

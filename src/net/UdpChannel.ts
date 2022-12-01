@@ -5,6 +5,7 @@
  */
 
 import { NetListener } from "./NetInterface";
+import { ByteArray } from "@project-chip/matter.js";
 
 export interface UdpChannelOptions {
     listeningPort: number,
@@ -13,7 +14,7 @@ export interface UdpChannelOptions {
 }
 
 export interface UdpChannel {
-    onData(listener: (peerAddress: string, peerPort: number, data: Buffer) => void): NetListener;
-    send(address: string, port: number, data: Buffer): Promise<void>;
+    onData(listener: (peerAddress: string, peerPort: number, data: ByteArray) => void): NetListener;
+    send(address: string, port: number, data: ByteArray): Promise<void>;
     close(): void;
 }

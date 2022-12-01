@@ -13,6 +13,7 @@ import { PbkdfParameters, Spake2p } from "../../../crypto/Spake2p";
 import { SECURE_CHANNEL_PROTOCOL_ID } from "./SecureChannelMessages";
 import { MatterDevice } from "../../MatterDevice";
 import { Logger } from "../../../log/Logger";
+import { ByteArray } from "@project-chip/matter.js";
 
 const logger = Logger.get("PaseServer");
 
@@ -59,7 +60,7 @@ export class PaseServer implements ProtocolHandler<MatterDevice> {
         if (!verifier.equals(hAY)) throw new Error("Received incorrect key confirmation from the initiator");
 
         // All good! Creating the secure session
-        await server.createSecureSession(sessionId, undefined /* fabric */, UNDEFINED_NODE_ID, peerSessionId, Ke, Buffer.alloc(0), false, false, mrpParameters?.idleRetransTimeoutMs, mrpParameters?.activeRetransTimeoutMs);
+        await server.createSecureSession(sessionId, undefined /* fabric */, UNDEFINED_NODE_ID, peerSessionId, Ke, new ByteArray(0), false, false, mrpParameters?.idleRetransTimeoutMs, mrpParameters?.activeRetransTimeoutMs);
         await messenger.sendSuccess();
         messenger.close();
         logger.info(`Pase server: session ${sessionId} created with ${messenger.getChannelName()}`);

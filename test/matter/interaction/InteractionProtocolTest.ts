@@ -5,7 +5,6 @@
  */
 
 import assert from "assert";
-import { TlvTag, TlvType } from "../../../src/codec/TlvCodec";
 import { ClusterServer, InteractionServer } from "../../../src/matter/interaction/InteractionServer";
 import { ReadRequest, DataReport } from "../../../src/matter/interaction/InteractionMessenger";
 import { MessageExchange } from "../../../src/matter/common/MessageExchange";
@@ -13,6 +12,11 @@ import { DEVICE } from "../../../src/matter/common/DeviceTypes";
 import { MatterDevice } from "../../../src/matter/MatterDevice";
 import { BasicInformationCluster } from "../../../src/matter/cluster/BasicInformationCluster";
 import { VendorId } from "../../../src/matter/common/VendorId";
+import { TlvUInt8 } from "@project-chip/matter.js";
+import { Time } from "../../../src/time/Time";
+import { TimeFake } from "../../../src/time/TimeFake";
+
+Time.get = () => new TimeFake(1262679233478);
 
 const READ_REQUEST: ReadRequest = {
     interactionModelRevision: 1,
@@ -33,11 +37,7 @@ const READ_RESPONSE: DataReport = {
                 clusterId: 0x28,
                 id: 2,
             },
-            value: {
-                tag: TlvTag.Anonymous,
-                type: TlvType.UnsignedInt,
-                value: 1,
-            },
+            value: TlvUInt8.encodeTlv(1),
             version: 0,
         }},
         { value: {
@@ -46,11 +46,7 @@ const READ_RESPONSE: DataReport = {
                 clusterId: 0x28,
                 id: 4,
             },
-            value: {
-                tag: TlvTag.Anonymous,
-                type: TlvType.UnsignedInt,
-                value: 2,
-            },
+            value: TlvUInt8.encodeTlv(2),
             version: 0,
         }},
     ]
@@ -65,7 +61,7 @@ describe("InteractionProtocol", () => {
                     new ClusterServer(BasicInformationCluster, {}, {
                         dataModelRevision: 1,
                         vendorName: "vendor",
-                        vendorId: VendorId(1),
+                        vendorId: new VendorId(1),
                         productName: "product",
                         productId: 2,
                         nodeLabel: "",

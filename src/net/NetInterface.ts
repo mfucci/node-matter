@@ -5,12 +5,13 @@
  */
 
 import { Channel } from "./Channel";
+import { ByteArray } from "@project-chip/matter.js";
 
 export interface NetListener {
     close(): void;
 }
 
 export interface NetInterface {
-    openChannel(address: string, port: number): Promise<Channel<Buffer>>;
-    onData(listener: (socket: Channel<Buffer>, data: Buffer) => void): NetListener;
+    openChannel(address: string, port: number): Promise<Channel<ByteArray>>;
+    onData(listener: (socket: Channel<ByteArray>, data: ByteArray) => void): NetListener;
 }

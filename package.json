@@ -43,8 +43,8 @@
   "files": [
     "build/**/*"
   ],
-  "main": "build/Device.js",
-  "types": "build/Device.d.ts",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
   "bin": {
     "matter": "./build/Device.js",
     "matter-controller": "./build/Controller.js"

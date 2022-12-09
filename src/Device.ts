@@ -33,6 +33,8 @@ import { Logger } from "./log/Logger";
 import { VendorId } from "./matter/common/VendorId";
 import { OnOffClusterHandler } from "./matter/cluster/server/OnOffServer";
 import { ByteArray } from "@project-chip/matter.js";
+import { CommissionningFlowType, DiscoveryCapabilitiesSchema, ManualPairingCodeCodec, QrPairingCodeCodec } from "./codec/PairingCode.js";
+import { QrCode } from "./codec/QrCode.js";
 
 // From Chip-Test-DAC-FFF1-8000-0007-Key.der
 const DevicePrivateKey = ByteArray.fromHex("727F1005CBA47ED7822A9D930943621617CFD3B79D9AF528B801ECF9F1992204");
@@ -62,6 +64,7 @@ class Device {
         const productName = "Matter test device";
         const productId = 0X8001;
         const discriminator = 3840;
+        const passcode = 20202021;
 
         // Barebone implementation of the On/Off cluster
         const onOffClusterServer = new ClusterServer(
@@ -79,7 +82,7 @@ class Device {
             .addScanner(await MdnsScanner.create())
             .addBroadcaster(await MdnsBroadcaster.create())
             .addProtocolHandler(new SecureChannelProtocol(
-                    new PaseServer(20202021, { iteration: 1000, salt: Crypto.getRandomData(32) }),
+                    new PaseServer(passcode, { iteration: 1000, salt: Crypto.getRandomData(32) }),
                     new CaseServer(),
                 ))
             .addProtocolHandler(new InteractionServer()
@@ -133,6 +136,23 @@ class Device {
             .start()
 
         logger.info("Listening");
+
+        const qrPairingCode = QrPairingCodeCodec.encode({
+            version: 0,
+            vendorId: vendorId.id,
+            productId,
+            flowType: CommissionningFlowType.Standard,
+            discriminator,
+            passcode,
+            discoveryCapabilities: DiscoveryCapabilitiesSchema.encode({
+                ble: false,
+                softAccessPoint: false,
+                onIpNetwork: true,
+            }),
+        });
+        console.log(QrCode.encode(qrPairingCode));
+        console.log(`QR Code URL: https://project-chip.github.io/connectedhomeip/qrcode.html?data=${qrPairingCode}`);
+        console.log(`Manual pairing code: ${ManualPairingCodeCodec.encode({ discriminator, passcode })}`);
     }
 }
 

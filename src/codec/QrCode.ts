@@ -31,8 +31,6 @@ const QR_MASK = [
     [0,0,0,0,0,0,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0],
 ];
 
-const BORDER_WIDTH = 2;
-
 enum Direction {
     UP,
     DOWN

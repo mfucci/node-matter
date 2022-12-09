@@ -45,17 +45,20 @@ const QrCodeDataSchema = ByteArrayBitmapSchema({
 });
 export type QrCodeData = TypeFromBitmapSchema<typeof QrCodeDataSchema>;
 
-class QrCodeSchema extends Schema<QrCodeData, string> {
+const PREFIX = "MT:";
+
+class QrPairingCodeSchema extends Schema<QrCodeData, string> {
     protected encodeInternal(payloadData: QrCodeData): string {
-        return Base38.encode(QrCodeDataSchema.encode(payloadData));
+        return PREFIX + Base38.encode(QrCodeDataSchema.encode(payloadData));
     }
 
     protected decodeInternal(encoded: string): QrCodeData {
-        return QrCodeDataSchema.decode(Base38.decode(encoded));
+        if (!encoded.startsWith(PREFIX)) throw new Error("The pairing code should start with MT:");
+        return QrCodeDataSchema.decode(Base38.decode(encoded.slice(PREFIX.length)));
     }
 }
 
-export const QrCodeCodec = new QrCodeSchema();
+export const QrPairingCodeCodec = new QrPairingCodeSchema();
 
 export type ManualPairingData = {
     discriminator: number,

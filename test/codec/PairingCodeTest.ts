@@ -5,9 +5,9 @@
  */
 
 import assert from "assert";
-import { CommissionningFlowType, DiscoveryCapabilitiesSchema, QrCodeData, QrCodeCodec, ManualPairingCodeCodec, ManualPairingData } from "../../src/codec/PairingCode";
+import { CommissionningFlowType, DiscoveryCapabilitiesSchema, QrCodeData, QrPairingCodeCodec, ManualPairingCodeCodec, ManualPairingData } from "../../src/codec/PairingCode";
 
-const QR_CODE = "YNJV7VSC00CMVH7SR00";
+const QR_CODE = "MT:YNJV7VSC00CMVH7SR00";
 const QR_CODE_DATA: QrCodeData = {
     version: 0,
     vendorId: 9050,
@@ -28,10 +28,10 @@ const MANUAL_PAIRING_CODE_DATA: ManualPairingData = {
 };
 const MANUAL_PAIRING_CODE = "26318621095";
 
-describe("QrCodeCodec", () => {
+describe("QrPairingCodeCodec", () => {
     context("encode", () => {
         it("encodes the data", () => {
-            const result = QrCodeCodec.encode(QR_CODE_DATA);
+            const result = QrPairingCodeCodec.encode(QR_CODE_DATA);
 
             assert.equal(result, QR_CODE);
         });
@@ -39,7 +39,7 @@ describe("QrCodeCodec", () => {
 
     context("decode", () => {
         it("decodes the data", () => {
-            const result = QrCodeCodec.decode(QR_CODE);
+            const result = QrPairingCodeCodec.decode(QR_CODE);
 
             assert.deepEqual(result, QR_CODE_DATA);
         });

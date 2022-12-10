@@ -5,7 +5,7 @@
  */
 
 import { GroupsCluster } from "../GroupsCluster";
-import { ClusterServerHandlers, CommandHandler } from "./ClusterServer";
+import { ClusterServerHandlers } from "./ClusterServer";
 import { StatusCode } from "../../interaction/InteractionMessages";
 import { GroupId } from "../../common/GroupId.js";
 

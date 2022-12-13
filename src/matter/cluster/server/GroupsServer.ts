@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { GroupsCluster } from "../GroupsCluster";
+import { GroupsCluster, TlvAddGroupResponse } from "../GroupsCluster";
 import { ClusterServerHandlers } from "./ClusterServer";
 import { StatusCode } from "../../interaction/InteractionMessages";
 import { GroupId } from "../../common/GroupId.js";
+import { ObjectSchema } from "@project-chip/matter.js";
 
 /*
 TODO: Global Cluster fields needs to be added also here because, as discussed, based on the implementation.
@@ -36,19 +37,23 @@ TODO: Is a "groupcast" the groupId range 0xFF00 - 0xFFFF ??
 export const GroupsClusterHandler: () => ClusterServerHandlers<typeof GroupsCluster> = () => {
     const clusterGroups = new Map<number, string>();
 
+    const addGroupLogic = (groupId: GroupId, groupName: string): TlvAddGroupResponse => {
+        // TODO If the AddGroup command was received as a unicast, the server SHALL generate an AddGroupResponse
+        //      command with the Status field set to the evaluated status. If the AddGroup command was received
+        //      as a groupcast, the server SHALL NOT generate an AddGroupResponse command.
+        if (groupId.id < 1 || groupId.id > 0xFFFF) {
+            return {status: StatusCode.ConstraintError, groupId};
+        }
+        if (groupName.length > 16) {
+            return {status: StatusCode.ConstraintError, groupId};
+        }
+        clusterGroups.set(groupId.id, groupName || '');
+        return {status: StatusCode.Success, groupId};
+    }
+
     return {
         addGroup: async ({ request: { groupId, groupName } }) => {
-            // TODO If the AddGroup command was received as a unicast, the server SHALL generate an AddGroupResponse
-            //      command with the Status field set to the evaluated status. If the AddGroup command was received
-            //      as a groupcast, the server SHALL NOT generate an AddGroupResponse command.
-            if (groupId.id < 1 || groupId.id > 0xFFFF) {
-                return {status: StatusCode.ConstraintError, groupId};
-            }
-            if (groupName.length > 16) {
-                return {status: StatusCode.ConstraintError, groupId};
-            }
-            clusterGroups.set(groupId.id, groupName || '');
-            return {status: StatusCode.Success, groupId};
+            return addGroupLogic(groupId, groupName);
         },
 
         viewGroup: async ({ request: { groupId } }) => {
@@ -113,7 +118,7 @@ export const GroupsClusterHandler: () => ClusterServerHandlers<typeof GroupsClus
             //      if the AddGroupIfIdentifying command was received as unicast and the evaluated status is SUCCESS and a
             //      response is not suppressed, the server SHALL generate a response with the Status field set to the
             //      evaluated status.
-            return this.addGroup({request: {groupId, groupName}});
+            return addGroupLogic(groupId, groupName);
         },
     }
 };

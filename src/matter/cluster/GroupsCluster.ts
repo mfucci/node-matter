@@ -16,7 +16,7 @@ const TlvAddGroupRequest = TlvObject({
 });
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.3.7.7 */
-const TlvAddGroupResponse = TlvObject({
+export const TlvAddGroupResponse = TlvObject({
     status: TlvField(0, TlvEnum<StatusCode>()),
     groupId: TlvField(1, TlvGroupId), /* type: min: 1 */
 });

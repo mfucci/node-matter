@@ -29,7 +29,7 @@ import { MdnsScanner } from "./matter/mdns/MdnsScanner";
 import { Time } from "./time/Time";
 import { TimeNode } from "./time/TimeNode";
 import packageJson from "../package.json";
-import { Logger } from "./log/Logger";
+import { Level, Logger } from "./log/Logger";
 import { VendorId } from "./matter/common/VendorId";
 import { OnOffClusterHandler } from "./matter/cluster/server/OnOffServer";
 import { ByteArray } from "@project-chip/matter.js";
@@ -52,6 +52,7 @@ Network.get = singleton(() => new NetworkNode());
 Time.get = singleton(() => new TimeNode());
 
 const logger = Logger.get("Device");
+Logger.defaultLogLevel = Level.DEBUG;
 
 class Device {
     async start() {

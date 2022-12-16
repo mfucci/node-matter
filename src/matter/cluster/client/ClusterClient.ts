@@ -10,7 +10,7 @@ type SignatureFromCommandSpec<C extends Command<any, any>> = (request: RequestTy
 type GetterTypeFromSpec<A extends Attribute<any>> = A extends OptionalAttribute<infer T> ? (T | undefined) : AttributeJsType<A>;
 type AttributeGetters<A extends Attributes> = { [P in keyof A as `get${Capitalize<string & P>}`]: () => Promise<GetterTypeFromSpec<A[P]>> };
 type WrittableAttributeNames<A extends Attributes> = {[K in keyof A]: A[K] extends WritableAttribute<any> ? K : never}[keyof A] | {[K in keyof A]: A[K] extends OptionalWritableAttribute<any> ? K : never}[keyof A];
-type AttributeSetters<A extends Attributes> = { [P in WrittableAttributeNames<A> as `set${Capitalize<string & P>}`]: AttributeJsType<A[P]> };
+type AttributeSetters<A extends Attributes> = { [P in WrittableAttributeNames<A> as `set${Capitalize<string & P>}`]: (value: AttributeJsType<A[P]>) => Promise<void> };
 type AttributeSubscribers<A extends Attributes> = { [P in keyof A as `subscribe${Capitalize<string & P>}`]: (listener: (value: AttributeJsType<A[P]>, version: number) => void, minIntervalS: number, maxIntervalS: number) => Promise<void> };
 
 /** Strongly typed interface of a cluster client */

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ARecord, PtrRecord, SrvRecord, TxtRecord } from "../../codec/DnsCodec";
+import { AAAARecord, ARecord, PtrRecord, Record, SrvRecord, TxtRecord } from "../../codec/DnsCodec";
 import { Crypto } from "../../crypto/Crypto";
 import { Broadcaster } from "../common/Broadcaster";
 import { getDeviceMatterQname, getFabricQname, MATTER_COMMISSION_SERVICE_QNAME, MATTER_SERVICE_QNAME, SERVICE_DISCOVERY_QNAME } from "./MdnsConsts";
@@ -12,11 +12,18 @@ import { MdnsServer } from "../../net/MdnsServer";
 import { VendorId } from "../common/VendorId";
 import { NodeId } from "../common/NodeId";
 import { ByteArray } from "@project-chip/matter.js";
+import { Network } from "../../net/Network";
+import { isIPv4 } from "../../util/Ip";
+import { Logger } from "../../log/Logger";
+
+const logger = Logger.get("MdnsBroadcaster");
 
 export class MdnsBroadcaster implements Broadcaster {
     static async create(multicastInterface?: string) {
         return new MdnsBroadcaster(await MdnsServer.create(multicastInterface));
     }
+
+    private readonly network = Network.get();
 
     constructor(
         private readonly mdnsServer: MdnsServer,
@@ -31,9 +38,11 @@ export class MdnsBroadcaster implements Broadcaster {
         const longDiscriminatorQname = `_L${discriminator}._sub.${MATTER_COMMISSION_SERVICE_QNAME}`;
         const commissionModeQname = `_CM._sub.${MATTER_COMMISSION_SERVICE_QNAME}`;
         const deviceQname = `${instanceId}.${MATTER_COMMISSION_SERVICE_QNAME}`;
-        this.mdnsServer.setRecordsGenerator((ip, mac) => {
+
+        this.mdnsServer.setRecordsGenerator(netInterface => {
+            const { mac, ips } = this.network.getIpMac(netInterface);
             const hostname = mac.replace(/:/g, "").toUpperCase() + "0000.local";
-            return [
+            const records = [
                 PtrRecord(SERVICE_DISCOVERY_QNAME, MATTER_COMMISSION_SERVICE_QNAME),
                 PtrRecord(SERVICE_DISCOVERY_QNAME, vendorQname),
                 PtrRecord(SERVICE_DISCOVERY_QNAME, deviceTypeQname),
@@ -46,9 +55,8 @@ export class MdnsBroadcaster implements Broadcaster {
                 PtrRecord(shortDiscriminatorQname, deviceQname),
                 PtrRecord(longDiscriminatorQname, deviceQname),
                 PtrRecord(commissionModeQname, deviceQname),
+                // TODO: the Matter port should not be hardcoded here
                 SrvRecord(deviceQname, {priority: 0, weight: 0, port: 5540, target: hostname }),
-                ARecord(hostname, ip),
-                // TODO: support IPv6
                 TxtRecord(deviceQname, [
                     `VP=${vendorId}+${productId}`,  /* Vendor / Product */
                     `DT=${deviceType}`,             /* Device Type */
@@ -62,6 +70,14 @@ export class MdnsBroadcaster implements Broadcaster {
                     "PI=",                          /* Pairing Instruction */
                 ]),
             ];
+            ips.forEach(ip => {
+                if (isIPv4(ip)) {
+                    records.push(ARecord(hostname, ip));
+                } else {
+                    records.push(AAAARecord(hostname, ip));
+                }
+            });
+            return records;
         });
     }
 
@@ -70,25 +86,32 @@ export class MdnsBroadcaster implements Broadcaster {
         const fabricQname = getFabricQname(operationalIdString);
         const deviceMatterQname = getDeviceMatterQname(operationalIdString, nodeId.toString());
 
-        this.mdnsServer.setRecordsGenerator((ip, mac) => {
+        this.mdnsServer.setRecordsGenerator(netInterface => {
+            const { mac, ips } = this.network.getIpMac(netInterface);
             const hostname = mac.replace(/:/g, "").toUpperCase() + "0000.local";
-            return [
+            const records = [
                 PtrRecord(SERVICE_DISCOVERY_QNAME, MATTER_SERVICE_QNAME),
                 PtrRecord(SERVICE_DISCOVERY_QNAME, fabricQname),
                 PtrRecord(MATTER_SERVICE_QNAME, deviceMatterQname),
                 PtrRecord(fabricQname, deviceMatterQname),
-                ARecord(hostname, ip),
-                // TODO: support IPv6
-                // AAAARecord(this.localHostname, "fe80::9580:b733:6f54:9f43"),
                 // TODO: the Matter port should not be hardcoded here
                 SrvRecord(deviceMatterQname, {priority: 0, weight: 0, port: 5540, target: hostname }),
                 TxtRecord(deviceMatterQname, ["SII=5000", "SAI=300", "T=1"]),
             ];
+            ips.forEach(ip => {
+                if (isIPv4(ip)) {
+                    records.push(ARecord(hostname, ip));
+                } else {
+                    records.push(AAAARecord(hostname, ip));
+                }
+            });
+            return records;
         });
     }
 
-    async announce() {
-        await this.mdnsServer.announce();
+    announce() {
+        this.mdnsServer.announce()
+            .catch(error => logger.error(error));
     }
 
     close() {

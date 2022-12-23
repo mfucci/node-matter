@@ -11,6 +11,6 @@ import { ByteArray } from "@project-chip/matter.js";
 export interface Broadcaster {
     setCommissionMode(deviceName: string, deviceType: number, vendorId: VendorId, productId: number, discriminator: number): void;
     setFabric(operationalId: ByteArray, nodeId: NodeId): void;
-    announce(): Promise<void>;
+    announce(): void;
     close(): void;
 }

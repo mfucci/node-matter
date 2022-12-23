@@ -78,7 +78,8 @@ class Device {
         onOffClusterServer.attributes.onOff.addListener(on => commandExecutor(on ? "on" : "off")?.());
 
         (new MatterDevice(deviceName, deviceType, vendorId, productId, discriminator))
-            .addNetInterface(await UdpInterface.create(5540))
+            //.addNetInterface(await UdpInterface.create(5540, "udp4"))
+            .addNetInterface(await UdpInterface.create(5540, "udp6"))
             .addScanner(await MdnsScanner.create())
             .addBroadcaster(await MdnsBroadcaster.create())
             .addProtocolHandler(new SecureChannelProtocol(

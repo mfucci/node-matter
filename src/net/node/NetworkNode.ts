@@ -8,48 +8,71 @@ import { networkInterfaces, NetworkInterfaceInfo } from "os";
 import { UdpChannelOptions, UdpChannel } from "../UdpChannel";
 import { UdpChannelNode } from "./UdpChannelNode";
 import { Network } from "../Network";
-import { ByteArray } from "@project-chip/matter.js";
-
-function ipToNumber(ip: string) {
-    const dataView = new ByteArray(4).getDataView();
-    const ipParts = ip.split(".");
-    for (var i = 0; i < 4; i++) {
-        dataView.setUint8(i, parseInt(ipParts[i]));
-    }
-    return dataView.getUint32(0);
-}
+import { onSameNetwork } from "../../util/Ip.js";
+import { Cache } from "../../util/Cache.js";
 
 export class NetworkNode extends Network {
-    createUdpChannel(options: UdpChannelOptions): Promise<UdpChannel> {
-        return UdpChannelNode.create(options);
+
+    static getMulticastInterface(netInterface: string, ipv4: boolean) {
+        if (ipv4) {
+            const netInterfaceInfo = networkInterfaces()[netInterface];
+            if (netInterfaceInfo === undefined) throw new Error(`Unknown interface: ${netInterface}`);
+            for (const {address, family} of netInterfaceInfo) {
+                if (family === "IPv4") {
+                    return address;
+                }
+            }
+            throw new Error(`No IPv4 addresses on interface: ${netInterface}`);
+        } else {
+            return `::%${netInterface}`;
+        }
     }
 
-    getIpMacAddresses(): {ip: string, mac: string}[] {
-        const result = new Array<{ip: string, mac: string}>();
+    static getNetInterfaceForIp(ip: string) {
+        // Finding the local interface on the same interface is complex and won't change
+        // So let's cache the results for 5mn
+        return this.netInterfaces.get(ip);
+    }
+
+    private static readonly netInterfaces = new Cache<string | undefined>(
+        (ip: string) => this.getNetInterfaceForIpInternal(ip),
+        5 * 60 * 1000, /* 5mn */
+    )
+    
+    private static getNetInterfaceForIpInternal(ip: string) {
+        if (ip.indexOf("%") !== -1) {
+            // IPv6 address with scope
+            return `::%${ip.split("%")[1]}`;
+        } else {
+            const interfaces = networkInterfaces();
+            for (const name in interfaces) {
+                const netInterfaces = interfaces[name] as NetworkInterfaceInfo[];
+                for (const {address, netmask} of netInterfaces) {
+                    if (onSameNetwork(ip, address, netmask)) {
+                        return name;
+                    }
+                }
+            }
+            return undefined;
+        }
+    }
+
+    getNetInterfaces(): string[] {
+        const result = new Array<string>();
         const interfaces = networkInterfaces();
         for (const name in interfaces) {
-            const netInterfaces = interfaces[name] as NetworkInterfaceInfo[];
-            for (const {family, mac, address} of netInterfaces) {
-                if (family !== "IPv4") continue;
-                result.push({ip: address, mac});
-            }
+            result.push(name);
         }
         return result;
     }
 
-    getIpMacOnInterface(remoteAddress: string): {ip: string, mac: string} | undefined {
-        const remoteAddressNumber = ipToNumber(remoteAddress);
-        const interfaces = networkInterfaces();
-        for (const name in interfaces) {
-            const netInterfaces = interfaces[name] as NetworkInterfaceInfo[];
-            for (const {family, mac, address, netmask} of netInterfaces) {
-                if (family !== "IPv4") continue;
-                const netmaskNumber = ipToNumber(netmask);
-                const ipNumber = ipToNumber(address);
-                if ((ipNumber & netmaskNumber) !== (remoteAddressNumber & netmaskNumber)) continue;
-                return {ip: address, mac};
-            }
-        }
-        return undefined;
+    getIpMac(netInterface: string): { mac: string; ips: string[]; } {
+        const netInterfaceInfo = networkInterfaces()[netInterface];
+        if (netInterfaceInfo === undefined) throw new Error(`Unknown interface: ${netInterface}`);
+        return { mac: netInterfaceInfo[0].mac, ips: netInterfaceInfo.map(({address}) => address) };
+    }
+
+    override createUdpChannel(options: UdpChannelOptions): Promise<UdpChannel> {
+        return UdpChannelNode.create(options);
     }
 }

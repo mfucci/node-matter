@@ -18,7 +18,7 @@ import { ByteArray } from "@project-chip/matter.js";
 const logger = Logger.get("MessageExchange");
 
 export class MessageExchange<ContextT> {
-    static fromInitialMessage<ContextT>(
+    static async fromInitialMessage<ContextT>(
         channel: MessageChannel<ContextT>,
         messageCounter: MessageCounter,
         initialMessage: Message,
@@ -37,7 +37,7 @@ export class MessageExchange<ContextT> {
             initialMessage.payloadHeader.protocolId,
             closeCallback,
         )
-        exchange.onMessageReceived(initialMessage);
+        await exchange.onMessageReceived(initialMessage);
         return exchange;
     }
 
@@ -89,23 +89,22 @@ export class MessageExchange<ContextT> {
         this.retransmissionRetries = retransmissionRetries;
     }
 
-    onMessageReceived(message: Message) {
+    async onMessageReceived(message: Message) {
         const { packetHeader: { messageId }, payloadHeader: { requiresAck, ackedMessageId, protocolId, messageType } } = message;
 
         logger.debug("onMessageReceived", MessageCodec.messageToString(message));
-        logger.debug(this.exchangeId, this.sentMessageToAck !== undefined ? MessageCodec.messageToString(this.sentMessageToAck) : "no message to ack");
 
         if (messageId === this.receivedMessageToAck?.packetHeader.messageId) {
             // Received a message retransmission but the reply is not ready yet, ignoring
             if (requiresAck) {
-                this.send(MessageType.StandaloneAck, new ByteArray(0));
+                await this.send(MessageType.StandaloneAck, new ByteArray(0));
             }
             return;
         }
         if (messageId === this.sentMessageToAck?.payloadHeader.ackedMessageId) {
             // Received a message retransmission, this means that the other side didn't get our ack
             // Resending the previously reply message which contains the ack
-            this.channel.send(this.sentMessageToAck);
+            await this.channel.send(this.sentMessageToAck);
             return;
         }
         const sentMessageIdToAck = this.sentMessageToAck?.packetHeader.messageId;
@@ -127,7 +126,7 @@ export class MessageExchange<ContextT> {
         if (requiresAck) {
             this.receivedMessageToAck = message;
         }
-        this.messagesQueue.write(message);
+        await this.messagesQueue.write(message);
     }
 
     async send(messageType: number, payload: ByteArray) {
@@ -157,6 +156,7 @@ export class MessageExchange<ContextT> {
             this.retransmissionTimer = Time.getTimer(this.activeRetransmissionTimeoutMs, () => this.retransmitMessage(message, 1))
                 .start();
             const { promise, resolver, rejecter } = await getPromiseResolver<void>();
+            ackPromise = promise;
             this.sentMessageAckSuccess = resolver;
             this.sentMessageAckFailure = rejecter;
         }
@@ -182,17 +182,21 @@ export class MessageExchange<ContextT> {
         return message;
     }
 
-    private async retransmitMessage(message: Message, retransmissionCount: number) {
-        await this.channel.send(message);
-        retransmissionCount++;
-        if (retransmissionCount === this.retransmissionRetries) return;
-        this.retransmissionTimer = Time.getTimer(this.activeRetransmissionTimeoutMs, () => this.retransmitMessage(message, retransmissionCount))
-            .start();
+    private retransmitMessage(message: Message, retransmissionCount: number) {
+        this.channel.send(message)
+            .then(() => {
+                retransmissionCount++;
+                if (retransmissionCount === this.retransmissionRetries) return;
+                this.retransmissionTimer = Time.getTimer(this.activeRetransmissionTimeoutMs, () => this.retransmitMessage(message, retransmissionCount))
+                    .start();
+            })
+            .catch(error => logger.error("An error happened when retransmitting a message", error));
     }
 
     close() {
         if (this.receivedMessageToAck !== undefined) {
-            this.send(MessageType.StandaloneAck, new ByteArray(0));
+            this.send(MessageType.StandaloneAck, new ByteArray(0))
+                .catch(error => logger.error("An error happened when closing the exchange", error));
         }
         Time.getTimer(this.activeRetransmissionTimeoutMs * (this.retransmissionRetries + 1), () => this.closeInternal())
             .start();

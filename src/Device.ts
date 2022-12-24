@@ -6,6 +6,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { singleton } from "./util/Singleton";
+import { Time } from "./time/Time";
+import { TimeNode } from "./time/TimeNode";
+
+Time.get = singleton(() => new TimeNode());
+
 import { MatterDevice } from "./matter/MatterDevice";
 import { UdpInterface } from "./net/UdpInterface";
 import { SecureChannelProtocol } from "./matter/session/secure/SecureChannelProtocol";
@@ -21,13 +27,10 @@ import { MdnsBroadcaster } from "./matter/mdns/MdnsBroadcaster";
 import { Network } from "./net/Network";
 import { NetworkNode } from "./net/node/NetworkNode";
 import { commandExecutor } from "./util/CommandLine";
-import { singleton } from "./util/Singleton";
 import { OnOffCluster } from "./matter/cluster/OnOffCluster";
 import { GeneralCommissioningClusterHandler } from "./matter/cluster/server/GeneralCommissioningServer";
 import { OperationalCredentialsClusterHandler } from "./matter/cluster/server/OperationalCredentialsServer";
 import { MdnsScanner } from "./matter/mdns/MdnsScanner";
-import { Time } from "./time/Time";
-import { TimeNode } from "./time/TimeNode";
 import packageJson from "../package.json";
 import { Logger } from "./log/Logger";
 import { VendorId } from "./matter/common/VendorId";
@@ -49,7 +52,6 @@ const ProductIntermediateCertificate = ByteArray.fromHex("308201d43082017aa00302
 const CertificateDeclaration = ByteArray.fromHex("3082021906092a864886f70d010702a082020a30820206020103310d300b06096086480165030402013082017106092a864886f70d010701a08201620482015e152400012501f1ff3602050080050180050280050380050480050580050680050780050880050980050a80050b80050c80050d80050e80050f80051080051180051280051380051480051580051680051780051880051980051a80051b80051c80051d80051e80051f80052080052180052280052380052480052580052680052780052880052980052a80052b80052c80052d80052e80052f80053080053180053280053380053480053580053680053780053880053980053a80053b80053c80053d80053e80053f80054080054180054280054380054480054580054680054780054880054980054a80054b80054c80054d80054e80054f80055080055180055280055380055480055580055680055780055880055980055a80055b80055c80055d80055e80055f80056080056180056280056380182403162c04135a494732303134325a423333303030332d32342405002406002507942624080018317d307b020103801462fa823359acfaa9963e1cfa140addf504f37160300b0609608648016503040201300a06082a8648ce3d04030204473045022024e5d1f47a7d7b0d206a26ef699b7c9757b72d469089de3192e678c745e7f60c022100f8aa2fa711fcb79b97e397ceda667bae464e2bd3ffdfc3cced7aa8ca5f4c1a7c");
 
 Network.get = singleton(() => new NetworkNode());
-Time.get = singleton(() => new TimeNode());
 
 const logger = Logger.get("Device");
 
@@ -78,7 +80,7 @@ class Device {
         onOffClusterServer.attributes.onOff.addListener(on => commandExecutor(on ? "on" : "off")?.());
 
         (new MatterDevice(deviceName, deviceType, vendorId, productId, discriminator))
-            //.addNetInterface(await UdpInterface.create(5540, "udp4"))
+            .addNetInterface(await UdpInterface.create(5540, "udp4"))
             .addNetInterface(await UdpInterface.create(5540, "udp6"))
             .addScanner(await MdnsScanner.create())
             .addBroadcaster(await MdnsBroadcaster.create())

@@ -23,15 +23,15 @@ export class SecureChannelProtocol implements ProtocolHandler<MatterDevice> {
         return SECURE_CHANNEL_PROTOCOL_ID;
     }
 
-    onNewExchange(exchange: MessageExchange<MatterDevice>, message: Message) {
+    async onNewExchange(exchange: MessageExchange<MatterDevice>, message: Message) {
         const messageType = message.payloadHeader.messageType;
 
         switch (messageType) {
             case MessageType.PbkdfParamRequest:
-                this.paseCommissioner.onNewExchange(exchange);
+                await this.paseCommissioner.onNewExchange(exchange);
                 break;
             case MessageType.Sigma1:
-                this.caseCommissioner.onNewExchange(exchange);
+                await this.caseCommissioner.onNewExchange(exchange);
                 break;
             default:
                 throw new Error(`Unexpected initial message on secure channel protocol: ${messageType.toString(16)}`);

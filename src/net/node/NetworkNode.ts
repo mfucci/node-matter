@@ -42,7 +42,7 @@ export class NetworkNode extends Network {
     private static getNetInterfaceForIpInternal(ip: string) {
         if (ip.indexOf("%") !== -1) {
             // IPv6 address with scope
-            return `::%${ip.split("%")[1]}`;
+            return ip.split("%")[1];
         } else {
             const interfaces = networkInterfaces();
             for (const name in interfaces) {
@@ -61,6 +61,9 @@ export class NetworkNode extends Network {
         const result = new Array<string>();
         const interfaces = networkInterfaces();
         for (const name in interfaces) {
+            const netInterfaces = interfaces[name] as NetworkInterfaceInfo[];
+            if (netInterfaces.length === 0) continue;
+            if (netInterfaces[0].internal) continue;
             result.push(name);
         }
         return result;

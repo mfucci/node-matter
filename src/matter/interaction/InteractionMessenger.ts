@@ -31,8 +31,7 @@ export type SubscribeResponse = TypeFromSchema<typeof TlvSubscribeResponse>;
 export type InvokeRequest = TypeFromSchema<typeof TlvInvokeRequest>;
 export type InvokeResponse = TypeFromSchema<typeof TlvInvokeResponse>;
 
-const logger = Logger.get("InteractionServerMessenger");
-
+const logger = Logger.get("InteractionMessenger");
 
 class InteractionMessenger<ContextT> {
     constructor(
@@ -102,6 +101,7 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
                     await this.exchange.send(MessageType.InvokeCommandResponse, TlvInvokeResponse.encode(invokeResponse));
                     break;
                 default:
+                    console.log("unsupported");
                     throw new Error(`Unsupported message type ${message.payloadHeader.messageType}`);
             }
         } catch (error) {

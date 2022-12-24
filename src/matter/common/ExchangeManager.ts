@@ -18,7 +18,7 @@ import { Logger } from "../../log/Logger";
 import { NodeId } from "./NodeId";
 import { ByteArray } from "@project-chip/matter.js";
 
-const logger = Logger.get("MessageChannel");
+const logger = Logger.get("ExchangeManager");
 
 export class MessageChannel<ContextT> implements Channel<Message> {
     constructor(
@@ -51,7 +51,10 @@ export class ExchangeManager<ContextT> {
     ) {}
 
     addNetInterface(netInterface: NetInterface) {
-        this.netListeners.push(netInterface.onData((socket, data) => this.onMessage(socket, data)));
+        this.netListeners.push(netInterface.onData((socket, data) => {
+            this.onMessage(socket, data)
+                .catch(error => logger.error(error));
+        }));
     }
 
     addProtocolHandler(protocol: ProtocolHandler<ContextT>) {
@@ -78,7 +81,7 @@ export class ExchangeManager<ContextT> {
         this.exchanges.clear();
     }
 
-    private onMessage(channel: Channel<ByteArray>, messageBytes: ByteArray) {
+    private async onMessage(channel: Channel<ByteArray>, messageBytes: ByteArray) {
         var packet = MessageCodec.decodePacket(messageBytes);
         if (packet.header.sessionType === SessionType.Group) throw new Error("Group messages are not supported");
 
@@ -91,11 +94,11 @@ export class ExchangeManager<ContextT> {
         if (exchange !== undefined) {
             exchange.onMessageReceived(message);
         } else {
-            const exchange = MessageExchange.fromInitialMessage(this.channelManager.getOrCreateChannel(channel, session), this.messageCounter, message, () => this.exchanges.delete(exchangeIndex));
+            const exchange = await MessageExchange.fromInitialMessage(this.channelManager.getOrCreateChannel(channel, session), this.messageCounter, message, () => this.exchanges.delete(exchangeIndex));
             this.exchanges.set(exchangeIndex, exchange);
             const protocolHandler = this.protocols.get(message.payloadHeader.protocolId);
             if (protocolHandler === undefined) throw new Error(`Unsupported protocol ${message.payloadHeader.protocolId}`);
-            protocolHandler.onNewExchange(exchange, message);
+            await protocolHandler.onNewExchange(exchange, message);
         }
     }
 }

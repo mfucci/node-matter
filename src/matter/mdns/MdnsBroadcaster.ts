@@ -50,7 +50,7 @@ export class MdnsBroadcaster implements Broadcaster {
                 ARecord(hostname, ip),
                 // TODO: support IPv6
                 TxtRecord(deviceQname, [
-                    `VP=${vendorId}+${productId}`,  /* Vendor / Product */
+                    `VP=${vendorId.id}+${productId}`,  /* Vendor / Product */
                     `DT=${deviceType}`,             /* Device Type */
                     `DN=${deviceName}`,             /* Device Name */
                     "SII=5000",                     /* Sleepy Idle Interval */

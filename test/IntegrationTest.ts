@@ -162,6 +162,15 @@ describe("Integration", () => {
         });
     });
 
+
+    context("attributes", () => {
+        it("get all attributes", async () => {
+            await (await client.connect(new NodeId(BigInt(1)))).getAllAttributes();
+
+            assert.ok(true);
+        });
+    });
+
     context("subscription", () => {
         /*it("subscription sends regular updates", async () => {
             const interactionClient = await client.connect(BigInt(1));

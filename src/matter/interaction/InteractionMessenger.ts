@@ -104,8 +104,8 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
                     console.log("unsupported");
                     throw new Error(`Unsupported message type ${message.payloadHeader.messageType}`);
             }
-        } catch (error) {
-            logger.error(error);
+        } catch (error: any) {
+            logger.error(error.stack ?? error);
             await this.sendStatus(StatusCode.Failure);
         } finally {
             this.exchange.close();

@@ -35,7 +35,7 @@ export type RequestType<T extends Command<any, any>> = T extends Command<infer R
 export const Command = <RequestT, ResponseT>(requestId: number, requestSchema: TlvSchema<RequestT>, responseId: number, responseSchema: TlvSchema<ResponseT>): Command<RequestT, ResponseT> => ({ optional: false, requestId, requestSchema, responseId, responseSchema });
 export const OptionalCommand = <RequestT, ResponseT>(requestId: number, requestSchema: TlvSchema<RequestT>, responseId: number, responseSchema: TlvSchema<ResponseT>): OptionalCommand<RequestT, ResponseT> => ({ optional: true, requestId, requestSchema, responseId, responseSchema });
 
-/* Interfaces and helper methods to define a cluset event */
+/* Interfaces and helper methods to define a cluster event */
 export const enum EventPriority {
     Critical,
     Info,

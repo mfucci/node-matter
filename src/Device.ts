@@ -32,7 +32,7 @@ import { GeneralCommissioningClusterHandler } from "./matter/cluster/server/Gene
 import { OperationalCredentialsClusterHandler } from "./matter/cluster/server/OperationalCredentialsServer";
 import { MdnsScanner } from "./matter/mdns/MdnsScanner";
 import packageJson from "../package.json";
-import { Logger } from "./log/Logger";
+import { Level, Logger } from "./log/Logger";
 import { VendorId } from "./matter/common/VendorId";
 import { OnOffClusterHandler } from "./matter/cluster/server/OnOffServer";
 import { ByteArray } from "@project-chip/matter.js";
@@ -54,6 +54,7 @@ const CertificateDeclaration = ByteArray.fromHex("3082021906092a864886f70d010702
 Network.get = singleton(() => new NetworkNode());
 
 const logger = Logger.get("Device");
+Logger.defaultLogLevel = Level.DEBUG;
 
 class Device {
     async start() {

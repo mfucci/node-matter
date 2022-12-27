@@ -58,7 +58,7 @@ export class MdnsBroadcaster implements Broadcaster {
                 // TODO: the Matter port should not be hardcoded here
                 SrvRecord(deviceQname, {priority: 0, weight: 0, port: 5540, target: hostname }),
                 TxtRecord(deviceQname, [
-                    `VP=${vendorId}+${productId}`,  /* Vendor / Product */
+                    `VP=${vendorId.id}+${productId}`,  /* Vendor / Product */
                     `DT=${deviceType}`,             /* Device Type */
                     `DN=${deviceName}`,             /* Device Name */
                     "SII=5000",                     /* Sleepy Idle Interval */

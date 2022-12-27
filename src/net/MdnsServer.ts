@@ -48,13 +48,14 @@ export class MdnsServer {
 
         const message = DnsCodec.decode(messageBytes);
         if (message === undefined) return; // The message cannot be parsed
-        if (message.messageType !== MessageType.Query) return;
+        const { transactionId, messageType, queries } = message;
+        if (messageType !== MessageType.Query) return;
         
         const answers = message.queries.flatMap(query => this.queryRecords(query, records));
         if (answers.length === 0) return;
 
         const additionalRecords = records.filter(record => !answers.includes(record));
-        this.multicastServer.send(DnsCodec.encode({ answers, additionalRecords }), netInterface);
+        this.multicastServer.send(DnsCodec.encode({ transactionId, answers, additionalRecords }), netInterface);
     }
 
     async announce() {

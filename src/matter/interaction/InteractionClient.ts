@@ -15,7 +15,7 @@ import { ExchangeManager, MessageChannel } from "../common/ExchangeManager";
 import { INTERACTION_PROTOCOL_ID } from "./InteractionServer";
 import { ProtocolHandler } from "../common/ProtocolHandler";
 import { StatusCode } from "./InteractionMessages";
-import { TlvSchema } from "@project-chip/matter.js";
+import { TlvSchema, TlvStream } from "@project-chip/matter.js";
 
 export function ClusterClient<CommandT extends Commands, AttributeT extends Attributes>(interactionClient: InteractionClient, endpointId: number, clusterDef: Cluster<any, AttributeT, CommandT, any>): ClusterClient<CommandT, AttributeT> {
     const result: any = {};
@@ -67,6 +67,18 @@ export class InteractionClient {
         private readonly channel: MessageChannel<MatterController>,
     ) {
         this.exchangeManager.addProtocolHandler(new SubscriptionClient(this.subscriptionListeners));
+    }
+
+    async getAllAttributes(): Promise<{}> {
+        return this.withMessenger<{ endpointId: number, clusterId: number, attributeId: number, version: number, value: TlvStream }[]>(async messenger => {
+            const response = await messenger.sendReadRequest({
+                attributes: [ {} ],
+                interactionModelRevision: 1,
+                isFabricFiltered: true,
+            });
+
+            return response.values.map(({ value: { path: {endpointId, clusterId, id}, version, value }}) => ({ endpointId, clusterId, attributeId: id, version, value }));
+        });
     }
 
     async get<A extends Attribute<any>>(endpointId: number, clusterId: number, { id, schema, optional, default: conformanceValue }: A): Promise<AttributeJsType<A>> {

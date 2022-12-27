@@ -19,6 +19,7 @@ import { Logger } from "../../log/Logger";
 import { DeviceTypeId } from "../common/DeviceTypeId";
 import { ClusterId } from "../common/ClusterId";
 import { TlvStream, TypeFromBitSchema } from "@project-chip/matter.js";
+import { EndpointNumber } from "../common/EndpointNumber";
 
 export const INTERACTION_PROTOCOL_ID = 0x0001;
 
@@ -111,9 +112,9 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
 
         // Add part list if the endpoint is not root
         if (endpointId !== 0) {
-            const rootPartsListAttribute = this.attributes.get(pathToId({endpointId: 0, clusterId: DescriptorCluster.id, id: DescriptorCluster.attributes.partsList.id}));
+            const rootPartsListAttribute: AttributeServer<EndpointNumber[]> | undefined = this.attributes.get(pathToId({endpointId: 0, clusterId: DescriptorCluster.id, id: DescriptorCluster.attributes.partsList.id}));
             if (rootPartsListAttribute === undefined) throw new Error("The root endpoint should be added first!");
-            rootPartsListAttribute.set([...rootPartsListAttribute.get(), endpointId]);
+            rootPartsListAttribute.set([...rootPartsListAttribute.get(), new EndpointNumber(endpointId)]);
         }
 
         return this;

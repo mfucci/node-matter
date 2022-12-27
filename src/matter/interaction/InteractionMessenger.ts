@@ -101,7 +101,6 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
                     await this.exchange.send(MessageType.InvokeCommandResponse, TlvInvokeResponse.encode(invokeResponse));
                     break;
                 default:
-                    console.log("unsupported");
                     throw new Error(`Unsupported message type ${message.payloadHeader.messageType}`);
             }
         } catch (error: any) {

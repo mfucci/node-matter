@@ -6,10 +6,9 @@
 
 import { DnsCodec, MessageType, Record, RecordClass, RecordType, SrvRecordValue } from "../../codec/DnsCodec";
 import { UdpMulticastServer } from "../../net/UdpMulticastServer";
-import { MDNS_BROADCAST_IP, MDNS_BROADCAST_PORT } from "../../net/MdnsServer";
+import { MDNS_BROADCAST_IPV4, MDNS_BROADCAST_IPV6, MDNS_BROADCAST_PORT } from "../../net/MdnsServer";
 import { getDeviceMatterQname, MATTER_SERVICE_QNAME } from "./MdnsConsts";
 import { getPromiseResolver } from "../../util/Promises";
-import { Network } from "../../net/Network";
 import { MatterServer, Scanner } from "../common/Scanner";
 import { Fabric } from "../fabric/Fabric";
 import { Time, Timer } from "../../time/Time";
@@ -19,11 +18,15 @@ import { ByteArray } from "@project-chip/matter.js";
 type MatterServerRecordWithExpire = MatterServer & { expires: number };
 
 export class MdnsScanner implements Scanner {
-    static async create(address?: string) {
-        return new MdnsScanner(await UdpMulticastServer.create({listeningAddress: address, broadcastAddress: MDNS_BROADCAST_IP, listeningPort: MDNS_BROADCAST_PORT}));
+    static async create(netInterface?: string) {
+        return new MdnsScanner(await UdpMulticastServer.create({
+            netInterface: netInterface,
+            broadcastAddressIpv4: MDNS_BROADCAST_IPV4,
+            broadcastAddressIpv6: MDNS_BROADCAST_IPV6,
+            listeningPort: MDNS_BROADCAST_PORT,
+        }));
     }
 
-    private readonly network = Network.get();
     private readonly matterDeviceRecords = new Map<string, MatterServerRecordWithExpire>();
     private readonly recordWaiters = new Map<string, (record: MatterServer | undefined) => void>();
     private readonly periodicTimer: Timer;

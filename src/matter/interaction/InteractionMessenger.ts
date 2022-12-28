@@ -31,8 +31,7 @@ export type SubscribeResponse = TypeFromSchema<typeof TlvSubscribeResponse>;
 export type InvokeRequest = TypeFromSchema<typeof TlvInvokeRequest>;
 export type InvokeResponse = TypeFromSchema<typeof TlvInvokeResponse>;
 
-const logger = Logger.get("InteractionServerMessenger");
-
+const logger = Logger.get("InteractionMessenger");
 
 class InteractionMessenger<ContextT> {
     constructor(

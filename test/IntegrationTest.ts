@@ -40,8 +40,8 @@ const SERVER_MAC = "00:B0:D0:63:C2:26";
 const CLIENT_IP = "192.168.200.2";
 const CLIENT_MAC = "CA:FE:00:00:BE:EF";
 
-const serverNetwork = new NetworkFake([ {ip: SERVER_IP, mac: SERVER_MAC} ]);
-const clientNetwork = new NetworkFake([ {ip: CLIENT_IP, mac: CLIENT_MAC} ]);
+const serverNetwork = new NetworkFake(SERVER_MAC, [SERVER_IP]);
+const clientNetwork = new NetworkFake(CLIENT_MAC, [CLIENT_IP]);
 
 // From Chip-Test-DAC-FFF1-8000-0007-Key.der
 const DevicePrivateKey = ByteArray.fromHex("727F1005CBA47ED7822A9D930943621617CFD3B79D9AF528B801ECF9F1992204");
@@ -79,7 +79,7 @@ describe("Integration", () => {
         Network.get = () => clientNetwork;
         client = await MatterController.create(
             await MdnsScanner.create(CLIENT_IP),
-            await UdpInterface.create(5540, CLIENT_IP),
+            await UdpInterface.create(5540, "udp6", CLIENT_IP),
         );
 
         Network.get = () => serverNetwork;
@@ -90,8 +90,8 @@ describe("Integration", () => {
             OnOffClusterHandler()
         );
         server = new MatterDevice(deviceName, deviceType, vendorId, productId, discriminator)
-            .addNetInterface(await UdpInterface.create(matterPort, SERVER_IP))
-            .addBroadcaster(await MdnsBroadcaster.create(SERVER_IP))
+            .addNetInterface(await UdpInterface.create(matterPort, "udp6", SERVER_IP))
+            .addBroadcaster(await MdnsBroadcaster.create())
             .addProtocolHandler(new SecureChannelProtocol(
                     new PaseServer(setupPin, { iteration: 1000, salt: Crypto.getRandomData(32) }),
                     new CaseServer(),

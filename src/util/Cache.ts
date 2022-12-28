@@ -14,13 +14,13 @@ export class Cache<T> {
     private readonly periodicTimer: Timer;
 
     constructor(
-        private readonly generator: (...params: string[]) => T,
+        private readonly generator: (...params: any[]) => T,
         private readonly expirationMs: number,
     ) {
         this.periodicTimer = Time.getPeriodicTimer(expirationMs, () => this.expire()).start();
     }
 
-    get(...params: string[]) {
+    get(...params: any[]) {
         const key = params.join(",");
         var value = this.values.get(key);
         if (value === undefined) {

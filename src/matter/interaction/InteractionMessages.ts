@@ -144,3 +144,7 @@ export const TlvInvokeResponse = TlvObject({
     }))),
     interactionModelRevision: TlvField(0xFF, TlvUInt8),
 });
+
+export const TlvTimedRequest = TlvObject({
+    timeout: TlvField(0, TlvUInt16),
+});

@@ -16,8 +16,6 @@ import { ByteArray } from "@project-chip/matter.js";
 const logger = Logger.get("PaseClient");
 
 export class PaseClient {
-    constructor() {}
-
     async pair(client: MatterController, exchange: MessageExchange<MatterController>, setupPin: number) {
         const messenger = new PaseClientMessenger(exchange);
         const random = Crypto.getRandom();
@@ -29,13 +27,14 @@ export class PaseClient {
         if (pbkdfParameters === undefined) throw new Error("Missing requested PbkdfParameters in the response");
 
         // Compute pake1 and read pake2
-        const spake2p = await Spake2p.create(Crypto.hash([ SPAKE_CONTEXT, requestPayload, responsePayload ]), pbkdfParameters, setupPin);
+        const { w0, w1 } = await Spake2p.computeW0W1(pbkdfParameters, setupPin);
+        const spake2p = await Spake2p.create(Crypto.hash([ SPAKE_CONTEXT, requestPayload, responsePayload ]), w0);
         const X = spake2p.computeX();
         await messenger.sendPasePake1({x: X});
 
         // Process pack2 and send pake3
         const { y: Y, verifier } = await messenger.readPasePake2();
-        const { Ke, hAY, hBX } = await spake2p.computeSecretAndVerifiersFromY(X, Y);
+        const { Ke, hAY, hBX } = await spake2p.computeSecretAndVerifiersFromY(w1, X, Y);
         if (!verifier.equals(hBX)) throw new Error("Received incorrect key confirmation from the receiver");
         await messenger.sendPasePake3({ verifier: hAY });
 

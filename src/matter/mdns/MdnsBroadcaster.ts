@@ -29,7 +29,7 @@ export class MdnsBroadcaster implements Broadcaster {
         private readonly mdnsServer: MdnsServer,
     ) {}
 
-    setCommissionMode(deviceName: string, deviceType: number, vendorId: VendorId, productId: number, discriminator: number) {
+    setCommissionMode(mode: number,deviceName: string, deviceType: number, vendorId: VendorId, productId: number, discriminator: number) {
         const shortDiscriminator = (discriminator >> 8) & 0x0F;
         const instanceId = Crypto.getRandomData(8).toHex().toUpperCase();
         const vendorQname = `_V${vendorId}._sub.${MATTER_COMMISSION_SERVICE_QNAME}`;
@@ -65,7 +65,7 @@ export class MdnsBroadcaster implements Broadcaster {
                     "SAI=300",                      /* Sleepy Active Interval */
                     "T=1",                          /* TCP supported */
                     `D=${discriminator}`,           /* Discriminator */
-                    "CM=1",                         /* Commission Mode */
+                    `CM=${mode}`,                   /* Commission Mode */
                     "PH=33",                        /* Pairing Hint */
                     "PI=",                          /* Pairing Instruction */
                 ]),

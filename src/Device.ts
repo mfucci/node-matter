@@ -86,7 +86,7 @@ class Device {
             .addScanner(await MdnsScanner.create())
             .addBroadcaster(await MdnsBroadcaster.create())
             .addProtocolHandler(new SecureChannelProtocol(
-                    await PaseServer.fromPin({ iteration: 1000, salt: Crypto.getRandomData(32) }, passcode),
+                    await PaseServer.fromPin(passcode, { iterations: 1000, salt: Crypto.getRandomData(32) }),
                     new CaseServer(),
                 ))
             .addProtocolHandler(new InteractionServer()

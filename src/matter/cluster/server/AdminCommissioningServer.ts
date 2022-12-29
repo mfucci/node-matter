@@ -13,7 +13,7 @@ import { Attributes } from "../Cluster";
 import { AttributeServers, ClusterServerHandlers } from "./ClusterServer"
 
 export const AdminCommissioingHandler: (secureChannelProtocol: SecureChannelProtocol) => ClusterServerHandlers<typeof AdminCommissioningCluster> = (secureChannelProtocol) => ({
-    openCommissioningWindow: async function ({ request: { pakeVerifier, discriminator, iterations, salt }, session}) {
+    openCommissioningWindow: async function ({ request: { pakePasscodeVerifier: pakeVerifier, discriminator, iterations, salt }, session}) {
         secureChannelProtocol.updatePaseCommissioner(PaseServer.fromVerificationValue(pakeVerifier, { iterations, salt }));
         session.getContext().openCommissioningModeWindow(2, discriminator);
     },

@@ -15,7 +15,6 @@ import { MatterDevice } from "../../MatterDevice";
 import { Logger } from "../../../log/Logger";
 import { ByteArray } from "@project-chip/matter.js";
 import BN from "bn.js";
-import BN from "bn.js";
 
 const logger = Logger.get("PaseServer");
 
@@ -64,10 +63,8 @@ export class PaseServer implements ProtocolHandler<MatterDevice> {
 
         // Process pake1 and send pake2
         const spake2p = await Spake2p.create(Crypto.hash([ SPAKE_CONTEXT, requestPayload, responsePayload ]), this.w0);
-        const spake2p = await Spake2p.create(Crypto.hash([ SPAKE_CONTEXT, requestPayload, responsePayload ]), this.w0);
         const { x: X } = await messenger.readPasePake1();
         const Y = spake2p.computeY();
-        const { Ke, hAY, hBX } = await spake2p.computeSecretAndVerifiersFromX(this.L, X, Y);
         const { Ke, hAY, hBX } = await spake2p.computeSecretAndVerifiersFromX(this.L, X, Y);
         await messenger.sendPasePake2({ y: Y, verifier: hBX });
 

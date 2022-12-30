@@ -16,16 +16,16 @@ const M = P256_CURVE.decodePoint("02886e2f97ace46e55ba9dd7242579f2993b64e16ef3dc
 const N = P256_CURVE.decodePoint("03d8bbd6c639c62937b04d997f38c3770719c629d7014d49a24b4f98baa1292b49", "hex");
 
 export interface PbkdfParameters {
-    iteration: number,
+    iterations: number,
     salt: ByteArray,
 }
 
 export class Spake2p {
 
-    static async computeW0W1({iteration, salt}: PbkdfParameters, pin: number) {
+    static async computeW0W1({iterations, salt}: PbkdfParameters, pin: number) {
         const pinWriter = new DataWriter(Endian.Little);
         pinWriter.writeUInt32(pin);
-        const ws = await Crypto.pbkdf2(pinWriter.toByteArray(), salt, iteration, 80);
+        const ws = await Crypto.pbkdf2(pinWriter.toByteArray(), salt, iterations, 80);
         const w0 = new BN(ws.slice(0, 40)).mod(P256_CURVE.n);
         const w1 = new BN(ws.slice(40, 80)).mod(P256_CURVE.n);
         return { w0, w1 };

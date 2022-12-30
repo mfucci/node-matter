@@ -20,15 +20,15 @@ const logger = Logger.get("PaseServer");
 
 export class PaseServer implements ProtocolHandler<MatterDevice> {
 
-    static async fromPin(pbkdfParameters: PbkdfParameters, setupPinCode: number) {
+    static async fromPin(setupPinCode: number, pbkdfParameters: PbkdfParameters, ) {
         const { w0, L } = await Spake2p.computeW0L(pbkdfParameters, setupPinCode);
         return new PaseServer(w0, L, pbkdfParameters);
     }
 
-    static fromVerificationValue(verificationValue: ByteArray) {
+    static fromVerificationValue(verificationValue: ByteArray, pbkdfParameters?: PbkdfParameters, ) {
         const w0 = new BN(verificationValue.slice(0, 32));
         const L = verificationValue.slice(32, 32 + 65);
-        return new PaseServer(w0, L);
+        return new PaseServer(w0, L, pbkdfParameters);
     }
 
     constructor(

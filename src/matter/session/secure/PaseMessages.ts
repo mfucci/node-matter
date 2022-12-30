@@ -31,7 +31,7 @@ export const TlvPbkdfParamResponse = TlvObject({
     random: TlvField(2, TlvByteString.bound({ length: 32 })),
     sessionId: TlvField(3, TlvUInt16),
     pbkdfParameters: TlvOptionalField(4, TlvObject({
-        iteration: TlvField(1, TlvUInt32),
+        iterations: TlvField(1, TlvUInt32),
         salt: TlvField(2, TlvByteString.bound({ minLength: 16, maxLength: 32 })),
     })),
     mrpParameters: TlvOptionalField(5, TlvSedParameters),

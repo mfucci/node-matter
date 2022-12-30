@@ -86,7 +86,7 @@ class Device {
             .addScanner(await MdnsScanner.create())
             .addBroadcaster(await MdnsBroadcaster.create())
             .addProtocolHandler(new SecureChannelProtocol(
-                    new PaseServer(passcode, { iteration: 1000, salt: Crypto.getRandomData(32) }),
+                    await PaseServer.fromPin(passcode, { iterations: 1000, salt: Crypto.getRandomData(32) }),
                     new CaseServer(),
                 ))
             .addProtocolHandler(new InteractionServer()
@@ -107,7 +107,8 @@ class Device {
                        capabilityMinima: {
                            caseSessionsPerFabric: 3,
                            subscriptionsPerFabric: 3,
-                       }
+                       },
+                       serialNumber: `node-matter-${packageJson.version}`,
                    }, {}),
                    new ClusterServer(GeneralCommissioningCluster, {}, {
                        breadcrumb: BigInt(0),

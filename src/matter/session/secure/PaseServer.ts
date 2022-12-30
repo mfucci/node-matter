@@ -14,14 +14,28 @@ import { SECURE_CHANNEL_PROTOCOL_ID } from "./SecureChannelMessages";
 import { MatterDevice } from "../../MatterDevice";
 import { Logger } from "../../../log/Logger";
 import { ByteArray } from "@project-chip/matter.js";
+import BN from "bn.js";
+import BN from "bn.js";
 
 const logger = Logger.get("PaseServer");
 
 export class PaseServer implements ProtocolHandler<MatterDevice> {
 
+    static async fromPin(setupPinCode: number, pbkdfParameters: PbkdfParameters, ) {
+        const { w0, L } = await Spake2p.computeW0L(pbkdfParameters, setupPinCode);
+        return new PaseServer(w0, L, pbkdfParameters);
+    }
+
+    static fromVerificationValue(verificationValue: ByteArray, pbkdfParameters?: PbkdfParameters, ) {
+        const w0 = new BN(verificationValue.slice(0, 32));
+        const L = verificationValue.slice(32, 32 + 65);
+        return new PaseServer(w0, L, pbkdfParameters);
+    }
+
     constructor(
-        private readonly setupPinCode: number,
-        private readonly pbkdfParameters: PbkdfParameters,
+        private readonly w0: BN,
+        private readonly L: ByteArray,
+        private readonly pbkdfParameters?: PbkdfParameters,
         ) {}
 
     getId(): number {
@@ -49,10 +63,12 @@ export class PaseServer implements ProtocolHandler<MatterDevice> {
         const responsePayload = await messenger.sendPbkdfParamResponse({ peerRandom, random, sessionId, mrpParameters, pbkdfParameters: hasPbkdfParameters ? undefined : this.pbkdfParameters });
 
         // Process pake1 and send pake2
-        const spake2p = await Spake2p.create(Crypto.hash([ SPAKE_CONTEXT, requestPayload, responsePayload ]), this.pbkdfParameters, this.setupPinCode);
+        const spake2p = await Spake2p.create(Crypto.hash([ SPAKE_CONTEXT, requestPayload, responsePayload ]), this.w0);
+        const spake2p = await Spake2p.create(Crypto.hash([ SPAKE_CONTEXT, requestPayload, responsePayload ]), this.w0);
         const { x: X } = await messenger.readPasePake1();
         const Y = spake2p.computeY();
-        const { Ke, hAY, hBX } = await spake2p.computeSecretAndVerifiersFromX(X, Y);
+        const { Ke, hAY, hBX } = await spake2p.computeSecretAndVerifiersFromX(this.L, X, Y);
+        const { Ke, hAY, hBX } = await spake2p.computeSecretAndVerifiersFromX(this.L, X, Y);
         await messenger.sendPasePake2({ y: Y, verifier: hBX });
 
         // Read and process pake3

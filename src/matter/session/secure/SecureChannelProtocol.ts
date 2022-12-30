@@ -15,12 +15,16 @@ import { MatterDevice } from "../../MatterDevice";
 export class SecureChannelProtocol implements ProtocolHandler<MatterDevice> {
 
     constructor(
-        private readonly paseCommissioner: PaseServer,
+        private paseCommissioner: PaseServer,
         private readonly caseCommissioner: CaseServer,
     ) {}
 
     getId(): number {
         return SECURE_CHANNEL_PROTOCOL_ID;
+    }
+    
+    updatePaseCommissioner(paseServer: PaseServer) {
+        this.paseCommissioner = paseServer;
     }
 
     async onNewExchange(exchange: MessageExchange<MatterDevice>, message: Message) {

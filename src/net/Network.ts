@@ -10,6 +10,6 @@ export abstract class Network {
     static get: () => Network = () => { throw new Error("No provider configured"); };
 
     abstract getNetInterfaces(): string[];
-    abstract getIpMac(netInterface: string): { mac: string, ips: string[] };
+    abstract getIpMac(netInterface: string): { mac: string, ips: string[] } | undefined;
     abstract createUdpChannel(options: UdpChannelOptions): Promise<UdpChannel>;
 }

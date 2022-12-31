@@ -69,9 +69,9 @@ export class NetworkNode extends Network {
         return result;
     }
 
-    getIpMac(netInterface: string): { mac: string; ips: string[]; } {
+    getIpMac(netInterface: string): { mac: string; ips: string[]; } | undefined {
         const netInterfaceInfo = networkInterfaces()[netInterface];
-        if (netInterfaceInfo === undefined) throw new Error(`Unknown interface: ${netInterface}`);
+        if (netInterfaceInfo === undefined) return undefined;
         return { mac: netInterfaceInfo[0].mac, ips: netInterfaceInfo.map(({address}) => address) };
     }
 

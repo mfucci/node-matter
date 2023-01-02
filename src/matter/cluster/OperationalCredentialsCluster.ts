@@ -28,10 +28,10 @@ const TlvFabricDescriptor = TlvObject({
     vendorId: TlvField(2, TlvVendorId),
 
     /** Contains the FabricID allocated to the fabric referenced by FabricIndex. */
-    fabricID: TlvField(3, TlvFabricId),
+    fabricId: TlvField(3, TlvFabricId),
 
     /** Contain the NodeID in use within the fabric referenced by FabricIndex. */
-    nodeID: TlvField(4, TlvNodeId),
+    nodeId: TlvField(4, TlvNodeId),
 
     /** Contains a commissioner-set label for the fabric referenced by FabricIndex. */
     label: TlvField(5, TlvString.bound({ maxLength: 32 })), /* default: "" */

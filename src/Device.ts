@@ -54,7 +54,6 @@ const CertificateDeclaration = ByteArray.fromHex("3082021906092a864886f70d010702
 Network.get = singleton(() => new NetworkNode());
 
 const logger = Logger.get("Device");
-Logger.defaultLogLevel = Level.DEBUG;
 
 class Device {
     async start() {
@@ -63,11 +62,12 @@ class Device {
         const deviceName = "Matter test device";
         const deviceType = 257 /* Dimmable bulb */;
         const vendorName = "node-matter";
-        const vendorId = new VendorId(0xFFF1);
-        const productName = "Matter test device";
-        const productId = 0X8001;
-        const discriminator = 3840;
         const passcode = 20202021;
+        const discriminator = 3840;
+        // product name / id and vendor id should match what is in the device certificate
+        const vendorId = new VendorId(0xFFF1);
+        const productName = "Matter Test DAC 0007";
+        const productId = 0X8000;
 
         // Barebone implementation of the On/Off cluster
         const onOffClusterServer = new ClusterServer(

@@ -38,6 +38,7 @@ import { OnOffClusterHandler } from "./matter/cluster/server/OnOffServer";
 import { ByteArray } from "@project-chip/matter.js";
 import { CommissionningFlowType, DiscoveryCapabilitiesSchema, ManualPairingCodeCodec, QrPairingCodeCodec } from "./codec/PairingCode.js";
 import { QrCode } from "./codec/QrCode.js";
+import { NetworkCommissioningCluster } from "./matter/cluster/NetworkCommissioningCluster";
 
 // From Chip-Test-DAC-FFF1-8000-0007-Key.der
 const DevicePrivateKey = ByteArray.fromHex("727F1005CBA47ED7822A9D930943621617CFD3B79D9AF528B801ECF9F1992204");
@@ -133,8 +134,26 @@ class Device {
                            deviceCertificate: DeviceCertificate,
                            deviceIntermediateCertificate: ProductIntermediateCertificate,
                            certificateDeclaration: CertificateDeclaration,
-                       })
+                       }),
                    ),
+                   new ClusterServer(NetworkCommissioningCluster, 
+                        {
+                            wifi: false,
+                            thread: false,
+                            ethernet: true,
+                        },
+                        {
+                            maxNetworks: 1,
+                            connectMaxTimeSeconds: 20,
+                            interfaceEnabled: true,
+                            lastConnectErrorValue: 0,
+                            lastNetworkId: Buffer.alloc(32),
+                            lastNetworkingStatus: null,
+                            networks: [{ networkId: Buffer.alloc(32), connected: true }],
+                            scanMaxTimeSeconds: 5,
+                        },
+                        {},
+                    ),
                 ])
                 .addEndpoint(0x01, DEVICE.ON_OFF_LIGHT, [ onOffClusterServer ])
             )

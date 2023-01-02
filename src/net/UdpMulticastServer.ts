@@ -49,7 +49,7 @@ export class UdpMulticastServer {
     async send(message: ByteArray, netInterface?: string) {
         const netInterfaces = netInterface !== undefined ? [netInterface] : this.network.getNetInterfaces();
         await Promise.all(netInterfaces.map(async netInterface => {
-            const { ips } = this.network.getIpMac(netInterface);
+            const { ips } = this.network.getIpMac(netInterface) ?? { ips: [] };
             await Promise.all(ips.map(async ip => {
                 const iPv4 = isIPv4(ip);
                 await (await this.broadcastChannels.get(netInterface, iPv4)).send(iPv4 ? this.broadcastAddressIpv4 : this.broadcastAddressIpv6, this.broadcastPort, message);

@@ -40,7 +40,9 @@ export class MdnsBroadcaster implements Broadcaster {
         const deviceQname = `${instanceId}.${MATTER_COMMISSION_SERVICE_QNAME}`;
 
         this.mdnsServer.setRecordsGenerator(netInterface => {
-            const { mac, ips } = this.network.getIpMac(netInterface);
+            const ipMac = this.network.getIpMac(netInterface);
+            if (ipMac === undefined) return [];
+            const { mac, ips } = ipMac;
             const hostname = mac.replace(/:/g, "").toUpperCase() + "0000.local";
             const records = [
                 PtrRecord(SERVICE_DISCOVERY_QNAME, MATTER_COMMISSION_SERVICE_QNAME),
@@ -87,7 +89,9 @@ export class MdnsBroadcaster implements Broadcaster {
         const deviceMatterQname = getDeviceMatterQname(operationalIdString, nodeId.toString());
 
         this.mdnsServer.setRecordsGenerator(netInterface => {
-            const { mac, ips } = this.network.getIpMac(netInterface);
+            const ipMac = this.network.getIpMac(netInterface);
+            if (ipMac === undefined) return [];
+            const { mac, ips } = ipMac;
             const hostname = mac.replace(/:/g, "").toUpperCase() + "0000.local";
             const records = [
                 PtrRecord(SERVICE_DISCOVERY_QNAME, MATTER_SERVICE_QNAME),

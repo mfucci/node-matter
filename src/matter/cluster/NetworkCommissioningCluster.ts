@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { TlvArray, BitFlag, TlvBoolean, TlvByteString, TlvEnum, TlvField, TlvInt32, TlvObject, TlvUInt8 } from "@project-chip/matter.js";
+import { TlvArray, BitFlag, TlvBoolean, TlvByteString, TlvEnum, TlvField, TlvInt32, TlvObject, TlvUInt8, TlvNullable } from "@project-chip/matter.js";
 import { Attribute, Cluster, WritableAttribute } from "./Cluster";
 
 export const enum NetworkCommissioningStatus {
@@ -41,8 +41,8 @@ export const NetworkCommissioningCluster = Cluster({
         })), { default: [] }), /* read = admin */
         scanMaxTimeSeconds: Attribute(2, TlvUInt8),
         connectMaxTimeSeconds: Attribute(3, TlvUInt8),
-        interfaceEnabled: WritableAttribute(4, TlvBoolean), /* write = admin */
-        lastNetworkingStatus: Attribute(5, TlvEnum<NetworkCommissioningStatus>()), /* read = admin */
+        interfaceEnabled: WritableAttribute(4, TlvBoolean, { default: true }), /* write = admin */
+        lastNetworkingStatus: Attribute(5, TlvNullable(TlvEnum<NetworkCommissioningStatus>()), { default: null }), /* read = admin */
         lastNetworkId: Attribute(6, TlvByteString.bound({ length: 32 })), /* read = admin */
         lastConnectErrorValue: Attribute(7, TlvInt32), /* read = admin */
     },

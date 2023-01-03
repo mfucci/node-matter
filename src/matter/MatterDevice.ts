@@ -77,7 +77,7 @@ export class MatterDevice {
         return this.fabricManager.findFabricFromDestinationId(destinationId, peerRandom);
     }
 
-    setFabric(fabric: Fabric) {
+    addFabric(fabric: Fabric) {
         this.fabricManager.addFabric(fabric);
         this.broadcasters.forEach(broadcaster => {
             broadcaster.setFabric(fabric.operationalId, fabric.nodeId);
@@ -103,6 +103,10 @@ export class MatterDevice {
 
     getFabricBuilder() {
         return this.fabricManager.getFabricBuilder();
+    }
+
+    getFabrics() {
+        return this.fabricManager.getFabrics();
     }
 
     completeCommission() {

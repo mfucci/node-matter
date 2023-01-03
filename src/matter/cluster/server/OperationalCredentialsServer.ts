@@ -16,6 +16,7 @@ import {
 } from "../OperationalCredentialsCluster";
 import { ClusterServerHandlers } from "./ClusterServer";
 import { ByteArray } from "@project-chip/matter.js";
+import { AttributeServer } from "./AttributeServer";
 
 interface OperationalCredentialsServerConf {
     devicePrivateKey: ByteArray,
@@ -51,15 +52,26 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
         }
     },
 
-    addOperationalCert: async ({ request: {operationalCert, intermediateCaCert, identityProtectionKey, caseAdminNode, adminVendorId}, session}) => {
-        const fabricBuilder = session.getContext().getFabricBuilder();
+    addOperationalCert: async ({ request: {operationalCert, intermediateCaCert, identityProtectionKey, caseAdminNode, adminVendorId}, session, attributes: { fabrics } }) => {
+        const device = session.getContext();
+        const fabricBuilder = device.getFabricBuilder();
         fabricBuilder.setOperationalCert(operationalCert);
         if (intermediateCaCert && intermediateCaCert.length > 0) fabricBuilder.setIntermediateCACert(intermediateCaCert);
-        fabricBuilder.setVendorId(adminVendorId);
+        fabricBuilder.setRootVendorId(adminVendorId);
         fabricBuilder.setIdentityProtectionKey(identityProtectionKey);
+        fabricBuilder.setRootNodeId(caseAdminNode);
 
         const fabric = await fabricBuilder.build();
-        session.getContext().setFabric(fabric);
+        device.addFabric(fabric);
+
+        fabrics.set(device.getFabrics().map((fabric, index) => ({
+            fabricId: fabric.fabricId,
+            label: fabric.label,
+            nodeId: fabric.nodeId,
+            rootPublicKey: fabric.rootPublicKey,
+            vendorId: fabric.rootVendorId,
+            fabricIndex: index,
+        })));
 
         // TODO: create ACL with caseAdminNode
 
@@ -70,8 +82,24 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
         throw new Error("Not implemented");
     },
 
-    updateFabricLabel: async ({ request: {label} }) => {
-        throw new Error("Not implemented");
+    updateFabricLabel: async ({ request: {label}, attributes: {fabrics}, session }) => {
+        if (!session.isSecure()) throw new Error("updateOperationalCert should be called on a secure session.");
+        const secureSession = session as SecureSession<MatterDevice>;
+        const fabric = secureSession.getFabric();
+        if (fabric === undefined) throw new Error("updateOperationalCert on a session linked to a fabric.");
+
+        fabric.label = label;
+
+        fabrics.set(session.getContext().getFabrics().map((fabric, index) => ({
+            fabricId: fabric.fabricId,
+            label: fabric.label,
+            nodeId: fabric.nodeId,
+            rootPublicKey: fabric.rootPublicKey,
+            vendorId: fabric.rootVendorId,
+            fabricIndex: index,
+        })));
+
+        return {status: OperationalCertStatus.Success};
     },
 
     removeFabric: async ({ request: {fabricIndex} }) => {

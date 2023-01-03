@@ -39,6 +39,7 @@ export class MatterController {
         const ipkValue = Crypto.getRandomData(16);
         const fabricBuilder = new FabricBuilder()
             .setRootCert(certificateManager.getRootCert())
+            .setRootNodeId(CONTROLLER_NODE_ID)
             .setIdentityProtectionKey(ipkValue)
             .setRootVendorId(ADMIN_VENDOR_ID);
         fabricBuilder.setOperationalCert(certificateManager.generateNoc(fabricBuilder.getPublicKey(), FABRIC_ID, CONTROLLER_NODE_ID));

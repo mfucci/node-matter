@@ -8,7 +8,8 @@ import { Crypto, KeyPair } from "../../crypto/Crypto";
 import { CertificateManager, TlvOperationalCertificate, TlvRootCertificate } from "../certificate/CertificateManager";
 import { NodeId } from "../common/NodeId";
 import { VendorId } from "../common/VendorId";
-import { ByteArray, DataWriter, Endian } from "@project-chip/matter.js";
+import { ByteArray, DataWriter, Endian, toBigInt } from "@project-chip/matter.js";
+import { FabricId } from "../common/FabricId";
 
 const COMPRESSED_FABRIC_ID_INFO = ByteArray.fromString("CompressedFabric");
 const GROUP_SECURITY_INFO = ByteArray.fromString("GroupKey v1.0");
@@ -16,7 +17,7 @@ const GROUP_SECURITY_INFO = ByteArray.fromString("GroupKey v1.0");
 export class Fabric {
 
     constructor(
-        readonly id: bigint | number,
+        readonly fabricId: FabricId,
         readonly nodeId: NodeId,
         readonly rootNodeId: NodeId,
         readonly operationalId: ByteArray,
@@ -48,7 +49,7 @@ export class Fabric {
         const writer = new DataWriter(Endian.Little);
         writer.writeByteArray(random);
         writer.writeByteArray(this.rootPublicKey);
-        writer.writeUInt64(this.id);
+        writer.writeUInt64(this.fabricId.id);
         writer.writeUInt64(nodeId.id);
         return Crypto.hmac(this.operationalIdentityProtectionKey, writer.toByteArray());
     }
@@ -60,7 +61,7 @@ export class FabricBuilder {
     private rootCert?: ByteArray;
     private intermediateCACert?: ByteArray;
     private operationalCert?: ByteArray;
-    private fabricId?: bigint | number;
+    private fabricId?: FabricId;
     private nodeId?: NodeId;
     private rootNodeId?: NodeId; 
     private rootPublicKey?: ByteArray;
@@ -83,7 +84,7 @@ export class FabricBuilder {
     setOperationalCert(operationalCert: ByteArray) {
         this.operationalCert = operationalCert;
         const {subject: {nodeId, fabricId} } = TlvOperationalCertificate.decode(operationalCert);
-        this.fabricId = fabricId;
+        this.fabricId = new FabricId(toBigInt(fabricId));
         this.nodeId = nodeId;
         return this;
     }
@@ -116,7 +117,7 @@ export class FabricBuilder {
         if (this.operationalCert === undefined || this.fabricId === undefined || this.nodeId === undefined) throw new Error("operationalCert needs to be set");
 
         const saltWriter = new DataWriter(Endian.Big);
-        saltWriter.writeUInt64(this.fabricId);
+        saltWriter.writeUInt64(this.fabricId.id);
         const operationalId = await Crypto.hkdf(this.rootPublicKey.slice(1), saltWriter.toByteArray(), COMPRESSED_FABRIC_ID_INFO, 8);
 
         return new Fabric(

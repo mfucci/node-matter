@@ -18,15 +18,17 @@ export class Fabric {
     constructor(
         readonly id: bigint | number,
         readonly nodeId: NodeId,
+        readonly rootNodeId: NodeId,
         readonly operationalId: ByteArray,
         readonly rootPublicKey: ByteArray,
         private readonly keyPair: KeyPair,
-        private readonly vendorId: VendorId,
+        readonly rootVendorId: VendorId,
         private readonly rootCert: ByteArray,
         readonly identityProtectionKey: ByteArray,
         readonly operationalIdentityProtectionKey: ByteArray,
         readonly intermediateCACert: ByteArray | undefined,
         readonly operationalCert: ByteArray,
+        public label: string,
     ) {}
 
     getPublicKey() {
@@ -54,12 +56,13 @@ export class Fabric {
 
 export class FabricBuilder {
     private keyPair = Crypto.createKeyPair();
-    private vendorId?: VendorId;
+    private rootVendorId?: VendorId;
     private rootCert?: ByteArray;
     private intermediateCACert?: ByteArray;
     private operationalCert?: ByteArray;
     private fabricId?: bigint | number;
     private nodeId?: NodeId;
+    private rootNodeId?: NodeId; 
     private rootPublicKey?: ByteArray;
     private identityProtectionKey?: ByteArray;
 
@@ -90,8 +93,13 @@ export class FabricBuilder {
         return this;
     }
 
-    setVendorId(vendorId: VendorId) {
-        this.vendorId = vendorId;
+    setRootVendorId(rootVendorId: VendorId) {
+        this.rootVendorId = rootVendorId;
+        return this;
+    }
+
+    setRootNodeId(rootNodeId: NodeId) {
+        this.rootNodeId = rootNodeId;
         return this;
     }
 
@@ -101,7 +109,8 @@ export class FabricBuilder {
     }
 
     async build() {
-        if (this.vendorId === undefined) throw new Error("vendorId needs to be set");
+        if (this.rootNodeId === undefined) throw new Error("rootNodeId needs to be set");
+        if (this.rootVendorId === undefined) throw new Error("vendorId needs to be set");
         if (this.rootCert === undefined || this.rootPublicKey === undefined) throw new Error("rootCert needs to be set");
         if (this.identityProtectionKey === undefined) throw new Error("identityProtectionKey needs to be set");
         if (this.operationalCert === undefined || this.fabricId === undefined || this.nodeId === undefined) throw new Error("operationalCert needs to be set");
@@ -113,15 +122,17 @@ export class FabricBuilder {
         return new Fabric(
             this.fabricId,
             this.nodeId,
+            this.rootNodeId,
             operationalId,
             this.rootPublicKey,
             this.keyPair,
-            this.vendorId,
+            this.rootVendorId,
             this.rootCert,
             this.identityProtectionKey,
             await Crypto.hkdf(this.identityProtectionKey, operationalId, GROUP_SECURITY_INFO, 16),
             this.intermediateCACert,
             this.operationalCert,
+            "",
         );
     }
 }

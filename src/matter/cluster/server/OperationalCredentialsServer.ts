@@ -51,15 +51,26 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
         }
     },
 
-    addOperationalCert: async ({ request: {operationalCert, intermediateCaCert, identityProtectionKey, caseAdminNode, adminVendorId}, session}) => {
-        const fabricBuilder = session.getContext().getFabricBuilder();
+    addOperationalCert: async ({ request: {operationalCert, intermediateCaCert, identityProtectionKey, caseAdminNode, adminVendorId}, session, attributes: { fabrics } }) => {
+        const device = session.getContext();
+        const fabricBuilder = device.getFabricBuilder();
         fabricBuilder.setOperationalCert(operationalCert);
         if (intermediateCaCert && intermediateCaCert.length > 0) fabricBuilder.setIntermediateCACert(intermediateCaCert);
-        fabricBuilder.setVendorId(adminVendorId);
+        fabricBuilder.setRootVendorId(adminVendorId);
         fabricBuilder.setIdentityProtectionKey(identityProtectionKey);
+        fabricBuilder.setRootNodeId(caseAdminNode);
 
         const fabric = await fabricBuilder.build();
-        session.getContext().setFabric(fabric);
+        device.addFabric(fabric);
+
+        fabrics.set(device.getFabrics().map((fabric, index) => ({
+            fabricId: fabric.id,
+            label: fabric.label,
+            nodeId: fabric.nodeId,
+            rootPublicKey: fabric.rootPublicKey,
+            vendorId: fabric.rootVendorId,
+            fabricIndex: 1,
+        }));
 
         // TODO: create ACL with caseAdminNode
 

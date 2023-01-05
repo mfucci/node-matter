@@ -4,8 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { TlvByteString, TlvField, TlvObject, TlvUInt16, TlvUInt32 } from "@project-chip/matter.js";
-import { Cluster, Command, TlvNoArguments, TlvNoResponse, OptionalCommand } from "./Cluster";
+import { BitFlag, TlvByteString, TlvEnum, TlvField, TlvNullable, TlvObject, TlvUInt16, TlvUInt32 } from "@project-chip/matter.js";
+import { TlvFabricIndex } from "../common/FabricIndex";
+import { TlvVendorId } from "../common/VendorId";
+import { Cluster, Command, TlvNoArguments, TlvNoResponse, OptionalCommand, Attribute } from "./Cluster";
+
+export const enum WindowStatus {
+    /** Commissioning win­dow not open */
+    WindowNotOpen = 0,
+
+    /** An Enhanced Commis­sioning Method win­dow is open */
+    EnhancedWindowOpen = 1,
+
+    /** A Basic Commissioning Method window is open */
+    BasicWindowOpen = 2,
+}
 
 /**
  * This cluster is used to trigger a Node to allow a new Administrator to commission it.
@@ -16,9 +29,20 @@ export const AdminCommissioningCluster = Cluster({
     id: 0x3c,
     name: "AdministratorCommissioning",
     revision: 1,
+    features: {
+        /** Node supports Basic Commissioning Method. */
+        basic: BitFlag(0),
+    },
 
     attributes: {
-        // TODO: add attributes
+        /** Indicates whether a new Commissioning window has been opened by an Administrator. */
+        windowStatus: Attribute(0, TlvEnum<WindowStatus>()),
+
+        /** If a window is opened, indicates the FabricIndex of the Administrator fabric that opened the window. */
+        adminFabricIndex: Attribute(1, TlvNullable(TlvFabricIndex)),
+
+        /** If a window is opened, indicates the vendorId of the Administrator fabric that opened the window. */
+        adminVendorId: Attribute(2, TlvNullable(TlvVendorId)),
     },
 
     commands: {
@@ -30,7 +54,7 @@ export const AdminCommissioningCluster = Cluster({
             salt: TlvField(4, TlvByteString.bound({ minLength: 16, maxLength: 32 })),
         }), 0, TlvNoResponse),
 
-        openBasicCommissioningWindow: OptionalCommand(1, TlvObject({
+        openBasicCommissioningWindow: Command(1, TlvObject({
             commissioningTimeout: TlvField(0, TlvUInt16),
         }), 1, TlvNoResponse),
         

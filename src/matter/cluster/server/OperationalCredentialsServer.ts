@@ -62,7 +62,7 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
         fabricBuilder.setRootNodeId(caseAdminNode);
 
         const fabric = await fabricBuilder.build();
-        device.addFabric(fabric);
+        const fabricIndex = device.addFabric(fabric);
 
         fabrics.set(device.getFabrics().map((fabric, index) => ({
             fabricId: fabric.fabricId,
@@ -74,8 +74,9 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
         })));
 
         // TODO: create ACL with caseAdminNode
+        console.log("addOperationalCert success")
 
-        return {status: OperationalCertStatus.Success};
+        return {status: OperationalCertStatus.Success, fabricIndex };
     },
 
     updateOperationalCert: async ({ request: {operationalCert, intermediateCaCert, }, session}) => {

@@ -32,13 +32,15 @@ import { GeneralCommissioningClusterHandler } from "./matter/cluster/server/Gene
 import { OperationalCredentialsClusterHandler } from "./matter/cluster/server/OperationalCredentialsServer";
 import { MdnsScanner } from "./matter/mdns/MdnsScanner";
 import packageJson from "../package.json";
-import { Level, Logger } from "./log/Logger";
+import { Logger } from "./log/Logger";
 import { VendorId } from "./matter/common/VendorId";
 import { OnOffClusterHandler } from "./matter/cluster/server/OnOffServer";
 import { ByteArray } from "@project-chip/matter.js";
 import { CommissionningFlowType, DiscoveryCapabilitiesSchema, ManualPairingCodeCodec, QrPairingCodeCodec } from "./codec/PairingCode.js";
 import { QrCode } from "./codec/QrCode.js";
 import { NetworkCommissioningCluster, NetworkCommissioningStatus } from "./matter/cluster/NetworkCommissioningCluster";
+import { AdminCommissioningCluster, WindowStatus } from "./matter/cluster/AdminCommissioningCluster";
+import { AdminCommissioningHandler } from "./matter/cluster/server/AdminCommissioningServer";
 
 // From Chip-Test-DAC-FFF1-8000-0007-Key.der
 const DevicePrivateKey = ByteArray.fromHex("727F1005CBA47ED7822A9D930943621617CFD3B79D9AF528B801ECF9F1992204");
@@ -81,15 +83,17 @@ class Device {
         // We listen to the attribute update to trigger an action. This could also have been done in the method invokations in the server.
         onOffClusterServer.attributes.onOff.addListener(on => commandExecutor(on ? "on" : "off")?.());
 
+        const secureChannelProtocol = new SecureChannelProtocol(
+            await PaseServer.fromPin(passcode, { iterations: 1000, salt: Crypto.getRandomData(32) }),
+            new CaseServer(),
+        );
+
         (new MatterDevice(deviceName, deviceType, vendorId, productId, discriminator))
             .addNetInterface(await UdpInterface.create(5540, "udp4"))
             .addNetInterface(await UdpInterface.create(5540, "udp6"))
             .addScanner(await MdnsScanner.create())
             .addBroadcaster(await MdnsBroadcaster.create())
-            .addProtocolHandler(new SecureChannelProtocol(
-                    await PaseServer.fromPin(passcode, { iterations: 1000, salt: Crypto.getRandomData(32) }),
-                    new CaseServer(),
-                ))
+            .addProtocolHandler(secureChannelProtocol)
             .addProtocolHandler(new InteractionServer()
                .addEndpoint(0x00, DEVICE.ROOT, [
                    new ClusterServer(BasicInformationCluster, {}, {
@@ -154,6 +158,17 @@ class Device {
                         },
                         {},
                     ),
+                    new ClusterServer(AdminCommissioningCluster, 
+                        {
+                            basic: true,
+                        },
+                        {
+                            windowStatus: WindowStatus.WindowNotOpen,
+                            adminFabricIndex: null,
+                            adminVendorId: null,
+                        },
+                        AdminCommissioningHandler(secureChannelProtocol),
+                    )
                 ])
                 .addEndpoint(0x01, DEVICE.ON_OFF_LIGHT, [ onOffClusterServer ])
             )

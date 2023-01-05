@@ -256,6 +256,7 @@ export const OperationalCredentialsCluster = Cluster({
         /** Contain accessing fabric index. */
         currentFabricIndex: Attribute(5, TlvUInt8),
     },
+    
     /** @see {@link MatterCoreSpecificationV1_0} § 11.17.7 */
     commands: {
         /** Sender is requesting attestation information from the receiver. */

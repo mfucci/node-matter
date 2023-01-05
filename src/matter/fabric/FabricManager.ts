@@ -14,7 +14,7 @@ export class FabricManager {
 
     addFabric(fabric: Fabric) {
         this.fabrics.push(fabric);
-        return new FabricIndex(this.fabrics.length - 1);
+        return new FabricIndex(this.fabrics.length);
     }
 
     getFabrics() {

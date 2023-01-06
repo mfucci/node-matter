@@ -39,7 +39,7 @@ import { ByteArray } from "@project-chip/matter.js";
 import { CommissionningFlowType, DiscoveryCapabilitiesSchema, ManualPairingCodeCodec, QrPairingCodeCodec } from "./codec/PairingCode.js";
 import { QrCode } from "./codec/QrCode.js";
 import { NetworkCommissioningCluster, NetworkCommissioningStatus } from "./matter/cluster/NetworkCommissioningCluster";
-import { AdminCommissioningCluster, CommissioningWindowStatus } from "./matter/cluster/AdminCommissioningCluster";
+import { AdminCommissioningCluster, WindowStatus } from "./matter/cluster/AdminCommissioningCluster";
 import { AdminCommissioningHandler } from "./matter/cluster/server/AdminCommissioningServer";
 import { NetworkCommissioningHandler } from "./matter/cluster/server/NetworkCommissioningServer";
 
@@ -164,7 +164,7 @@ class Device {
                             basic: true,
                         },
                         {
-                            windowStatus: CommissioningWindowStatus.WindowNotOpen,
+                            windowStatus: WindowStatus.WindowNotOpen,
                             adminFabricIndex: null,
                             adminVendorId: null,
                         },

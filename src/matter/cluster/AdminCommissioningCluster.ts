@@ -4,7 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { BitFlag, TlvByteString, TlvEnum, TlvField, TlvNullable, TlvObject, TlvUInt16, TlvUInt32 } from "@project-chip/matter.js";
+import {
+    BitFlag,
+    TlvByteString,
+    TlvEnum,
+    TlvField,
+    TlvNullable,
+    TlvObject,
+    TlvOptionalField,
+    TlvUInt16,
+    TlvUInt32
+} from "@project-chip/matter.js";
 import { TlvFabricIndex } from "../common/FabricIndex";
 import { TlvVendorId } from "../common/VendorId";
 import { Cluster, Command, TlvNoArguments, TlvNoResponse, Attribute } from "./Cluster";
@@ -60,6 +70,10 @@ const TlvOpenBasicCommissioningWindowRequest = TlvObject({
     commissioningTimeout: TlvField(0, TlvUInt16),
 });
 
+const TlvStatusOnlyResponse = TlvObject({
+    status: TlvOptionalField(0, TlvEnum<StatusCode>()),
+});
+
 /**
  * This cluster is used to trigger a Node to allow a new Administrator to commission it.
  *
@@ -89,12 +103,12 @@ export const AdminCommissioningCluster = Cluster({
     /** @see {@link MatterCoreSpecificationV1_0} § 11.18.8 */
     commands: {
         /** Used to instruct a Node to go into commissioning mode using enhanced commissioning method. */
-        openCommissioningWindow: Command(0, TlvOpenCommissioningWindowRequest, 0, TlvNoResponse),
+        openCommissioningWindow: Command(0, TlvOpenCommissioningWindowRequest, 0, TlvStatusOnlyResponse),
 
         /** Used to instruct a Node to go into commissioning mode using basic commissioning method, if the node supports it. */
-        openBasicCommissioningWindow: Command(1, TlvOpenBasicCommissioningWindowRequest, 1, TlvNoResponse),
+        openBasicCommissioningWindow: Command(1, TlvOpenBasicCommissioningWindowRequest, 1, TlvStatusOnlyResponse),
 
         /** Used to instruct a Node to revoke any active Open Commissioning Window or Open Basic Commissioning Window command. */
-        revokeCommissioning: Command(2, TlvNoArguments, 2, TlvNoResponse),
+        revokeCommissioning: Command(2, TlvNoArguments, 2, TlvStatusOnlyResponse),
     },
 });

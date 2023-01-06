@@ -17,6 +17,7 @@ export const AdminCommissioningHandler: (secureChannelProtocol: SecureChannelPro
         //windowStatus.set(CommissioningWindowStatus.EnhancedWindowOpen);
         secureChannelProtocol.updatePaseCommissioner(PaseServer.fromVerificationValue(pakeVerifier, { iterations, salt }));
         session.getContext().openCommissioningModeWindow(2, discriminator);
+        return {};
     },
 
     openBasicCommissioningWindow: async function ({}) {
@@ -25,5 +26,6 @@ export const AdminCommissioningHandler: (secureChannelProtocol: SecureChannelPro
 
     revokeCommissioning: async function (args: { request: {}; attributes: AttributeServers<Attributes>; session: Session<MatterDevice>; }) {
         // TODO: implement this
+        return {};
     }
 });

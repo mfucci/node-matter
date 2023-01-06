@@ -276,7 +276,6 @@ export const NetworkCommissioningCluster = Cluster({
     },
 
     commands: {
-
         /** Determine the set of networks the device sees as available. */
         scanNetworks: Command(0, TlvScanNetworksRequest, 1, TlvScanNetworksResponse),
 

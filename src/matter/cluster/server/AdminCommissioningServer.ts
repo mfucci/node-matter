@@ -8,13 +8,13 @@ import { MatterDevice } from "../../MatterDevice";
 import { PaseServer } from "../../session/secure/PaseServer";
 import { SecureChannelProtocol } from "../../session/secure/SecureChannelProtocol";
 import { Session } from "../../session/Session";
-import { AdminCommissioningCluster, WindowStatus } from "../AdminCommissioningCluster"
+import { AdminCommissioningCluster, CommissioningWindowStatus } from "../AdminCommissioningCluster"
 import { Attributes } from "../Cluster";
 import { AttributeServers, ClusterServerHandlers } from "./ClusterServer"
 
 export const AdminCommissioningHandler: (secureChannelProtocol: SecureChannelProtocol) => ClusterServerHandlers<typeof AdminCommissioningCluster> = (secureChannelProtocol) => ({
     openCommissioningWindow: async function ({ request: { pakePasscodeVerifier: pakeVerifier, discriminator, iterations, salt }, session, attributes: { windowStatus }}) {
-        //windowStatus.set(WindowStatus.EnhancedWindowOpen);
+        //windowStatus.set(CommissioningWindowStatus.EnhancedWindowOpen);
         secureChannelProtocol.updatePaseCommissioner(PaseServer.fromVerificationValue(pakeVerifier, { iterations, salt }));
         session.getContext().openCommissioningModeWindow(2, discriminator);
     },

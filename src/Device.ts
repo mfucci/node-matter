@@ -39,7 +39,7 @@ import { ByteArray } from "@project-chip/matter.js";
 import { CommissionningFlowType, DiscoveryCapabilitiesSchema, ManualPairingCodeCodec, QrPairingCodeCodec } from "./codec/PairingCode.js";
 import { QrCode } from "./codec/QrCode.js";
 import { NetworkCommissioningCluster, NetworkCommissioningStatus } from "./matter/cluster/NetworkCommissioningCluster";
-import { AdminCommissioningCluster, WindowStatus } from "./matter/cluster/AdminCommissioningCluster";
+import { AdminCommissioningCluster, CommissioningWindowStatus } from "./matter/cluster/AdminCommissioningCluster";
 import { AdminCommissioningHandler } from "./matter/cluster/server/AdminCommissioningServer";
 
 // From Chip-Test-DAC-FFF1-8000-0007-Key.der
@@ -163,7 +163,7 @@ class Device {
                             basic: true,
                         },
                         {
-                            windowStatus: WindowStatus.WindowNotOpen,
+                            windowStatus: CommissioningWindowStatus.WindowNotOpen,
                             adminFabricIndex: null,
                             adminVendorId: null,
                         },

@@ -78,11 +78,12 @@ export class MatterDevice {
     }
 
     addFabric(fabric: Fabric) {
-        this.fabricManager.addFabric(fabric);
+        const fabricIndex = this.fabricManager.addFabric(fabric);
         this.broadcasters.forEach(broadcaster => {
             broadcaster.setFabric(fabric.operationalId, fabric.nodeId);
             broadcaster.announce();
         });
+        return fabricIndex;
     }
 
     initiateExchange(fabric: Fabric, nodeId: NodeId, protocolId: number) {

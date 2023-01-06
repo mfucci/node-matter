@@ -39,8 +39,9 @@ import { ByteArray } from "@project-chip/matter.js";
 import { CommissionningFlowType, DiscoveryCapabilitiesSchema, ManualPairingCodeCodec, QrPairingCodeCodec } from "./codec/PairingCode.js";
 import { QrCode } from "./codec/QrCode.js";
 import { NetworkCommissioningCluster, NetworkCommissioningStatus } from "./matter/cluster/NetworkCommissioningCluster";
-import { AdminCommissioningCluster, WindowStatus } from "./matter/cluster/AdminCommissioningCluster";
+import { AdminCommissioningCluster, CommissioningWindowStatus } from "./matter/cluster/AdminCommissioningCluster";
 import { AdminCommissioningHandler } from "./matter/cluster/server/AdminCommissioningServer";
+import { NetworkCommissioningHandler } from "./matter/cluster/server/NetworkCommissioningServer";
 
 // From Chip-Test-DAC-FFF1-8000-0007-Key.der
 const DevicePrivateKey = ByteArray.fromHex("727F1005CBA47ED7822A9D930943621617CFD3B79D9AF528B801ECF9F1992204");
@@ -140,7 +141,7 @@ class Device {
                            certificateDeclaration: CertificateDeclaration,
                        }),
                    ),
-                   new ClusterServer(NetworkCommissioningCluster, 
+                   new ClusterServer(NetworkCommissioningCluster,
                         {
                             wifi: false,
                             thread: false,
@@ -156,14 +157,14 @@ class Device {
                             networks: [{ networkId: Buffer.alloc(32), connected: true }],
                             scanMaxTimeSeconds: 5,
                         },
-                        {},
+                        NetworkCommissioningHandler(),
                     ),
-                    new ClusterServer(AdminCommissioningCluster, 
+                    new ClusterServer(AdminCommissioningCluster,
                         {
                             basic: true,
                         },
                         {
-                            windowStatus: WindowStatus.WindowNotOpen,
+                            windowStatus: CommissioningWindowStatus.WindowNotOpen,
                             adminFabricIndex: null,
                             adminVendorId: null,
                         },

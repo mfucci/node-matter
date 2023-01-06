@@ -35,6 +35,9 @@ const TlvFabricDescriptor = TlvObject({
 
     /** Contains a commissioner-set label for the fabric referenced by FabricIndex. */
     label: TlvField(5, TlvString.bound({ maxLength: 32 })), /* default: "" */
+
+    // TODO: this data is scoped in the fabric context and should be marked as such
+    fabricIndex: TlvField(0xfe, TlvUInt8),
 });
 
 /**

@@ -70,7 +70,8 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
             nodeId: fabric.nodeId,
             rootPublicKey: fabric.rootPublicKey,
             vendorId: fabric.rootVendorId,
-            fabricIndex: index,
+            // TODO: this is a hack. Fabric-scoped data need to be handled automatically
+            fabricIndex: index + 1,
         })));
 
         // TODO: create ACL with caseAdminNode
@@ -97,7 +98,7 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
             nodeId: fabric.nodeId,
             rootPublicKey: fabric.rootPublicKey,
             vendorId: fabric.rootVendorId,
-            fabricIndex: index,
+            fabricIndex: index + 1,
         })));
 
         return {status: OperationalCertStatus.Success};

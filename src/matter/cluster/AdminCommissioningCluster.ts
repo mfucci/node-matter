@@ -49,7 +49,7 @@ export const AdminCommissioningCluster = Cluster({
         openCommissioningWindow: Command(0, TlvObject({
             commissioningTimeout: TlvField(0, TlvUInt16),
             pakePasscodeVerifier: TlvField(1, TlvByteString),
-            discriminator: TlvField(2, TlvUInt16.bound({ max: 2047 })),
+            discriminator: TlvField(2, TlvUInt16.bound({ max: 4095 /* Matter specs v1.0 are incorrect */})),
             iterations: TlvField(3, TlvUInt32.bound({ min: 1000, max: 100000 })),
             salt: TlvField(4, TlvByteString.bound({ minLength: 16, maxLength: 32 })),
         }), 0, TlvNoResponse),

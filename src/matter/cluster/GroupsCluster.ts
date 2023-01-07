@@ -7,7 +7,19 @@
 import { Attribute, Cluster, Command, TlvNoArguments, TlvNoResponse } from "./Cluster";
 import { StatusCode } from "../interaction/InteractionMessages";
 import { TlvGroupId } from "../common/GroupId";
-import { BitFlag, MatterApplicationClusterSpecificationV1_0, TlvArray, TlvBitmap, TlvEnum, TlvField, TlvNullable, TlvObject, TlvString, TlvUInt8 } from "@project-chip/matter.js";
+import {
+    BitFlag,
+    MatterApplicationClusterSpecificationV1_0,
+    TlvArray,
+    TlvBitmap,
+    TlvEnum,
+    TlvField,
+    TlvNullable,
+    TlvObject,
+    TlvOptionalField,
+    TlvString,
+    TlvUInt8
+} from "@project-chip/matter.js";
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.3.7.1 */
 const TlvAddGroupRequest = TlvObject({
@@ -76,6 +88,10 @@ const TlvAddGroupIfIdentifyingRequest = TlvObject({
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.3.6.1 */
 const TlvNameSupportBitmap = TlvBitmap(TlvUInt8, {
     groupNames: BitFlag(7),
+});
+
+const TlvStatusOnlyResponse = TlvObject({
+    status: TlvOptionalField(0, TlvEnum<StatusCode>()),
 });
 
 /**
@@ -148,6 +164,6 @@ export const GroupsCluster = Cluster({
          * server endpoint, on condition that the endpoint is identifying itself.
          *
          */
-        addGroupIfIdentifying: Command(5, TlvAddGroupIfIdentifyingRequest, 5, TlvAddGroupResponse),
+        addGroupIfIdentifying: Command(5, TlvAddGroupIfIdentifyingRequest, 5, TlvStatusOnlyResponse),
     }
 });

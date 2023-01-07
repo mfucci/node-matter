@@ -11,20 +11,6 @@ import { GroupId } from "../../common/GroupId.js";
 import { ObjectSchema } from "@project-chip/matter.js";
 
 /*
-TODO: Global Cluster fields needs to be added also here because, as discussed, based on the implementation.
-* Cluster Revision: 4
-* FeatureMap:
-  * Bit 0: Group Names - The ability to store a name for a group.
-* AttributeList:
-  * xxx
-* AcceptedCommandList:
-  * xxx
-* GeneratedCommandList: empty
-* EventList: empty
-* FabricIndex: empty
- */
-
-/*
 TODO: If the Scenes server cluster is implemented on the same endpoint, the following extension field SHALL
       be added to the Scene Table:
       * OnOff
@@ -37,18 +23,18 @@ TODO: Is a "groupcast" the groupId range 0xFF00 - 0xFFFF ??
 export const GroupsClusterHandler: () => ClusterServerHandlers<typeof GroupsCluster> = () => {
     const clusterGroups = new Map<number, string>();
 
-    const addGroupLogic = (groupId: GroupId, groupName: string): TlvAddGroupResponse => {
+    const addGroupLogic = (groupId: GroupId, groupName: string) => {
         // TODO If the AddGroup command was received as a unicast, the server SHALL generate an AddGroupResponse
         //      command with the Status field set to the evaluated status. If the AddGroup command was received
         //      as a groupcast, the server SHALL NOT generate an AddGroupResponse command.
         if (groupId.id < 1 || groupId.id > 0xFFFF) {
-            return {status: StatusCode.ConstraintError, groupId};
+            return { status: StatusCode.ConstraintError, groupId };
         }
         if (groupName.length > 16) {
-            return {status: StatusCode.ConstraintError, groupId};
+            return { status: StatusCode.ConstraintError, groupId };
         }
         clusterGroups.set(groupId.id, groupName || '');
-        return {status: StatusCode.Success, groupId};
+        return { status: StatusCode.Success, groupId };
     }
 
     return {
@@ -61,12 +47,12 @@ export const GroupsClusterHandler: () => ClusterServerHandlers<typeof GroupsClus
             //      command with the Status field set to the evaluated status. If the AddGroup command was received
             //      as a groupcast, the server SHALL NOT generate an AddGroupResponse command.
             if (groupId.id < 1 || groupId.id > 0xFFFF) {
-                return {status: StatusCode.ConstraintError, groupId, groupName: ''};
+                return { status: StatusCode.ConstraintError, groupId, groupName: '' };
             }
             if (clusterGroups.has(groupId.id)) {
-                return {status: StatusCode.Success, groupId, groupName: clusterGroups.get(groupId.id) || ''};
+                return { status: StatusCode.Success, groupId, groupName: clusterGroups.get(groupId.id) || '' };
             }
-            return {status: StatusCode.NotFound, groupId, groupName: ''};
+            return { status: StatusCode.NotFound, groupId, groupName: '' };
         },
 
         getGroupMembership: async ({ request: { groupList } }) => {
@@ -77,26 +63,26 @@ export const GroupsClusterHandler: () => ClusterServerHandlers<typeof GroupsClus
             const allGroupsList = Array.from(clusterGroups.keys());
             const capacity = allGroupsList.length < 0xff ? 0xFF - allGroupsList.length : 0xfe;
             if (groupList.length === 0) {
-                return {capacity, groupList: allGroupsList.map(id => new GroupId(id))};
+                return { capacity, groupList: allGroupsList.map(id => new GroupId(id)) };
             }
             const filteredGroupsList = groupList.filter(groupId => clusterGroups.has(groupId.id));
             if (filteredGroupsList.length === 0) {
                 // TODO the server SHALL only respond in this case if the command is unicast.
-                return {capacity, groupList: []};
+                return { capacity, groupList: [] };
             } else {
-                return {capacity, groupList: filteredGroupsList};
+                return { capacity, groupList: filteredGroupsList };
             }
         },
 
         removeGroup: async ({request: { groupId } }) => {
             if (groupId.id < 1 || groupId.id > 0xFFFF) {
-                return {status: StatusCode.ConstraintError, groupId};
+                return { status: StatusCode.ConstraintError, groupId };
             }
             if (clusterGroups.has(groupId.id)) {
                 clusterGroups.delete(groupId.id);
-                return {status: StatusCode.Success, groupId};
+                return { status: StatusCode.Success, groupId };
             }
-            return {status: StatusCode.NotFound, groupId};
+            return { status: StatusCode.NotFound, groupId };
         },
 
         removeAllGroups: async () => {
@@ -106,7 +92,7 @@ export const GroupsClusterHandler: () => ClusterServerHandlers<typeof GroupsClus
             //      associated with group ID 0, SHALL be removed on that endpoint.
 
             // TODO If the RemoveAllGroups command was received as unicast and a response is not suppressed ... return Success
-            return {status: StatusCode.Success};
+            return { status: StatusCode.Success };
         },
 
         addGroupIfIdentifying: async ({  request: { groupId, groupName } }) => {
@@ -118,7 +104,8 @@ export const GroupsClusterHandler: () => ClusterServerHandlers<typeof GroupsClus
             //      if the AddGroupIfIdentifying command was received as unicast and the evaluated status is SUCCESS and a
             //      response is not suppressed, the server SHALL generate a response with the Status field set to the
             //      evaluated status.
-            return addGroupLogic(groupId, groupName);
+            const res = addGroupLogic(groupId, groupName);
+            return { status: res.status };
         },
     }
 };

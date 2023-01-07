@@ -74,15 +74,15 @@ export const TlvDataReport = TlvObject({
 });
 
 export const TlvSubscribeRequest = TlvObject({
-    keepSubscriptions: TlvField(0,  TlvBoolean),
+    keepSubscriptions: TlvField(0, TlvBoolean),
     minIntervalFloorSeconds: TlvField(1, TlvUInt16),
     maxIntervalCeilingSeconds: TlvField(2, TlvUInt16),
     attributeRequests: TlvOptionalField(3, TlvArray(TlvAttributePath)),
     eventRequests: TlvOptionalField(4, TlvArray(TlvList({
-        node: TlvField(0, TlvNodeId),
-        endpoint: TlvField(1, TlvUInt16),
-        cluster: TlvField(2, TlvUInt32),
-        event: TlvField(3, TlvUInt32),
+        node: TlvOptionalField(0, TlvNodeId),
+        endpoint: TlvOptionalField(1, TlvUInt16),
+        cluster: TlvOptionalField(2, TlvUInt32),
+        event: TlvOptionalField(3, TlvUInt32),
         isUrgent: TlvField(4,  TlvBoolean),
     }))),
     eventFilters: TlvOptionalField(5, TlvArray(TlvList({

@@ -11,7 +11,7 @@ To know more about Matter: https://csa-iot.org/all-solutions/matter/
 
 node-matter is compatible with (or will soon be):
 - *iOS 16.2 - Home app*: fully working, [screenshot](https://github.com/mfucci/node-matter/issues/103#issuecomment-1374301293)
-- *Alexa*: fully working, [thread](https://github.com/mfucci/node-matter/issues/159#issuecomment-1372309864)
+- *Alexa*: fully working, [screenshot](https://github.com/mfucci/node-matter/issues/159#issuecomment-1374323476)
 - *Android - Home app*: nearly working, [thread](https://github.com/mfucci/node-matter/issues/140)
 - *Home Assistant*: was working, we are on it, [thread](https://github.com/mfucci/node-matter/issues/11)
 

@@ -4,13 +4,16 @@
 
 Matter protocol for node.js with no native dependencies (and very limited dependencies).
 
-Matter is a new secure / reliable / local / standard protocol for smart devices that will launch at the end of 2022.
+> This package requires Node 16+ for the required Crypto primitives
 
-It is supported and Google / Apple / Amazon and 200+ other companies and it is supposed to bring a revolution in smart home automation by unifying WiFi / Bluetooth / Zigbee (through Thread) and by making all smart devices inter-compatible and secure (through the standard and secure Matter protocol).
-
+Matter is a new secure / reliable / local / standard protocol for smart devices launched at the end of 2022.
 To know more about Matter: https://csa-iot.org/all-solutions/matter/
 
-> This package requires Node 16+ for the required Crypto primitives
+node-matter is compatible with (or will soon be):
+- *iOS 16.2 - Home app*: fully working, https://github.com/mfucci/node-matter/issues/103#issuecomment-1374301293
+- *Alexa*: fully working, https://github.com/mfucci/node-matter/issues/159#issuecomment-1372309864
+- *Android - Home app*: nearly working, https://github.com/mfucci/node-matter/issues/140
+- *Home Assistant*: was working, we are on it, https://github.com/mfucci/node-matter/issues/11
 
 ## Installation
 

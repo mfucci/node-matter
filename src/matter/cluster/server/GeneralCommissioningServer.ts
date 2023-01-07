@@ -59,7 +59,7 @@ export const GeneralCommissioningClusterHandler: ClusterServerHandlers<typeof Ge
         const fabric = (session as SecureSession<MatterDevice>).getFabric();
         if (fabric === undefined) throw new Error("commissioningComplete is called but the fabric has not been defined yet");
         breadcrumb.set(BigInt(0));
-        logger.info(`Commissioning completed on fabric #${fabric.fabricId} as node #${fabric.nodeId}.`)
+        logger.info(`Commissioning completed on fabric #${fabric.fabricId.id} as node #${fabric.nodeId}.`)
         return SuccessResponse;
     },
 };

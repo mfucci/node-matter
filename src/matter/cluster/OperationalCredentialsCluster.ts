@@ -20,7 +20,7 @@ export const RESP_MAX = 900;
  *
  * @see {@link MatterCoreSpecificationV1_0} § 11.17.5.3
  */
-const TlvFabricDescriptor = TlvObject({
+const TlvFabricDescriptor = TlvObject({ /* fabricScoped: true */
     /** Contains the public key for the trusted root that scopes the fabric referenced by FabricIndex and its associated operational credential. */
     rootPublicKey: TlvField(1, TlvByteString.bound({ length: 65 })),
 
@@ -35,6 +35,9 @@ const TlvFabricDescriptor = TlvObject({
 
     /** Contains a commissioner-set label for the fabric referenced by FabricIndex. */
     label: TlvField(5, TlvString.bound({ maxLength: 32 })), /* default: "" */
+
+    // TODO: this data is scoped in the fabric context and should be marked as such
+    fabricIndex: TlvField(0xfe, TlvUInt8),
 });
 
 /**
@@ -42,12 +45,12 @@ const TlvFabricDescriptor = TlvObject({
  *
  * @see {@link MatterCoreSpecificationV1_0} § 11.17.5.2
  */
-const TlvNoc = TlvObject({
+const TlvNoc = TlvObject({ /* fabricScoped: true */
     /** Contains the NOC for the struct’s associated fabric. */
-    noc: TlvField(1, TlvByteString.bound({ maxLength: 400 })),
+    noc: TlvField(1, TlvByteString.bound({ maxLength: 400 })), /* fabricSensitive: true */
 
     /** Contain the ICAC or the struct’s associated fabric. */
-    icac: TlvField(2, TlvNullable(TlvByteString.bound({ maxLength: 400 }))), /* default(not present): null */
+    icac: TlvField(2, TlvNullable(TlvByteString.bound({ maxLength: 400 }))), /* default(not present): null, fabricSensitive: true */
 });
 
 /**
@@ -256,7 +259,7 @@ export const OperationalCredentialsCluster = Cluster({
         /** Contain accessing fabric index. */
         currentFabricIndex: Attribute(5, TlvUInt8),
     },
-    
+
     /** @see {@link MatterCoreSpecificationV1_0} § 11.17.7 */
     commands: {
         /** Sender is requesting attestation information from the receiver. */
@@ -272,13 +275,13 @@ export const OperationalCredentialsCluster = Cluster({
         addOperationalCert: Command(6, TlvAddNocRequest, 8, TlvOperationalCertificateStatusResponse),
 
         /** Sender is requesting to update the node operational certificates. */
-        updateOperationalCert: Command(7, TlvUpdateNocRequest, 8, TlvOperationalCertificateStatusResponse),
+        updateOperationalCert: Command(7, TlvUpdateNocRequest, 8, TlvOperationalCertificateStatusResponse), /* fabricScoped: true */
 
         /**
          * This command SHALL be used by an Administrative Node to set the user-visible Label field for a given
          * Fabric, as reflected by entries in the Fabrics attribute.
          */
-        updateFabricLabel: Command(9, TlvUpdateFabricLabelRequest, 8, TlvOperationalCertificateStatusResponse),
+        updateFabricLabel: Command(9, TlvUpdateFabricLabelRequest, 8, TlvOperationalCertificateStatusResponse), /* fabricScoped: true */
 
         /**
          * This command is used by Administrative Nodes to remove a given fabric index and delete all associated

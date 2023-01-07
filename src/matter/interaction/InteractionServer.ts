@@ -11,7 +11,7 @@ import { InteractionServerMessenger, InvokeRequest, InvokeResponse, ReadRequest,
 import { CommandServer, ResultCode } from "../cluster/server/CommandServer";
 import { DescriptorCluster } from "../cluster/DescriptorCluster";
 import { AttributeServer } from "../cluster/server/AttributeServer";
-import { Cluster } from "../cluster/Cluster";
+import { Attribute, Cluster } from "../cluster/Cluster";
 import { AttributeServers, AttributeInitialValues, ClusterServerHandlers } from "../cluster/server/ClusterServer";
 import { SecureSession } from "../session/SecureSession";
 import { SubscriptionHandler } from "./SubscriptionHandler";
@@ -177,7 +177,13 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
 
         if (attributeRequests !== undefined) {
             logger.debug(`Subscribe to ${attributeRequests.map(path => this.resolveAttributeName(path)).join(", ")}`);
-            const attributes = this.getAttributes(attributeRequests);
+            let attributes = this.getAttributes(attributeRequests);
+
+            // Temporay hack until attribution subscription is handled correctly
+            if (attributes.length > 1) {
+                // If subscription to multiple attributes is requested, only returns the onoff attribute to handle */*/* subscription.
+                attributes = [{ path: { endpointId: 1, clusterId: 6, id: 0 }, attribute: this.attributes.get("1/6/0") as AttributeServer<any>}];
+            }
 
             if (attributeRequests.length === 0) throw new Error("Invalid subscription request");
             if (minIntervalFloorSeconds < 0) throw new Error("minIntervalFloorSeconds should be greater or equal to 0");
@@ -191,7 +197,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
     }
 
     async handleInvokeRequest(exchange: MessageExchange<MatterDevice>, {invokes}: InvokeRequest): Promise<InvokeResponse> {
-        logger.debug(`Received invoke request from ${exchange.channel.getName()}: ${invokes.map(({path: {endpointId, clusterId, id}}) => `${endpointId}/${clusterId}/${id}`).join(", ")}`);
+        logger.debug(`Received invoke request from ${exchange.channel.getName()}: ${invokes.map(({path: {endpointId, clusterId, id}}) => `${toHex(endpointId)}/${toHex(clusterId)}/${toHex(id)}`).join(", ")}`);
 
         const results = new Array<{path: Path, code: ResultCode, response: TlvStream, responseId: number }>();
 

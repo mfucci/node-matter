@@ -25,12 +25,14 @@ export const INTERACTION_PROTOCOL_ID = 0x0001;
 
 export class ClusterServer<ClusterT extends Cluster<any, any, any, any>> {
     readonly id: number;
+    readonly name: string;
     readonly attributes = <AttributeServers<ClusterT["attributes"]>>{};
     readonly commands = new Array<CommandServer<any, any>>();
 
     constructor(clusterDef: ClusterT, features: TypeFromBitSchema<ClusterT["features"]>, attributesInitialValues: AttributeInitialValues<ClusterT["attributes"]>, handlers: ClusterServerHandlers<ClusterT>) {
-        const { id, attributes: attributeDefs, commands: commandDefs } = clusterDef;
+        const { id, name, attributes: attributeDefs, commands: commandDefs } = clusterDef;
         this.id = id;
+        this.name = name;
 
         // Create attributes
         attributesInitialValues = {
@@ -68,9 +70,14 @@ export function pathToId({endpointId, clusterId, id}: Path) {
     return `${endpointId}/${clusterId}/${id}`;
 }
 
+function toHex(value: number | undefined) {
+    return value === undefined ? "*" : `0x${value.toString(16)}`;
+}
+
 const logger = Logger.get("InteractionProtocol");
 
 export class InteractionServer implements ProtocolHandler<MatterDevice> {
+    private readonly endpoints = new Map<number, { name: string, code: number, clusters: Map<number, ClusterServer<any>> }>();
     private readonly attributes = new Map<string, AttributeServer<any>>();
     private readonly attributePaths = new Array<Path>();
     private readonly commands = new Map<string, CommandServer<any, any>>();
@@ -93,7 +100,10 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
         clusters.push(descriptorCluster);
         descriptorCluster.attributes.serverList.set(clusters.map(({id}) => new ClusterId(id)));
 
-        clusters.forEach(({ id: clusterId, attributes, commands }) => {
+        const clusterMap = new Map<number, ClusterServer<any>>();
+        clusters.forEach(cluster => {
+            const { id: clusterId, attributes, commands } = cluster;
+            clusterMap.set(clusterId, cluster);
             // Add attributes
             for (const name in attributes) {
                 const attribute = attributes[name];
@@ -117,6 +127,8 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
             rootPartsListAttribute.set([...rootPartsListAttribute.get(), new EndpointNumber(endpointId)]);
         }
 
+        this.endpoints.set(endpointId, { ...device, clusters: clusterMap });
+
         return this;
     }
 
@@ -130,7 +142,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
     }
 
     handleReadRequest(exchange: MessageExchange<MatterDevice>, {attributes: attributePaths}: ReadRequest): DataReport {
-        logger.debug(`Received read request from ${exchange.channel.getName()}: ${attributePaths.map(({endpointId = "*", clusterId = "*", id = "*"}) => `${endpointId}/${clusterId}/${id}`).join(", ")}`);
+        logger.debug(`Received read request from ${exchange.channel.getName()}: ${attributePaths.map(path => this.resolveAttributeName(path)).join(", ")}`);
 
         const values = this.getAttributes(attributePaths)
             .map(({ path, attribute }) => {
@@ -164,6 +176,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
         }
 
         if (attributeRequests !== undefined) {
+            logger.debug(`Subscribe to ${attributeRequests.map(path => this.resolveAttributeName(path)).join(", ")}`);
             const attributes = this.getAttributes(attributeRequests);
 
             if (attributeRequests.length === 0) throw new Error("Invalid subscription request");
@@ -205,6 +218,33 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
     async handleTimedRequest(exchange: MessageExchange<MatterDevice>, {timeout}: TimedRequest) {
         logger.debug(`Received timed request from ${exchange.channel.getName()}`);
         // TODO: implement this
+    }
+
+    private resolveAttributeName({ endpointId, clusterId, id }: Partial<Path>) {
+        if (endpointId === undefined) {
+            return `*/${toHex(clusterId)}/${toHex(id)}`;
+        }
+        const endpoint = this.endpoints.get(endpointId);
+        if (endpoint === undefined) {
+            return `unknown(${toHex(endpointId)})/${toHex(clusterId)}/${toHex(id)}`;
+        }
+        const endpointName = `${endpoint.name}(${toHex(endpointId)})`;
+
+        if (clusterId === undefined) {
+            return `${endpointName}/*/${toHex(id)}`;
+        }
+        const cluster = endpoint.clusters.get(clusterId);
+        if (cluster === undefined) {
+            return `${endpointName}/unkown(${toHex(clusterId)})/${toHex(id)}`;
+        }
+        const clusterName = `${cluster.name}(${toHex(clusterId)})`;
+
+        if (id === undefined) {
+            return `${endpointName}/${clusterName}/*`;
+        }
+        const attribute = this.attributes.get(pathToId({ endpointId, clusterId, id }));
+        const attributeName = `${attribute?.name ?? "unknown"}(${toHex(id)})`;
+        return `${endpointName}/${clusterName}/${attributeName}`;
     }
 
     private getAttributes(filters: Partial<Path>[] ): AttributeWithPath[] {

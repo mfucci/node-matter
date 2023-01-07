@@ -151,7 +151,6 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
             });
 
         return {
-            isFabricFiltered: true,
             interactionModelRevision: 1,
             values: values.map(({ path, value, version, schema }) => ({
                 value: {
@@ -178,12 +177,6 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
         if (attributeRequests !== undefined) {
             logger.debug(`Subscribe to ${attributeRequests.map(path => this.resolveAttributeName(path)).join(", ")}`);
             let attributes = this.getAttributes(attributeRequests);
-
-            // Temporay hack until attribution subscription is handled correctly
-            if (attributes.length > 1) {
-                // If subscription to multiple attributes is requested, only returns the onoff attribute to handle */*/* subscription.
-                attributes = [{ path: { endpointId: 1, clusterId: 6, id: 0 }, attribute: this.attributes.get("1/6/0") as AttributeServer<any>}];
-            }
 
             if (attributeRequests.length === 0) throw new Error("Invalid subscription request");
             if (minIntervalFloorSeconds < 0) throw new Error("minIntervalFloorSeconds should be greater or equal to 0");

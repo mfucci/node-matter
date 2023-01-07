@@ -8,7 +8,7 @@ import { Logger } from "../../log/Logger";
 import { MessageExchange } from "../common/MessageExchange";
 import { MatterController } from "../MatterController";
 import { MatterDevice } from "../MatterDevice";
-import { TlvInvokeRequest, TlvInvokeResponse, TlvReadRequest, TlvDataReport, TlvSubscribeRequest, TlvSubscribeResponse, StatusCode, TlvStatusResponse, TlvTimedRequest } from "./InteractionMessages";
+import { TlvInvokeRequest, TlvInvokeResponse, TlvReadRequest, TlvDataReport, TlvSubscribeRequest, TlvSubscribeResponse, StatusCode, TlvStatusResponse, TlvTimedRequest, TlvAttributeReport } from "./InteractionMessages";
 import { ByteArray, TlvSchema, TypeFromSchema } from "@project-chip/matter.js";
 
 export const enum MessageType {
@@ -31,6 +31,8 @@ export type SubscribeResponse = TypeFromSchema<typeof TlvSubscribeResponse>;
 export type InvokeRequest = TypeFromSchema<typeof TlvInvokeRequest>;
 export type InvokeResponse = TypeFromSchema<typeof TlvInvokeResponse>;
 export type TimedRequest = TypeFromSchema<typeof TlvTimedRequest>;
+
+const MAX_SPDU_LENGTH = 1024;
 
 const logger = Logger.get("InteractionMessenger");
 
@@ -124,6 +126,36 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
     }
 
     async sendDataReport(dataReport: DataReport) {
+        const messageBytes = TlvDataReport.encode(dataReport);
+        if (messageBytes.length > MAX_SPDU_LENGTH) {
+            // DataReport is too long, it needs to be sent in chunked
+            const attributeReportsToSend = [...dataReport.values];
+            dataReport.values.length = 0;
+            dataReport.moreChunkedMessages = true;
+
+            const emptyDataReportBytes = TlvDataReport.encode(dataReport);
+
+            let messageSize = emptyDataReportBytes.length;
+            while (true) {
+                const attributeReport = attributeReportsToSend.pop();
+                if (attributeReport === undefined) {
+                    // No more chunks to send
+                    dataReport.moreChunkedMessages = undefined;
+                    break;
+                }
+                const attributeReportBytes = TlvAttributeReport.encode(attributeReport).length;
+                if (messageSize + attributeReportBytes > MAX_SPDU_LENGTH) {
+                    // Report doesn't fit, sending this chunk
+                    await this.exchange.send(MessageType.ReportData, TlvDataReport.encode(dataReport));
+                    await this.waitForSuccess();
+                    dataReport.values.length = 0;
+                    messageSize = emptyDataReportBytes.length;
+                }
+                messageSize += attributeReportBytes;
+                dataReport.values.push(attributeReport);
+            }
+        }
+
         await this.exchange.send(MessageType.ReportData, TlvDataReport.encode(dataReport));
     }
 }

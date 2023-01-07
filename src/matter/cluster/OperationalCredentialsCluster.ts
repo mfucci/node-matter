@@ -11,6 +11,7 @@ import { TlvFabricId } from "../common/FabricId";
 import { TlvFabricIndex } from "../common/FabricIndex";
 import { AccessLevel, Attribute, Cluster, Command, TlvNoResponse } from "./Cluster";
 import { MatterCoreSpecificationV1_0, TlvArray, TlvBoolean, TlvByteString, TlvEnum, TlvField, TlvNullable, TlvObject, TlvOptionalField, TlvString, TlvString32max, TlvUInt32, TlvUInt8 } from "@project-chip/matter.js";
+import { StatusCode } from "../interaction/InteractionMessages";
 
 /** @see {@link MatterCoreSpecificationV1_0} § 11.17.5.1 */
 export const RESP_MAX = 900;
@@ -228,6 +229,11 @@ const TlvRemoveFabricRequest = TlvObject({
     fabricIndex: TlvField(0, TlvFabricIndex),
 });
 
+const TlvStatusOnlyResponse = TlvObject({
+    status: TlvOptionalField(0, TlvEnum<StatusCode>()),
+});
+
+
 /**
  * This cluster is used to add or remove Operational Credentials on a Commissionee or Node, as well as manage the
  * associated Fabrics.
@@ -292,6 +298,6 @@ export const OperationalCredentialsCluster = Cluster({
         /**
          * This command SHALL add a Trusted Root CA Certificate, provided as its CHIP Certificate representation.
          */
-        addRootCert: Command(11, TlvAddTrustedRootCertificateRequest, 11, TlvNoResponse),
+        addRootCert: Command(11, TlvAddTrustedRootCertificateRequest, 11, TlvStatusOnlyResponse),
     },
 });

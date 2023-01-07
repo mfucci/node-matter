@@ -167,6 +167,10 @@ const TlvNameSupportBitmap = TlvBitmap(TlvUInt8, {
     sceneNames: BitFlag(7),
 });
 
+const TlvStatusOnlyResponse = TlvObject({
+    status: TlvOptionalField(0, TlvEnum<StatusCode>()),
+});
+
 /**
  * The Scenes cluster provides attributes and commands for setting up and recalling scenes.
  * Each scene corresponds to a set of stored values of specified attributes for one or more
@@ -244,7 +248,7 @@ export const ScenesCluster = Cluster({
          * Set the attributes and corresponding state for each other cluster implemented on the endpoint accordingly to
          * the requested scene entry in the Scene Table
          */
-        recallScene: Command(5, TlvRecallSceneRequest, 5, TlvNoResponse), /* fabricScoped: true */
+        recallScene: Command(5, TlvRecallSceneRequest, 5, TlvStatusOnlyResponse), /* fabricScoped: true */
 
         /**
          * Get an unused scene identifier when no commissioning tool is in the network, or for a commissioning tool to

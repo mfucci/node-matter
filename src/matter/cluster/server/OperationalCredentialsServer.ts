@@ -110,5 +110,6 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
 
     addRootCert: async ({ request: {certificate}, session} ) => {
         session.getContext().getFabricBuilder().setRootCert(certificate);
+        return {};
     },
 });

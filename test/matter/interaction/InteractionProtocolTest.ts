@@ -29,7 +29,6 @@ const READ_REQUEST: ReadRequest = {
 
 const READ_RESPONSE: DataReport = {
     interactionModelRevision: 1,
-    isFabricFiltered: true,
     values: [
         { value: {
             path: {

@@ -56,20 +56,23 @@ export const TlvReadRequest = TlvObject({
     interactionModelRevision: TlvField(0xFF, TlvUInt8),
 });
 
+export const TlvAttributeReport = TlvObject({
+    value: TlvField(1, TlvObject({
+        version: TlvField(0, TlvUInt32),
+        path: TlvField(1, TlvList({
+            endpointId: TlvField(2, TlvUInt16),
+            clusterId: TlvField(3, TlvUInt32),
+            id: TlvField(4, TlvUInt32),
+        })),
+        value: TlvField(2, TlvAny),
+    })),
+});
+
 export const TlvDataReport = TlvObject({
     subscriptionId: TlvOptionalField(0, TlvUInt32),
-    values: TlvField(1, TlvArray(TlvObject({
-        value: TlvField(1, TlvObject({
-            version: TlvField(0, TlvUInt32),
-            path: TlvField(1, TlvList({
-                endpointId: TlvField(2, TlvUInt16),
-                clusterId: TlvField(3, TlvUInt32),
-                id: TlvField(4, TlvUInt32),
-            })),
-            value: TlvField(2, TlvAny),
-        })),
-    }))),
-    isFabricFiltered: TlvOptionalField(4,  TlvBoolean),
+    values: TlvField(1, TlvArray(TlvAttributeReport)),
+    moreChunkedMessages: TlvOptionalField(3, TlvBoolean),
+    suppressResponse: TlvOptionalField(4, TlvBoolean),
     interactionModelRevision: TlvField(0xFF, TlvUInt8),
 });
 

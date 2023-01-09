@@ -14,6 +14,7 @@ import { Time, Timer } from "../../time/Time";
 import { Logger } from "../../log/Logger";
 import { NodeId } from "./NodeId";
 import { ByteArray } from "@project-chip/matter.js";
+import { SecureChannelProtocol } from "../session/secure/SecureChannelProtocol";
 
 const logger = Logger.get("MessageExchange");
 
@@ -84,9 +85,10 @@ export class MessageExchange<ContextT> {
         private readonly protocolId: number,
         private readonly closeCallback: () => void,
     ) {
-        const {activeRetransmissionTimeoutMs: activeRetransmissionTimeoutMs, retransmissionRetries} = session.getMrpParameters();
+        const {activeRetransmissionTimeoutMs, retransmissionRetries} = session.getMrpParameters();
         this.activeRetransmissionTimeoutMs = activeRetransmissionTimeoutMs;
         this.retransmissionRetries = retransmissionRetries;
+        logger.debug("new MessageExchange", this.exchangeId, this.activeRetransmissionTimeoutMs, this.retransmissionRetries);
     }
 
     async onMessageReceived(message: Message) {
@@ -109,14 +111,24 @@ export class MessageExchange<ContextT> {
         }
         const sentMessageIdToAck = this.sentMessageToAck?.packetHeader.messageId;
         if (sentMessageIdToAck !== undefined) {
-            if (ackedMessageId === undefined) throw new Error("Previous message ack is missing");
-            if (ackedMessageId !== sentMessageIdToAck) throw new Error(`Incorrect ack received. Expected ${sentMessageIdToAck}, received: ${ackedMessageId}`);
-            // The other side has received our previous message
-            this.sentMessageAckSuccess?.();
-            this.sentMessageToAck = undefined;
-            this.retransmissionTimer?.stop();
+            if (ackedMessageId === undefined) {
+                // The message has no ack, but one previous message sent still needs to be acked.
+                throw new Error("Previous message ack is missing");
+            } else if (ackedMessageId !== sentMessageIdToAck) {
+                // The message has an ack for another message.
+                if (SecureChannelProtocol.isStandaloneAck(protocolId, messageType)) {
+                    // Ignore if this is a standalone ack, probably this was a retransmission.
+                } else {
+                    throw new Error(`Incorrect ack received. Expected ${sentMessageIdToAck}, received: ${ackedMessageId}`);
+                }
+            } else {
+                // The other side has received our previous message
+                this.sentMessageAckSuccess?.();
+                this.sentMessageToAck = undefined;
+                this.retransmissionTimer?.stop();
+            }
         }
-        if (protocolId === SECURE_CHANNEL_PROTOCOL_ID && messageType === MessageType.StandaloneAck) {
+        if (SecureChannelProtocol.isStandaloneAck(protocolId, messageType)) {
             // Don't include standalone acks in the message stream
             return;
         }
@@ -153,8 +165,7 @@ export class MessageExchange<ContextT> {
         let ackPromise: Promise<void> | undefined;
         if (message.payloadHeader.requiresAck) {
             this.sentMessageToAck = message;
-            this.retransmissionTimer = Time.getTimer(this.activeRetransmissionTimeoutMs, () => this.retransmitMessage(message, 1))
-                .start();
+            this.retransmissionTimer = Time.getTimer(this.activeRetransmissionTimeoutMs, () => this.retransmitMessage(message, 1));
             const { promise, resolver, rejecter } = await getPromiseResolver<void>();
             ackPromise = promise;
             this.sentMessageAckSuccess = resolver;
@@ -164,8 +175,10 @@ export class MessageExchange<ContextT> {
         await this.channel.send(message);
 
         if (ackPromise !== undefined) {
+            this.retransmissionTimer?.start();
             await ackPromise;
-            this.sentMessageAckFailure = undefined;
+            this.retransmissionTimer?.stop();
+            this.sentMessageAckSuccess = undefined;
             this.sentMessageAckFailure = undefined;
         }
     }

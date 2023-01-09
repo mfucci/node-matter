@@ -41,4 +41,8 @@ export class SecureChannelProtocol implements ProtocolHandler<MatterDevice> {
                 throw new Error(`Unexpected initial message on secure channel protocol: ${messageType.toString(16)}`);
         }
     }
+
+    static isStandaloneAck(protocolId: number, messageType: number) {
+        return protocolId === SECURE_CHANNEL_PROTOCOL_ID && messageType === MessageType.StandaloneAck;
+    }
 }

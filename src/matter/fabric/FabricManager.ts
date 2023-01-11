@@ -9,6 +9,7 @@ import { FabricIndex } from "../common/FabricIndex";
 import { Fabric, FabricBuilder } from "./Fabric";
 
 export class FabricManager {
+    private nextFabricIndex = 1;
     private readonly fabrics = new Array<Fabric>();
     private fabricBuilder?: FabricBuilder;
 
@@ -32,7 +33,7 @@ export class FabricManager {
     }
 
     armFailSafe() {
-        this.fabricBuilder = new FabricBuilder();
+        this.fabricBuilder = new FabricBuilder(new FabricIndex(this.nextFabricIndex++));
     }
 
     getFabricBuilder() {

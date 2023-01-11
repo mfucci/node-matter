@@ -64,14 +64,14 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
         const fabric = await fabricBuilder.build();
         const fabricIndex = device.addFabric(fabric);
 
-        fabrics.set(device.getFabrics().map((fabric, index) => ({
+        fabrics.set(device.getFabrics().map(fabric => ({
             fabricId: fabric.fabricId,
             label: fabric.label,
             nodeId: fabric.nodeId,
             rootPublicKey: fabric.rootPublicKey,
             vendorId: fabric.rootVendorId,
             // TODO: this is a hack. Fabric-scoped data need to be handled automatically
-            fabricIndex: index + 1,
+            fabricIndex: fabric.fabricIndex,
         })));
 
         // TODO: create ACL with caseAdminNode
@@ -92,13 +92,13 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
 
         fabric.label = label;
 
-        fabrics.set(session.getContext().getFabrics().map((fabric, index) => ({
+        fabrics.set(session.getContext().getFabrics().map(fabric => ({
             fabricId: fabric.fabricId,
             label: fabric.label,
             nodeId: fabric.nodeId,
             rootPublicKey: fabric.rootPublicKey,
             vendorId: fabric.rootVendorId,
-            fabricIndex: index + 1,
+            fabricIndex: fabric.fabricIndex,
         })));
 
         return {status: OperationalCertStatus.Success};

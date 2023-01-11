@@ -7,23 +7,10 @@
 import { TlvSchema } from "@project-chip/matter.js";
 import { MatterDevice } from "../../MatterDevice";
 import { SecureSession } from "../../session/SecureSession";
+import { AttributeServer } from "./AttributeServer";
 
-export class AttributeServer<T> {
-    private value: T;
-    private version = 0;
-    private readonly matterListeners = new Array<(value: T, version: number) => void>();
-    private readonly listeners = new Array<(newValue: T, oldValue: T) => void>();
-
-    constructor(
-        readonly id: number,
-        readonly name: string,
-        readonly schema: TlvSchema<T>,
-        private readonly validator: (value: T, name: string) => void,
-        defaultValue: T,
-    ) {
-        validator(defaultValue, name);
-        this.value = defaultValue;
-    }
+export class AttributeFabricScopedServer<T> extends AttributeServer<T> {
+    private scopedValues = new Map<number, T>();
 
     set(session: SecureSession<MatterDevice>, value: T) {
         // TODO: check ACL
@@ -60,21 +47,5 @@ export class AttributeServer<T> {
 
     getWithVersionLocal() {
         return { version: this.version, value: this.value };
-    }
-
-    addMatterListener(listener: (value: T, version: number) => void) {
-        this.matterListeners.push(listener);
-    }
-
-    removeMatterListener(listener: (value: T, version: number) => void) {
-        this.matterListeners.splice(this.matterListeners.findIndex(item => item === listener), 1);
-    }
-
-    addListener(listener: (newValue: T, oldValue: T) => void) {
-        this.listeners.push(listener);
-    }
-
-    removeListener(listener: (newValue: T, oldValue: T) => void) {
-        this.listeners.splice(this.listeners.findIndex(item => item === listener), 1);
     }
 }

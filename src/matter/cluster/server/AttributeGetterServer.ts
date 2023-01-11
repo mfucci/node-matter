@@ -7,8 +7,9 @@
 import { TlvSchema } from "@project-chip/matter.js";
 import { MatterDevice } from "../../MatterDevice";
 import { SecureSession } from "../../session/SecureSession";
+import { AttributeServer } from "./AttributeServer";
 
-export class AttributeServer<T> {
+export class AttributeGetterServer<T> extends AttributeServer<T> {
     private value: T;
     private version = 0;
     private readonly matterListeners = new Array<(value: T, version: number) => void>();
@@ -21,8 +22,7 @@ export class AttributeServer<T> {
         private readonly validator: (value: T, name: string) => void,
         defaultValue: T,
     ) {
-        validator(defaultValue, name);
-        this.value = defaultValue;
+        super(id, name, schema, validator);
     }
 
     set(session: SecureSession<MatterDevice>, value: T) {

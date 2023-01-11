@@ -256,7 +256,7 @@ export const OperationalCredentialsCluster = Cluster({
         /** Contains a read-only list of Trusted Root CA Certificates installed on the Node. */
         trustedRootCertificates: Attribute(4, TlvArray(TlvByteString, { maxLength: 400 })),
 
-        /** Contain accessing fabric index. */
+        /** Contains the accessing fabric index. */
         currentFabricIndex: Attribute(5, TlvUInt8),
     },
 

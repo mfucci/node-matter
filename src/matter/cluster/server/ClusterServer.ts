@@ -20,10 +20,11 @@ export type AttributeInitialValues<A extends Attributes> = Merge<Omit<{ [P in Ma
 type MandatoryCommandNames<C extends Commands> = {[K in keyof C]: C[K] extends OptionalCommand<any, any> ? never : K}[keyof C];
 type OptionalCommandNames<C extends Commands> = {[K in keyof C]: C[K] extends OptionalCommand<any, any> ? K : never}[keyof C];
 type CommandHandler<C extends Command<any, any>, A extends AttributeServers<any>> = C extends Command<infer RequestT, infer ResponseT> ? (args: { request: RequestT, attributes: A, session: Session<MatterDevice> }) => Promise<ResponseT> : never;
+type AttributeGetters<A extends Attributes> = { [P in keyof A as `get${Capitalize<string & P>}`]?: (session: Session<MatterDevice>) => Promise<AttributeJsType<A[P]>> };
 type CommandHandlers<T extends Commands, A extends AttributeServers<any>> = Merge<{ [P in MandatoryCommandNames<T>]: CommandHandler<T[P], A> }, { [P in OptionalCommandNames<T>]?: CommandHandler<T[P], A> }>;
 
 /** Handlers to process cluster commands */
-export type ClusterServerHandlers<C extends Cluster<any, any, any, any>> = CommandHandlers<C["commands"], AttributeServers<C["attributes"]>>;
+export type ClusterServerHandlers<C extends Cluster<any, any, any, any>> =  Merge<CommandHandlers<C["commands"], AttributeServers<C["attributes"]>>, AttributeGetters<C["attributes"]>>;
 
 type OptionalAttributeConf<T extends Attributes> = { [K in OptionalAttributeNames<T>]?: true };
 type MakeAttributeMandatory<A extends Attribute<any>> = A extends OptionalWritableAttribute<infer T> ? WritableAttribute<T> : (A extends OptionalAttribute<infer T> ? Attribute<T> : A);

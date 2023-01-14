@@ -86,7 +86,7 @@ export const TlvSubscribeRequest = TlvObject({
         endpoint: TlvOptionalField(1, TlvUInt16),
         cluster: TlvOptionalField(2, TlvUInt32),
         event: TlvOptionalField(3, TlvUInt32),
-        isUrgent: TlvField(4,  TlvBoolean),
+        isUrgent: TlvOptionalField(4,  TlvBoolean),
     }))),
     eventFilters: TlvOptionalField(5, TlvArray(TlvList({
         node: TlvField(0, TlvNodeId),

@@ -77,11 +77,11 @@ function toHex(value: number | undefined) {
 const logger = Logger.get("InteractionProtocol");
 
 export class InteractionServer implements ProtocolHandler<MatterDevice> {
-    readonly endpoints = new Map<number, { name: string, code: number, clusters: Map<number, ClusterServer<any>> }>();
-    readonly attributes = new Map<string, AttributeServer<any>>();
-    readonly attributePaths = new Array<Path>();
-    readonly commands = new Map<string, CommandServer<any, any>>();
-    readonly commandPaths = new Array<Path>();
+    private readonly endpoints = new Map<number, { name: string, code: number, clusters: Map<number, ClusterServer<any>> }>();
+    private readonly attributes = new Map<string, AttributeServer<any>>();
+    private readonly attributePaths = new Array<Path>();
+    private readonly commands = new Map<string, CommandServer<any, any>>();
+    private readonly commandPaths = new Array<Path>();
 
     constructor() {}
 

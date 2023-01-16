@@ -5,22 +5,25 @@ import { AttributeServer } from "../cluster/server/AttributeServer";
 import { EndpointNumber } from "../common/EndpointNumber";
 import { ClusterServer, Path, pathToId } from "./InteractionServer";
 import { CommandServer } from "../cluster/server/CommandServer";
+import { DeviceTypeType } from "../common/DeviceTypes";
+
+export type MinimumOneDeviceTypeArray = [DeviceTypeType, ...DeviceTypeType[]];
 
 export class Endpoint {
 
     private readonly mainEndpointId: number;
-    readonly endpoints = new Map<number, { deviceTypes: { name: string, code: number}[], clusters: Map<number, ClusterServer<any>> }>();
+    readonly endpoints = new Map<number, { deviceTypes: MinimumOneDeviceTypeArray, clusters: Map<number, ClusterServer<any>> }>();
     readonly attributes = new Map<string, AttributeServer<any>>();
     readonly attributePaths = new Array<Path>();
     readonly commands = new Map<string, CommandServer<any, any>>();
     readonly commandPaths = new Array<Path>();
 
-    constructor(endpointId: number, deviceTypes: { name: string, code: number }[], clusters: ClusterServer<any>[], childrenEndpoints?: Endpoint[]) {
+    constructor(endpointId: number, deviceTypes: MinimumOneDeviceTypeArray, clusters: ClusterServer<any>[], childrenEndpoints?: Endpoint[]) {
         this.mainEndpointId = endpointId;
         return this.addEndpoint(endpointId, deviceTypes, clusters, childrenEndpoints);
     }
 
-    addEndpoint(endpointId: number, deviceTypes: { name: string, code: number }[], clusters: ClusterServer<any>[], childrenEndpoints?: Endpoint[]) {
+    addEndpoint(endpointId: number, deviceTypes: MinimumOneDeviceTypeArray, clusters: ClusterServer<any>[], childrenEndpoints?: Endpoint[]) {
         // Add the descriptor cluster
         const descriptorCluster = new ClusterServer(DescriptorCluster, {}, {
             deviceTypeList: deviceTypes.map(deviceType => ({type: new DeviceTypeId(deviceType.code), revision: 1})),

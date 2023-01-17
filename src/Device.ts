@@ -42,6 +42,7 @@ import { NetworkCommissioningCluster, NetworkCommissioningStatus } from "./matte
 import { AdminCommissioningCluster, CommissioningWindowStatus } from "./matter/cluster/AdminCommissioningCluster";
 import { AdminCommissioningHandler } from "./matter/cluster/server/AdminCommissioningServer";
 import { NetworkCommissioningHandler } from "./matter/cluster/server/NetworkCommissioningServer";
+import { FabricIndex } from "./matter/common/FabricIndex";
 
 // From Chip-Test-DAC-FFF1-8000-0007-Key.der
 const DevicePrivateKey = ByteArray.fromHex("727F1005CBA47ED7822A9D930943621617CFD3B79D9AF528B801ECF9F1992204");
@@ -132,7 +133,7 @@ class Device {
                            supportedFabrics: 254,
                            commissionedFabrics: 0,
                            trustedRootCertificates: [],
-                           currentFabricIndex: 0,
+                           currentFabricIndex: FabricIndex.NO_FABRIC,
                        },
                        OperationalCredentialsClusterHandler({
                            devicePrivateKey: DevicePrivateKey,

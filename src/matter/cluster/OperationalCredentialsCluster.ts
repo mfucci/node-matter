@@ -37,7 +37,7 @@ const TlvFabricDescriptor = TlvObject({ /* fabricScoped: true */
     label: TlvField(5, TlvString.bound({ maxLength: 32 })), /* default: "" */
 
     // TODO: this data is scoped in the fabric context and should be marked as such
-    fabricIndex: TlvField(0xfe, TlvUInt8),
+    fabricIndex: TlvField(0xfe, TlvFabricIndex),
 });
 
 /**
@@ -257,7 +257,7 @@ export const OperationalCredentialsCluster = Cluster({
         trustedRootCertificates: Attribute(4, TlvArray(TlvByteString, { maxLength: 400 })),
 
         /** Contain accessing fabric index. */
-        currentFabricIndex: Attribute(5, TlvUInt8),
+        currentFabricIndex: Attribute(5, TlvFabricIndex),
     },
 
     /** @see {@link MatterCoreSpecificationV1_0} § 11.17.7 */

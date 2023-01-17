@@ -25,9 +25,11 @@ import { Time } from "../time/Time";
 import { NodeId } from "./common/NodeId";
 import { VendorId } from "./common/VendorId";
 import { ByteArray } from "@project-chip/matter.js";
+import { FabricIndex } from "./common/FabricIndex";
 
 requireMinNodeVersion(16);
 
+const FABRIC_INDEX = new FabricIndex(1);
 const FABRIC_ID = BigInt(1);
 const CONTROLLER_NODE_ID = new NodeId(BigInt(0));
 const ADMIN_VENDOR_ID = new VendorId(752);
@@ -37,7 +39,7 @@ export class MatterController {
     public static async create(scanner: Scanner, netInterface: NetInterface) {
         const certificateManager = new RootCertificateManager();
         const ipkValue = Crypto.getRandomData(16);
-        const fabricBuilder = new FabricBuilder()
+        const fabricBuilder = new FabricBuilder(FABRIC_INDEX)
             .setRootCert(certificateManager.getRootCert())
             .setRootNodeId(CONTROLLER_NODE_ID)
             .setIdentityProtectionKey(ipkValue)

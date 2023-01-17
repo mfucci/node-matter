@@ -10,8 +10,8 @@ import { MessageExchange } from "../common/MessageExchange";
 import { InteractionServerMessenger, InvokeRequest, InvokeResponse, ReadRequest, DataReport, SubscribeRequest, SubscribeResponse, TimedRequest } from "./InteractionMessenger";
 import { CommandServer, ResultCode } from "../cluster/server/CommandServer";
 import { DescriptorCluster } from "../cluster/DescriptorCluster";
-import { AttributeServer } from "../cluster/server/AttributeServer";
-import { Attribute, Cluster } from "../cluster/Cluster";
+import { AttributeGetterServer, AttributeServer } from "../cluster/server/AttributeServer";
+import { Cluster } from "../cluster/Cluster";
 import { AttributeServers, AttributeInitialValues, ClusterServerHandlers } from "../cluster/server/ClusterServer";
 import { SecureSession } from "../session/SecureSession";
 import { SubscriptionHandler } from "./SubscriptionHandler";
@@ -20,6 +20,7 @@ import { DeviceTypeId } from "../common/DeviceTypeId";
 import { ClusterId } from "../common/ClusterId";
 import { TlvStream, TypeFromBitSchema } from "@project-chip/matter.js";
 import { EndpointNumber } from "../common/EndpointNumber";
+import { capitalize } from "../../util/String";
 
 export const INTERACTION_PROTOCOL_ID = 0x0001;
 
@@ -42,7 +43,12 @@ export class ClusterServer<ClusterT extends Cluster<any, any, any, any>> {
         };
         for (const name in attributesInitialValues) {
             const { id, schema, validator } = attributeDefs[name];
-            (this.attributes as any)[name] = new AttributeServer(id, name, schema, validator ?? (() => {}), (attributesInitialValues as any)[name]);
+            const getter = (handlers as any)[`get${capitalize(name)}`];
+            if (getter === undefined) {
+                (this.attributes as any)[name] = new AttributeServer(id, name, schema, validator ?? (() => {}), (attributesInitialValues as any)[name]);
+            } else {
+                (this.attributes as any)[name] = new AttributeGetterServer(id, name, schema, validator ?? (() => {}), (attributesInitialValues as any)[name], getter);
+            }
         }
 
         // Create commands
@@ -98,7 +104,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
             partsList: [],
         }, {});
         clusters.push(descriptorCluster);
-        descriptorCluster.attributes.serverList.set(clusters.map(({id}) => new ClusterId(id)));
+        descriptorCluster.attributes.serverList.setLocal(clusters.map(({id}) => new ClusterId(id)));
 
         const clusterMap = new Map<number, ClusterServer<any>>();
         clusters.forEach(cluster => {
@@ -124,7 +130,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
         if (endpointId !== 0) {
             const rootPartsListAttribute: AttributeServer<EndpointNumber[]> | undefined = this.attributes.get(pathToId({endpointId: 0, clusterId: DescriptorCluster.id, id: DescriptorCluster.attributes.partsList.id}));
             if (rootPartsListAttribute === undefined) throw new Error("The root endpoint should be added first!");
-            rootPartsListAttribute.set([...rootPartsListAttribute.get(), new EndpointNumber(endpointId)]);
+            rootPartsListAttribute.setLocal([...rootPartsListAttribute.getLocal(), new EndpointNumber(endpointId)]);
         }
 
         this.endpoints.set(endpointId, { ...device, clusters: clusterMap });
@@ -146,7 +152,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
 
         const values = this.getAttributes(attributePaths)
             .map(({ path, attribute }) => {
-                const { value, version } = attribute.getWithVersion();
+                const { value, version } = attribute.getWithVersion(exchange.session);
                 return { path, value, version, schema: attribute.schema };
             });
 

@@ -34,6 +34,7 @@ import { VendorId } from "../src/matter/common/VendorId";
 import { NodeId } from "../src/matter/common/NodeId";
 import { OnOffClusterHandler } from "../src/matter/cluster/server/OnOffServer";
 import { ByteArray } from "@project-chip/matter.js";
+import { FabricIndex } from "../src/matter/common/FabricIndex";
 
 const SERVER_IP = "192.168.200.1";
 const SERVER_MAC = "00:B0:D0:63:C2:26";
@@ -132,7 +133,7 @@ describe("Integration", () => {
                              supportedFabrics: 254,
                              commissionedFabrics: 0,
                              trustedRootCertificates: [],
-                             currentFabricIndex: 0,
+                             currentFabricIndex: FabricIndex.NO_FABRIC,
                          },
                          OperationalCredentialsClusterHandler({
                              devicePrivateKey: DevicePrivateKey,

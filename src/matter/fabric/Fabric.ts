@@ -10,6 +10,7 @@ import { NodeId } from "../common/NodeId";
 import { VendorId } from "../common/VendorId";
 import { ByteArray, DataWriter, Endian, toBigInt } from "@project-chip/matter.js";
 import { FabricId } from "../common/FabricId";
+import { FabricIndex } from "../common/FabricIndex";
 
 const COMPRESSED_FABRIC_ID_INFO = ByteArray.fromString("CompressedFabric");
 const GROUP_SECURITY_INFO = ByteArray.fromString("GroupKey v1.0");
@@ -17,6 +18,7 @@ const GROUP_SECURITY_INFO = ByteArray.fromString("GroupKey v1.0");
 export class Fabric {
 
     constructor(
+        readonly fabricIndex: FabricIndex,
         readonly fabricId: FabricId,
         readonly nodeId: NodeId,
         readonly rootNodeId: NodeId,
@@ -66,6 +68,10 @@ export class FabricBuilder {
     private rootNodeId?: NodeId; 
     private rootPublicKey?: ByteArray;
     private identityProtectionKey?: ByteArray;
+
+    constructor(
+        private readonly fabricIndex: FabricIndex, 
+    ) {}
 
     getPublicKey() {
         return this.keyPair.publicKey;
@@ -121,6 +127,7 @@ export class FabricBuilder {
         const operationalId = await Crypto.hkdf(this.rootPublicKey.slice(1), saltWriter.toByteArray(), COMPRESSED_FABRIC_ID_INFO, 8);
 
         return new Fabric(
+            this.fabricIndex,
             this.fabricId,
             this.nodeId,
             this.rootNodeId,

@@ -175,14 +175,14 @@ describe("Endpoint", () => {
 
             const rootEndpoint = new Endpoint(0, [ DEVICE.ROOT ], [ basicInformationCluster ], [
                 new Endpoint(1, [ DEVICE.AGGREGATOR ], [ ])
-                    .addEndpoint(11, [ DEVICE.ON_OFF_LIGHT, DEVICE.BRIDGED_DEVICE ], [
+                    .addEndpoint(11, [ DEVICE.ON_OFF_PLUGIN_UNIT, DEVICE.BRIDGED_DEVICE ], [
                         new ClusterServer(BridgedDeviceBasicInformationCluster, {}, {
                             nodeLabel: "Socket 2",
                             reachable: true
                         }, {}),
                         onOffServer
                     ])
-                    .addEndpoint(12, [ DEVICE.ON_OFF_LIGHT, DEVICE.BRIDGED_DEVICE ], [
+                    .addEndpoint(12, [ DEVICE.ON_OFF_PLUGIN_UNIT, DEVICE.BRIDGED_DEVICE ], [
                         new ClusterServer(BridgedDeviceBasicInformationCluster, {}, {
                             nodeLabel: "Socket 2",
                             reachable: true
@@ -249,14 +249,14 @@ describe("Endpoint", () => {
                         labelList: [ { label: "bridge", value: "Type A" } ]
                     }, {}),
                 ])
-                .addEndpoint(11, [ DEVICE.ON_OFF_LIGHT, DEVICE.BRIDGED_DEVICE ], [
+                .addEndpoint(11, [ DEVICE.ON_OFF_PLUGIN_UNIT, DEVICE.BRIDGED_DEVICE ], [
                     new ClusterServer(BridgedDeviceBasicInformationCluster, {}, {
                         nodeLabel: "Socket 1-1",
                         reachable: true
                     }, {}),
                     onOffServer
                 ])
-                .addEndpoint(12, [ DEVICE.ON_OFF_LIGHT, DEVICE.BRIDGED_DEVICE ], [
+                .addEndpoint(12, [ DEVICE.ON_OFF_PLUGIN_UNIT, DEVICE.BRIDGED_DEVICE ], [
                     new ClusterServer(BridgedDeviceBasicInformationCluster, {}, {
                         nodeLabel: "Socket 1-2",
                         reachable: true
@@ -268,14 +268,14 @@ describe("Endpoint", () => {
                         labelList: [ { label: "bridge", value: "Type B" } ]
                     }, {}),
                 ])
-                .addEndpoint(21, [ DEVICE.ON_OFF_LIGHT, DEVICE.BRIDGED_DEVICE ], [
+                .addEndpoint(21, [ DEVICE.ON_OFF_PLUGIN_UNIT, DEVICE.BRIDGED_DEVICE ], [
                     new ClusterServer(BridgedDeviceBasicInformationCluster, {}, {
                         nodeLabel: "Socket 2-1",
                         reachable: true
                     }, {}),
                     onOffServer
                 ])
-                .addEndpoint(22, [ DEVICE.ON_OFF_LIGHT, DEVICE.BRIDGED_DEVICE ], [
+                .addEndpoint(22, [ DEVICE.ON_OFF_PLUGIN_UNIT, DEVICE.BRIDGED_DEVICE ], [
                     new ClusterServer(BridgedDeviceBasicInformationCluster, {}, {
                         nodeLabel: "Socket 2-2",
                         reachable: true

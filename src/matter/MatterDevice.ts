@@ -19,6 +19,7 @@ import { ChannelManager } from "./common/ChannelManager";
 import { VendorId } from "./common/VendorId";
 import { NodeId } from "./common/NodeId";
 import { ByteArray } from "@project-chip/matter.js";
+import { FabricIndex } from "./common/FabricIndex";
 
 requireMinNodeVersion(16);
 
@@ -84,6 +85,10 @@ export class MatterDevice {
             broadcaster.announce();
         });
         return fabricIndex;
+    }
+
+    removeFabric(fabricIndex: FabricIndex) {
+        this.fabricManager.removeFabric(fabricIndex);
     }
 
     initiateExchange(fabric: Fabric, nodeId: NodeId, protocolId: number) {

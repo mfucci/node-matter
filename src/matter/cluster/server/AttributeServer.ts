@@ -5,6 +5,9 @@
  */
 
 import { TlvSchema } from "@project-chip/matter.js";
+import { MatterDevice } from "../../MatterDevice";
+import { SecureSession } from "../../session/SecureSession";
+import { Session } from "../../session/Session";
 
 export class AttributeServer<T> {
     private value: T;
@@ -23,7 +26,13 @@ export class AttributeServer<T> {
         this.value = defaultValue;
     }
 
-    set(value: T) {
+    set(value: T, session?: Session<MatterDevice>) {
+        // TODO: check ACL
+
+        this.setLocal(value);
+    }
+
+    setLocal(value: T) {
         const oldValue = this.value;
         if (value !== oldValue) {
             this.validator(value, this.name);
@@ -34,12 +43,18 @@ export class AttributeServer<T> {
         this.listeners.forEach(listener => listener(value, oldValue));
     }
 
-    get(): T {
-        return this.value;
+    get(session?: Session<MatterDevice>): T {
+        // TODO: check ACL
+
+        return this.getLocal();
     }
 
-    getWithVersion() {
-        return { version: this.version, value: this.value };
+    getWithVersion(session?: Session<MatterDevice>) {
+        return { version: this.version, value: this.get(session) };
+    }
+
+    getLocal(): T {
+        return this.value;
     }
 
     addMatterListener(listener: (value: T, version: number) => void) {
@@ -56,5 +71,29 @@ export class AttributeServer<T> {
 
     removeListener(listener: (newValue: T, oldValue: T) => void) {
         this.listeners.splice(this.listeners.findIndex(item => item === listener), 1);
+    }
+}
+
+export class AttributeGetterServer<T> extends AttributeServer<T> {
+
+    constructor(
+        id: number,
+        name: string,
+        schema: TlvSchema<T>,
+        validator: (value: T, name: string) => void,
+        defaultValue: T,
+        readonly getter: (session?: Session<MatterDevice>) => T,
+    ) {
+        super(id, name, schema, validator, defaultValue);
+    }
+
+    setLocal(value: T) {
+        throw new Error("Setter is not supported on attribute defined by a getter");
+    }
+
+    get(session?: SecureSession<MatterDevice>): T {
+        // TODO: check ACL
+        
+        return this.getter(session);
     }
 }

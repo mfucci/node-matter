@@ -18,6 +18,10 @@ export class FabricManager {
         return new FabricIndex(this.fabrics.length);
     }
 
+    removeFabric(fabricIndex: FabricIndex) {
+        this.fabrics.splice(this.fabrics.findIndex(fabric => fabric.fabricIndex.index === fabricIndex.index), 1);
+    }
+
     getFabrics() {
         return this.fabrics;
     }

@@ -16,7 +16,7 @@ import {
 } from "../OperationalCredentialsCluster";
 import { ClusterServerHandlers } from "./ClusterServer";
 import { ByteArray } from "@project-chip/matter.js";
-import { AttributeServer } from "./AttributeServer";
+import { FabricIndex } from "../../common/FabricIndex";
 
 interface OperationalCredentialsServerConf {
     devicePrivateKey: ByteArray,
@@ -53,6 +53,7 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
     },
 
     addOperationalCert: async ({ request: {operationalCert, intermediateCaCert, identityProtectionKey, caseAdminNode, adminVendorId}, session, attributes: { fabrics } }) => {
+        if (!session.isSecure()) throw new Error("addOperationalCert should be called on a secure session.");
         const device = session.getContext();
         const fabricBuilder = device.getFabricBuilder();
         fabricBuilder.setOperationalCert(operationalCert);
@@ -64,7 +65,7 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
         const fabric = await fabricBuilder.build();
         const fabricIndex = device.addFabric(fabric);
 
-        fabrics.set(device.getFabrics().map(fabric => ({
+        fabrics.setLocal(device.getFabrics().map(fabric => ({
             fabricId: fabric.fabricId,
             label: fabric.label,
             nodeId: fabric.nodeId,
@@ -80,6 +81,11 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
         return {status: OperationalCertStatus.Success, fabricIndex };
     },
 
+    getCurrentFabricIndex: session => {
+        if (session === undefined || !session.isSecure()) return FabricIndex.NO_FABRIC;
+        return (session as SecureSession<MatterDevice>).getFabric()?.fabricIndex ?? FabricIndex.NO_FABRIC;
+    },
+
     updateOperationalCert: async ({ request: {operationalCert, intermediateCaCert, }, session}) => {
         throw new Error("Not implemented");
     },
@@ -92,7 +98,7 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
 
         fabric.label = label;
 
-        fabrics.set(session.getContext().getFabrics().map(fabric => ({
+        fabrics.setLocal(session.getContext().getFabrics().map(fabric => ({
             fabricId: fabric.fabricId,
             label: fabric.label,
             nodeId: fabric.nodeId,
@@ -104,8 +110,11 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
         return {status: OperationalCertStatus.Success};
     },
 
-    removeFabric: async ({ request: {fabricIndex} }) => {
-        throw new Error("Not implemented");
+    removeFabric: async ({ request: {fabricIndex}, session }) => {
+        const device = session.getContext();
+        device.removeFabric(fabricIndex);
+
+        return {status: OperationalCertStatus.Success};
     },
 
     addRootCert: async ({ request: {certificate}, session} ) => {

@@ -5,9 +5,9 @@
  */
 import { MatterDeviceLibrarySpecificationV1_0 } from "@project-chip/matter.js";
 
-export type DeviceTypeType = { name: string, code: number};
+export type Device = { name: string, code: number};
 
-export const DEVICE: Record<string, DeviceTypeType> = {
+export const DEVICE: { [name: string]: Device } = {
     // Utility Device Types
     /**
      * This represents a Root Node for devices.

@@ -70,10 +70,6 @@ const TlvOpenBasicCommissioningWindowRequest = TlvObject({
     commissioningTimeout: TlvField(0, TlvUInt16),
 });
 
-const TlvStatusOnlyResponse = TlvObject({
-    status: TlvOptionalField(0, TlvEnum<StatusCode>()),
-});
-
 /**
  * This cluster is used to trigger a Node to allow a new Administrator to commission it.
  *
@@ -103,12 +99,12 @@ export const AdminCommissioningCluster = Cluster({
     /** @see {@link MatterCoreSpecificationV1_0} § 11.18.8 */
     commands: {
         /** Used to instruct a Node to go into commissioning mode using enhanced commissioning method. */
-        openCommissioningWindow: Command(0, TlvOpenCommissioningWindowRequest, 0, TlvStatusOnlyResponse),
+        openCommissioningWindow: Command(0, TlvOpenCommissioningWindowRequest, 0, TlvNoResponse),
 
         /** Used to instruct a Node to go into commissioning mode using basic commissioning method, if the node supports it. */
-        openBasicCommissioningWindow: Command(1, TlvOpenBasicCommissioningWindowRequest, 1, TlvStatusOnlyResponse),
+        openBasicCommissioningWindow: Command(1, TlvOpenBasicCommissioningWindowRequest, 1, TlvNoResponse),
 
         /** Used to instruct a Node to revoke any active Open Commissioning Window or Open Basic Commissioning Window command. */
-        revokeCommissioning: Command(2, TlvNoArguments, 2, TlvStatusOnlyResponse),
+        revokeCommissioning: Command(2, TlvNoArguments, 2, TlvNoResponse),
     },
 });

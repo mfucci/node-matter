@@ -32,7 +32,7 @@ export class Endpoint {
             partsList: [],
         }, {});
         clusters.unshift(descriptorCluster);
-        descriptorCluster.attributes.serverList.set(clusters.map(({id}) => new ClusterId(id)));
+        descriptorCluster.attributes.serverList.setLocal(clusters.map(({id}) => new ClusterId(id)));
 
         const clusterMap = new Map<number, ClusterServer<any>>();
         clusters.forEach(cluster => {
@@ -63,7 +63,7 @@ export class Endpoint {
         }));
 
         if (parentPartsListAttribute === undefined) throw new Error(`Descriptor CLuster of endpoint ${this.mainEndpointId} not found.`);
-        const newPartsList = parentPartsListAttribute.get();
+        const newPartsList = parentPartsListAttribute.getLocal();
 
         // Add all data from the child endpoints
         if (childrenEndpoints) {
@@ -88,7 +88,7 @@ export class Endpoint {
                     id: DescriptorCluster.attributes.partsList.id
                 }));
                 if (childrenPartsListAttribute === undefined) throw new Error(`Descriptor CLuster of endpoint ${children.mainEndpointId} not found.`);
-                const childrenPartsList = childrenPartsListAttribute.get();
+                const childrenPartsList = childrenPartsListAttribute.getLocal();
                 if (children.mainEndpointId !== undefined) {
                     newPartsList.push(new EndpointNumber(children.mainEndpointId));
                 }
@@ -102,7 +102,7 @@ export class Endpoint {
         if (endpointId !== this.mainEndpointId) {
             newPartsList.push(new EndpointNumber(endpointId));
         }
-        parentPartsListAttribute.set(newPartsList);
+        parentPartsListAttribute.setLocal(newPartsList);
 
         return this;
     }

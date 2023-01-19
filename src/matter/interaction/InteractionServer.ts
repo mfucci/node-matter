@@ -194,6 +194,9 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
                 });
             } else {
                 logger.error(`Attribute ${this.resolveAttributeName({ endpointId: request.path.endpointId, clusterId: request.path.clusterId, id: request.path.attributeId })} is ambiguous`);
+                attribute.forEach(({ path }) => {
+                    logger.debug(`Skipped set ${exchange.channel.getName()} to: ${this.resolveAttributeName(path)}=${Logger.toJSON(request.data)} (${request.dataVersion})`);
+                });
                 writeResponses.push({
                     status: {
                         status: StatusCode.UnsupportedWrite
@@ -205,6 +208,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
 
         // TODO respect suppressResponse
 
+        logger.debug(`Write request from ${exchange.channel.getName()} resolved to: ${writeResponses.map(({ path, status }) => `${this.resolveAttributeName(path)}=${Logger.toJSON(status)}`).join(", ")}`);
         return {
             interactionModelRevision: 1,
             writeResponses

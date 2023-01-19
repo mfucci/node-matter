@@ -174,10 +174,10 @@ export const TlvTimedRequest = TlvObject({
  * @see {@link MatterCoreSpecificationV1_0} 10.6.6
  */
 export const TlvWriteRequest = TlvObject({
-    suppressResponse: TlvField(0, TlvBoolean),
-    timedRequest: TlvField(1, TlvBoolean),
+    suppressResponse: TlvOptionalField(0, TlvBoolean),
+    timedRequest: TlvOptionalField(1, TlvBoolean),
     writeRequests: TlvField(2, TlvArray(TlvObject({
-        dataVersion: TlvField(0, TlvUInt32),
+        dataVersion: TlvOptionalField(0, TlvUInt32),
         path: TlvField(1, TlvList({
             enableTagCompression: TlvOptionalField(0, TlvBoolean),
             nodeId: TlvOptionalField(1, TlvNodeId),

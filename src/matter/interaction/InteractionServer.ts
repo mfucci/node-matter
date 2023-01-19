@@ -21,6 +21,7 @@ import { ClusterId } from "../common/ClusterId";
 import { TlvStream, TypeFromBitSchema } from "@project-chip/matter.js";
 import { EndpointNumber } from "../common/EndpointNumber";
 import { capitalize } from "../../util/String";
+import { StatusCode } from "./InteractionMessages";
 
 export const INTERACTION_PROTOCOL_ID = 0x0001;
 

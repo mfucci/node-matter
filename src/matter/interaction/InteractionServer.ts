@@ -192,7 +192,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
                             status: {
                                 status: StatusCode.ConstraintError
                             },
-                            path: request.path,
+                            path: attribute[0].path,
                         });
                     }
                 } else {

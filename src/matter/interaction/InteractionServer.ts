@@ -219,13 +219,13 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
                         return;
                     }
                     // Todo respect ACL and TimedWrite flags
-                    const data = attribute.schema.decodeTlv(request.data);
-                    logger.debug(`Handle write request from ${exchange.channel.getName()} resolved to: ${this.resolveAttributeName(path)}=${Logger.toJSON(data)} (${request.dataVersion})`);
                     // TODO add checks or dataVersion
                     try {
+                        const data = attribute.schema.decodeTlv(request.data);
+                        logger.debug(`Handle write request from ${exchange.channel.getName()} resolved to: ${this.resolveAttributeName(path)}=${Logger.toJSON(data)} (${request.dataVersion})`);
                         attribute.set(data, exchange.session);
                     } catch (e: any) {
-                        logger.error(`Error while handling write request from ${exchange.channel.getName()}: ${e.message}`);
+                        logger.error(`Error while handling write request from ${exchange.channel.getName()} to ${this.resolveAttributeName(path)}: ${e.message}`);
                         writeResponses.push({
                             status: {
                                 status: StatusCode.ConstraintError

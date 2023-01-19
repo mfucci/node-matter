@@ -149,8 +149,8 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
         );
     }
 
-    handleReadRequest(exchange: MessageExchange<MatterDevice>, {attributes: attributePaths}: ReadRequest): DataReport {
-        logger.debug(`Received read request from ${exchange.channel.getName()}: ${attributePaths.map(path => this.resolveAttributeName(path)).join(", ")}`);
+    handleReadRequest(exchange: MessageExchange<MatterDevice>, {attributes: attributePaths, isFabricFiltered}: ReadRequest): DataReport {
+        logger.debug(`Received read request from ${exchange.channel.getName()}: ${attributePaths.map(path => this.resolveAttributeName(path)).join(", ")}, isFabricFiltered=${isFabricFiltered}`);
 
         const values = this.getAttributes(attributePaths)
             .map(({ path, attribute }) => {
@@ -158,6 +158,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
                 return { path, value, version, schema: attribute.schema };
             });
 
+        logger.debug(`Read request from ${exchange.channel.getName()} resolved to: ${values.map(({ path, value, version }) => `${this.resolveAttributeName(path)}=${Logger.toJSON(value)} (${version})`).join(", ")}`);
         return {
             interactionModelRevision: 1,
             values: values.map(({ path, value, version, schema }) => ({
@@ -263,7 +264,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
     }
 
     async handleTimedRequest(exchange: MessageExchange<MatterDevice>, {timeout}: TimedRequest) {
-        logger.debug(`Received timed request from ${exchange.channel.getName()}`);
+        logger.debug(`Received timed request (${timeout}) from ${exchange.channel.getName()}`);
         // TODO: implement this
     }
 

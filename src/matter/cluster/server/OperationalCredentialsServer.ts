@@ -17,6 +17,9 @@ import {
 import { ClusterServerHandlers } from "./ClusterServer";
 import { ByteArray } from "@project-chip/matter.js";
 import { FabricIndex } from "../../common/FabricIndex";
+import { Logger } from "../../../log/Logger";
+
+const logger = Logger.get("OperationalCredentialsServer");
 
 interface OperationalCredentialsServerConf {
     devicePrivateKey: ByteArray,
@@ -75,8 +78,10 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
             fabricIndex: fabric.fabricIndex,
         })));
 
+        logger.info(`Added fabric ${fabricIndex.index} to device`);
+
         // TODO: create ACL with caseAdminNode
-        console.log("addOperationalCert success")
+        logger.debug("addOperationalCert success")
 
         return {status: OperationalCertStatus.Success, fabricIndex };
     },

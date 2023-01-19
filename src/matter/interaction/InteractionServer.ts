@@ -7,7 +7,7 @@
 import { MatterDevice } from "../MatterDevice";
 import { ProtocolHandler } from "../common/ProtocolHandler";
 import { MessageExchange } from "../common/MessageExchange";
-import { InteractionServerMessenger, InvokeRequest, InvokeResponse, ReadRequest, DataReport, SubscribeRequest, SubscribeResponse, TimedRequest } from "./InteractionMessenger";
+import { InteractionServerMessenger, InvokeRequest, InvokeResponse, ReadRequest, DataReport, SubscribeRequest, SubscribeResponse, TimedRequest, WriteRequest, WriteResponse } from "./InteractionMessenger";
 import { CommandServer, ResultCode } from "../cluster/server/CommandServer";
 import { DescriptorCluster } from "../cluster/DescriptorCluster";
 import { AttributeGetterServer, AttributeServer } from "../cluster/server/AttributeServer";
@@ -155,6 +155,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
             subscribeRequest => this.handleSubscribeRequest(exchange, subscribeRequest),
             invokeRequest => this.handleInvokeRequest(exchange, invokeRequest),
             timedRequest => this.handleTimedRequest(exchange, timedRequest),
+            writeRequest => this.handleWriteRequest(exchange, writeRequest),
         );
     }
 
@@ -176,6 +177,46 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
                     value: schema.encodeTlv(value),
                 },
             })),
+        };
+    }
+
+    handleWriteRequest(exchange: MessageExchange<MatterDevice>, {suppressResponse, writeRequests }: WriteRequest): WriteResponse | undefined {
+        logger.debug(`Received write request from ${exchange.channel.getName()} for ${writeRequests.length} attributes, suppressResponse=${suppressResponse}`);
+
+        // TODO consider TimedRequest constrains
+
+        const writeResponses = [];
+        for (const request of writeRequests) {
+            const attribute = this.getAttribute({ endpointId: request.path.endpointId, clusterId: request.path.clusterId, id: request.path.attributeId});
+            if (attribute.length === 1) {
+                const data = attribute[0].attribute.schema.decodeTlv(request.data);
+                logger.debug(`Handle write request from ${exchange.channel.getName()} resolved to: ${this.resolveAttributeName(attribute[0].path)}=${Logger.toJSON(data)} (${request.dataVersion})`);
+                // TODO add checks or dataVersion
+                attribute[0].attribute.set(data, exchange.session);
+            } else if (attribute.length === 0) {
+                logger.error(`Attribute ${this.resolveAttributeName({ endpointId: request.path.endpointId, clusterId: request.path.clusterId, id: request.path.attributeId })} not found`);
+                writeResponses.push({
+                    status: {
+                        status: StatusCode.UnsupportedWrite
+                    }, // TODO: Find correct status code
+                    path: request.path,
+                });
+            } else {
+                logger.error(`Attribute ${this.resolveAttributeName({ endpointId: request.path.endpointId, clusterId: request.path.clusterId, id: request.path.attributeId })} is ambiguous`);
+                writeResponses.push({
+                    status: {
+                        status: StatusCode.UnsupportedWrite
+                    },
+                    path: request.path,
+                });
+            }
+        }
+
+        // TODO respect suppressResponse
+
+        return {
+            interactionModelRevision: 1,
+            writeResponses
         };
     }
 
@@ -265,6 +306,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
 
     private getAttributes(filters: Partial<AttributePath>[], onlyWritable: boolean = false): AttributeWithPath[] {
         const result = new Array<AttributeWithPath>();
+        const { endpointId, clusterId, id } = path;
 
         filters.forEach(({ endpointId, clusterId, attributeId }) => {
             if (endpointId !== undefined && clusterId !== undefined && attributeId !== undefined) {

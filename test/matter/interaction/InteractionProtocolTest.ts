@@ -6,13 +6,18 @@
 
 import assert from "assert";
 import { ClusterServer, InteractionServer } from "../../../src/matter/interaction/InteractionServer";
-import { ReadRequest, DataReport } from "../../../src/matter/interaction/InteractionMessenger";
+import {
+    ReadRequest,
+    DataReport,
+    WriteRequest,
+    WriteResponse
+} from "../../../src/matter/interaction/InteractionMessenger";
 import { MessageExchange } from "../../../src/matter/common/MessageExchange";
 import { DEVICE } from "../../../src/matter/common/DeviceTypes";
 import { MatterDevice } from "../../../src/matter/MatterDevice";
 import { BasicInformationCluster } from "../../../src/matter/cluster/BasicInformationCluster";
 import { VendorId } from "../../../src/matter/common/VendorId";
-import { TlvUInt8 } from "@project-chip/matter.js";
+import { TlvString, TlvUInt8 } from "@project-chip/matter.js";
 import { Time } from "../../../src/time/Time";
 import { TimeFake } from "../../../src/time/TimeFake";
 
@@ -51,6 +56,42 @@ const READ_RESPONSE: DataReport = {
     ]
 };
 
+const WRITE_REQUEST: WriteRequest = {
+    interactionModelRevision: 1,
+    suppressResponse: false,
+    timedRequest: false,
+    writeRequests: [
+        {
+            path: { endpointId: 0, clusterId: 0x28, attributeId: 100 },
+            data: TlvUInt8.encodeTlv(3),
+            dataVersion: 0,
+        },
+        {
+            path: { endpointId: 0, clusterId: 0x28, attributeId: 5 },
+            data: TlvString.encodeTlv("test"),
+            dataVersion: 0,
+        },
+    ],
+    moreChunkedMessages: false,
+};
+
+const WRITE_RESPONSE: WriteResponse = {
+    interactionModelRevision: 1,
+    writeResponses: [
+        {
+            path: {
+                attributeId: 100,
+                clusterId: 40,
+                endpointId: 0
+            },
+            status: {
+                status: 136
+            }
+        }
+    ]
+};
+
+
 describe("InteractionProtocol", () => {
 
     context("handleReadRequest", () => {
@@ -82,4 +123,36 @@ describe("InteractionProtocol", () => {
             assert.deepEqual(result, READ_RESPONSE);
         });
     });
+
+    context("handleWriteRequest", () => {
+        it("replies with attribute values", () => {
+
+            const basicCluster = new ClusterServer(BasicInformationCluster, {}, {
+                dataModelRevision: 1,
+                vendorName: "vendor",
+                vendorId: new VendorId(1),
+                productName: "product",
+                productId: 2,
+                nodeLabel: "",
+                hardwareVersion: 0,
+                hardwareVersionString: "",
+                location: "US",
+                localConfigDisabled: false,
+                softwareVersion: 1,
+                softwareVersionString: "v1",
+                capabilityMinima: {
+                    caseSessionsPerFabric: 100,
+                    subscriptionsPerFabric: 100,
+                },
+            }, {});
+
+            const interactionProtocol = new InteractionServer().addEndpoint(0, DEVICE.ROOT, [ basicCluster ]);
+
+            const result = interactionProtocol.handleWriteRequest(({channel: {getName: () => "test"}}) as MessageExchange<MatterDevice>, WRITE_REQUEST);
+
+            assert.deepEqual(result, WRITE_RESPONSE);
+            assert.equal(basicCluster.attributes.nodeLabel.get(), "test");
+        });
+    });
+
 });

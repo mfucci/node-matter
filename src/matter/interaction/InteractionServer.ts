@@ -18,7 +18,7 @@ import { SubscriptionHandler } from "./SubscriptionHandler";
 import { Logger } from "../../log/Logger";
 import { DeviceTypeId } from "../common/DeviceTypeId";
 import { ClusterId } from "../common/ClusterId";
-import { TlvStream, TypeFromBitSchema } from "@project-chip/matter.js";
+import {BasicInformationCluster, TlvStream, TypeFromBitSchema} from "@project-chip/matter.js";
 import { EndpointNumber } from "../common/EndpointNumber";
 import { capitalize } from "../../util/String";
 import { StatusCode } from "./InteractionMessages";
@@ -180,28 +180,18 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
         for (const request of writeRequests) {
             const attributes = this.getAttribute({ endpointId: request.path.endpointId, clusterId: request.path.clusterId, id: request.path.attributeId});
             if (attributes.length === 1) {
-                const data = attributes[0].attribute.schema.decodeTlv(request.data);
-                if (typeof attributes[0].attribute.set === "function") {
+                // TODO add checks or dataVersion
+                try {
+                    const data = attributes[0].attribute.schema.decodeTlv(request.data);
                     logger.debug(`Handle write request from ${exchange.channel.getName()} resolved to: ${this.resolveAttributeName(attributes[0].path)}=${Logger.toJSON(data)} (${request.dataVersion})`);
-                    // TODO add checks or dataVersion
-                    try {
-                        attributes[0].attribute.set(data, exchange.session);
-                    } catch (e: any) {
-                        logger.error(`Error while handling write request from ${exchange.channel.getName()}: ${e.message}`);
-                        writeResponses.push({
-                            status: {
-                                status: StatusCode.ConstraintError
-                            },
-                            path: attributes[0].path,
-                        });
-                    }
-                } else {
-                    logger.error(`Skipped write request ${exchange.channel.getName()} to: ${this.resolveAttributeName(attributes[0].path)}=${Logger.toJSON(data)} because not writable`);
+                    attributes[0].attribute.set(data, exchange.session);
+                } catch (e: any) {
+                    logger.error(`Error while handling write request from ${exchange.channel.getName()}: ${e.message}`);
                     writeResponses.push({
                         status: {
-                            status: StatusCode.UnsupportedWrite
-                        }, // TODO: Find correct status code
-                        path: request.path,
+                            status: StatusCode.ConstraintError
+                        },
+                        path: attributes[0].path,
                     });
                 }
             } else if (attributes.length === 0) {
@@ -214,22 +204,27 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
                 });
             } else {
                 attributes.forEach(({ path, attribute }) => {
-                    if (typeof attribute.set === "function") {
-                        // Todo respect ACL and TimedWrite flags
-                        // TODO add checks or dataVersion
-                        try {
-                            const data = attribute.schema.decodeTlv(request.data);
-                            logger.debug(`Handle write request from ${exchange.channel.getName()} resolved to: ${this.resolveAttributeName(path)}=${Logger.toJSON(data)} (${request.dataVersion})`);
-                            attribute.set(data, exchange.session);
-                        } catch (e: any) {
-                            logger.error(`Error while handling write request from ${exchange.channel.getName()} to ${this.resolveAttributeName(path)}: ${e.message}`);
-                            writeResponses.push({
-                                status: {
-                                    status: StatusCode.ConstraintError
-                                },
-                                path,
-                            });
-                        }
+                    // Todo respect ACL and TimedWrite flags
+                    // TODO add checks or dataVersion
+                    if (path.clusterId === BasicInformationCluster.id && path.id !== BasicInformationCluster.attributes.nodeLabel.id) {
+                        // hack for tries with Smartthings
+                        // because we need to check if field is Writeable and also validator
+                        // currently do not check length requirements from typings and such
+                        return;
+                    }
+                    try {
+                        const data = attribute.schema.decodeTlv(request.data);
+                        logger.debug(`Handle write request from ${exchange.channel.getName()} resolved to: ${this.resolveAttributeName(path)}=${Logger.toJSON(data)} (${request.dataVersion})`);
+                        attribute.set(data, exchange.session);
+                    } catch (e: any) {
+                        logger.error(`Error while handling write request from ${exchange.channel.getName()} to ${this.resolveAttributeName(path)}: ${e.message}`);
+                        /*writeResponses.push({
+                            status: {
+                                status: StatusCode.ConstraintError
+                            },
+                            path,
+                        });*/
+                        // Ignore all errors for now and discard it
                     }
                 });
             }

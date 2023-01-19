@@ -178,25 +178,25 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
 
         const writeResponses = [];
         for (const request of writeRequests) {
-            const attribute = this.getAttribute({ endpointId: request.path.endpointId, clusterId: request.path.clusterId, id: request.path.attributeId});
-            if (attribute.length === 1) {
-                const data = attribute[0].attribute.schema.decodeTlv(request.data);
-                if (typeof attribute[0].attribute.set === "function") {
-                    logger.debug(`Handle write request from ${exchange.channel.getName()} resolved to: ${this.resolveAttributeName(attribute[0].path)}=${Logger.toJSON(data)} (${request.dataVersion})`);
+            const attributes = this.getAttribute({ endpointId: request.path.endpointId, clusterId: request.path.clusterId, id: request.path.attributeId});
+            if (attributes.length === 1) {
+                const data = attributes[0].attribute.schema.decodeTlv(request.data);
+                if (typeof attributes[0].attribute.set === "function") {
+                    logger.debug(`Handle write request from ${exchange.channel.getName()} resolved to: ${this.resolveAttributeName(attributes[0].path)}=${Logger.toJSON(data)} (${request.dataVersion})`);
                     // TODO add checks or dataVersion
                     try {
-                        attribute[0].attribute.set(data, exchange.session);
+                        attributes[0].attribute.set(data, exchange.session);
                     } catch (e: any) {
                         logger.error(`Error while handling write request from ${exchange.channel.getName()}: ${e.message}`);
                         writeResponses.push({
                             status: {
                                 status: StatusCode.ConstraintError
                             },
-                            path: attribute[0].path,
+                            path: attributes[0].path,
                         });
                     }
                 } else {
-                    logger.error(`Skipped write request ${exchange.channel.getName()} to: ${this.resolveAttributeName(attribute[0].path)}=${Logger.toJSON(data)} because not writable`);
+                    logger.error(`Skipped write request ${exchange.channel.getName()} to: ${this.resolveAttributeName(attributes[0].path)}=${Logger.toJSON(data)} because not writable`);
                     writeResponses.push({
                         status: {
                             status: StatusCode.UnsupportedWrite
@@ -204,7 +204,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
                         path: request.path,
                     });
                 }
-            } else if (attribute.length === 0) {
+            } else if (attributes.length === 0) {
                 logger.error(`Attribute ${this.resolveAttributeName({ endpointId: request.path.endpointId, clusterId: request.path.clusterId, id: request.path.attributeId })} not found`);
                 writeResponses.push({
                     status: {
@@ -213,25 +213,23 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
                     path: request.path,
                 });
             } else {
-                attribute.forEach(({ path, attribute }) => {
+                attributes.forEach(({ path, attribute }) => {
                     if (typeof attribute.set === "function") {
-                        // skip
-                        return;
-                    }
-                    // Todo respect ACL and TimedWrite flags
-                    // TODO add checks or dataVersion
-                    try {
-                        const data = attribute.schema.decodeTlv(request.data);
-                        logger.debug(`Handle write request from ${exchange.channel.getName()} resolved to: ${this.resolveAttributeName(path)}=${Logger.toJSON(data)} (${request.dataVersion})`);
-                        attribute.set(data, exchange.session);
-                    } catch (e: any) {
-                        logger.error(`Error while handling write request from ${exchange.channel.getName()} to ${this.resolveAttributeName(path)}: ${e.message}`);
-                        writeResponses.push({
-                            status: {
-                                status: StatusCode.ConstraintError
-                            },
-                            path,
-                        });
+                        // Todo respect ACL and TimedWrite flags
+                        // TODO add checks or dataVersion
+                        try {
+                            const data = attribute.schema.decodeTlv(request.data);
+                            logger.debug(`Handle write request from ${exchange.channel.getName()} resolved to: ${this.resolveAttributeName(path)}=${Logger.toJSON(data)} (${request.dataVersion})`);
+                            attribute.set(data, exchange.session);
+                        } catch (e: any) {
+                            logger.error(`Error while handling write request from ${exchange.channel.getName()} to ${this.resolveAttributeName(path)}: ${e.message}`);
+                            writeResponses.push({
+                                status: {
+                                    status: StatusCode.ConstraintError
+                                },
+                                path,
+                            });
+                        }
                     }
                 });
             }
@@ -239,7 +237,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
 
         // TODO respect suppressResponse
 
-        logger.debug(`Write request from ${exchange.channel.getName()} resolved to: ${writeResponses.map(({ path, status }) => `${this.resolveAttributeName(path)}=${Logger.toJSON(status)}`).join(", ")}`);
+        logger.debug(`Write request from ${exchange.channel.getName()} done with following errors: ${writeResponses.map(({ path, status }) => `${this.resolveAttributeName(path)}=${Logger.toJSON(status)}`).join(", ")}`);
         return {
             interactionModelRevision: 1,
             writeResponses

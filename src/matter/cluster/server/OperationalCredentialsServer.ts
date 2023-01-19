@@ -78,7 +78,7 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
         // TODO: create ACL with caseAdminNode
         console.log("addOperationalCert success")
 
-        return {status: OperationalCertStatus.Success, fabricIndex };
+        return { status: OperationalCertStatus.Success, fabricIndex };
     },
 
     getCurrentFabricIndex: session => {

@@ -118,7 +118,7 @@ export class MatterDevice {
     completeCommission() {
         return this.fabricManager.completeCommission();
     }
-    
+
     openCommissioningModeWindow(mode: number, discriminator: number) {
         this.broadcasters.forEach(broadcaster => {
             broadcaster.setCommissionMode(mode, this.deviceName, this.deviceType, this.vendorId, this.productId, discriminator);

@@ -5,7 +5,22 @@
  */
 
 import { TlvNodeId } from "../common/NodeId";
-import { MatterCoreSpecificationV1_0, TlvAny, TlvArray, TlvBoolean, TlvEnum, TlvField, TlvList, TlvObject, TlvOptionalField, TlvUInt16, TlvUInt32, TlvUInt64, TlvUInt8 } from "@project-chip/matter.js";
+import {
+    MatterCoreSpecificationV1_0,
+    TlvAny,
+    TlvArray,
+    TlvBoolean,
+    TlvEnum,
+    TlvField,
+    TlvList,
+    TlvNullable,
+    TlvObject,
+    TlvOptionalField,
+    TlvUInt16,
+    TlvUInt32,
+    TlvUInt64,
+    TlvUInt8
+} from "@project-chip/matter.js";
 
 /**
  * @see {@link MatterCoreSpecificationV1_0}, section 8.10
@@ -153,4 +168,47 @@ export const TlvInvokeResponse = TlvObject({
  */
 export const TlvTimedRequest = TlvObject({
     timeout: TlvField(0, TlvUInt16),
+});
+
+/**
+ * @see {@link MatterCoreSpecificationV1_0} 10.6.6
+ */
+export const TlvWriteRequest = TlvObject({
+    suppressResponse: TlvField(0, TlvBoolean),
+    timedRequest: TlvField(1, TlvBoolean),
+    writeRequests: TlvField(2, TlvArray(TlvObject({
+        dataVersion: TlvField(0, TlvUInt32),
+        path: TlvField(1, TlvList({
+            enableTagCompression: TlvOptionalField(0, TlvBoolean),
+            nodeId: TlvOptionalField(1, TlvNodeId),
+            endpointId: TlvOptionalField(2, TlvUInt16),
+            clusterId: TlvOptionalField(3, TlvUInt32),
+            attributeId: TlvOptionalField(4, TlvUInt32),
+            listIndex: TlvOptionalField(4,  TlvNullable(TlvUInt16)),
+        })),
+        data: TlvField(2, TlvAny),
+    }))),
+    moreChunkedMessages: TlvOptionalField(3, TlvBoolean),
+    interactionModelRevision: TlvField(0xFF, TlvUInt8),
+});
+
+/**
+ * @see {@link MatterCoreSpecificationV1_0} 10.6.7
+ */
+export const TlvWriteResponse = TlvObject({
+    writeResponses: TlvField(0, TlvArray(TlvObject({
+        path: TlvField(0, TlvList({
+            enableTagCompression: TlvOptionalField(0, TlvBoolean),
+            nodeId: TlvOptionalField(1, TlvNodeId),
+            endpointId: TlvOptionalField(2, TlvUInt16),
+            clusterId: TlvOptionalField(3, TlvUInt32),
+            attributeId: TlvOptionalField(4, TlvUInt32),
+            listIndex: TlvOptionalField(4,  TlvNullable(TlvUInt16)),
+        })),
+        status: TlvField(1, TlvList({
+            status: TlvOptionalField(0, TlvEnum<StatusCode>()),
+            clusterStatus: TlvOptionalField(1, TlvEnum<StatusCode>()),
+        })),
+    }))),
+    interactionModelRevision: TlvField(0xFF, TlvUInt8),
 });

@@ -107,14 +107,30 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
             fabricIndex: fabric.fabricIndex,
         })));
 
+        // TODO persist fabrics
+
         return {status: OperationalCertStatus.Success};
     },
 
-    removeFabric: async ({ request: {fabricIndex}, session }) => {
+    removeFabric: async ({ request: {fabricIndex}, attributes: {fabrics}, session }) => {
         const device = session.getContext();
-        device.removeFabric(fabricIndex);
+        if (device.removeFabric(fabricIndex)) {
+            fabrics.setLocal(device.getFabrics().map(fabric => ({
+                fabricId: fabric.fabricId,
+                label: fabric.label,
+                nodeId: fabric.nodeId,
+                rootPublicKey: fabric.rootPublicKey,
+                vendorId: fabric.rootVendorId,
+                fabricIndex: fabric.fabricIndex,
+            })));
 
-        return {status: OperationalCertStatus.Success};
+            // TODO persist fabrics
+            // TODO: depending on cases destroy the secure session and delete all data!
+
+            return { status: OperationalCertStatus.Success };
+        } else {
+            return { status: OperationalCertStatus.InvalidFabricIndex };
+        }
     },
 
     addRootCert: async ({ request: {certificate}, session} ) => {

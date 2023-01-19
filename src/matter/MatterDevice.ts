@@ -88,7 +88,7 @@ export class MatterDevice {
     }
 
     removeFabric(fabricIndex: FabricIndex) {
-        this.fabricManager.removeFabric(fabricIndex);
+        return this.fabricManager.removeFabric(fabricIndex);
     }
 
     initiateExchange(fabric: Fabric, nodeId: NodeId, protocolId: number) {

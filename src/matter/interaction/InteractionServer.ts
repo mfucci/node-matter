@@ -42,12 +42,12 @@ export class ClusterServer<ClusterT extends Cluster<any, any, any, any>> {
             featureMap: features,
         };
         for (const name in attributesInitialValues) {
-            const { id, schema, validator } = attributeDefs[name];
+            const { id, schema, writable } = attributeDefs[name];
             const getter = (handlers as any)[`get${capitalize(name)}`];
             if (getter === undefined) {
-                (this.attributes as any)[name] = new AttributeServer(id, name, schema, validator ?? (() => {}), (attributesInitialValues as any)[name]);
+                (this.attributes as any)[name] = new AttributeServer(id, name, schema, validator ?? (() => {}), writable, (attributesInitialValues as any)[name]);
             } else {
-                (this.attributes as any)[name] = new AttributeGetterServer(id, name, schema, validator ?? (() => {}), (attributesInitialValues as any)[name], getter);
+                (this.attributes as any)[name] = new AttributeGetterServer(id, name, schema, validator ?? (() => {}), writable, (attributesInitialValues as any)[name], getter);
             }
         }
 

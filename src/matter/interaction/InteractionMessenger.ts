@@ -94,10 +94,10 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
 
     async handleRequest(
         handleReadRequest: (request: ReadRequest) => DataReport,
+        handleWriteRequest: (request: WriteRequest) => WriteResponse,
         handleSubscribeRequest: (request: SubscribeRequest) => SubscribeResponse | undefined,
         handleInvokeRequest: (request: InvokeRequest) => Promise<InvokeResponse>,
         handleTimedRequest: (request: TimedRequest) => Promise<void>,
-        handleWriteRequest: (request: WriteRequest) => WriteResponse | undefined,
     ) {
         let continueExchange = true;
         try {
@@ -108,6 +108,11 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
                     case MessageType.ReadRequest:
                         const readRequest = TlvReadRequest.decode(message.payload);
                         await this.sendDataReport(handleReadRequest(readRequest));
+                        break;
+                    case MessageType.WriteRequest:
+                        const writeRequest = TlvWriteRequest.decode(message.payload);
+                        const writeResponse = handleWriteRequest(writeRequest);
+                        await this.exchange.send(MessageType.WriteResponse, TlvWriteResponse.encode(writeResponse));
                         break;
                     case MessageType.SubscribeRequest:
                         const subscribeRequest = TlvSubscribeRequest.decode(message.payload);
@@ -128,15 +133,6 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
                         await handleTimedRequest(timedRequest);
                         await this.sendStatus(StatusCode.Success);
                         continueExchange = true;
-                        break;
-                    case MessageType.WriteRequest:
-                        const writeRequest = TlvWriteRequest.decode(message.payload);
-                        const writeResponse = await handleWriteRequest(writeRequest);
-                        if (writeResponse) {
-                            await this.exchange.send(MessageType.WriteResponse, TlvWriteResponse.encode(writeResponse));
-                        } else {
-                            await this.sendStatus(StatusCode.Success); // ???
-                        }
                         break;
                     default:
                         throw new Error(`Unsupported message type ${message.payloadHeader.messageType}`);

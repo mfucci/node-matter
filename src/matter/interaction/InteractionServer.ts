@@ -42,7 +42,8 @@ export class ClusterServer<ClusterT extends Cluster<any, any, any, any>> {
             featureMap: features,
         };
         for (const name in attributesInitialValues) {
-            const { id, schema, validator } = attributeDefs[name];
+            let { id, schema } = attributeDefs[name];
+            const validator = typeof schema.validate === 'function' ? schema.validate.bind(schema) : undefined;
             const getter = (handlers as any)[`get${capitalize(name)}`];
             if (getter === undefined) {
                 (this.attributes as any)[name] = new AttributeServer(id, name, schema, validator ?? (() => {}), (attributesInitialValues as any)[name]);

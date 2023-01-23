@@ -268,7 +268,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
                     && (clusterId === undefined || clusterId === path.clusterId)
                     && (id === undefined || id === path.id))
                     .forEach(path => {
-                        const attribute = this.attributes.get(attributePathToId(path)) as AttributeServer<any>;
+                        const attribute = this.attributes.get(pathToId(path)) as AttributeServer<any>;
                         if (attribute === undefined) return;
                         if (onlyWritable && !attribute.isWritable) return;
                         result.push({ path, attribute })

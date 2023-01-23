@@ -252,7 +252,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
         return `${endpointName}/${clusterName}/${attributeName}`;
     }
 
-    private getAttributes(filters: Partial<Path>[] ): AttributeWithPath[] {
+    private getAttributes(filters: Partial<Path>[], onlyWritable: boolean = false): AttributeWithPath[] {
         const result = new Array<AttributeWithPath>();
 
         filters.forEach(({ endpointId, clusterId, id }) => {
@@ -260,13 +260,19 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
                 const path = { endpointId, clusterId, id };
                 const attribute = this.attributes.get(pathToId(path));
                 if (attribute === undefined) return;
+                if (onlyWritable && !attribute.isWritable) return;
                 result.push({ path, attribute });
             } else {
                 this.attributePaths.filter(path =>
                     (endpointId === undefined || endpointId === path.endpointId)
                     && (clusterId === undefined || clusterId === path.clusterId)
                     && (id === undefined || id === path.id))
-                    .forEach(path => result.push({ path, attribute: this.attributes.get(pathToId(path)) as AttributeServer<any> }));
+                    .forEach(path => {
+                        const attribute = this.attributes.get(attributePathToId(path)) as AttributeServer<any>;
+                        if (attribute === undefined) return;
+                        if (onlyWritable && !attribute.isWritable) return;
+                        result.push({ path, attribute })
+                    });
             }
         })
 

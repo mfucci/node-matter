@@ -59,10 +59,10 @@ export class Logger {
     }
 
     /**
-     * returns the value as (bigint aware) stringified json
+     * Returns the value as (BigInt aware) stringified JSON.
      */
-    static toJSON(data: any) {
-        return JSON.stringify(data, (_, v) => typeof v === 'bigint' ? v.toString() : v)
+    static toJSON(data: any, indent?: string | number) {
+        return JSON.stringify(data, (_, v) => typeof v === 'bigint' ? v.toString() : v, indent || " ");
     }
 
     constructor(

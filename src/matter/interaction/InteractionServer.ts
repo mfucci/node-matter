@@ -153,10 +153,10 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
     async onNewExchange(exchange: MessageExchange<MatterDevice>) {
         await new InteractionServerMessenger(exchange).handleRequest(
             readRequest => this.handleReadRequest(exchange, readRequest),
+            writeRequest => this.handleWriteRequest(exchange, writeRequest),
             subscribeRequest => this.handleSubscribeRequest(exchange, subscribeRequest),
             invokeRequest => this.handleInvokeRequest(exchange, invokeRequest),
             timedRequest => this.handleTimedRequest(exchange, timedRequest),
-            writeRequest => this.handleWriteRequest(exchange, writeRequest),
         );
     }
 

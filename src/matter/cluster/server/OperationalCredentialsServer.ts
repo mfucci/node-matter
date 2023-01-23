@@ -52,7 +52,7 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
         }
     },
 
-    addOperationalCert: async ({ request: {operationalCert, intermediateCaCert, identityProtectionKey, caseAdminNode, adminVendorId}, session, attributes: { fabrics } }) => {
+    addOperationalCert: async ({ request: {operationalCert, intermediateCaCert, identityProtectionKey, caseAdminNode, adminVendorId}, session }) => {
         if (!session.isSecure()) throw new Error("addOperationalCert should be called on a secure session.");
         const device = session.getContext();
         const fabricBuilder = device.getFabricBuilder();
@@ -65,7 +65,15 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
         const fabric = await fabricBuilder.build();
         const fabricIndex = device.addFabric(fabric);
 
-        fabrics.setLocal(device.getFabrics().map(fabric => ({
+        // TODO: create ACL with caseAdminNode
+        console.log("addOperationalCert success")
+
+        return { status: OperationalCertStatus.Success, fabricIndex };
+    },
+
+    getFabrics: session => {
+        if (session === undefined || !session.isSecure()) return []; // ???
+        return session.getContext().getFabrics().map(fabric => ({
             fabricId: fabric.fabricId,
             label: fabric.label,
             nodeId: fabric.nodeId,
@@ -73,12 +81,7 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
             vendorId: fabric.rootVendorId,
             // TODO: this is a hack. Fabric-scoped data need to be handled automatically
             fabricIndex: fabric.fabricIndex,
-        })));
-
-        // TODO: create ACL with caseAdminNode
-        console.log("addOperationalCert success")
-
-        return { status: OperationalCertStatus.Success, fabricIndex };
+        }));
     },
 
     getCurrentFabricIndex: session => {
@@ -98,18 +101,9 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
 
         fabric.label = label;
 
-        fabrics.setLocal(session.getContext().getFabrics().map(fabric => ({
-            fabricId: fabric.fabricId,
-            label: fabric.label,
-            nodeId: fabric.nodeId,
-            rootPublicKey: fabric.rootPublicKey,
-            vendorId: fabric.rootVendorId,
-            fabricIndex: fabric.fabricIndex,
-        })));
-
         // TODO persist fabrics
 
-        return {status: OperationalCertStatus.Success};
+        return { status: OperationalCertStatus.Success };
     },
 
     removeFabric: async ({ request: {fabricIndex}, attributes: {fabrics}, session }) => {
@@ -120,15 +114,6 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
         } catch {
             return { status: OperationalCertStatus.InvalidFabricIndex };
         }
-
-        fabrics.setLocal(device.getFabrics().map(fabric => ({
-            fabricId: fabric.fabricId,
-            label: fabric.label,
-            nodeId: fabric.nodeId,
-            rootPublicKey: fabric.rootPublicKey,
-            vendorId: fabric.rootVendorId,
-            fabricIndex: fabric.fabricIndex,
-        })));
 
         // TODO persist fabrics
         // TODO: depending on cases destroy the secure session and delete all data!

@@ -134,21 +134,21 @@ describe("Logger", () => {
             logger.debug("test");
             const result = fakeLogSink.pop();
 
-            assert.equal(result?.log, "2010-0-2 8:13:53.478 DEBUG UnitTest test");
+            assert.equal(result?.log, "2010-01-05 08:13:53.478 DEBUG UnitTest test");
         });
 
         it("accepts multiple values", () => {
             logger.debug("value1", "value2");
             const result = fakeLogSink.pop();
 
-            assert.equal(result?.log, "2010-0-2 8:13:53.478 DEBUG UnitTest value1 value2");
+            assert.equal(result?.log, "2010-01-05 08:13:53.478 DEBUG UnitTest value1 value2");
         });
 
         it("converts Buffer to hex strings", () => {
             logger.debug(ByteArray.fromHex("00deadbeef"));
             const result = fakeLogSink.pop();
 
-            assert.equal(result?.log, "2010-0-2 8:13:53.478 DEBUG UnitTest 00deadbeef");
+            assert.equal(result?.log, "2010-01-05 08:13:53.478 DEBUG UnitTest 00deadbeef");
         });
 
         it("accepts custom formatters", () => {

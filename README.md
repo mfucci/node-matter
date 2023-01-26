@@ -75,7 +75,10 @@ new MatterServer()
 
 ## Pairing and Usage Information
 
-It should work with any Matter-compatible home automation app when Matter will be released.
+It should work with any Matter-compatible home automation app when Matter will be released. We tested the Library with the "big" ones and can provide additional information.
+
+A good guide with images on how to add devices to Alexa, Google and Apple in general is available in the [TP-Link FAQ](https://www.tp-link.com/de/support/faq/3564/).
+
 
 ### iOS Home
 Minimum OS Required for iOS device: iOS16.2 or later.

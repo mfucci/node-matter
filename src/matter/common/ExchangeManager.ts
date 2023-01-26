@@ -92,7 +92,7 @@ export class ExchangeManager<ContextT> {
         const exchangeIndex = message.payloadHeader.isInitiatorMessage ? message.payloadHeader.exchangeId : (message.payloadHeader.exchangeId | 0x10000);
         const exchange = this.exchanges.get(exchangeIndex);
         if (exchange !== undefined) {
-            exchange.onMessageReceived(message);
+            await exchange.onMessageReceived(message);
         } else {
             const exchange = await MessageExchange.fromInitialMessage(this.channelManager.getOrCreateChannel(channel, session), this.messageCounter, message, () => this.exchanges.delete(exchangeIndex));
             this.exchanges.set(exchangeIndex, exchange);

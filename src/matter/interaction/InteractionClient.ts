@@ -77,19 +77,19 @@ export class InteractionClient {
                 isFabricFiltered: true,
             });
 
-            return response.values.map(({ value: { path: {endpointId, clusterId, id}, version, value }}) => ({ endpointId, clusterId, attributeId: id, version, value }));
+            return response.values.map(({ value: { path: {endpointId, clusterId, attributeId}, version, value }}) => ({ endpointId, clusterId, attributeId, version, value }));
         });
     }
 
     async get<A extends Attribute<any>>(endpointId: number, clusterId: number, { id, schema, optional, default: conformanceValue }: A): Promise<AttributeJsType<A>> {
         return this.withMessenger<AttributeJsType<A>>(async messenger => {
             const response = await messenger.sendReadRequest({
-                attributes: [ {endpointId , clusterId, id} ],
+                attributes: [ {endpointId , clusterId, attributeId: id} ],
                 interactionModelRevision: 1,
                 isFabricFiltered: true,
             });
 
-            const value = response.values.map(({value}) => value).find(({ path }) => endpointId === path.endpointId && clusterId === path.clusterId && id === path.id);
+            const value = response.values.map(({value}) => value).find(({ path }) => endpointId === path.endpointId && clusterId === path.clusterId && id === path.attributeId);
             if (value === undefined) {
                 if (optional) return undefined;
                 if (conformanceValue === undefined) throw new Error(`Attribute ${endpointId}/${clusterId}/${id} not found`);
@@ -113,7 +113,7 @@ export class InteractionClient {
     ): Promise<void> {
         return this.withMessenger<void>(async messenger => {
             const { subscriptionId } = await messenger.sendSubscribeRequest({
-                attributeRequests: [ {endpointId , clusterId, id} ],
+                attributeRequests: [ {endpointId , clusterId, attributeId: id} ],
                 keepSubscriptions: true,
                 minIntervalFloorSeconds,  
                 maxIntervalCeilingSeconds,              
@@ -121,7 +121,7 @@ export class InteractionClient {
             });
 
             this.subscriptionListeners.set(subscriptionId, (dataReport: DataReport) => {
-                const value = dataReport.values.map(({value}) => value).find(({ path }) => endpointId === path.endpointId && clusterId === path.clusterId && id === path.id);
+                const value = dataReport.values.map(({value}) => value).find(({ path }) => endpointId === path.endpointId && clusterId === path.clusterId && id === path.attributeId);
                 if (value === undefined) return;
                 listener(schema.decodeTlv(value.value), value.version);
             });
@@ -133,7 +133,7 @@ export class InteractionClient {
         return this.withMessenger<ResponseType<C>>(async messenger => {
             const { responses } = await messenger.sendInvokeCommand({
                 invokes: [
-                    { path: { endpointId, clusterId, id }, args: requestSchema.encodeTlv(request) }
+                    { path: { endpointId, clusterId, commandId: id }, args: requestSchema.encodeTlv(request) }
                 ],
                 timedRequest: false,
                 suppressResponse: false,

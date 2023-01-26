@@ -5,7 +5,22 @@
  */
 
 import { Merge } from "../../util/Type";
-import { BitSchema, TlvBitmap, TlvFields, TlvObject, TlvSchema, TlvUInt16, TlvUInt32, TlvVoid, TypeFromBitSchema, TypeFromFields } from "@project-chip/matter.js";
+import {
+    BitSchema, TlvArray,
+    TlvBitmap,
+    TlvFields,
+    TlvList,
+    TlvObject,
+    TlvSchema,
+    TlvUInt16,
+    TlvUInt32,
+    TlvVoid,
+    TypeFromBitSchema,
+    TypeFromFields
+} from "@project-chip/matter.js";
+import { TlvAttributeId } from "../common/AttributeId";
+import { TlvEventId } from "../common/EventId";
+import { TlvCommandId } from "../common/CommandId";
 
 export const enum AccessLevel {
     View,
@@ -55,12 +70,16 @@ export type GlobalAttributes<F extends BitSchema> = {
     /** Indicates the revision of the server cluster specification supported by the cluster instance. */
     clusterRevision: Attribute<number>,
 
-    /** Indicates whether the server supports zero or more optional clus­ter features. */
+    /** Indicates whether the server supports zero or more optional cluster features. */
     featureMap: Attribute<TypeFromBitSchema<F>>,
 }
 export const GlobalAttributes = <F extends BitSchema>(features: F) => ({
     clusterRevision: Attribute(0xFFFD, TlvUInt16),
     featureMap: Attribute(0xFFFC, TlvBitmap(TlvUInt32, features)),
+    attributeList: Attribute(0xFFFB, TlvArray(TlvAttributeId)),
+    eventList: Attribute(0xFFFA, TlvArray(TlvEventId)),
+    acceptedCommandList: Attribute(0xFFF9, TlvArray(TlvCommandId)),
+    generatedCommandList: Attribute(0xFFF8, TlvArray(TlvCommandId)),
 } as GlobalAttributes<F>);
 
 export interface Cluster<F extends BitSchema, A extends Attributes, C extends Commands, E extends Events> {

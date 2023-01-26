@@ -7,13 +7,13 @@
 import { MatterDevice } from "../MatterDevice";
 import { InteractionServerMessenger } from "./InteractionMessenger";
 import { Fabric } from "../fabric/Fabric";
-import { AttributeWithPath, Path, INTERACTION_PROTOCOL_ID } from "./InteractionServer";
+import { AttributeWithPath, AttributePath, INTERACTION_PROTOCOL_ID } from "./InteractionServer";
 import { Time, Timer } from "../../time/Time";
 import { NodeId } from "../common/NodeId";
 import { TlvSchema } from "@project-chip/matter.js";
 
 interface PathValueVersion<T> {
-    path: Path,
+    path: AttributePath,
     schema: TlvSchema<T>,
     valueVersion: { value: T, version: number },
 }

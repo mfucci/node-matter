@@ -35,6 +35,7 @@ import { NodeId } from "../src/matter/common/NodeId";
 import { OnOffClusterHandler } from "../src/matter/cluster/server/OnOffServer";
 import { ByteArray } from "@project-chip/matter.js";
 import { FabricIndex } from "../src/matter/common/FabricIndex";
+import {DescriptorCluster} from "../src/matter/cluster/DescriptorCluster";
 
 const SERVER_IP = "192.168.200.1";
 const SERVER_MAC = "00:B0:D0:63:C2:26";
@@ -80,6 +81,7 @@ describe("Integration", () => {
         Network.get = () => clientNetwork;
         client = await MatterController.create(
             await MdnsScanner.create(CLIENT_IP),
+            await UdpInterface.create(5540, "udp4", CLIENT_IP),
             await UdpInterface.create(5540, "udp6", CLIENT_IP),
         );
 
@@ -151,9 +153,9 @@ describe("Integration", () => {
 
     context("commission", () => {
         it("the client commissions a new device", async () => {
-            await client.commission(SERVER_IP, matterPort, discriminator, setupPin);
+            const nodeId = await client.commission(SERVER_IP, matterPort, discriminator, setupPin);
 
-            assert.ok(true);
+            assert.equal(nodeId.id, BigInt(1));
         });
 
         it("the session is resumed if it has been established previously", async () => {
@@ -165,6 +167,12 @@ describe("Integration", () => {
 
 
     context("attributes", () => {
+        it("get one specific attribute including schema parsing", async () => {
+            const descriptorCluster = ClusterClient(await client.connect(new NodeId(BigInt(1))), 0, BasicInformationCluster);
+
+            assert.equal(await descriptorCluster.getSoftwareVersionString(), "v1");
+        });
+
         it("get all attributes", async () => {
             await (await client.connect(new NodeId(BigInt(1)))).getAllAttributes();
 

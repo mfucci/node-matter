@@ -90,7 +90,7 @@ export class MdnsBroadcaster implements Broadcaster {
         const fabricQname = getFabricQname(operationalIdString);
         const deviceMatterQname = getDeviceMatterQname(operationalIdString, nodeId.toString());
 
-        logger.debug(`announce fabric ${operationalId.toHex()} ${nodeId.id}: ${deviceMatterQname}`);
+        logger.debug(`Set fabric ${operationalId.toHex()} ${nodeId.id}: ${deviceMatterQname} for announcement`);
 
         this.mdnsServer.setRecordsGenerator(netInterface => {
             const ipMac = this.network.getIpMac(netInterface);

@@ -93,7 +93,7 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
         throw new Error("Not implemented");
     },
 
-    updateFabricLabel: async ({ request: {label}, attributes: {fabrics}, session }) => {
+    updateFabricLabel: async ({ request: {label}, session }) => {
         if (!session.isSecure()) throw new Error("updateOperationalCert should be called on a secure session.");
         const secureSession = session as SecureSession<MatterDevice>;
         const fabric = secureSession.getFabric();
@@ -106,7 +106,7 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
         return { status: OperationalCertStatus.Success };
     },
 
-    removeFabric: async ({ request: {fabricIndex}, attributes: {fabrics}, session }) => {
+    removeFabric: async ({ request: {fabricIndex}, session }) => {
         const device = session.getContext();
 
         try {

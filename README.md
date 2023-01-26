@@ -111,6 +111,8 @@ Google supports several [Matter device types](https://developers.home.google.com
 ### Amazon Alexa
 Minimum Version Required for Alexa App：2.2.491118.0 or later.
 
+**Please note that because Alexa’s temporarily limited setting, Alexa ecosystem needs to be paired with Matter-certified device as the first ecosystem. If you are unsure, please factory default your device before setup.**
+
 For Amazon Alexa Usage you also need one [Alexa device as Matter hub](https://www.amazon.com/b?ie=UTF8&node=37490568011) in your local network.
 
 Pairing is currently only possible using the Alexa Android App on Android 8.1 or higher. The iOS App is not supporting Matter yet.

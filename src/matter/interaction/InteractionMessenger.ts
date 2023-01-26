@@ -10,6 +10,7 @@ import { MatterController } from "../MatterController";
 import { MatterDevice } from "../MatterDevice";
 import { TlvInvokeRequest, TlvInvokeResponse, TlvReadRequest, TlvDataReport, TlvSubscribeRequest, TlvSubscribeResponse, StatusCode, TlvStatusResponse, TlvTimedRequest, TlvAttributeReport } from "./InteractionMessages";
 import { ByteArray, TlvSchema, TypeFromSchema } from "@project-chip/matter.js";
+import { PacketHeader } from "../../codec/MessageCodec";
 
 export const enum MessageType {
     StatusResponse = 0x01,
@@ -80,9 +81,9 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
     async handleRequest(
         handleReadRequest: (request: ReadRequest) => DataReport,
         handleSubscribeRequest: (request: SubscribeRequest) => SubscribeResponse | undefined,
-        handleInvokeRequest: (request: InvokeRequest) => Promise<InvokeResponse>,
+        handleInvokeRequest: (request: InvokeRequest, paketHeader: PacketHeader) => Promise<InvokeResponse>,
         handleTimedRequest: (request: TimedRequest) => Promise<void>,
-    ) { 
+    ) {
         let continueExchange = true;
         try {
             while (continueExchange) {
@@ -104,7 +105,7 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
                         break;
                     case MessageType.InvokeCommandRequest:
                         const invokeRequest = TlvInvokeRequest.decode(message.payload);
-                        const invokeResponse = await handleInvokeRequest(invokeRequest);
+                        const invokeResponse = await handleInvokeRequest(invokeRequest, message.packetHeader);
                         await this.exchange.send(MessageType.InvokeCommandResponse, TlvInvokeResponse.encode(invokeResponse));
                         break;
                     case MessageType.TimedRequest:

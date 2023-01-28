@@ -10,6 +10,10 @@ export function isIPv4(ip: string) {
     return ip.includes(".")
 }
 
+export function isIPv6(ip: string) {
+    return ip.includes(":")
+}
+
 export function iPv4ToNumber(ip: string) {
     const dataView = new ByteArray(4).getDataView();
     const ipParts = ip.split(".");

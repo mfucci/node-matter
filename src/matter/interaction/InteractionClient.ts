@@ -24,10 +24,10 @@ export function ClusterClient<CommandT extends Commands, AttributeT extends Attr
     // Add accessors
     for (const attributeName in attributes) {
         const attribute = attributes[attributeName];
-        const captilizedAttributeName = capitalize(attributeName);
-        result[`get${captilizedAttributeName}`] = async () => interactionClient.get(endpointId, clusterId, attribute);
-        result[`set${captilizedAttributeName}`] = async <T,>(value: T) => interactionClient.set<T>(endpointId, clusterId, attribute, value);
-        result[`subscribe${captilizedAttributeName}`] = async <T,>(listener: (value: T, version: number) => void, minIntervalS: number, maxIntervalS: number) => interactionClient.subscribe(endpointId, clusterId, attribute, listener, minIntervalS, maxIntervalS);
+        const capitalizedAttributeName = capitalize(attributeName);
+        result[`get${capitalizedAttributeName}`] = async () => interactionClient.get(endpointId, clusterId, attribute);
+        result[`set${capitalizedAttributeName}`] = async <T,>(value: T) => interactionClient.set<T>(endpointId, clusterId, attribute, value);
+        result[`subscribe${capitalizedAttributeName}`] = async <T,>(listener: (value: T, version: number) => void, minIntervalS: number, maxIntervalS: number) => interactionClient.subscribe(endpointId, clusterId, attribute, listener, minIntervalS, maxIntervalS);
     }
 
     // Add command calls
@@ -108,15 +108,15 @@ export class InteractionClient {
         clusterId: number,
         { id, schema, default: conformanceValue }: A,
         listener: (value: AttributeJsType<A>, version: number) => void,
-        minIntervalFloorSeconds: number,  
-        maxIntervalCeilingSeconds: number, 
+        minIntervalFloorSeconds: number,
+        maxIntervalCeilingSeconds: number,
     ): Promise<void> {
         return this.withMessenger<void>(async messenger => {
             const { subscriptionId } = await messenger.sendSubscribeRequest({
                 attributeRequests: [ {endpointId , clusterId, id} ],
                 keepSubscriptions: true,
-                minIntervalFloorSeconds,  
-                maxIntervalCeilingSeconds,              
+                minIntervalFloorSeconds,
+                maxIntervalCeilingSeconds,
                 isFabricFiltered: true,
             });
 

@@ -9,7 +9,6 @@ import {
     BitSchema, TlvArray,
     TlvBitmap,
     TlvFields,
-    TlvList,
     TlvObject,
     TlvSchema,
     TlvUInt16,
@@ -18,9 +17,9 @@ import {
     TypeFromBitSchema,
     TypeFromFields
 } from "@project-chip/matter.js";
-import {AttributeId, TlvAttributeId} from "../common/AttributeId";
-import {EventId, TlvEventId} from "../common/EventId";
-import {CommandId, TlvCommandId} from "../common/CommandId";
+import { AttributeId, TlvAttributeId } from "../common/AttributeId";
+import { EventId, TlvEventId } from "../common/EventId";
+import { CommandId, TlvCommandId } from "../common/CommandId";
 
 export const enum AccessLevel {
     View,

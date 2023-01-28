@@ -52,7 +52,7 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
         }
     },
 
-    addOperationalCert: async ({ request: {operationalCert, intermediateCaCert, identityProtectionKey, caseAdminNode, adminVendorId}, session, attributes: { fabrics } }) => {
+    addOperationalCert: async ({ request: {operationalCert, intermediateCaCert, identityProtectionKey, caseAdminNode, adminVendorId}, session }) => {
         if (!session.isSecure()) throw new Error("addOperationalCert should be called on a secure session.");
         const device = session.getContext();
         const fabricBuilder = device.getFabricBuilder();
@@ -65,7 +65,15 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
         const fabric = await fabricBuilder.build();
         const fabricIndex = device.addFabric(fabric);
 
-        fabrics.setLocal(device.getFabrics().map(fabric => ({
+        // TODO: create ACL with caseAdminNode
+        console.log("addOperationalCert success")
+
+        return { status: OperationalCertStatus.Success, fabricIndex };
+    },
+
+    getFabrics: session => {
+        if (session === undefined || !session.isSecure()) return []; // ???
+        return session.getContext().getFabrics().map(fabric => ({
             fabricId: fabric.fabricId,
             label: fabric.label,
             nodeId: fabric.nodeId,
@@ -73,12 +81,7 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
             vendorId: fabric.rootVendorId,
             // TODO: this is a hack. Fabric-scoped data need to be handled automatically
             fabricIndex: fabric.fabricIndex,
-        })));
-
-        // TODO: create ACL with caseAdminNode
-        console.log("addOperationalCert success")
-
-        return {status: OperationalCertStatus.Success, fabricIndex };
+        }));
     },
 
     getCurrentFabricIndex: session => {
@@ -90,7 +93,7 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
         throw new Error("Not implemented");
     },
 
-    updateFabricLabel: async ({ request: {label}, attributes: {fabrics}, session }) => {
+    updateFabricLabel: async ({ request: {label}, session }) => {
         if (!session.isSecure()) throw new Error("updateOperationalCert should be called on a secure session.");
         const secureSession = session as SecureSession<MatterDevice>;
         const fabric = secureSession.getFabric();
@@ -98,23 +101,24 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
 
         fabric.label = label;
 
-        fabrics.setLocal(session.getContext().getFabrics().map(fabric => ({
-            fabricId: fabric.fabricId,
-            label: fabric.label,
-            nodeId: fabric.nodeId,
-            rootPublicKey: fabric.rootPublicKey,
-            vendorId: fabric.rootVendorId,
-            fabricIndex: fabric.fabricIndex,
-        })));
+        // TODO persist fabrics
 
-        return {status: OperationalCertStatus.Success};
+        return { status: OperationalCertStatus.Success };
     },
 
     removeFabric: async ({ request: {fabricIndex}, session }) => {
         const device = session.getContext();
-        device.removeFabric(fabricIndex);
 
-        return {status: OperationalCertStatus.Success};
+        try {
+            device.removeFabric(fabricIndex);
+        } catch {
+            return { status: OperationalCertStatus.InvalidFabricIndex };
+        }
+
+        // TODO persist fabrics
+        // TODO: depending on cases destroy the secure session and delete all data!
+
+        return { status: OperationalCertStatus.Success };
     },
 
     addRootCert: async ({ request: {certificate}, session} ) => {

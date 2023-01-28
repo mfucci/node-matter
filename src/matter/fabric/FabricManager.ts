@@ -19,7 +19,9 @@ export class FabricManager {
     }
 
     removeFabric(fabricIndex: FabricIndex) {
-        this.fabrics.splice(this.fabrics.findIndex(fabric => fabric.fabricIndex.index === fabricIndex.index), 1);
+        const index = this.fabrics.findIndex(fabric => fabric.fabricIndex.index === fabricIndex.index);
+        if (index === -1) throw new Error(`Fabric with index ${fabricIndex} cannot be removed because it does not exist.`);
+        this.fabrics.splice(index, 1);
     }
 
     getFabrics() {
@@ -32,7 +34,7 @@ export class FabricManager {
             if (!candidateDestinationId.equals(destinationId)) continue;
             return fabric;
         }
-        
+
         throw new Error("Fabric cannot be found from destinationId");
     }
 

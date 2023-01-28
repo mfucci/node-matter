@@ -32,9 +32,21 @@ describe("Errors", () => {
                 throw new MatterJsError("test", MatterJsErrorCodes.FabricNotFound, "test-context");
             } catch (error) {
                 assertMatterJsError(error);
-                assert.equal(isMatterJsError(error), true);
                 assert.equal(error.code, MatterJsErrorCodes.FabricNotFound);
+                assert.equal(error.context, "test-context");
                 assert.equal(error.message, "test-context (fabric-not-found): test");
+            }
+        });
+
+        it("error with code and context and contextdata", () => {
+            try {
+                throw new MatterJsError("test", MatterJsErrorCodes.FabricNotFound, "test-context", { dataHere: "data" });
+            } catch (error) {
+                assertMatterJsError(error);
+                assert.equal(error.code, MatterJsErrorCodes.FabricNotFound);
+                assert.equal(error.context, "test-context");
+                assert.equal(error.message, "test-context (fabric-not-found): test");
+                assert.equal(error.contextData.dataHere, "data");
             }
         });
     });

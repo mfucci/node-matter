@@ -17,6 +17,7 @@ export class MatterJsError extends Error {
         public readonly code: MatterJsErrorCodes,
         /** Additional information about which component/class generated the error. */
         public readonly context?: string,
+        public readonly contextData: Record<string, unknown> = {}
     ) {
         super();
 

@@ -80,7 +80,7 @@ export const TlvAttributeReportPath = TlvList({
     endpointId: TlvField(2, TlvUInt16), // TODO: could be optional, handling then defined by enableTagCompression
     clusterId: TlvField(3, TlvUInt32),
     attributeId: TlvField(4, TlvUInt32),
-    listIndex: TlvOptionalField(5,  TlvNullable(TlvUInt16)),
+    listIndex: TlvOptionalField(5, TlvNullable(TlvUInt16)),
 });
 
 export const TlvAttributeReportValue = TlvObject({

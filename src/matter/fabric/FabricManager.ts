@@ -7,6 +7,7 @@
 import { ByteArray } from "@project-chip/matter.js";
 import { FabricIndex } from "../common/FabricIndex";
 import { Fabric, FabricBuilder } from "./Fabric";
+import { MatterJsError, MatterJsErrorCodes } from "../../error/MatterJsError";
 
 export class FabricManager {
     private nextFabricIndex = 1;
@@ -20,7 +21,7 @@ export class FabricManager {
 
     removeFabric(fabricIndex: FabricIndex) {
         const index = this.fabrics.findIndex(fabric => fabric.fabricIndex.index === fabricIndex.index);
-        if (index === -1) throw new Error(`Fabric with index ${fabricIndex} cannot be removed because it does not exist.`);
+        if (index === -1) throw new MatterJsError(`Fabric with index ${fabricIndex} cannot be removed because it does not exist.`, MatterJsErrorCodes.FabricNotFound, "FabricManager");
         this.fabrics.splice(index, 1);
     }
 

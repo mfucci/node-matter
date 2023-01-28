@@ -17,6 +17,7 @@ import {
 import { ClusterServerHandlers } from "./ClusterServer";
 import { ByteArray } from "@project-chip/matter.js";
 import { FabricIndex } from "../../common/FabricIndex";
+import { isMatterJsError, MatterJsErrorCodes } from "../../../error/MatterJsError";
 
 interface OperationalCredentialsServerConf {
     devicePrivateKey: ByteArray,
@@ -111,8 +112,12 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
 
         try {
             device.removeFabric(fabricIndex);
-        } catch {
-            return { status: OperationalCertStatus.InvalidFabricIndex };
+        } catch (error) {
+            if (isMatterJsError(error) && error.code === MatterJsErrorCodes.FabricNotFound) {
+                return { status: OperationalCertStatus.InvalidFabricIndex };
+            } else {
+                throw error;
+            }
         }
 
         // TODO persist fabrics

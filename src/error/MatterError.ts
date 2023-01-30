@@ -128,3 +128,19 @@ export function tryCatch<T>(codeBlock: () => T, errorType: typeof MatterError, f
     }
 }
 
+export async function tryCatchAsync<T>(codeBlock: () => Promise<T>, errorType: typeof MatterError, fallbackValue: MatterErrorHandler<T> | T): Promise<T> {
+    try {
+        return await codeBlock();
+    }
+    catch (error) {
+        if (isMatterError(error) && error instanceof errorType) {
+            if (typeof fallbackValue === "function") {
+                const computedFallbackValue = (fallbackValue as MatterErrorHandler<T>)(error);
+                if (computedFallbackValue !== undefined) return Promise.resolve(computedFallbackValue);
+            } else {
+                return Promise.resolve(fallbackValue);
+            }
+        }
+        throw error;
+    }
+}

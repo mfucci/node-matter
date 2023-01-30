@@ -111,11 +111,10 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
         const device = session.getContext();
 
         const status = tryCatch(() => {
-                device.removeFabric(fabricIndex);
-                return OperationalCertStatus.Success;
-            },
-            FabricNotFoundError, OperationalCertStatus.InvalidFabricIndex,
-        );
+            device.removeFabric(fabricIndex);
+            return OperationalCertStatus.Success;
+        },
+        FabricNotFoundError, OperationalCertStatus.InvalidFabricIndex);
 
         if (status === OperationalCertStatus.Success) {
             // TODO persist fabrics

@@ -42,13 +42,13 @@ export class ClusterServer<ClusterT extends Cluster<any, any, any, any>> {
             featureMap: features,
         };
         for (const name in attributesInitialValues) {
-            let { id, schema } = attributeDefs[name];
+            let { id, schema, writable } = attributeDefs[name];
             const validator = typeof schema.validate === 'function' ? schema.validate.bind(schema) : undefined;
             const getter = (handlers as any)[`get${capitalize(name)}`];
             if (getter === undefined) {
-                (this.attributes as any)[name] = new AttributeServer(id, name, schema, validator ?? (() => {}), (attributesInitialValues as any)[name]);
+                (this.attributes as any)[name] = new AttributeServer(id, name, schema, validator ?? (() => {}), writable, (attributesInitialValues as any)[name]);
             } else {
-                (this.attributes as any)[name] = new AttributeGetterServer(id, name, schema, validator ?? (() => {}), (attributesInitialValues as any)[name], getter);
+                (this.attributes as any)[name] = new AttributeGetterServer(id, name, schema, validator ?? (() => {}), writable, (attributesInitialValues as any)[name], getter);
             }
         }
 
@@ -253,7 +253,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
         return `${endpointName}/${clusterName}/${attributeName}`;
     }
 
-    private getAttributes(filters: Partial<Path>[] ): AttributeWithPath[] {
+    private getAttributes(filters: Partial<Path>[], onlyWritable: boolean = false): AttributeWithPath[] {
         const result = new Array<AttributeWithPath>();
 
         filters.forEach(({ endpointId, clusterId, id }) => {
@@ -261,13 +261,19 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
                 const path = { endpointId, clusterId, id };
                 const attribute = this.attributes.get(pathToId(path));
                 if (attribute === undefined) return;
+                if (onlyWritable && !attribute.isWritable) return;
                 result.push({ path, attribute });
             } else {
                 this.attributePaths.filter(path =>
                     (endpointId === undefined || endpointId === path.endpointId)
                     && (clusterId === undefined || clusterId === path.clusterId)
                     && (id === undefined || id === path.id))
-                    .forEach(path => result.push({ path, attribute: this.attributes.get(pathToId(path)) as AttributeServer<any> }));
+                    .forEach(path => {
+                        const attribute = this.attributes.get(pathToId(path)) as AttributeServer<any>;
+                        if (attribute === undefined) return;
+                        if (onlyWritable && !attribute.isWritable) return;
+                        result.push({ path, attribute })
+                    });
             }
         })
 

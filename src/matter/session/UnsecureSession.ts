@@ -9,8 +9,11 @@ import { Fabric } from "../fabric/Fabric";
 import { DEFAULT_ACTIVE_RETRANSMISSION_TIMEOUT_MS, DEFAULT_IDLE_RETRANSMISSION_TIMEOUT_MS, DEFAULT_RETRANSMISSION_RETRIES, Session } from "./Session";
 import { UNICAST_UNSECURE_SESSION_ID } from "./SessionManager";
 import { ByteArray } from "@project-chip/matter.js";
+import { NodeId } from "../common/NodeId";
 
 export class UnsecureSession<T> implements Session<T> {
+    private readonly initiatorNodeId = NodeId.getRandomOperationalNodeId();
+
     constructor(
         private readonly context: T,
     ) {}
@@ -60,7 +63,7 @@ export class UnsecureSession<T> implements Session<T> {
     }
 
     getNodeId() {
-        return undefined;
+        return this.initiatorNodeId;
     }
 
     getPeerNodeId() {

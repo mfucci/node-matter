@@ -16,7 +16,7 @@ export enum Level {
 }
 
 function logFormater(now: Date, level: Level, logger: string, values: any[]) {
-    const formattedNow = `${now.getFullYear()}-${now.getMonth()}-${now.getDay()} ${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}.${now.getMilliseconds().toString().padStart(3, "0")}`;
+    const formattedNow = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, "0")}-${now.getDate().toString().padStart(2, "0")} ${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}:${now.getSeconds().toString().padStart(2, "0")}.${now.getMilliseconds().toString().padStart(3, "0")}`;
     const formattedValues = values.map(value => {
         if (value instanceof ByteArray) {
             return value.toHex();

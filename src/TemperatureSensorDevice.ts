@@ -80,11 +80,12 @@ class TemperatureSensor {
         // Barebone implementation of the TemperatureMeasurement cluster
         const temperatureMeasurementClusterServer = new ClusterServer(
             TemperatureMeasurementCluster,
-            { measuredValue: false  },
-            { measuredValue: 0, minMeasuredValue: 0, maxMeasuredValue: 0, tolerance: 0 },
+            { measuredVAlue: false },
+            { measuredValue: 1, minMeasuredValue: -27315, maxMeasuredValue: 32767, tolerance: 1 },
             TemperatureMeasurementClusterHandler()
         );
 
+        // for testing: -temperature "echo \$RANDOM % 100 | bc"
         const temperatureScript = getParameter( "temperature" ) ?? "";
 
         // if we have a script to check temperature
@@ -92,10 +93,11 @@ class TemperatureSensor {
            function temperatureIntervalCheck() {
               var temperature : number  = parseInt(execSync(temperatureScript).toString().slice(0, -1)) | 0 ;
 
-              temperatureMeasurementClusterServer.attributes.measuredValue.set( temperature );
+              // scale as per 2.3.4.
+              temperatureMeasurementClusterServer.attributes.measuredValue.set( temperature * 100 );
           }
           temperatureIntervalCheck();
-          setInterval( temperatureIntervalCheck, 2000);
+          setInterval( temperatureIntervalCheck, 60000);
         }
 
         const secureChannelProtocol = new SecureChannelProtocol(

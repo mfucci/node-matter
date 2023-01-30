@@ -20,10 +20,10 @@ export const TemperatureMeasurementCluster = Cluster({
 
     /** @see {@link MatterApplicationClusterSpecificationV1_0} § 2.3.4 */
     attributes: {
-       measuredValue: Attribute(0, TlvInt16.bound({ min: -32768, max: 32768 }), { default: 0 }),
-       minMeasuredValue: Attribute(1, TlvInt16.bound({ min: -32768, max: 32768 }), { default: 0 }),
-       maxMeasuredValue: Attribute(2, TlvInt16.bound({ min: -32768, max: 32768 }), { default: 0 }),
-       tolerance: Attribute(3, TlvUInt16.bound({ min: 0, max: 2048 }), { default: 0 }),
+       measuredValue: Attribute(0, TlvInt16.bound({ min: -27315, max: 32767 }), { default: 1 }),
+       minMeasuredValue: Attribute(1, TlvInt16.bound({ min: -27315 , max: -27315 }), { default: 27315 }),
+       maxMeasuredValue: Attribute(2, TlvInt16.bound({ min: 32767, max: 32767 }), { default: 32767 }),
+       tolerance: Attribute(3, TlvUInt16.bound({ min: 0, max: 2048 }), { default: 1 }),
     },
 
     /** @see {@link MatterApplicationClusterSpecificationV1_0} § 2.3.5 */

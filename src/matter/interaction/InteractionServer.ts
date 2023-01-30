@@ -263,7 +263,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
         return `${endpointName}/${clusterName}/${attributeName}`;
     }
 
-    private getAttributes(filters: Partial<Path>[], onlyWritable: boolean = false): AttributeWithPath[] {
+    private getAttributes(filters: Partial<AttributePath>[], onlyWritable: boolean = false): AttributeWithPath[] {
         const result = new Array<AttributeWithPath>();
 
         filters.forEach(({ endpointId, clusterId, attributeId }) => {

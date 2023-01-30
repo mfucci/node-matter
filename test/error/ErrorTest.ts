@@ -5,50 +5,103 @@
  */
 
 import assert from "assert";
-import { MatterJsErrorCodes, MatterJsError, isMatterJsError } from "../../src/error/MatterJsError";
+import { tryCatch, MatterError, StatusResponseError, FailureStatusResponseError } from "../../src/error/MatterError";
+import { StatusCode } from "../../src/matter/interaction/InteractionMessages";
 
-export function assertMatterJsError(e: unknown): asserts e is MatterJsError {
-    if (!isMatterJsError(e)) {
-        throw e;
-    }
-}
+class SubMatterError extends MatterError {}
+class SubSubMatterError extends SubMatterError {}
+class OtherMatterError extends MatterError {}
 
 describe("Errors", () => {
 
-    context("Test Errors", () => {
-        it("error with code", () => {
-            try {
-                throw new MatterJsError("test", MatterJsErrorCodes.FabricNotFound);
-            } catch (error) {
-                assertMatterJsError(error);
-                assert.equal(isMatterJsError(error), true);
-                assert.equal(error.code, MatterJsErrorCodes.FabricNotFound);
-                assert.equal(error.message, "(fabric-not-found): test");
-            }
+    context("Test tryCatch method", () => {
+        it("tryCatch without error return value", () => {
+            const error = tryCatch(() => {
+                return "ok";
+            },
+            MatterError, "caught");
+
+            assert.equal(error, "ok");
         });
 
-        it("error with code and context", () => {
-            try {
-                throw new MatterJsError("test", MatterJsErrorCodes.FabricNotFound, "test-context");
-            } catch (error) {
-                assertMatterJsError(error);
-                assert.equal(error.code, MatterJsErrorCodes.FabricNotFound);
-                assert.equal(error.context, "test-context");
-                assert.equal(error.message, "test-context (fabric-not-found): test");
-            }
+        it("tryCatch with expected error, uses fallback value", () => {
+            const error = tryCatch(() => {
+                throw new SubMatterError("test");
+            },
+            SubMatterError, "caught");
+
+            assert.equal(error, "caught");
         });
 
-        it("error with code and context and contextdata", () => {
+        it("tryCatch with unexpected error, throw error", () => {
             try {
-                throw new MatterJsError("test", MatterJsErrorCodes.FabricNotFound, "test-context", { dataHere: "data" });
-            } catch (error) {
-                assertMatterJsError(error);
-                assert.equal(error.code, MatterJsErrorCodes.FabricNotFound);
-                assert.equal(error.context, "test-context");
-                assert.equal(error.message, "test-context (fabric-not-found): test");
-                assert.equal(error.contextData.dataHere, "data");
+                const error = tryCatch(() => {
+                    throw new Error("test");
+                },
+                SubMatterError, "caught");
+            } catch (e: any) {
+                assert.equal(e instanceof Error, true);
+                assert.equal(e.message, "test");
+                return;
             }
+            assert(false);
+        });
+
+        it("tryCatch with inherited error returns fallbackvalue", () => {
+            const error = tryCatch(() => {
+                throw new SubSubMatterError("test");
+            },
+            SubSubMatterError, "caught");
+
+            assert.equal(error, "caught");
+        });
+
+        it("tryCatch with inherited error also return fallback when checking for parent error", () => {
+            const error = tryCatch(() => {
+                throw new SubSubMatterError("test");
+            },
+            SubMatterError, "caught");
+
+            assert.equal(error, "caught");
+        });
+
+        it("tryCatch with inherited error process error in handler function return dynamic fallback value", () => {
+            const error = tryCatch(() => {
+                throw new SubSubMatterError("test");
+            },
+            SubMatterError, (error) => {
+                if (error instanceof SubSubMatterError) {
+                    return "caught";
+                }
+            });
+
+            assert.equal(error, "caught");
+        });
+
+        it("tryCatch with inherited error process error in handler function that not return fallback value throws the error", () => {
+            try {
+                const error = tryCatch(() => {
+                        throw new SubSubMatterError("test");
+                    },
+                    SubMatterError, (error) => {
+                        if (error instanceof OtherMatterError) {
+                            return "caught";
+                        }
+                    });
+            } catch (e: any) {
+                assert.equal(e instanceof SubSubMatterError, true);
+                assert.equal(e.message, "test");
+                return;
+            }
+            assert(false);
         });
     });
 
+    context("Test dynamic created errors", () => {
+        it("get an Error for a certain StatusCode", () => {
+            const error = new (StatusResponseError.getErrorClass(StatusCode.Failure))("test");
+            assert.equal(error instanceof StatusResponseError, true);
+            assert.equal(error instanceof FailureStatusResponseError, true);
+        });
+    });
 });

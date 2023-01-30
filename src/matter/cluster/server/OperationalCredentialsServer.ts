@@ -17,7 +17,7 @@ import {
 import { ClusterServerHandlers } from "./ClusterServer";
 import { ByteArray } from "@project-chip/matter.js";
 import { FabricIndex } from "../../common/FabricIndex";
-import { isMatterJsError, MatterJsErrorCodes } from "../../../error/MatterJsError";
+import { FabricNotFoundError, tryCatch } from "../../../error/MatterError";
 
 interface OperationalCredentialsServerConf {
     devicePrivateKey: ByteArray,
@@ -110,20 +110,19 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
     removeFabric: async ({ request: {fabricIndex}, session }) => {
         const device = session.getContext();
 
-        try {
-            device.removeFabric(fabricIndex);
-        } catch (error) {
-            if (isMatterJsError(error) && error.code === MatterJsErrorCodes.FabricNotFound) {
-                return { status: OperationalCertStatus.InvalidFabricIndex };
-            } else {
-                throw error;
-            }
+        const status = tryCatch(() => {
+                device.removeFabric(fabricIndex);
+                return OperationalCertStatus.Success;
+            },
+            FabricNotFoundError, OperationalCertStatus.InvalidFabricIndex,
+        );
+
+        if (status === OperationalCertStatus.Success) {
+            // TODO persist fabrics
+            // TODO: depending on cases destroy the secure session and delete all data!
         }
 
-        // TODO persist fabrics
-        // TODO: depending on cases destroy the secure session and delete all data!
-
-        return { status: OperationalCertStatus.Success };
+        return { status };
     },
 
     addRootCert: async ({ request: {certificate}, session} ) => {

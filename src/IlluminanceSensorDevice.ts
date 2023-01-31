@@ -30,14 +30,14 @@ import { Network } from "./net/Network";
 import { NetworkNode } from "./net/node/NetworkNode";
 import { commandExecutor } from "./util/CommandLine";
 import { getParameter } from "./util/CommandLine";
-import { TemperatureMeasurementCluster } from "./matter/cluster/TemperatureMeasurementCluster";
+import { IlluminanceMeasurementCluster } from "./matter/cluster/IlluminanceMeasurementCluster";
 import { GeneralCommissioningClusterHandler } from "./matter/cluster/server/GeneralCommissioningServer";
 import { OperationalCredentialsClusterHandler } from "./matter/cluster/server/OperationalCredentialsServer";
 import { MdnsScanner } from "./matter/mdns/MdnsScanner";
 import packageJson from "../package.json";
 import { Logger } from "./log/Logger";
 import { VendorId } from "./matter/common/VendorId";
-import { TemperatureMeasurementClusterHandler } from "./matter/cluster/server/TemperatureMeasurementServer";
+import { IlluminanceMeasurementClusterHandler } from "./matter/cluster/server/IlluminanceMeasurementServer";
 import { ByteArray } from "@project-chip/matter.js";
 import { CommissionningFlowType, DiscoveryCapabilitiesSchema, ManualPairingCodeCodec, QrPairingCodeCodec } from "./codec/PairingCode.js";
 import { QrCode } from "./codec/QrCode.js";
@@ -61,43 +61,43 @@ const CertificateDeclaration = ByteArray.fromHex("3082021906092a864886f70d010702
 
 Network.get = singleton(() => new NetworkNode());
 
-const logger = Logger.get("TemperatureSensor");
+const logger = Logger.get("IlluminanceSensor");
 
-class TemperatureSensor {
+class IlluminanceSensor {
     async start() {
         logger.info(`node-matter@${packageJson.version}`);
 
         const deviceName = "Matter Sensor device";
-        const deviceType = DEVICE.TEMPERATURE_SENSOR.code ;
+        const deviceType = DEVICE.LIGHT_SENSOR.code ;
+        //const deviceType = 0x0106 ;
         const vendorName = "node-matter";
         const passcode = 20202021;
         const discriminator = 3840;
         // product name / id and vendor id should match what is in the device certificate
         const vendorId = new VendorId(0xFFF1);
         const productName = "Matter Test DAC 0007";
-        const productId = 0X8001;
+        const productId = 0X8002;
 
-        // Barebone implementation of the TemperatureMeasurement cluster
-        const temperatureMeasurementClusterServer = new ClusterServer(
-            TemperatureMeasurementCluster,
-            { measuredValue: false },
-            { measuredValue: 1, minMeasuredValue: -27315, maxMeasuredValue: 32767, tolerance: 1 },
-            TemperatureMeasurementClusterHandler()
+        // Barebone implementation of the IlluminanceMeasurement cluster
+        const illuminanceMeasurementClusterServer = new ClusterServer(
+            IlluminanceMeasurementCluster,
+            { measuredVAlue: false },
+            { measuredValue: 1, minMeasuredValue: 1, maxMeasuredValue: 1, tolerance: 1 },
+            IlluminanceMeasurementClusterHandler()
         );
 
-        // for testing: -temperature "echo \$RANDOM % 100 | bc"
-        const temperatureScript = getParameter( "temperature" ) ?? "";
+        // for testing: -illuminance "echo \$RANDOM % 100 | bc"
+        const illuminanceScript = getParameter( "illuminance" ) ?? "";
 
-        // if we have a script to check temperature
-        if ( temperatureScript ) {
-           function temperatureIntervalCheck() {
-              var temperature : number  = parseInt(execSync(temperatureScript).toString().slice(0, -1)) | 0 ;
+        // if we have a script to check emperature
+        if ( illuminanceScript ) {
+           function illuminanceIntervalCheck() {
+              var illuminance : number  = parseInt(execSync(illuminanceScript).toString().slice(0, -1)) | 0 ;
 
-              // scale as per 2.3.4.
-              temperatureMeasurementClusterServer.attributes.measuredValue.set( temperature * 100 );
+              illuminanceMeasurementClusterServer.attributes.measuredValue.set( illuminance  );
           }
-          temperatureIntervalCheck();
-          setInterval( temperatureIntervalCheck, 60000);
+          illuminanceIntervalCheck();
+          setInterval( illuminanceIntervalCheck, 60000);
         }
 
         const secureChannelProtocol = new SecureChannelProtocol(
@@ -187,7 +187,7 @@ class TemperatureSensor {
                         AdminCommissioningHandler(secureChannelProtocol),
                     )
                 ])
-                .addEndpoint(0x01, DEVICE.TEMPERATURE_SENSOR, [ temperatureMeasurementClusterServer ])
+                .addEndpoint(0x01, DEVICE.LIGHT_SENSOR, [ illuminanceMeasurementClusterServer ])
             )
             .start()
 
@@ -212,4 +212,4 @@ class TemperatureSensor {
     }
 }
 
-new TemperatureSensor().start();
+new IlluminanceSensor().start();

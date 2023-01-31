@@ -37,7 +37,6 @@ import { MdnsScanner } from "./matter/mdns/MdnsScanner";
 import packageJson from "../package.json";
 import { Logger } from "./log/Logger";
 import { VendorId } from "./matter/common/VendorId";
-import { TemperatureMeasurementClusterHandler } from "./matter/cluster/server/TemperatureMeasurementServer";
 import { ByteArray } from "@project-chip/matter.js";
 import { CommissionningFlowType, DiscoveryCapabilitiesSchema, ManualPairingCodeCodec, QrPairingCodeCodec } from "./codec/PairingCode.js";
 import { QrCode } from "./codec/QrCode.js";
@@ -82,7 +81,7 @@ class TemperatureSensor {
             TemperatureMeasurementCluster,
             { measuredValue: false },
             { measuredValue: 1, minMeasuredValue: -27315, maxMeasuredValue: 32767, tolerance: 1 },
-            TemperatureMeasurementClusterHandler()
+             ({ }) //    TemperatureMeasurementClusterHandler()
         );
 
         // for testing: -temperature "echo \$RANDOM % 100 | bc"

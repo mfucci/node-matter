@@ -37,7 +37,6 @@ import { MdnsScanner } from "./matter/mdns/MdnsScanner";
 import packageJson from "../package.json";
 import { Logger } from "./log/Logger";
 import { VendorId } from "./matter/common/VendorId";
-import { WaterContentMeasurementClusterHandler } from "./matter/cluster/server/WaterContentMeasurementServer";
 import { ByteArray } from "@project-chip/matter.js";
 import { CommissionningFlowType, DiscoveryCapabilitiesSchema, ManualPairingCodeCodec, QrPairingCodeCodec } from "./codec/PairingCode.js";
 import { QrCode } from "./codec/QrCode.js";
@@ -82,7 +81,7 @@ class WaterContentSensor {
             WaterContentMeasurementCluster,
             { measuredVAlue: false },
             { measuredValue: 1, minMeasuredValue: 1, maxMeasuredValue: 1, tolerance: 1 },
-            WaterContentMeasurementClusterHandler()
+            ({}) // WaterContentMeasurementClusterHandler()
         );
 
         // for testing: -watercontent "echo \$RANDOM % 10000 | bc"

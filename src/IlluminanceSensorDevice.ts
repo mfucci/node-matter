@@ -37,7 +37,6 @@ import { MdnsScanner } from "./matter/mdns/MdnsScanner";
 import packageJson from "../package.json";
 import { Logger } from "./log/Logger";
 import { VendorId } from "./matter/common/VendorId";
-import { IlluminanceMeasurementClusterHandler } from "./matter/cluster/server/IlluminanceMeasurementServer";
 import { ByteArray } from "@project-chip/matter.js";
 import { CommissionningFlowType, DiscoveryCapabilitiesSchema, ManualPairingCodeCodec, QrPairingCodeCodec } from "./codec/PairingCode.js";
 import { QrCode } from "./codec/QrCode.js";
@@ -83,7 +82,7 @@ class IlluminanceSensor {
             IlluminanceMeasurementCluster,
             { measuredVAlue: false },
             { measuredValue: 1, minMeasuredValue: 1, maxMeasuredValue: 1, tolerance: 1 },
-            IlluminanceMeasurementClusterHandler()
+            ({}) // IlluminanceMeasurementClusterHandler()
         );
 
         // for testing: -illuminance "echo \$RANDOM % 100 | bc"

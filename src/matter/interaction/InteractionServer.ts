@@ -18,10 +18,10 @@ import { SubscriptionHandler } from "./SubscriptionHandler";
 import { Logger } from "../../log/Logger";
 import { DeviceTypeId } from "../common/DeviceTypeId";
 import { ClusterId } from "../common/ClusterId";
-import {BasicInformationCluster, TlvStream, TypeFromBitSchema} from "@project-chip/matter.js";
+import { TlvStream, TypeFromBitSchema, TypeFromSchema} from "@project-chip/matter.js";
 import { EndpointNumber } from "../common/EndpointNumber";
 import { capitalize } from "../../util/String";
-import { StatusCode } from "./InteractionMessages";
+import { StatusCode, TlvAttributePath } from "./InteractionMessages";
 
 export const INTERACTION_PROTOCOL_ID = 0x0001;
 
@@ -182,71 +182,44 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
         };
     }
 
-    handleWriteRequest(exchange: MessageExchange<MatterDevice>, {suppressResponse, writeRequests }: WriteRequest): WriteResponse | undefined {
-        logger.debug(`Received write request from ${exchange.channel.getName()} for ${writeRequests.length} attributes, suppressResponse=${suppressResponse}`);
+    handleWriteRequest(exchange: MessageExchange<MatterDevice>, {suppressResponse, writeRequests }: WriteRequest): WriteResponse {
+        logger.debug(`Received write request from ${exchange.channel.getName()}: ${writeRequests.map(req => this.resolveAttributeName(req.path)).join(", ")}, suppressResponse=${suppressResponse}`);
 
-        // TODO consider TimedRequest constrains
+        // TODO consider TimedRequest constraints
 
-        const writeResponses = [];
-        for (const request of writeRequests) {
-            const attributes = this.getAttribute({ endpointId: request.path.endpointId, clusterId: request.path.clusterId, id: request.path.attributeId});
-            if (attributes.length === 1) {
-                // TODO add checks or dataVersion
-                try {
-                    const data = attributes[0].attribute.schema.decodeTlv(request.data);
-                    logger.debug(`Handle write request from ${exchange.channel.getName()} resolved to: ${this.resolveAttributeName(attributes[0].path)}=${Logger.toJSON(data)} (${request.dataVersion})`);
-                    attributes[0].attribute.set(data, exchange.session);
-                } catch (e: any) {
-                    logger.error(`Error while handling write request from ${exchange.channel.getName()}: ${e.message}`);
-                    writeResponses.push({
-                        status: {
-                            status: StatusCode.ConstraintError
-                        },
-                        path: attributes[0].path,
-                    });
-                }
-            } else if (attributes.length === 0) {
-                logger.error(`Attribute ${this.resolveAttributeName({ endpointId: request.path.endpointId, clusterId: request.path.clusterId, id: request.path.attributeId })} not found`);
-                writeResponses.push({
-                    status: {
-                        status: StatusCode.UnsupportedWrite
-                    }, // TODO: Find correct status code
-                    path: request.path,
-                });
-            } else {
-                attributes.forEach(({ path, attribute }) => {
-                    // Todo respect ACL and TimedWrite flags
-                    // TODO add checks or dataVersion
-                    if (path.clusterId === BasicInformationCluster.id && path.id !== BasicInformationCluster.attributes.nodeLabel.id) {
-                        // hack for tries with Smartthings
-                        // because we need to check if field is Writeable and also validator
-                        // currently do not check length requirements from typings and such
-                        return;
-                    }
-                    try {
-                        const data = attribute.schema.decodeTlv(request.data);
-                        logger.debug(`Handle write request from ${exchange.channel.getName()} resolved to: ${this.resolveAttributeName(path)}=${Logger.toJSON(data)} (${request.dataVersion})`);
-                        attribute.set(data, exchange.session);
-                    } catch (e: any) {
-                        logger.error(`Error while handling write request from ${exchange.channel.getName()} to ${this.resolveAttributeName(path)}: ${e.message}`);
-                        /*writeResponses.push({
-                            status: {
-                                status: StatusCode.ConstraintError
-                            },
-                            path,
-                        });*/
-                        // Ignore all errors for now and discard it
-                    }
-                });
+        const writeResults = writeRequests.flatMap(({ path, dataVersion, data}) : { path: TypeFromSchema<typeof TlvAttributePath>, statusCode: StatusCode}[] => {
+            const attributes = this.getAttributes([ path ], true);
+            if (attributes.length === 0) {
+                return [ { path, statusCode: StatusCode.UnsupportedWrite } ]; // TODO: Find correct status code
             }
-        }
 
-        // TODO respect suppressResponse
+            return attributes.map(({ path, attribute }) => {
+                // TODO add checks or dataVersion
+                // TODO add ACL checks
 
-        logger.debug(`Write request from ${exchange.channel.getName()} done with following errors: ${writeResponses.map(({ path, status }) => `${this.resolveAttributeName(path)}=${Logger.toJSON(status)}`).join(", ")}`);
+                try {
+                    const decodedData = attribute.schema.decodeTlv(data);
+                    logger.debug(`Handle write request from ${exchange.channel.getName()} resolved to: ${this.resolveAttributeName(path)}=${Logger.toJSON(data)} (${dataVersion})`);
+                    attribute.set(decodedData, exchange.session);
+                } catch (error: any) {
+                    if (attributes.length === 1) { // For Multi-Attribute-Writes we ignore errors
+                        logger.error(`Error while handling write request from ${exchange.channel.getName()} to ${this.resolveAttributeName(path)}: ${error.message}`);
+                        return { path, statusCode: StatusCode.ConstraintError };
+                    } else {
+                        logger.debug(`While handling write request from ${exchange.channel.getName()} to ${this.resolveAttributeName(path)} ignored: ${error.message}`);
+                    }
+                }
+                return { path, statusCode: StatusCode.Success };
+            }).filter(({ statusCode }) => statusCode !== StatusCode.Success);
+        });
+
+        // TODO respect suppressResponse, potentially also needs adjustment in InteractionMessenger class!
+
+        logger.debug(`Write request from ${exchange.channel.getName()} done with following errors: ${writeResults.map(({ path, statusCode }) => `${this.resolveAttributeName(path)}=${Logger.toJSON(statusCode)}`).join(", ")}`);
+
         return {
             interactionModelRevision: 1,
-            writeResponses
+            writeResponses: writeResults.map(({ path, statusCode }) => ( { path, status: { status: statusCode } })),
         };
     }
 

@@ -91,6 +91,25 @@ const WRITE_RESPONSE: WriteResponse = {
     ]
 };
 
+const MASS_WRITE_REQUEST: WriteRequest = {
+    interactionModelRevision: 1,
+    suppressResponse: false,
+    timedRequest: false,
+    writeRequests: [
+        {
+            path: { endpointId: 0, clusterId: 0x28 },
+            data: TlvString.encodeTlv("test"),
+            dataVersion: 0,
+        },
+    ],
+    moreChunkedMessages: false,
+};
+
+const MASS_WRITE_RESPONSE: WriteResponse = {
+    interactionModelRevision: 1,
+    writeResponses: []
+};
+
 
 describe("InteractionProtocol", () => {
 
@@ -125,7 +144,7 @@ describe("InteractionProtocol", () => {
     });
 
     context("handleWriteRequest", () => {
-        it("replies with attribute values", () => {
+        it("write values and return errors on invalid values", () => {
 
             const basicCluster = new ClusterServer(BasicInformationCluster, {}, {
                 dataModelRevision: 1,
@@ -135,7 +154,7 @@ describe("InteractionProtocol", () => {
                 productId: 2,
                 nodeLabel: "",
                 hardwareVersion: 0,
-                hardwareVersionString: "",
+                hardwareVersionString: "0",
                 location: "US",
                 localConfigDisabled: false,
                 softwareVersion: 1,
@@ -151,6 +170,38 @@ describe("InteractionProtocol", () => {
             const result = interactionProtocol.handleWriteRequest(({channel: {getName: () => "test"}}) as MessageExchange<MatterDevice>, WRITE_REQUEST);
 
             assert.deepEqual(result, WRITE_RESPONSE);
+            assert.equal(basicCluster.attributes.nodeLabel.get(), "test");
+        });
+
+        it("mass write values and only set the one allowed", () => {
+
+            const basicCluster = new ClusterServer(BasicInformationCluster, {}, {
+                dataModelRevision: 1,
+                vendorName: "vendor",
+                vendorId: new VendorId(1),
+                productName: "product",
+                productId: 2,
+                nodeLabel: "",
+                hardwareVersion: 0,
+                hardwareVersionString: "0",
+                location: "US",
+                localConfigDisabled: false,
+                softwareVersion: 1,
+                softwareVersionString: "v1",
+                capabilityMinima: {
+                    caseSessionsPerFabric: 100,
+                    subscriptionsPerFabric: 100,
+                },
+            }, {});
+
+            const interactionProtocol = new InteractionServer().addEndpoint(0, DEVICE.ROOT, [ basicCluster ]);
+
+            const result = interactionProtocol.handleWriteRequest(({channel: {getName: () => "test"}}) as MessageExchange<MatterDevice>, MASS_WRITE_REQUEST);
+
+            assert.deepEqual(result, MASS_WRITE_RESPONSE);
+            assert.equal(basicCluster.attributes.vendorName.get(), "vendor");
+            assert.equal(basicCluster.attributes.productName.get(), "product");
+            assert.equal(basicCluster.attributes.location.get(), "US");
             assert.equal(basicCluster.attributes.nodeLabel.get(), "test");
         });
     });

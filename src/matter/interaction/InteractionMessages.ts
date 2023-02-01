@@ -5,7 +5,22 @@
  */
 
 import { TlvNodeId } from "../common/NodeId";
-import { MatterCoreSpecificationV1_0, TlvAny, TlvArray, TlvBoolean, TlvEnum, TlvField, TlvList, TlvObject, TlvOptionalField, TlvUInt16, TlvUInt32, TlvUInt64, TlvUInt8 } from "@project-chip/matter.js";
+import {
+    MatterCoreSpecificationV1_0,
+    TlvAny,
+    TlvArray,
+    TlvBoolean,
+    TlvEnum,
+    TlvField,
+    TlvList,
+    TlvNullable,
+    TlvObject,
+    TlvOptionalField,
+    TlvUInt16,
+    TlvUInt32,
+    TlvUInt64,
+    TlvUInt8
+} from "@project-chip/matter.js";
 
 /**
  * @see {@link MatterCoreSpecificationV1_0}, section 8.10
@@ -44,10 +59,13 @@ export const TlvStatusResponse = TlvObject({
     interactionModelRevision: TlvField(0xFF, TlvUInt8),
 });
 
-const TlvAttributePath = TlvList({
+export const TlvAttributePath = TlvList({
+    enableTagCompression: TlvOptionalField(0, TlvBoolean),
+    nodeId: TlvOptionalField(1, TlvNodeId),
     endpointId: TlvOptionalField(2, TlvUInt16),
     clusterId: TlvOptionalField(3, TlvUInt32),
-    id: TlvOptionalField(4, TlvUInt32),
+    attributeId: TlvOptionalField(4, TlvUInt32),
+    listIndex: TlvOptionalField(5,  TlvNullable(TlvUInt16)),
 });
 
 export const TlvReadRequest = TlvObject({
@@ -56,16 +74,23 @@ export const TlvReadRequest = TlvObject({
     interactionModelRevision: TlvField(0xFF, TlvUInt8),
 });
 
+export const TlvAttributeReportPath = TlvList({
+    enableTagCompression: TlvOptionalField(0, TlvBoolean),
+    nodeId: TlvOptionalField(1, TlvNodeId),
+    endpointId: TlvField(2, TlvUInt16), // TODO: could be optional, handling then defined by enableTagCompression
+    clusterId: TlvField(3, TlvUInt32),
+    attributeId: TlvField(4, TlvUInt32),
+    listIndex: TlvOptionalField(5, TlvNullable(TlvUInt16)),
+});
+
+export const TlvAttributeReportValue = TlvObject({
+    version: TlvField(0, TlvUInt32),
+    path: TlvField(1, TlvAttributeReportPath),
+    value: TlvField(2, TlvAny),
+});
+
 export const TlvAttributeReport = TlvObject({
-    value: TlvField(1, TlvObject({
-        version: TlvField(0, TlvUInt32),
-        path: TlvField(1, TlvList({
-            endpointId: TlvField(2, TlvUInt16),
-            clusterId: TlvField(3, TlvUInt32),
-            id: TlvField(4, TlvUInt32),
-        })),
-        value: TlvField(2, TlvAny),
-    })),
+    value: TlvField(1, TlvAttributeReportValue),
 });
 
 export const TlvDataReport = TlvObject({
@@ -109,15 +134,17 @@ export const TlvSubscribeResponse = TlvObject({
     interactionModelRevision: TlvField(0xFF, TlvUInt8),
 });
 
+export const TlvCommandPath = TlvList({
+    endpointId: TlvField(0, TlvUInt16),
+    clusterId: TlvField(1, TlvUInt32),
+    commandId: TlvField(2, TlvUInt32),
+});
+
 export const TlvInvokeRequest = TlvObject({
     suppressResponse: TlvField(0,  TlvBoolean),
     timedRequest: TlvField(1,  TlvBoolean),
     invokes: TlvField(2, TlvArray(TlvObject({
-        path: TlvField(0, TlvList({
-            endpointId: TlvField(0, TlvUInt16),
-            clusterId: TlvField(1, TlvUInt32),
-            id: TlvField(2, TlvUInt32),
-        })),
+        path: TlvField(0, TlvCommandPath),
         args: TlvField(1, TlvAny),
     }))),
     interactionModelRevision: TlvField(0xFF, TlvUInt8),
@@ -127,19 +154,11 @@ export const TlvInvokeResponse = TlvObject({
     suppressResponse: TlvField(0,  TlvBoolean),
     responses: TlvField(1, TlvArray(TlvObject({
         response: TlvOptionalField(0, TlvObject({
-            path: TlvField(0, TlvList({
-                endpointId: TlvField(0, TlvUInt16),
-                clusterId: TlvField(1, TlvUInt32),
-                id: TlvField(2, TlvUInt32),
-            })),
+            path: TlvField(0, TlvCommandPath),
             response: TlvField(1, TlvAny),
         })),
         result: TlvOptionalField(1, TlvObject({
-            path: TlvField(0, TlvList({
-                endpointId: TlvField(0, TlvUInt16),
-                clusterId: TlvField(1, TlvUInt32),
-                id: TlvField(2, TlvUInt32),
-            })),
+            path: TlvField(0, TlvCommandPath),
             result: TlvField(1, TlvObject({
                 code: TlvField(0, TlvUInt16),
             })),

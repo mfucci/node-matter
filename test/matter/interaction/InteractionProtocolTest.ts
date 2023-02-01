@@ -22,8 +22,8 @@ const READ_REQUEST: ReadRequest = {
     interactionModelRevision: 1,
     isFabricFiltered: true,
     attributes: [
-        { endpointId: 0, clusterId: 0x28, id: 2},
-        { endpointId: 0, clusterId: 0x28, id: 4},
+        { endpointId: 0, clusterId: 0x28, attributeId: 2},
+        { endpointId: 0, clusterId: 0x28, attributeId: 4},
     ],
 };
 
@@ -34,7 +34,7 @@ const READ_RESPONSE: DataReport = {
             path: {
                 endpointId: 0,
                 clusterId: 0x28,
-                id: 2,
+                attributeId: 2,
             },
             value: TlvUInt8.encodeTlv(1),
             version: 0,
@@ -43,7 +43,7 @@ const READ_RESPONSE: DataReport = {
             path: {
                 endpointId: 0,
                 clusterId: 0x28,
-                id: 4,
+                attributeId: 4,
             },
             value: TlvUInt8.encodeTlv(2),
             version: 0,
@@ -65,7 +65,7 @@ describe("InteractionProtocol", () => {
                         productId: 2,
                         nodeLabel: "",
                         hardwareVersion: 0,
-                        hardwareVersionString: "",
+                        hardwareVersionString: "0",
                         location: "US",
                         localConfigDisabled: false,
                         softwareVersion: 1,

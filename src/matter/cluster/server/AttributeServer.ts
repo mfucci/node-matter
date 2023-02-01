@@ -20,6 +20,7 @@ export class AttributeServer<T> {
         readonly name: string,
         readonly schema: TlvSchema<T>,
         private readonly validator: (value: T, name: string) => void,
+        readonly isWritable: boolean,
         defaultValue: T,
     ) {
         validator(defaultValue, name);
@@ -81,10 +82,11 @@ export class AttributeGetterServer<T> extends AttributeServer<T> {
         name: string,
         schema: TlvSchema<T>,
         validator: (value: T, name: string) => void,
+        isWritable: boolean,
         defaultValue: T,
         readonly getter: (session?: Session<MatterDevice>) => T,
     ) {
-        super(id, name, schema, validator, defaultValue);
+        super(id, name, schema, validator, isWritable, defaultValue);
     }
 
     setLocal(value: T) {

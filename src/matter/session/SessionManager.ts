@@ -40,7 +40,7 @@ export class SessionManager<ContextT> {
         const session = await SecureSession.create(this.context, sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, salt, isInitiator, isResumption, idleRetransTimeoutMs, activeRetransTimeoutMs);
         this.sessions.set(sessionId, session);
 
-        // TODO: close previous secure channel for 
+        // TODO: close previous secure channel for
         return session;
     }
 
@@ -66,7 +66,6 @@ export class SessionManager<ContextT> {
             return secureSession.getFabric() === fabric && secureSession.getPeerNodeId() === nodeId;
         });
     }
-
 
     getUnsecureSession() {
         return this.unsecureSession;

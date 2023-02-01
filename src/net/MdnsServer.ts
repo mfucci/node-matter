@@ -50,7 +50,7 @@ export class MdnsServer {
         if (message === undefined) return; // The message cannot be parsed
         const { transactionId, messageType, queries } = message;
         if (messageType !== MessageType.Query) return;
-        
+
         const answers = message.queries.flatMap(query => this.queryRecords(query, records));
         if (answers.length === 0) return;
 

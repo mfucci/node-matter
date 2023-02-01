@@ -43,12 +43,13 @@ export class ClusterServer<ClusterT extends Cluster<any, any, any, any>> {
             featureMap: features,
         };
         for (const name in attributesInitialValues) {
-            const { id, schema, validator } = attributeDefs[name];
+            let { id, schema, writable } = attributeDefs[name];
+            const validator = typeof schema.validate === 'function' ? schema.validate.bind(schema) : undefined;
             const getter = (handlers as any)[`get${capitalize(name)}`];
             if (getter === undefined) {
-                (this.attributes as any)[name] = new AttributeServer(id, name, schema, validator ?? (() => {}), (attributesInitialValues as any)[name]);
+                (this.attributes as any)[name] = new AttributeServer(id, name, schema, validator ?? (() => {}), writable, (attributesInitialValues as any)[name]);
             } else {
-                (this.attributes as any)[name] = new AttributeGetterServer(id, name, schema, validator ?? (() => {}), (attributesInitialValues as any)[name], getter);
+                (this.attributes as any)[name] = new AttributeGetterServer(id, name, schema, validator ?? (() => {}), writable, (attributesInitialValues as any)[name], getter);
             }
         }
 
@@ -62,19 +63,29 @@ export class ClusterServer<ClusterT extends Cluster<any, any, any, any>> {
     }
 }
 
-export interface Path {
+export interface CommandPath {
     endpointId: number,
     clusterId: number,
-    id: number,
+    commandId: number,
+}
+
+export interface AttributePath {
+    endpointId: number,
+    clusterId: number,
+    attributeId: number,
 }
 
 export interface AttributeWithPath {
-    path: Path,
+    path: AttributePath,
     attribute: AttributeServer<any>,
 }
 
-export function pathToId({endpointId, clusterId, id}: Path) {
-    return `${endpointId}/${clusterId}/${id}`;
+export function commandPathToId({endpointId, clusterId, commandId}: CommandPath) {
+    return `${endpointId}/${clusterId}/${commandId}`;
+}
+
+export function attributePathToId({endpointId, clusterId, attributeId}: Partial<AttributePath>) {
+    return `${endpointId}/${clusterId}/${attributeId}`;
 }
 
 function toHex(value: number | undefined) {
@@ -86,9 +97,9 @@ const logger = Logger.get("InteractionProtocol");
 export class InteractionServer implements ProtocolHandler<MatterDevice> {
     private readonly endpoints = new Map<number, { name: string, code: number, clusters: Map<number, ClusterServer<any>> }>();
     private readonly attributes = new Map<string, AttributeServer<any>>();
-    private readonly attributePaths = new Array<Path>();
+    private readonly attributePaths = new Array<AttributePath>();
     private readonly commands = new Map<string, CommandServer<any, any>>();
-    private readonly commandPaths = new Array<Path>();
+    private readonly commandPaths = new Array<CommandPath>();
 
     constructor() {}
 
@@ -114,22 +125,22 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
             // Add attributes
             for (const name in attributes) {
                 const attribute = attributes[name];
-                const path = { endpointId, clusterId, id: attribute.id };
-                this.attributes.set(pathToId(path), attribute);
+                const path = { endpointId, clusterId, attributeId: attribute.id };
+                this.attributes.set(attributePathToId(path), attribute);
                 this.attributePaths.push(path);
             }
 
             // Add commands
             commands.forEach(command => {
-                const path = { endpointId, clusterId, id: command.invokeId };
-                this.commands.set(pathToId(path), command);
+                const path = { endpointId, clusterId, commandId: command.invokeId };
+                this.commands.set(commandPathToId(path), command);
                 this.commandPaths.push(path);
             });
         });
 
         // Add part list if the endpoint is not root
         if (endpointId !== 0) {
-            const rootPartsListAttribute: AttributeServer<EndpointNumber[]> | undefined = this.attributes.get(pathToId({endpointId: 0, clusterId: DescriptorCluster.id, id: DescriptorCluster.attributes.partsList.id}));
+            const rootPartsListAttribute: AttributeServer<EndpointNumber[]> | undefined = this.attributes.get(attributePathToId({endpointId: 0, clusterId: DescriptorCluster.id, attributeId: DescriptorCluster.attributes.partsList.id}));
             if (rootPartsListAttribute === undefined) throw new Error("The root endpoint should be added first!");
             rootPartsListAttribute.setLocal([...rootPartsListAttribute.getLocal(), new EndpointNumber(endpointId)]);
         }
@@ -197,12 +208,12 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
     }
 
     async handleInvokeRequest(exchange: MessageExchange<MatterDevice>, {invokes}: InvokeRequest, message: Message): Promise<InvokeResponse> {
-        logger.debug(`Received invoke request from ${exchange.channel.getName()}: ${invokes.map(({path: {endpointId, clusterId, id}}) => `${toHex(endpointId)}/${toHex(clusterId)}/${toHex(id)}`).join(", ")}`);
+        logger.debug(`Received invoke request from ${exchange.channel.getName()}: ${invokes.map(({ path: {endpointId, clusterId, commandId }}) => `${toHex(endpointId)}/${toHex(clusterId)}/${toHex(commandId)}`).join(", ")}`);
 
-        const results = new Array<{path: Path, code: ResultCode, response: TlvStream, responseId: number }>();
+        const results = new Array<{path: CommandPath, code: ResultCode, response: TlvStream, responseId: number }>();
 
         await Promise.all(invokes.map(async ({ path, args }) => {
-            const command = this.commands.get(pathToId(path));
+            const command = this.commands.get(commandPathToId(path));
             if (command === undefined) return;
             const result = await command.invoke(exchange.session, args, message);
             results.push({ ...result, path });
@@ -215,7 +226,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
                 if (response.length === 0) {
                     return { result: { path, result: { code }} };
                 } else {
-                    return { response: { path: { ...path, id: responseId }, response} };
+                    return { response: { path: { ...path, commandId: responseId }, response} };
                 }
             }),
         };
@@ -226,50 +237,56 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
         // TODO: implement this
     }
 
-    private resolveAttributeName({ endpointId, clusterId, id }: Partial<Path>) {
+    private resolveAttributeName({ endpointId, clusterId, attributeId }: Partial<AttributePath>) {
         if (endpointId === undefined) {
-            return `*/${toHex(clusterId)}/${toHex(id)}`;
+            return `*/${toHex(clusterId)}/${toHex(attributeId)}`;
         }
         const endpoint = this.endpoints.get(endpointId);
         if (endpoint === undefined) {
-            return `unknown(${toHex(endpointId)})/${toHex(clusterId)}/${toHex(id)}`;
+            return `unknown(${toHex(endpointId)})/${toHex(clusterId)}/${toHex(attributeId)}`;
         }
         const endpointName = `${endpoint.name}(${toHex(endpointId)})`;
 
         if (clusterId === undefined) {
-            return `${endpointName}/*/${toHex(id)}`;
+            return `${endpointName}/*/${toHex(attributeId)}`;
         }
         const cluster = endpoint.clusters.get(clusterId);
         if (cluster === undefined) {
-            return `${endpointName}/unkown(${toHex(clusterId)})/${toHex(id)}`;
+            return `${endpointName}/unknown(${toHex(clusterId)})/${toHex(attributeId)}`;
         }
         const clusterName = `${cluster.name}(${toHex(clusterId)})`;
 
-        if (id === undefined) {
+        if (attributeId === undefined) {
             return `${endpointName}/${clusterName}/*`;
         }
-        const attribute = this.attributes.get(pathToId({ endpointId, clusterId, id }));
-        const attributeName = `${attribute?.name ?? "unknown"}(${toHex(id)})`;
+        const attribute = this.attributes.get(attributePathToId({ endpointId, clusterId, attributeId }));
+        const attributeName = `${attribute?.name ?? "unknown"}(${toHex(attributeId)})`;
         return `${endpointName}/${clusterName}/${attributeName}`;
     }
 
-    private getAttributes(filters: Partial<Path>[] ): AttributeWithPath[] {
+    private getAttributes(filters: Partial<AttributePath>[], onlyWritable: boolean = false): AttributeWithPath[] {
         const result = new Array<AttributeWithPath>();
 
-        filters.forEach(({ endpointId, clusterId, id }) => {
-            if (endpointId !== undefined && clusterId !== undefined && id !== undefined) {
-                const path = { endpointId, clusterId, id };
-                const attribute = this.attributes.get(pathToId(path));
+        filters.forEach(({ endpointId, clusterId, attributeId }) => {
+            if (endpointId !== undefined && clusterId !== undefined && attributeId !== undefined) {
+                const path = { endpointId, clusterId, attributeId };
+                const attribute = this.attributes.get(attributePathToId(path));
                 if (attribute === undefined) return;
+                if (onlyWritable && !attribute.isWritable) return;
                 result.push({ path, attribute });
             } else {
                 this.attributePaths.filter(path =>
                     (endpointId === undefined || endpointId === path.endpointId)
                     && (clusterId === undefined || clusterId === path.clusterId)
-                    && (id === undefined || id === path.id))
-                    .forEach(path => result.push({ path, attribute: this.attributes.get(pathToId(path)) as AttributeServer<any> }));
+                    && (attributeId === undefined || attributeId === path.attributeId))
+                    .forEach(path => {
+                        const attribute = this.attributes.get(attributePathToId(path)) as AttributeServer<any>;
+                        if (attribute === undefined) return;
+                        if (onlyWritable && !attribute.isWritable) return;
+                        result.push({ path, attribute })
+                    });
             }
-        })
+        });
 
         return result;
     }

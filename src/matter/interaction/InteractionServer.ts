@@ -336,7 +336,6 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
 
     private getAttributes(filters: Partial<AttributePath>[], onlyWritable: boolean = false): AttributeWithPath[] {
         const result = new Array<AttributeWithPath>();
-        const { endpointId, clusterId, id } = path;
 
         filters.forEach(({ endpointId, clusterId, attributeId }) => {
             if (endpointId !== undefined && clusterId !== undefined && attributeId !== undefined) {

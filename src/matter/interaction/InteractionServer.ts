@@ -21,7 +21,7 @@ import { ClusterId } from "../common/ClusterId";
 import { TlvStream, TypeFromBitSchema } from "@project-chip/matter.js";
 import { EndpointNumber } from "../common/EndpointNumber";
 import { capitalize } from "../../util/String";
-import { PacketHeader } from "../../codec/MessageCodec";
+import { Message } from "../../codec/MessageCodec";
 
 export const INTERACTION_PROTOCOL_ID = 0x0001;
 
@@ -57,7 +57,7 @@ export class ClusterServer<ClusterT extends Cluster<any, any, any, any>> {
             const handler = (handlers as any)[name];
             if (handler === undefined) continue;
             const { requestId, requestSchema, responseId, responseSchema } = commandDefs[name];
-            this.commands.push(new CommandServer(requestId, responseId, name, requestSchema, responseSchema, (request, session, packetHeader) => handler({request, attributes: this.attributes, session, packetHeader})));
+            this.commands.push(new CommandServer(requestId, responseId, name, requestSchema, responseSchema, (request, session, message) => handler({request, attributes: this.attributes, session, message})));
         }
     }
 }
@@ -143,7 +143,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
         await new InteractionServerMessenger(exchange).handleRequest(
             readRequest => this.handleReadRequest(exchange, readRequest),
             subscribeRequest => this.handleSubscribeRequest(exchange, subscribeRequest),
-            (invokeRequest, packetHeader) => this.handleInvokeRequest(exchange, invokeRequest, packetHeader),
+            (invokeRequest, message) => this.handleInvokeRequest(exchange, invokeRequest, message),
             timedRequest => this.handleTimedRequest(exchange, timedRequest),
         );
     }
@@ -196,7 +196,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
         }
     }
 
-    async handleInvokeRequest(exchange: MessageExchange<MatterDevice>, {invokes}: InvokeRequest, packetHeader: PacketHeader): Promise<InvokeResponse> {
+    async handleInvokeRequest(exchange: MessageExchange<MatterDevice>, {invokes}: InvokeRequest, message: Message): Promise<InvokeResponse> {
         logger.debug(`Received invoke request from ${exchange.channel.getName()}: ${invokes.map(({path: {endpointId, clusterId, id}}) => `${toHex(endpointId)}/${toHex(clusterId)}/${toHex(id)}`).join(", ")}`);
 
         const results = new Array<{path: Path, code: ResultCode, response: TlvStream, responseId: number }>();
@@ -204,7 +204,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
         await Promise.all(invokes.map(async ({ path, args }) => {
             const command = this.commands.get(pathToId(path));
             if (command === undefined) return;
-            const result = await command.invoke(exchange.session, args, packetHeader);
+            const result = await command.invoke(exchange.session, args, message);
             results.push({ ...result, path });
         }));
 

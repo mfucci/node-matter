@@ -74,7 +74,7 @@ class TemperatureSensor {
         // product name / id and vendor id should match what is in the device certificate
         const vendorId = new VendorId(0xFFF1);
         const productName = "Matter Test DAC 0007";
-        const productId = 0X8001;
+        const productId = 0X8000;
 
         // Barebone implementation of the TemperatureMeasurement cluster
         const temperatureMeasurementClusterServer = new ClusterServer(

@@ -38,11 +38,11 @@ function consoleLogger(level: Level, formatedLog: string) {
 
 /**
  * Logger that can be used to emit traces.
- * 
+ *
  * Usage:
  * const logger = Logger.get("loggerName");
  * logger.debug("My debug message", "my extra value to log");
- * 
+ *
  * Configuration:
  * Logger.defaultLogLevel sets the default log level for all the logger
  * Logger.logLevels = { loggerName: Level.DEBUG } can set the level for the specific loggers
@@ -56,6 +56,13 @@ export class Logger {
 
     static get(name: string) {
         return new Logger(name);
+    }
+
+    /**
+     * Returns the value as (BigInt aware) stringified JSON.
+     */
+    static toJSON(data: any, indent?: string | number) {
+        return JSON.stringify(data, (_, v) => typeof v === 'bigint' ? v.toString() : v, indent || " ");
     }
 
     constructor(

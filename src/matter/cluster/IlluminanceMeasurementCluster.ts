@@ -21,7 +21,7 @@ export const IlluminanceMeasurementCluster = Cluster({
     /** @see {@link MatterApplicationClusterSpecificationV1_0} § 2.2.5 */
     attributes: {
        /** Represents the illuminance in Lux (symbol lx): MeasuredValue = 10,000 x log10(illuminance) + 1 */
-       measuredValue: Attribute(0, TlvNullable(TlvUInt16)), { default: 0 }),
+       measuredValue: Attribute(0, TlvNullable(TlvUInt16), { default: 0 }),
        
        /** Indicates the minimum value of MeasuredValue that can be measured. */
        minMeasuredValue: Attribute(1, TlvNullable(TlvUInt16.bound({ min: 1 }))),

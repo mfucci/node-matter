@@ -11,6 +11,9 @@ import { AttributeWithPath, AttributePath, INTERACTION_PROTOCOL_ID } from "./Int
 import { Time, Timer } from "../../time/Time";
 import { NodeId } from "../common/NodeId";
 import { TlvSchema } from "@project-chip/matter.js";
+import { Logger } from "../../log/Logger";
+
+const logger = Logger.get("SubscriptionHandler");
 
 interface PathValueVersion<T> {
     path: AttributePath,
@@ -64,6 +67,7 @@ export class SubscriptionHandler {
     private async sendUpdateMessage(values: PathValueVersion<any>[]) {
         const exchange = this.server.initiateExchange(this.fabric, this.peerNodeId, INTERACTION_PROTOCOL_ID);
         if (exchange === undefined) return;
+        logger.debug(`Sending subscription changes: ${Logger.toJSON(values)}`);
         const messenger = new InteractionServerMessenger(exchange);
         await messenger.sendDataReport({
             subscriptionId: this.subscriptionId,

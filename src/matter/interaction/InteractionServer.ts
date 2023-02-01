@@ -7,7 +7,7 @@
 import { MatterDevice } from "../MatterDevice";
 import { ProtocolHandler } from "../common/ProtocolHandler";
 import { MessageExchange } from "../common/MessageExchange";
-import { InteractionServerMessenger, InvokeRequest, InvokeResponse, ReadRequest, DataReport, SubscribeRequest, SubscribeResponse, TimedRequest } from "./InteractionMessenger";
+import { InteractionServerMessenger, InvokeRequest, InvokeResponse, ReadRequest, DataReport, SubscribeRequest, SubscribeResponse, TimedRequest, WriteRequest, WriteResponse } from "./InteractionMessenger";
 import { CommandServer, ResultCode } from "../cluster/server/CommandServer";
 import { DescriptorCluster } from "../cluster/DescriptorCluster";
 import { AttributeGetterServer, AttributeServer } from "../cluster/server/AttributeServer";
@@ -18,9 +18,10 @@ import { SubscriptionHandler } from "./SubscriptionHandler";
 import { Logger } from "../../log/Logger";
 import { DeviceTypeId } from "../common/DeviceTypeId";
 import { ClusterId } from "../common/ClusterId";
-import { TlvStream, TypeFromBitSchema } from "@project-chip/matter.js";
+import { TlvStream, TypeFromBitSchema, TypeFromSchema} from "@project-chip/matter.js";
 import { EndpointNumber } from "../common/EndpointNumber";
 import { capitalize } from "../../util/String";
+import { StatusCode, TlvAttributePath } from "./InteractionMessages";
 
 export const INTERACTION_PROTOCOL_ID = 0x0001;
 
@@ -152,14 +153,15 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
     async onNewExchange(exchange: MessageExchange<MatterDevice>) {
         await new InteractionServerMessenger(exchange).handleRequest(
             readRequest => this.handleReadRequest(exchange, readRequest),
+            writeRequest => this.handleWriteRequest(exchange, writeRequest),
             subscribeRequest => this.handleSubscribeRequest(exchange, subscribeRequest),
             invokeRequest => this.handleInvokeRequest(exchange, invokeRequest),
             timedRequest => this.handleTimedRequest(exchange, timedRequest),
         );
     }
 
-    handleReadRequest(exchange: MessageExchange<MatterDevice>, {attributes: attributePaths}: ReadRequest): DataReport {
-        logger.debug(`Received read request from ${exchange.channel.getName()}: ${attributePaths.map(path => this.resolveAttributeName(path)).join(", ")}`);
+    handleReadRequest(exchange: MessageExchange<MatterDevice>, {attributes: attributePaths, isFabricFiltered}: ReadRequest): DataReport {
+        logger.debug(`Received read request from ${exchange.channel.getName()}: ${attributePaths.map(path => this.resolveAttributeName(path)).join(", ")}, isFabricFiltered=${isFabricFiltered}`);
 
         const values = this.getAttributes(attributePaths)
             .map(({ path, attribute }) => {
@@ -167,6 +169,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
                 return { path, value, version, schema: attribute.schema };
             });
 
+        logger.debug(`Read request from ${exchange.channel.getName()} resolved to: ${values.map(({ path, value, version }) => `${this.resolveAttributeName(path)}=${Logger.toJSON(value)} (${version})`).join(", ")}`);
         return {
             interactionModelRevision: 1,
             values: values.map(({ path, value, version, schema }) => ({
@@ -176,6 +179,47 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
                     value: schema.encodeTlv(value),
                 },
             })),
+        };
+    }
+
+    handleWriteRequest(exchange: MessageExchange<MatterDevice>, {suppressResponse, writeRequests }: WriteRequest): WriteResponse {
+        logger.debug(`Received write request from ${exchange.channel.getName()}: ${writeRequests.map(req => this.resolveAttributeName(req.path)).join(", ")}, suppressResponse=${suppressResponse}`);
+
+        // TODO consider TimedRequest constraints
+
+        const writeResults = writeRequests.flatMap(({ path, dataVersion, data}) : { path: TypeFromSchema<typeof TlvAttributePath>, statusCode: StatusCode}[] => {
+            const attributes = this.getAttributes([ path ], true);
+            if (attributes.length === 0) {
+                return [ { path, statusCode: StatusCode.UnsupportedWrite } ]; // TODO: Find correct status code
+            }
+
+            return attributes.map(({ path, attribute }) => {
+                // TODO add checks or dataVersion
+                // TODO add ACL checks
+
+                try {
+                    const decodedData = attribute.schema.decodeTlv(data);
+                    logger.debug(`Handle write request from ${exchange.channel.getName()} resolved to: ${this.resolveAttributeName(path)}=${Logger.toJSON(data)} (${dataVersion})`);
+                    attribute.set(decodedData, exchange.session);
+                } catch (error: any) {
+                    if (attributes.length === 1) { // For Multi-Attribute-Writes we ignore errors
+                        logger.error(`Error while handling write request from ${exchange.channel.getName()} to ${this.resolveAttributeName(path)}: ${error.message}`);
+                        return { path, statusCode: StatusCode.ConstraintError };
+                    } else {
+                        logger.debug(`While handling write request from ${exchange.channel.getName()} to ${this.resolveAttributeName(path)} ignored: ${error.message}`);
+                    }
+                }
+                return { path, statusCode: StatusCode.Success };
+            }).filter(({ statusCode }) => statusCode !== StatusCode.Success);
+        });
+
+        // TODO respect suppressResponse, potentially also needs adjustment in InteractionMessenger class!
+
+        logger.debug(`Write request from ${exchange.channel.getName()} done with following errors: ${writeResults.map(({ path, statusCode }) => `${this.resolveAttributeName(path)}=${Logger.toJSON(statusCode)}`).join(", ")}`);
+
+        return {
+            interactionModelRevision: 1,
+            writeResponses: writeResults.map(({ path, statusCode }) => ( { path, status: { status: statusCode } })),
         };
     }
 
@@ -232,7 +276,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
     }
 
     async handleTimedRequest(exchange: MessageExchange<MatterDevice>, {timeout}: TimedRequest) {
-        logger.debug(`Received timed request from ${exchange.channel.getName()}`);
+        logger.debug(`Received timed request (${timeout}) from ${exchange.channel.getName()}`);
         // TODO: implement this
     }
 

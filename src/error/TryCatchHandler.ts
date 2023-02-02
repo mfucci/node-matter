@@ -6,7 +6,7 @@
 
 type ErrorHandler<T> = (error: Error) => T | undefined;
 
-export function tryCatch<T>(codeBlock: () => T, errorType: {new (message?: string): Error}, fallbackValueOrFunction: ErrorHandler<T> | T): T {
+export function tryCatch<T>(codeBlock: () => T, errorType: {new (...args: any[]): Error}, fallbackValueOrFunction: ErrorHandler<T> | T): T {
     try {
         return codeBlock();
     } catch (error) {
@@ -22,7 +22,7 @@ export function tryCatch<T>(codeBlock: () => T, errorType: {new (message?: strin
     }
 }
 
-export async function tryCatchAsync<T>(codeBlock: () => Promise<T>, errorType: {new (message?: string): Error}, fallbackValueOrFunction: ErrorHandler<T> | T): Promise<T> {
+export async function tryCatchAsync<T>(codeBlock: () => Promise<T>, errorType: {new (...args: any[]): Error}, fallbackValueOrFunction: ErrorHandler<T> | T): Promise<T> {
     try {
         return await codeBlock();
     } catch (error) {

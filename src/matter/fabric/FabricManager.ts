@@ -7,7 +7,7 @@
 import { ByteArray } from "@project-chip/matter.js";
 import { FabricIndex } from "../common/FabricIndex";
 import { Fabric, FabricBuilder } from "./Fabric";
-import { FabricNotFoundError } from "../../error/MatterError";
+import {FabricNotFoundError} from "../interaction/InteractionErrors";
 
 export class FabricManager {
     private nextFabricIndex = 1;

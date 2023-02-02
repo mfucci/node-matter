@@ -5,14 +5,10 @@
  */
 
 import assert from "assert";
-import {
-    tryCatch,
-    MatterError,
-    StatusResponseError,
-    FailureStatusResponseError,
-    tryCatchAsync
-} from "../../src/error/MatterError";
+import { MatterError } from "../../src/error/MatterError";
 import { StatusCode } from "../../src/matter/interaction/InteractionMessages";
+import { tryCatch, tryCatchAsync } from "../../src/error/TryCatchHandler";
+import { StatusResponseError } from "../../src/matter/interaction/InteractionErrors";
 
 class SubMatterError extends MatterError {}
 class SubSubMatterError extends SubMatterError {}
@@ -184,14 +180,6 @@ describe("Errors", () => {
                 return;
             }
             assert(false);
-        });
-    });
-
-    context("Test dynamic created errors", () => {
-        it("get an Error for a certain StatusCode", () => {
-            const error = new (StatusResponseError.getErrorClass(StatusCode.Failure))("test");
-            assert.equal(error instanceof StatusResponseError, true);
-            assert.equal(error instanceof FailureStatusResponseError, true);
         });
     });
 });

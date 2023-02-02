@@ -17,7 +17,8 @@ import {
 import { ClusterServerHandlers } from "./ClusterServer";
 import { ByteArray } from "@project-chip/matter.js";
 import { FabricIndex } from "../../common/FabricIndex";
-import { FabricNotFoundError, tryCatch } from "../../../error/MatterError";
+import {FabricNotFoundError} from "../../interaction/InteractionErrors";
+import {tryCatch} from "../../../error/TryCatchHandler";
 
 interface OperationalCredentialsServerConf {
     devicePrivateKey: ByteArray,
@@ -111,15 +112,15 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
         const device = session.getContext();
 
         const status = tryCatch(() => {
-            device.removeFabric(fabricIndex);
-            return OperationalCertStatus.Success;
-        },
-        FabricNotFoundError, OperationalCertStatus.InvalidFabricIndex);
+                device.removeFabric(fabricIndex);
 
-        if (status === OperationalCertStatus.Success) {
-            // TODO persist fabrics
-            // TODO: depending on cases destroy the secure session and delete all data!
-        }
+                // TODO persist fabrics
+                // TODO: depending on cases destroy the secure session and delete all data!
+
+                return OperationalCertStatus.Success;
+            },
+            FabricNotFoundError, OperationalCertStatus.InvalidFabricIndex
+        );
 
         return { status };
     },

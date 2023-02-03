@@ -79,10 +79,10 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
 
     async handleRequest(
         handleReadRequest: (request: ReadRequest) => DataReport,
-        handleSubscribeRequest: (request: SubscribeRequest) => SubscribeResponse | undefined,
+        handleSubscribeRequest: (request: SubscribeRequest, messenger: InteractionServerMessenger) => Promise<SubscribeResponse | undefined>,
         handleInvokeRequest: (request: InvokeRequest) => Promise<InvokeResponse>,
         handleTimedRequest: (request: TimedRequest) => Promise<void>,
-    ) { 
+    ) {
         let continueExchange = true;
         try {
             while (continueExchange) {
@@ -95,7 +95,7 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
                         break;
                     case MessageType.SubscribeRequest:
                         const subscribeRequest = TlvSubscribeRequest.decode(message.payload);
-                        const subscribeResponse = handleSubscribeRequest(subscribeRequest);
+                        const subscribeResponse = await handleSubscribeRequest(subscribeRequest, this);
                         if (subscribeResponse === undefined) {
                             await this.sendStatus(StatusCode.Success);
                         } else {
@@ -171,8 +171,42 @@ export class InteractionClientMessenger extends InteractionMessenger<MatterContr
         return this.request(MessageType.ReadRequest, TlvReadRequest, MessageType.ReportData, TlvDataReport, readRequest);
     }
 
-    sendSubscribeRequest(subscribeRequest: SubscribeRequest) {
-        return this.request(MessageType.SubscribeRequest, TlvSubscribeRequest, MessageType.SubscribeResponse, TlvSubscribeResponse, subscribeRequest);
+    async sendSubscribeRequest(subscribeRequest: SubscribeRequest) {
+        await this.exchange.send(MessageType.SubscribeRequest, TlvSubscribeRequest.encode(subscribeRequest));
+        const initialSubscriptionValues = await this.readDataReport();
+        if (!initialSubscriptionValues.values) initialSubscriptionValues.values = [];
+        const subscriptionId = initialSubscriptionValues.subscriptionId;
+        if (subscriptionId === undefined) {
+            await this.sendStatus(StatusCode.Failure);
+            throw new Error('Subscription ID not provided');
+        }
+        await this.sendStatus(StatusCode.Success);
+        if (initialSubscriptionValues.moreChunkedMessages) {
+            while (true) {
+                const dataReport = await this.readDataReport();
+                if (dataReport.subscriptionId !== subscriptionId) {
+                    await this.sendStatus(StatusCode.Failure);
+                    throw new Error(`Received subscription ID ${dataReport.subscriptionId} instead of ${subscriptionId}`);
+                }
+                await this.sendStatus(StatusCode.Success);
+                if (dataReport.values && dataReport.values.length > 0) {
+                    initialSubscriptionValues.values.push(...dataReport.values);
+                }
+                if (!dataReport.moreChunkedMessages) {
+                    initialSubscriptionValues.moreChunkedMessages = false;
+                    break;
+                }
+            }
+        }
+        const subscribeResponseMessage = await this.nextMessage(MessageType.SubscribeResponse);
+        const subscribeResponse = TlvSubscribeResponse.decode(subscribeResponseMessage.payload);
+        if (subscribeResponse.subscriptionId !== subscriptionId) {
+            throw new Error(`Received subscription ID ${subscribeResponse.subscriptionId} instead of ${subscriptionId}`);
+        }
+        return {
+            subscribeResponse,
+            initialSubscriptionValues,
+        };
     }
 
     sendInvokeCommand(invokeRequest: InvokeRequest) {

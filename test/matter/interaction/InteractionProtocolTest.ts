@@ -29,6 +29,7 @@ const READ_REQUEST: ReadRequest = {
 
 const READ_RESPONSE: DataReport = {
     interactionModelRevision: 1,
+    suppressResponse: false,
     values: [
         { value: {
             path: {

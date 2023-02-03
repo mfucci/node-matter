@@ -51,11 +51,27 @@ export class SubscriptionClient implements ProtocolHandler<MatterController> {
 
     async onNewExchange(exchange: MessageExchange<MatterController>) {
         const messenger = new InteractionClientMessenger(exchange);
-        const dataReport = await messenger.readDataReport();
-        await messenger.sendStatus(StatusCode.Success);
+        let dataReport = await messenger.readDataReport();
         const subscriptionId = dataReport.subscriptionId;
-        if (subscriptionId === undefined) return;
+        if (subscriptionId === undefined || !this.subscriptionListeners.has(subscriptionId)) {
+            await messenger.sendStatus(StatusCode.InvalidSubscription);
+            return;
+        }
+        await messenger.sendStatus(StatusCode.Success);
         this.subscriptionListeners.get(subscriptionId)?.(dataReport);
+
+        // If we have more chunked messages, also handle them
+        if (dataReport.moreChunkedMessages) {
+            while (dataReport.moreChunkedMessages) {
+                dataReport = await messenger.readDataReport();
+                if (dataReport.subscriptionId !== subscriptionId) {
+                    await messenger.sendStatus(StatusCode.InvalidSubscription);
+                    return;
+                }
+                await messenger.sendStatus(StatusCode.Success);
+                this.subscriptionListeners.get(subscriptionId)?.(dataReport);
+            }
+        }
     }
 }
 
@@ -112,19 +128,20 @@ export class InteractionClient {
         maxIntervalCeilingSeconds: number,
     ): Promise<void> {
         return this.withMessenger<void>(async messenger => {
-            const { subscriptionId } = await messenger.sendSubscribeRequest({
+            const { initialSubscriptionValues, subscribeResponse: { subscriptionId } } = await messenger.sendSubscribeRequest({
                 attributeRequests: [ {endpointId , clusterId, attributeId: id} ],
                 keepSubscriptions: true,
                 minIntervalFloorSeconds,
                 maxIntervalCeilingSeconds,
                 isFabricFiltered: true,
-            });
+            }); // TODO: also initialize all values
 
             this.subscriptionListeners.set(subscriptionId, (dataReport: DataReport) => {
                 const value = dataReport.values.map(({value}) => value).find(({ path }) => endpointId === path.endpointId && clusterId === path.clusterId && id === path.attributeId);
                 if (value === undefined) return;
                 listener(schema.decodeTlv(value.value), value.version);
             });
+            this.subscriptionListeners.get(subscriptionId)?.(initialSubscriptionValues);
             return;
         });
     }

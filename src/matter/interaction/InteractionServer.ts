@@ -21,8 +21,11 @@ import { ClusterId } from "../common/ClusterId";
 import { TlvStream, TypeFromBitSchema } from "@project-chip/matter.js";
 import { EndpointNumber } from "../common/EndpointNumber";
 import { capitalize } from "../../util/String";
+import { StatusCode } from "./InteractionMessages";
 
 export const INTERACTION_PROTOCOL_ID = 0x0001;
+
+const logger = Logger.get("InteractionProtocol");
 
 export class ClusterServer<ClusterT extends Cluster<any, any, any, any>> {
     readonly id: number;
@@ -91,14 +94,13 @@ function toHex(value: number | undefined) {
     return value === undefined ? "*" : `0x${value.toString(16)}`;
 }
 
-const logger = Logger.get("InteractionProtocol");
-
 export class InteractionServer implements ProtocolHandler<MatterDevice> {
     private readonly endpoints = new Map<number, { name: string, code: number, clusters: Map<number, ClusterServer<any>> }>();
     private readonly attributes = new Map<string, AttributeServer<any>>();
     private readonly attributePaths = new Array<AttributePath>();
     private readonly commands = new Map<string, CommandServer<any, any>>();
     private readonly commandPaths = new Array<CommandPath>();
+    private nextSubscriptionId = Math.floor(Math.random() * 0xFFFFFFFF);
 
     constructor() {}
 
@@ -152,7 +154,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
     async onNewExchange(exchange: MessageExchange<MatterDevice>) {
         await new InteractionServerMessenger(exchange).handleRequest(
             readRequest => this.handleReadRequest(exchange, readRequest),
-            subscribeRequest => this.handleSubscribeRequest(exchange, subscribeRequest),
+            (subscribeRequest, messenger) => this.handleSubscribeRequest(exchange, subscribeRequest, messenger),
             invokeRequest => this.handleInvokeRequest(exchange, invokeRequest),
             timedRequest => this.handleTimedRequest(exchange, timedRequest),
         );
@@ -169,6 +171,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
 
         return {
             interactionModelRevision: 1,
+            suppressResponse: false,
             values: values.map(({ path, value, version, schema }) => ({
                 value: {
                     path,
@@ -179,7 +182,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
         };
     }
 
-    handleSubscribeRequest(exchange: MessageExchange<MatterDevice>, { minIntervalFloorSeconds, maxIntervalCeilingSeconds, attributeRequests, keepSubscriptions }: SubscribeRequest): SubscribeResponse | undefined {
+    async handleSubscribeRequest(exchange: MessageExchange<MatterDevice>, { minIntervalFloorSeconds, maxIntervalCeilingSeconds, attributeRequests, eventRequests, keepSubscriptions }: SubscribeRequest, messenger: InteractionServerMessenger): Promise<SubscribeResponse | undefined> {
         logger.debug(`Received subscribe request from ${exchange.channel.getName()}`);
 
         if (!exchange.session.isSecure()) throw new Error("Subscriptions are only implemented on secure sessions");
@@ -187,21 +190,38 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
         const fabric = session.getFabric();
         if (fabric === undefined) throw new Error("Subscriptions are only implemented after a fabric has been assigned");
 
+        if ((!attributeRequests || attributeRequests.length === 0) && (!eventRequests || eventRequests.length === 0)) {
+            await messenger.sendStatus(StatusCode.InvalidAction);
+            return;
+        }
+
         if (!keepSubscriptions) {
             session.clearSubscriptions();
         }
 
+        // TODO add eventsRequest and other missing supports
         if (attributeRequests !== undefined) {
             logger.debug(`Subscribe to ${attributeRequests.map(path => this.resolveAttributeName(path)).join(", ")}`);
-            let attributes = this.getAttributes(attributeRequests);
 
-            if (attributeRequests.length === 0) throw new Error("Invalid subscription request");
+            if (attributeRequests.length === 0) throw new Error("Unsupported subscription request with empty attribute list");
             if (minIntervalFloorSeconds < 0) throw new Error("minIntervalFloorSeconds should be greater or equal to 0");
             if (maxIntervalCeilingSeconds < 0) throw new Error("maxIntervalCeilingSeconds should be greater or equal to 1");
             if (maxIntervalCeilingSeconds < minIntervalFloorSeconds) throw new Error("maxIntervalCeilingSeconds should be greater or equal to minIntervalFloorSeconds");
 
-            const subscriptionId = session.addSubscription(SubscriptionHandler.Builder(session.getContext(), fabric, session.getPeerNodeId(), attributes, minIntervalFloorSeconds, maxIntervalCeilingSeconds));
+            let attributes = this.getAttributes(attributeRequests);
 
+            // TODO: Interpret specs:
+            // The publisher SHALL compute an appropriate value for the MaxInterval field in the action. This SHALL respect the following constraint: MinIntervalFloor ≤ MaxInterval ≤ MAX(SUBSCRIPTION_MAX_INTERVAL_PUBLISHER_LIMIT=60mn, MaxIntervalCeiling)
+
+            if (this.nextSubscriptionId === 0xFFFFFFFF) this.nextSubscriptionId = 0;
+            const subscriptionHandler = new SubscriptionHandler(this.nextSubscriptionId++, session.getContext(), fabric, session.getPeerNodeId(), attributes, minIntervalFloorSeconds * 1000, maxIntervalCeilingSeconds * 1000);
+            session.addSubscription(subscriptionHandler);
+            const subscriptionId = subscriptionHandler.subscriptionId;
+
+            // Send initial data report to prime the subscription with initial data
+            await subscriptionHandler.sendInitialReport(messenger);
+
+            // Then send the subscription response
             return { subscriptionId, maxIntervalCeilingSeconds, interactionModelRevision: 1 };
         }
     }

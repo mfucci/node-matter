@@ -12,6 +12,9 @@ import { DEFAULT_ACTIVE_RETRANSMISSION_TIMEOUT_MS, DEFAULT_IDLE_RETRANSMISSION_T
 import { UNDEFINED_NODE_ID } from "./SessionManager";
 import { NodeId } from "../common/NodeId";
 import { ByteArray, DataWriter, Endian } from "@project-chip/matter.js";
+import { Logger } from "../../log/Logger";
+
+const logger = Logger.get("SecureSession");
 
 const SESSION_KEYS_INFO = ByteArray.fromString("SessionKeys");
 const SESSION_RESUMPTION_KEYS_INFO = ByteArray.fromString("SessionResumptionKeys");
@@ -53,7 +56,7 @@ export class SecureSession<T> implements Session<T> {
         const nonce = this.generateNonce(securityFlags, header.messageId, this.peerNodeId);
         return MessageCodec.decodePayload({ header, bytes: Crypto.decrypt(this.decryptKey, bytes, nonce, headerBytes) });
     }
-    
+
     encode(message: Message): Packet {
         message.packetHeader.sessionId = this.peerSessionId;
         const {header, bytes} = MessageCodec.encodePayload(message);
@@ -100,11 +103,13 @@ export class SecureSession<T> implements Session<T> {
         return this.peerNodeId;
     }
 
-    addSubscription(subscriptionBuilder: (subscriptionId: number) => SubscriptionHandler): number {
-        const subscriptionId = this.nextSubscriptionId++;
-        const subscription = subscriptionBuilder(subscriptionId);
+    addSubscription(subscription: SubscriptionHandler) {
         this.subscriptions.push(subscription);
-        return subscriptionId;
+        logger.debug(`Added subscription ${subscription.subscriptionId} to ${this.getName()}/${this.id}`);
+    }
+
+    destroy() {
+        this.clearSubscriptions();
     }
 
     clearSubscriptions() {

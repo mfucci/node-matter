@@ -66,13 +66,13 @@ class WaterContentSensor {
         const discriminator = 3840;
         // product name / id and vendor id should match what is in the device certificate
         const vendorId = new VendorId(0xFFF1);
-        const productName = "Matter Test DAC 0007";
+        const productName = "Humdity Sensor";
         const productId = 0X8000;
 
         // Barebone implementation of the WaterContentMeasurement cluster
         const waterContentMeasurementClusterServer = new ClusterServer(
             RelativeHumidityCluster,
-            { measuredVAlue: false },
+            { measuredValue: false },
             { measuredValue: 1, minMeasuredValue: 1, maxMeasuredValue: 1, tolerance: 1 },
             ({}) // WaterContentMeasurementClusterHandler()
         );

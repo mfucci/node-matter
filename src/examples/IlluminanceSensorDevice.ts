@@ -66,13 +66,13 @@ class IlluminanceSensor {
         const discriminator = 3840;
         // product name / id and vendor id should match what is in the device certificate
         const vendorId = new VendorId(0xFFF1);
-        const productName = "Matter Test DAC 0007";
+        const productName = "Illuminance Sensor";
         const productId = 0X8000;
 
         // Barebone implementation of the IlluminanceMeasurement cluster
         const illuminanceMeasurementClusterServer = new ClusterServer(
             IlluminanceMeasurementCluster,
-            { measuredVAlue: false },
+            { measuredValue: false },
             { measuredValue: 1, minMeasuredValue: 1, maxMeasuredValue: 1, tolerance: 1 },
             ({}) // IlluminanceMeasurementClusterHandler()
         );

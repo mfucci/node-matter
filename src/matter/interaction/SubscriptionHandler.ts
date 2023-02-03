@@ -48,7 +48,7 @@ export class SubscriptionHandler {
             return;
         }
 
-        const values = this.attributes.map(({ attribute, path }) => ({ path, valueVersion: attribute.getWithVersion(), schema: attribute.schema }));
+        const values = this.attributes.map(({ attribute, path }) => ({ path, valueVersion: attribute.getWithVersion(), schema: attribute.schema })).filter(({ valueVersion: { value } }) => value !== undefined);
         await this.sendUpdateMessage(values);
         this.lastUpdateTimeMs = now;
 

@@ -11,11 +11,16 @@ import { AttributeWithPath, AttributePath, INTERACTION_PROTOCOL_ID, attributePat
 import { Time, Timer } from "../../time/Time";
 import { NodeId } from "../common/NodeId";
 import { TlvSchema } from "@project-chip/matter.js";
+import { Logger } from "../../log/Logger";
+import { SecureSession } from "../session/SecureSession";
+
+const logger = Logger.get("SubscriptionHandler");
 
 interface PathValueVersion<T> {
     path: AttributePath,
     schema: TlvSchema<T>,
-    valueVersion: { value: T, version: number },
+    value: T,
+    version: number
 }
 
 export class SubscriptionHandler {
@@ -35,6 +40,7 @@ export class SubscriptionHandler {
         private readonly maxIntervalCeilingMs: number,
     ) {
         attributes.forEach(({ path, attribute }) => {
+            // TODO: handle attributes with "getter" methods
             const listener = (value: any, version: number) => this.attributeChangeListener(path, attribute.schema, version, value);
             this.attributeListeners.set(attributePathToId(path), listener);
             attribute.addMatterListener(listener);
@@ -49,7 +55,6 @@ export class SubscriptionHandler {
         }
         const timeSinceLastUpdateMs = now - this.lastUpdateTimeMs;
         if (timeSinceLastUpdateMs < this.minIntervalFloorMs) {
-            console.log(` Too soon, waiting ${this.minIntervalFloorMs - timeSinceLastUpdateMs}ms`);
             this.updateTimer = Time.getTimer(this.minIntervalFloorMs - timeSinceLastUpdateMs, () => this.sendUpdate()).start();
             return;
         }
@@ -58,22 +63,24 @@ export class SubscriptionHandler {
         this.outstandingAttributeUpdates.clear();
         this.lastUpdateTimeMs = now;
         await this.sendUpdateMessage(updatesToSend);
-
         this.updateTimer = Time.getTimer(this.maxIntervalCeilingMs, () => this.sendUpdate()).start();
     }
 
-    async sendInitialReport(messenger: InteractionServerMessenger) {
+    async sendInitialReport(messenger: InteractionServerMessenger, session: SecureSession<MatterDevice>) {
         if (this.updateTimer) {
             this.updateTimer.stop();
             this.updateTimer = null;
         }
 
-        const values = this.attributes.map(({ path, attribute }) => ({ path, schema: attribute.schema, valueVersion: attribute.getWithVersion() })).filter(({ valueVersion: { value } }) => value !== undefined) as PathValueVersion<any>[];
+        const values = this.attributes.map(({ path, attribute }) => {
+            const { value, version } = attribute.getWithVersion(session);
+            return { path, value, version, schema: attribute.schema };
+        }).filter(({ value }) => value !== undefined) as PathValueVersion<any>[];
         await messenger.sendDataReport({
             suppressResponse: false,
             subscriptionId: this.subscriptionId,
             interactionModelRevision: 1,
-            values: values.map(({ path, schema, valueVersion: { value, version } }) => ({
+            values: values.map(({ path, schema, value, version  }) => ({
                 value: {
                     path,
                     version,
@@ -89,7 +96,7 @@ export class SubscriptionHandler {
 
     async attributeChangeListener(path: AttributePath, schema: TlvSchema<any>, version: number, value: any) {
         console.log(`Attribute change listener for subscription ${this.subscriptionId}`, path, version, value);
-        this.outstandingAttributeUpdates.set(attributePathToId(path), { path, schema, valueVersion: { version, value } });
+        this.outstandingAttributeUpdates.set(attributePathToId(path), { path, schema, version, value });
         await this.sendUpdate();
     }
 
@@ -105,6 +112,7 @@ export class SubscriptionHandler {
     }
 
     private async sendUpdateMessage(values: PathValueVersion<any>[]) {
+        logger.debug(`Sending subscription update message for ID ${this.subscriptionId} with ${values.length} values`);
         const exchange = this.server.initiateExchange(this.fabric, this.peerNodeId, INTERACTION_PROTOCOL_ID);
         if (exchange === undefined) return;
         const messenger = new InteractionServerMessenger(exchange);
@@ -112,7 +120,7 @@ export class SubscriptionHandler {
             suppressResponse: !values.length, // suppressResponse ok for empty DataReports
             subscriptionId: this.subscriptionId,
             interactionModelRevision: 1,
-            values: values.map(({ path, schema, valueVersion: { value, version } }) => ({
+            values: values.map(({ path, schema, value, version }) => ({
                 value: {
                     path,
                     version,

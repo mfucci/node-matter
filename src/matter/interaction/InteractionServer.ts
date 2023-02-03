@@ -219,7 +219,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
             const subscriptionId = subscriptionHandler.subscriptionId;
 
             // Send initial data report to prime the subscription with initial data
-            await subscriptionHandler.sendInitialReport(messenger);
+            await subscriptionHandler.sendInitialReport(messenger, session);
 
             // Then send the subscription response
             return { subscriptionId, maxIntervalCeilingSeconds, interactionModelRevision: 1 };

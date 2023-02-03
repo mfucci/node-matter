@@ -41,7 +41,7 @@ export class ClusterServer<ClusterT extends Cluster<any, any, any, any>> {
             clusterRevision: clusterDef.revision,
             featureMap: features,
         };
-        for (const name in attributesInitialValues) {
+        for (const name in attributeDefs) {
             let { id, schema, writable } = attributeDefs[name];
             const validator = typeof schema.validate === 'function' ? schema.validate.bind(schema) : undefined;
             const getter = (handlers as any)[`get${capitalize(name)}`];
@@ -165,7 +165,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
             .map(({ path, attribute }) => {
                 const { value, version } = attribute.getWithVersion(exchange.session);
                 return { path, value, version, schema: attribute.schema };
-            });
+            }).filter(({ value }) => value !== undefined);
 
         return {
             interactionModelRevision: 1,

@@ -85,7 +85,7 @@ class WaterContentSensor {
            function waterContentIntervalCheck() {
               var waterContent : number  = parseInt(execSync(waterContentScript).toString().slice(0, -1)) | 0 ;
 
-              waterContentMeasurementClusterServer.attributes.measuredValue.set( waterContent  );
+              waterContentMeasurementClusterServer.attributes.measuredValue.set( waterContent * 100  );
           }
           waterContentIntervalCheck();
           setInterval( waterContentIntervalCheck, 60000);

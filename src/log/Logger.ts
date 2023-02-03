@@ -61,8 +61,8 @@ export class Logger {
     /**
      * Returns the value as (BigInt aware) stringified JSON.
      */
-    static toJSON(data: any, indent?: string | number) {
-        return JSON.stringify(data, (_, v) => typeof v === 'bigint' ? v.toString() : v, indent || " ");
+    static toJSON(data: any) {
+        return JSON.stringify(data, (_, v) => typeof v === 'bigint' ? v.toString() : v);
     }
 
     constructor(

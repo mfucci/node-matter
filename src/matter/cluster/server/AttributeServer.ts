@@ -23,9 +23,7 @@ export class AttributeServer<T> {
         readonly isWritable: boolean,
         defaultValue: T,
     ) {
-        if (defaultValue !== undefined) {
-            validator(defaultValue, name);
-        }
+        validator(defaultValue, name);
         this.value = defaultValue;
     }
 

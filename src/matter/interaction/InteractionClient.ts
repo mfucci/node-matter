@@ -76,6 +76,7 @@ export class InteractionClient {
                 interactionModelRevision: 1,
                 isFabricFiltered: true,
             });
+            response.values = response.values ?? [];
 
             return response.values.map(({ value: { path: {endpointId, clusterId, attributeId}, version, value }}) => ({ endpointId, clusterId, attributeId, version, value }));
         });
@@ -88,6 +89,7 @@ export class InteractionClient {
                 interactionModelRevision: 1,
                 isFabricFiltered: true,
             });
+            response.values = response.values ?? [];
 
             const value = response.values.map(({value}) => value).find(({ path }) => endpointId === path.endpointId && clusterId === path.clusterId && id === path.attributeId);
             if (value === undefined) {
@@ -121,6 +123,7 @@ export class InteractionClient {
             });
 
             this.subscriptionListeners.set(subscriptionId, (dataReport: DataReport) => {
+                if (!dataReport.values) return;
                 const value = dataReport.values.map(({value}) => value).find(({ path }) => endpointId === path.endpointId && clusterId === path.clusterId && id === path.attributeId);
                 if (value === undefined) return;
                 listener(schema.decodeTlv(value.value), value.version);

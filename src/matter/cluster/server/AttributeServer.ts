@@ -23,7 +23,9 @@ export class AttributeServer<T> {
         readonly isWritable: boolean,
         defaultValue: T,
     ) {
-        validator(defaultValue, name);
+        if (defaultValue !== undefined) {
+            validator(defaultValue, name);
+        }
         this.value = defaultValue;
     }
 
@@ -95,7 +97,7 @@ export class AttributeGetterServer<T> extends AttributeServer<T> {
 
     get(session?: SecureSession<MatterDevice>): T {
         // TODO: check ACL
-        
+
         return this.getter(session);
     }
 }

@@ -95,9 +95,9 @@ export const TlvAttributeReport = TlvObject({
 
 export const TlvDataReport = TlvObject({
     subscriptionId: TlvOptionalField(0, TlvUInt32),
-    values: TlvField(1, TlvArray(TlvAttributeReport)),
+    values: TlvOptionalField(1, TlvArray(TlvAttributeReport)), // Mandatory but chip tool do not send it
     moreChunkedMessages: TlvOptionalField(3, TlvBoolean),
-    suppressResponse: TlvOptionalField(4, TlvBoolean),
+    suppressResponse: TlvOptionalField(4, TlvBoolean), // Mandatory but chip tool do not send it
     interactionModelRevision: TlvField(0xFF, TlvUInt8),
 });
 

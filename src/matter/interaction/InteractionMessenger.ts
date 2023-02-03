@@ -82,7 +82,7 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
         handleSubscribeRequest: (request: SubscribeRequest) => SubscribeResponse | undefined,
         handleInvokeRequest: (request: InvokeRequest) => Promise<InvokeResponse>,
         handleTimedRequest: (request: TimedRequest) => Promise<void>,
-    ) { 
+    ) {
         let continueExchange = true;
         try {
             while (continueExchange) {
@@ -128,6 +128,7 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
     async sendDataReport(dataReport: DataReport) {
         const messageBytes = TlvDataReport.encode(dataReport);
         if (messageBytes.length > MAX_SPDU_LENGTH) {
+            dataReport.values = dataReport.values ?? [];
             // DataReport is too long, it needs to be sent in chunked
             const attributeReportsToSend = [...dataReport.values];
             dataReport.values.length = 0;

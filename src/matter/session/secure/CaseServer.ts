@@ -23,7 +23,7 @@ export class CaseServer implements ProtocolHandler<MatterDevice> {
         try {
             await this.handleSigma1(exchange.session.getContext(), messenger);
         } catch (error) {
-            logger.error("An error occured during the commissioning", error);
+            logger.error("An error occurred during the commissioning", error);
             await messenger.sendError();
         }
     }

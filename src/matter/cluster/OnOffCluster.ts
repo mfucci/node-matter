@@ -93,7 +93,7 @@ export const OnOffCluster = Cluster({
     /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.5.6 */
     attributes: {
         /** Indicates whether the device type implemented on the endpoint is turned off (false) or turned on (true). */
-        onOff: Attribute(0,  TlvBoolean, { default: false }), /* reportable: true, scene:true - Specs 1.0 wrong here, using chip XMLs*/
+        onOff: Attribute(0,  TlvBoolean, { nonVolatile: true, default: false }), /* reportable: true, scene:true - Specs 1.0 wrong here, using chip XMLs*/
 
         // The following attributes are only needed for "Level Control for Lighting" support
 
@@ -113,7 +113,7 @@ export const OnOffCluster = Cluster({
         //offWaitTime: OptionalWritableAttribute(0x4002, TlvNullable(TlvUInt16), { default: 0 }), /* unit: 1/10s */
 
         /** Defines the desired startup behavior of a device when it is supplied with power. */
-        //startUpOnOff: OptionalWritableAttribute(0x4003, TlvNullable(TlvEnum<StartUpOnOff>()), { writeAcl: AccessLevel.Manage }),
+        //startUpOnOff: OptionalWritableAttribute(0x4003, TlvNullable(TlvEnum<StartUpOnOff>()), { nonVolatile: true, writeAcl: AccessLevel.Manage }),
     },
 
     /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.5.7 */

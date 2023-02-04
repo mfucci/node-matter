@@ -25,3 +25,13 @@ export function commandExecutor(scriptParamName: string) {
     if (script === undefined) return undefined;
     return () => console.log(`${scriptParamName}: ${execSync(script).toString().slice(0, -1)}`);
 }
+
+export function getFloatCommandResult(script: string) {
+    return (parseFloat(`${execSync(script).toString().slice(0, -1)}`) || 0);
+}
+
+export function getIntCommandResult(script: string) {
+    return (parseInt(`${execSync(script).toString().slice(0, -1)}`) || 0);
+}
+
+

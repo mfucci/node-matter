@@ -30,6 +30,7 @@ import { MdnsBroadcaster } from "../matter/mdns/MdnsBroadcaster";
 import { Network } from "../net/Network";
 import { NetworkNode } from "../net/node/NetworkNode";
 import { commandExecutor } from "../util/CommandLine";
+import { getFloatCommandResult } from "../util/CommandLine";
 import { getParameter } from "../util/CommandLine";
 import { TemperatureMeasurementCluster } from "../matter/cluster/TemperatureMeasurementCluster";
 import { GeneralCommissioningClusterHandler } from "../matter/cluster/server/GeneralCommissioningServer";
@@ -52,7 +53,9 @@ import { DeviceCertificate } from "../certificates"
 import { ProductIntermediateCertificate } from "../certificates"
 import { CertificateDeclaration } from "../certificates"
 
+
 Network.get = singleton(() => new NetworkNode());
+
 
 const logger = Logger.get("TemperatureSensor");
 
@@ -84,10 +87,8 @@ class TemperatureSensor {
         // if we have a script to check temperature
         if ( temperatureScript ) {
            function temperatureIntervalCheck() {
-              var temperature : number  = parseFloat(execSync(temperatureScript).toString().slice(0, -1)) | 0 ;
-
               // scale as per 2.3.4.
-              temperatureMeasurementClusterServer.attributes.measuredValue.set( temperature * 100 );
+              temperatureMeasurementClusterServer.attributes.measuredValue.set( getFloatCommandResult(temperatureScript) * 100 );
           }
           temperatureIntervalCheck();
           setInterval( temperatureIntervalCheck, 60000);

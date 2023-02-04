@@ -29,6 +29,7 @@ import { MdnsBroadcaster } from "../matter/mdns/MdnsBroadcaster";
 import { Network } from "../net/Network";
 import { NetworkNode } from "../net/node/NetworkNode";
 import { commandExecutor } from "../util/CommandLine";
+import { getIntCommandResult } from "../util/CommandLine";
 import { getParameter } from "../util/CommandLine";
 import { IlluminanceMeasurementCluster } from "../matter/cluster/IlluminanceMeasurementCluster";
 import { GeneralCommissioningClusterHandler } from "../matter/cluster/server/GeneralCommissioningServer";
@@ -83,9 +84,7 @@ class IlluminanceSensor {
         // if we have a script to check 
         if ( illuminanceScript ) {
            function illuminanceIntervalCheck() {
-              var illuminance : number  = parseInt(execSync(illuminanceScript).toString().slice(0, -1)) | 0 ;
-
-              illuminanceMeasurementClusterServer.attributes.measuredValue.set( illuminance  );
+              illuminanceMeasurementClusterServer.attributes.measuredValue.set( getIntCommandResult(illuminanceScript));
           }
           illuminanceIntervalCheck();
           setInterval( illuminanceIntervalCheck, 60000);

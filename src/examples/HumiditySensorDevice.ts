@@ -30,6 +30,7 @@ import { Network } from "../net/Network";
 import { NetworkNode } from "../net/node/NetworkNode";
 import { commandExecutor } from "../util/CommandLine";
 import { getParameter } from "../util/CommandLine";
+import { getIntCommandResult } from "../util/CommandLine";
 import { RelativeHumidityCluster } from "../matter/cluster/WaterContentMeasurementCluster";
 import { GeneralCommissioningClusterHandler } from "../matter/cluster/server/GeneralCommissioningServer";
 import { OperationalCredentialsClusterHandler } from "../matter/cluster/server/OperationalCredentialsServer";
@@ -83,9 +84,7 @@ class WaterContentSensor {
         // if we have a script to check 
         if ( waterContentScript ) {
            function waterContentIntervalCheck() {
-              var waterContent : number  = parseInt(execSync(waterContentScript).toString().slice(0, -1)) | 0 ;
-
-              waterContentMeasurementClusterServer.attributes.measuredValue.set( waterContent * 100  );
+              waterContentMeasurementClusterServer.attributes.measuredValue.set( getIntCommandResult(waterContentScript) * 100 );
           }
           waterContentIntervalCheck();
           setInterval( waterContentIntervalCheck, 60000);

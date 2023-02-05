@@ -85,6 +85,8 @@ describe("Errors", () => {
                     SubMatterError, (error) => {
                         if (error instanceof OtherMatterError) {
                             return "caught";
+                        } else {
+                            throw error;
                         }
                     }
                 );

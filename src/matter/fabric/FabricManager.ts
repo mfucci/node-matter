@@ -7,7 +7,11 @@
 import { ByteArray } from "@project-chip/matter.js";
 import { FabricIndex } from "../common/FabricIndex";
 import { Fabric, FabricBuilder } from "./Fabric";
-import {FabricNotFoundError} from "../interaction/InteractionErrors";
+import { MatterError } from "../../error/MatterError";
+
+/** Specific Error for when a fabric is not found. */
+export class FabricNotFoundError extends MatterError {}
+
 
 export class FabricManager {
     private nextFabricIndex = 1;

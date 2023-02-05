@@ -7,9 +7,6 @@
 import {MatterError} from "../../error/MatterError";
 import {StatusCode} from "./InteractionMessages";
 
-/** Specific Error for when a fabric is not found. */
-export class FabricNotFoundError extends MatterError {}
-
 /** Error base Class for all errors related to the status response messages. */
 export class StatusResponseError extends MatterError {
     public constructor(

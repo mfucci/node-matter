@@ -3,8 +3,9 @@
  * Copyright 2022 The node-matter Authors
  * SPDX-License-Identifier: Apache-2.0
  */
+import { ClassExtends } from "../util/Type";
 
-type ErrorHandler<T> = (error: Error) => T | undefined;
+type ErrorHandler<T> = (error: Error) => T;
 
 /**
  * Try to execute the code block and catch the error if it is of the given type.
@@ -15,14 +16,13 @@ type ErrorHandler<T> = (error: Error) => T | undefined;
  * @param errorType Errortype to catch and handle
  * @param fallbackValueOrFunction Fallback value or function to compute the fallback value
  */
-export function tryCatch<T>(codeBlock: () => T, errorType: {new (...args: any[]): Error}, fallbackValueOrFunction: ErrorHandler<T> | T): T {
+export function tryCatch<T>(codeBlock: () => T, errorType: ClassExtends<Error>, fallbackValueOrFunction: ErrorHandler<T> | T): T {
     try {
         return codeBlock();
     } catch (error) {
-        if (error instanceof Error && error instanceof errorType) {
+        if (error instanceof errorType) {
             if (typeof fallbackValueOrFunction === "function") {
-                const computedFallbackValue = (fallbackValueOrFunction as ErrorHandler<T>)(error);
-                if (computedFallbackValue !== undefined) return computedFallbackValue;
+                return (fallbackValueOrFunction as ErrorHandler<T>)(error);
             } else {
                 return fallbackValueOrFunction;
             }
@@ -40,14 +40,13 @@ export function tryCatch<T>(codeBlock: () => T, errorType: {new (...args: any[])
  * @param errorType Errortype to catch and handle
  * @param fallbackValueOrFunction Fallback value or function to compute the fallback value
  */
-export async function tryCatchAsync<T>(codeBlock: () => Promise<T>, errorType: {new (...args: any[]): Error}, fallbackValueOrFunction: ErrorHandler<T> | T): Promise<T> {
+export async function tryCatchAsync<T>(codeBlock: () => Promise<T>, errorType: ClassExtends<Error>, fallbackValueOrFunction: ErrorHandler<T> | T): Promise<T> {
     try {
         return await codeBlock();
     } catch (error) {
         if (error instanceof errorType) {
             if (typeof fallbackValueOrFunction === "function") {
-                const computedFallbackValue = (fallbackValueOrFunction as ErrorHandler<T>)(error);
-                if (computedFallbackValue !== undefined) return computedFallbackValue;
+                return (fallbackValueOrFunction as ErrorHandler<T>)(error);
             } else {
                 return fallbackValueOrFunction;
             }

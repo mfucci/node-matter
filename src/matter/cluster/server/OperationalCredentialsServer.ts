@@ -17,8 +17,8 @@ import {
 import { ClusterServerHandlers } from "./ClusterServer";
 import { ByteArray } from "@project-chip/matter.js";
 import { FabricIndex } from "../../common/FabricIndex";
-import {FabricNotFoundError} from "../../interaction/InteractionErrors";
-import {tryCatch} from "../../../error/TryCatchHandler";
+import { tryCatch } from "../../../error/TryCatchHandler";
+import { FabricNotFoundError } from "../../fabric/FabricManager";
 
 interface OperationalCredentialsServerConf {
     devicePrivateKey: ByteArray,

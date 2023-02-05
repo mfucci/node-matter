@@ -7,7 +7,4 @@
 /** Error base class for all errors thrown by this library. */
 export class MatterError extends Error {}
 
-export function isMatterError(e: unknown): e is MatterError {
-    return e instanceof MatterError;
-}
 

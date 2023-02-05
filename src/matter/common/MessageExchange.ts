@@ -105,7 +105,7 @@ export class MessageExchange<ContextT> {
         }
         if (messageId === this.sentMessageToAck?.payloadHeader.ackedMessageId) {
             // Received a message retransmission, this means that the other side didn't get our ack
-            // Resending the previously reply message which contains the ack
+            // Resending the previous reply message which contains the ack
             await this.channel.send(this.sentMessageToAck);
             return;
         }

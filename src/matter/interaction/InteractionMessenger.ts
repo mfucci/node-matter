@@ -23,6 +23,7 @@ import {
     TlvWriteResponse
 } from "./InteractionMessages";
 import { ByteArray, TlvSchema, TypeFromSchema } from "@project-chip/matter.js";
+import { Message } from "../../codec/MessageCodec";
 
 export const enum MessageType {
     StatusResponse = 0x01,
@@ -96,7 +97,7 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
         handleReadRequest: (request: ReadRequest) => DataReport,
         handleWriteRequest: (request: WriteRequest) => WriteResponse,
         handleSubscribeRequest: (request: SubscribeRequest) => SubscribeResponse | undefined,
-        handleInvokeRequest: (request: InvokeRequest) => Promise<InvokeResponse>,
+        handleInvokeRequest: (request: InvokeRequest, message: Message) => Promise<InvokeResponse>,
         handleTimedRequest: (request: TimedRequest) => Promise<void>,
     ) {
         let continueExchange = true;
@@ -125,7 +126,7 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
                         break;
                     case MessageType.InvokeCommandRequest:
                         const invokeRequest = TlvInvokeRequest.decode(message.payload);
-                        const invokeResponse = await handleInvokeRequest(invokeRequest);
+                        const invokeResponse = await handleInvokeRequest(invokeRequest, message);
                         await this.exchange.send(MessageType.InvokeCommandResponse, TlvInvokeResponse.encode(invokeResponse));
                         break;
                     case MessageType.TimedRequest:

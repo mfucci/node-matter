@@ -49,6 +49,6 @@ export const BindingCluster = Cluster({
     /** @see {@link MatterCoreSpecificationV1_0} § 9.6.5 */
     attributes: {
         /** List of device types and corresponding revisions declaring endpoint conformance. */
-        binding: WritableAttribute(0, TlvArray(TlvTarget), { nonVolatile: true, default: [] }),
+        binding: WritableAttribute(0, TlvArray(TlvTarget), { persistent: true, default: [] }),
     },
 });

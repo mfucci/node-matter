@@ -242,19 +242,19 @@ export const OperationalCredentialsCluster = Cluster({
     /** @see {@link MatterCoreSpecificationV1_0} § 11.17.6 */
     attributes: {
         /** Contains all NOCs applicable to this Node. */
-        nocs: Attribute(0, TlvArray(TlvNoc), { nonVolatile: true, omitChanges: true, readAcl: AccessLevel.Administer }),
+        nocs: Attribute(0, TlvArray(TlvNoc), { persistent: true, omitChanges: true, readAcl: AccessLevel.Administer }),
 
         /** Describes all fabrics to which this Node is commissioned. */
-        fabrics: Attribute(1, TlvArray(TlvFabricDescriptor), { nonVolatile: true }),
+        fabrics: Attribute(1, TlvArray(TlvFabricDescriptor), { persistent: true }),
 
         /** Contains the number of Fabrics that are supported by the device. */
         supportedFabrics: Attribute(2, TlvUInt8.bound({ min: 5, max: 254 })),
 
         /** Contains the number of Fabrics to which the device is currently commissioned. */
-        commissionedFabrics: Attribute(3, TlvUInt8, { nonVolatile: true }),
+        commissionedFabrics: Attribute(3, TlvUInt8, { persistent: true }),
 
         /** Contains a read-only list of Trusted Root CA Certificates installed on the Node. */
-        trustedRootCertificates: Attribute(4, TlvArray(TlvByteString, { maxLength: 400 }), { nonVolatile: true, omitChanges: true }),
+        trustedRootCertificates: Attribute(4, TlvArray(TlvByteString, { maxLength: 400 }), { persistent: true, omitChanges: true }),
 
         /** Contain accessing fabric index. */
         currentFabricIndex: Attribute(5, TlvFabricIndex, { default: new FabricIndex(0)}),

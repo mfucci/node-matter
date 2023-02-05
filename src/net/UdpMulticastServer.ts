@@ -55,7 +55,11 @@ export class UdpMulticastServer {
             const { ips } = this.network.getIpMac(netInterface) ?? { ips: [] };
             await Promise.all(ips.map(async ip => {
                 const iPv4 = isIPv4(ip);
-                await (await this.broadcastChannels.get(netInterface, iPv4)).send(iPv4 ? this.broadcastAddressIpv4 : this.broadcastAddressIpv6, this.broadcastPort, message).catch(err => logger.debug(`${netInterface}: ${err}`));
+                try {
+                    await (await this.broadcastChannels.get(netInterface, iPv4)).send(iPv4 ? this.broadcastAddressIpv4 : this.broadcastAddressIpv6, this.broadcastPort, message);
+                } catch (err) {
+                    logger.debug(`${netInterface}: ${(err as Error).message}`);
+                }
             }));
         }));
     }

@@ -20,6 +20,8 @@ function logFormater(now: Date, level: Level, logger: string, values: any[]) {
     const formattedValues = values.map(value => {
         if (value instanceof ByteArray) {
             return value.toHex();
+        } else if (value instanceof Error) {
+            return value.stack;
         }
         return value.toString()
     });
@@ -38,11 +40,11 @@ function consoleLogger(level: Level, formatedLog: string) {
 
 /**
  * Logger that can be used to emit traces.
- * 
+ *
  * Usage:
  * const logger = Logger.get("loggerName");
  * logger.debug("My debug message", "my extra value to log");
- * 
+ *
  * Configuration:
  * Logger.defaultLogLevel sets the default log level for all the logger
  * Logger.logLevels = { loggerName: Level.DEBUG } can set the level for the specific loggers

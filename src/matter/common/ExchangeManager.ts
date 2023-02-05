@@ -53,7 +53,7 @@ export class ExchangeManager<ContextT> {
     addNetInterface(netInterface: NetInterface) {
         this.netListeners.push(netInterface.onData((socket, data) => {
             this.onMessage(socket, data)
-                .catch(error => logger.error(error.stack));
+                .catch(error => logger.error(error));
         }));
     }
 

@@ -72,7 +72,7 @@ const fakeTime = new TimeFake(TIME_START);
 
 describe("Integration", () => {
     var server: MatterDevice;
-    var onOffServer: ClusterServer<typeof OnOffCluster>;
+    var onOffServer: ClusterServer<any, any, any, any>;
     var client: MatterController;
 
     before(async () => {

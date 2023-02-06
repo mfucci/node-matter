@@ -11,10 +11,16 @@ export class NoStorageMapKeyValueStore implements KeyValueHandler {
     constructor() {}
 
     private buildKeyString(context: string, contextKey: string): string {
+        if (!context.length) {
+            throw new Error("Context must be a non-empty string");
+        }
+        if (!contextKey.length) {
+            throw new Error("Context key must be a non-empty string");
+        }
         return `${context}$$${contextKey}`;
     }
 
-    getContextKey(context: string, contextKey: string, defaultValue: any): any | undefined {
+    getContextKey(context: string, contextKey: string, defaultValue?: any): any | undefined {
         const value = this.data.get(this.buildKeyString(context, contextKey));
         if (value === undefined) {
             return defaultValue;
@@ -23,9 +29,9 @@ export class NoStorageMapKeyValueStore implements KeyValueHandler {
     }
 
     getContextKeys(context: string): { key: string, value: any}[] {
-return [...this.data]
-    .filter(([key]) => key.startsWith(`${context}$$`))
-    .map(([key, value]) => ({ key: key.substring(context.length + 1), value }));
+        return [...this.data]
+            .filter(([key]) => key.startsWith(`${context}$$`))
+            .map(([key, value]) => ({ key: key.substring(context.length + 2), value }));
     }
 
     setContextKey(context: string, contextKey: string, value: any): void {
@@ -41,6 +47,9 @@ return [...this.data]
     }
 
     deleteContext(context: string): void {
+        if (!context.length) {
+            throw new Error("Context must be a non-empty string");
+        }
         const keys = Array.from(this.data.keys());
         keys.filter((key) => key.startsWith(`${context}$$`)).forEach((key) => this.data.delete(key));
     }

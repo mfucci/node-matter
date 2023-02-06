@@ -5,7 +5,7 @@
  */
 
 export interface KeyValueHandler {
-    getContextKey(context: string, contextKey: string, defaultValue: any): any | undefined;
+    getContextKey(context: string, contextKey: string, defaultValue?: any): any | undefined;
     getContextKeys(context: string): any[];
     setContextKey(context: string, contextKey: string, value: any): void;
     setContextKeys(context: string, data: { key: string, value: any}[]): void;

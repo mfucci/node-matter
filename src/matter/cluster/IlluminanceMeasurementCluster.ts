@@ -30,6 +30,6 @@ export const IlluminanceMeasurementCluster = Cluster({
        tolerance: OptionalAttribute(3, TlvUInt16.bound({ min: 0, max: 2048 })),
        
        /** Specifies the electronic type of the light sensor. */
-       lightSensorType: OptionalAttribute(4, TlvNullable(TlvUInt8)), // only values null, 0, 1 and 0x40 to 0xfe are allowed
+       lightSensorType: OptionalAttribute(4, TlvNullable(TlvUInt8), { default: null }), // only values null, 0, 1 and 0x40 to 0xfe are allowed
     },
 });

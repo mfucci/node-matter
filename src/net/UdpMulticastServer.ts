@@ -58,7 +58,7 @@ export class UdpMulticastServer {
                 try {
                     await (await this.broadcastChannels.get(netInterface, iPv4)).send(iPv4 ? this.broadcastAddressIpv4 : this.broadcastAddressIpv6, this.broadcastPort, message);
                 } catch (err) {
-                    logger.debug(`${netInterface}: ${(err as Error).message}`);
+                    logger.info(`${netInterface}: ${(err as Error).message}`);
                 }
             }));
         }));

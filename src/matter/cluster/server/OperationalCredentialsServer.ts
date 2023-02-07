@@ -19,6 +19,9 @@ import { ByteArray } from "@project-chip/matter.js";
 import { FabricIndex } from "../../common/FabricIndex";
 import { tryCatch } from "../../../error/TryCatchHandler";
 import { FabricNotFoundError } from "../../fabric/FabricManager";
+import { Logger } from "../../../log/Logger";
+
+const logger = Logger.get("OperationalCredentialsServer");
 
 interface OperationalCredentialsServerConf {
     devicePrivateKey: ByteArray,

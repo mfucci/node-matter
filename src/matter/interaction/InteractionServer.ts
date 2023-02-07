@@ -7,30 +7,32 @@
 import { MatterDevice } from "../MatterDevice";
 import { ProtocolHandler } from "../common/ProtocolHandler";
 import { MessageExchange } from "../common/MessageExchange";
-import { InteractionServerMessenger, InvokeRequest, InvokeResponse, ReadRequest, DataReport, SubscribeRequest, SubscribeResponse, TimedRequest } from "./InteractionMessenger";
+import { InteractionServerMessenger, InvokeRequest, InvokeResponse, ReadRequest, DataReport, SubscribeRequest, SubscribeResponse, TimedRequest, WriteRequest, WriteResponse } from "./InteractionMessenger";
 import { CommandServer, ResultCode } from "../cluster/server/CommandServer";
 import { DescriptorCluster } from "../cluster/DescriptorCluster";
 import { AttributeGetterServer, AttributeServer } from "../cluster/server/AttributeServer";
-import { Cluster } from "../cluster/Cluster";
+import { Attributes, Cluster, Commands, Events } from "../cluster/Cluster";
 import { AttributeServers, AttributeInitialValues, ClusterServerHandlers } from "../cluster/server/ClusterServer";
 import { SecureSession } from "../session/SecureSession";
 import { SubscriptionHandler } from "./SubscriptionHandler";
 import { Logger } from "../../log/Logger";
 import { DeviceTypeId } from "../common/DeviceTypeId";
 import { ClusterId } from "../common/ClusterId";
-import { TlvStream, TypeFromBitSchema } from "@project-chip/matter.js";
+import { BitSchema, TlvStream, TypeFromBitSchema, TypeFromSchema} from "@project-chip/matter.js";
 import { EndpointNumber } from "../common/EndpointNumber";
 import { capitalize } from "../../util/String";
+import { StatusCode, TlvAttributePath } from "./InteractionMessages";
+import { Message } from "../../codec/MessageCodec";
 
 export const INTERACTION_PROTOCOL_ID = 0x0001;
 
-export class ClusterServer<ClusterT extends Cluster<any, any, any, any>> {
+export class ClusterServer<F extends BitSchema, A extends Attributes, C extends Commands, E extends Events> {
     readonly id: number;
     readonly name: string;
-    readonly attributes = <AttributeServers<ClusterT["attributes"]>>{};
+    readonly attributes = <AttributeServers<A>>{};
     readonly commands = new Array<CommandServer<any, any>>();
 
-    constructor(clusterDef: ClusterT, features: TypeFromBitSchema<ClusterT["features"]>, attributesInitialValues: AttributeInitialValues<ClusterT["attributes"]>, handlers: ClusterServerHandlers<ClusterT>) {
+    constructor(clusterDef: Cluster<F, A, C, E>, features: TypeFromBitSchema<F>, attributesInitialValues: AttributeInitialValues<A>, handlers: ClusterServerHandlers<Cluster<F, A, C, E>>) {
         const { id, name, attributes: attributeDefs, commands: commandDefs } = clusterDef;
         this.id = id;
         this.name = name;
@@ -57,7 +59,7 @@ export class ClusterServer<ClusterT extends Cluster<any, any, any, any>> {
             const handler = (handlers as any)[name];
             if (handler === undefined) continue;
             const { requestId, requestSchema, responseId, responseSchema } = commandDefs[name];
-            this.commands.push(new CommandServer(requestId, responseId, name, requestSchema, responseSchema, (request, session) => handler({request, attributes: this.attributes, session})));
+            this.commands.push(new CommandServer(requestId, responseId, name, requestSchema, responseSchema, (request, session, message) => handler({request, attributes: this.attributes, session, message})));
         }
     }
 }
@@ -94,7 +96,7 @@ function toHex(value: number | undefined) {
 const logger = Logger.get("InteractionProtocol");
 
 export class InteractionServer implements ProtocolHandler<MatterDevice> {
-    private readonly endpoints = new Map<number, { name: string, code: number, clusters: Map<number, ClusterServer<any>> }>();
+    private readonly endpoints = new Map<number, { name: string, code: number, clusters: Map<number, ClusterServer<any, any, any, any>> }>();
     private readonly attributes = new Map<string, AttributeServer<any>>();
     private readonly attributePaths = new Array<AttributePath>();
     private readonly commands = new Map<string, CommandServer<any, any>>();
@@ -106,7 +108,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
         return INTERACTION_PROTOCOL_ID;
     }
 
-    addEndpoint(endpointId: number, device: {name: string, code: number}, clusters: ClusterServer<any>[]) {
+    addEndpoint(endpointId: number, device: {name: string, code: number}, clusters: ClusterServer<any, any, any, any>[]) {
         // Add the descriptor cluster
         const descriptorCluster = new ClusterServer(DescriptorCluster, {}, {
             deviceTypeList: [{revision: 1, type: new DeviceTypeId(device.code)}],
@@ -117,7 +119,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
         clusters.push(descriptorCluster);
         descriptorCluster.attributes.serverList.setLocal(clusters.map(({id}) => new ClusterId(id)));
 
-        const clusterMap = new Map<number, ClusterServer<any>>();
+        const clusterMap = new Map<number, ClusterServer<any, any, any, any>>();
         clusters.forEach(cluster => {
             const { id: clusterId, attributes, commands } = cluster;
             clusterMap.set(clusterId, cluster);
@@ -152,14 +154,15 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
     async onNewExchange(exchange: MessageExchange<MatterDevice>) {
         await new InteractionServerMessenger(exchange).handleRequest(
             readRequest => this.handleReadRequest(exchange, readRequest),
+            writeRequest => this.handleWriteRequest(exchange, writeRequest),
             subscribeRequest => this.handleSubscribeRequest(exchange, subscribeRequest),
-            invokeRequest => this.handleInvokeRequest(exchange, invokeRequest),
+            (invokeRequest, message) => this.handleInvokeRequest(exchange, invokeRequest, message),
             timedRequest => this.handleTimedRequest(exchange, timedRequest),
         );
     }
 
-    handleReadRequest(exchange: MessageExchange<MatterDevice>, {attributes: attributePaths}: ReadRequest): DataReport {
-        logger.debug(`Received read request from ${exchange.channel.getName()}: ${attributePaths.map(path => this.resolveAttributeName(path)).join(", ")}`);
+    handleReadRequest(exchange: MessageExchange<MatterDevice>, {attributes: attributePaths, isFabricFiltered}: ReadRequest): DataReport {
+        logger.debug(`Received read request from ${exchange.channel.getName()}: ${attributePaths.map(path => this.resolveAttributeName(path)).join(", ")}, isFabricFiltered=${isFabricFiltered}`);
 
         const values = this.getAttributes(attributePaths)
             .map(({ path, attribute }) => {
@@ -167,6 +170,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
                 return { path, value, version, schema: attribute.schema };
             });
 
+        logger.debug(`Read request from ${exchange.channel.getName()} resolved to: ${values.map(({ path, value, version }) => `${this.resolveAttributeName(path)}=${Logger.toJSON(value)} (${version})`).join(", ")}`);
         return {
             interactionModelRevision: 1,
             values: values.map(({ path, value, version, schema }) => ({
@@ -176,6 +180,47 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
                     value: schema.encodeTlv(value),
                 },
             })),
+        };
+    }
+
+    handleWriteRequest(exchange: MessageExchange<MatterDevice>, {suppressResponse, writeRequests }: WriteRequest): WriteResponse {
+        logger.debug(`Received write request from ${exchange.channel.getName()}: ${writeRequests.map(req => this.resolveAttributeName(req.path)).join(", ")}, suppressResponse=${suppressResponse}`);
+
+        // TODO consider TimedRequest constraints
+
+        const writeResults = writeRequests.flatMap(({ path, dataVersion, data}) : { path: TypeFromSchema<typeof TlvAttributePath>, statusCode: StatusCode}[] => {
+            const attributes = this.getAttributes([ path ], true);
+            if (attributes.length === 0) {
+                return [ { path, statusCode: StatusCode.UnsupportedWrite } ]; // TODO: Find correct status code
+            }
+
+            return attributes.map(({ path, attribute }) => {
+                // TODO add checks or dataVersion
+                // TODO add ACL checks
+
+                try {
+                    const decodedData = attribute.schema.decodeTlv(data);
+                    logger.debug(`Handle write request from ${exchange.channel.getName()} resolved to: ${this.resolveAttributeName(path)}=${Logger.toJSON(data)} (${dataVersion})`);
+                    attribute.set(decodedData, exchange.session);
+                } catch (error: any) {
+                    if (attributes.length === 1) { // For Multi-Attribute-Writes we ignore errors
+                        logger.error(`Error while handling write request from ${exchange.channel.getName()} to ${this.resolveAttributeName(path)}: ${error.message}`);
+                        return { path, statusCode: StatusCode.ConstraintError };
+                    } else {
+                        logger.debug(`While handling write request from ${exchange.channel.getName()} to ${this.resolveAttributeName(path)} ignored: ${error.message}`);
+                    }
+                }
+                return { path, statusCode: StatusCode.Success };
+            }).filter(({ statusCode }) => statusCode !== StatusCode.Success);
+        });
+
+        // TODO respect suppressResponse, potentially also needs adjustment in InteractionMessenger class!
+
+        logger.debug(`Write request from ${exchange.channel.getName()} done with following errors: ${writeResults.map(({ path, statusCode }) => `${this.resolveAttributeName(path)}=${Logger.toJSON(statusCode)}`).join(", ")}`);
+
+        return {
+            interactionModelRevision: 1,
+            writeResponses: writeResults.map(({ path, statusCode }) => ( { path, status: { status: statusCode } })),
         };
     }
 
@@ -206,7 +251,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
         }
     }
 
-    async handleInvokeRequest(exchange: MessageExchange<MatterDevice>, {invokes}: InvokeRequest): Promise<InvokeResponse> {
+    async handleInvokeRequest(exchange: MessageExchange<MatterDevice>, {invokes}: InvokeRequest, message: Message): Promise<InvokeResponse> {
         logger.debug(`Received invoke request from ${exchange.channel.getName()}: ${invokes.map(({ path: {endpointId, clusterId, commandId }}) => `${toHex(endpointId)}/${toHex(clusterId)}/${toHex(commandId)}`).join(", ")}`);
 
         const results = new Array<{path: CommandPath, code: ResultCode, response: TlvStream, responseId: number }>();
@@ -214,7 +259,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
         await Promise.all(invokes.map(async ({ path, args }) => {
             const command = this.commands.get(commandPathToId(path));
             if (command === undefined) return;
-            const result = await command.invoke(exchange.session, args);
+            const result = await command.invoke(exchange.session, args, message);
             results.push({ ...result, path });
         }));
 
@@ -232,7 +277,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
     }
 
     async handleTimedRequest(exchange: MessageExchange<MatterDevice>, {timeout}: TimedRequest) {
-        logger.debug(`Received timed request from ${exchange.channel.getName()}`);
+        logger.debug(`Received timed request (${timeout}) from ${exchange.channel.getName()}`);
         // TODO: implement this
     }
 

@@ -30,6 +30,8 @@ export class MdnsBroadcaster implements Broadcaster {
     ) {}
 
     setCommissionMode(mode: number,deviceName: string, deviceType: number, vendorId: VendorId, productId: number, discriminator: number) {
+        logger.debug(`announce commissioning mode ${mode} ${deviceName} ${deviceType} ${vendorId} ${productId} ${discriminator}`);
+
         const shortDiscriminator = (discriminator >> 8) & 0x0F;
         const instanceId = Crypto.getRandomData(8).toHex().toUpperCase();
         const vendorQname = `_V${vendorId.id}._sub.${MATTER_COMMISSION_SERVICE_QNAME}`;
@@ -87,6 +89,8 @@ export class MdnsBroadcaster implements Broadcaster {
         const operationalIdString = operationalId.toHex().toUpperCase();
         const fabricQname = getFabricQname(operationalIdString);
         const deviceMatterQname = getDeviceMatterQname(operationalIdString, nodeId.toString());
+
+        logger.debug(`Set fabric ${operationalId.toHex()} ${nodeId.id}: ${deviceMatterQname} for announcement`);
 
         this.mdnsServer.setRecordsGenerator(netInterface => {
             const ipMac = this.network.getIpMac(netInterface);

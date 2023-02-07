@@ -8,7 +8,20 @@ import { Logger } from "../../log/Logger";
 import { MessageExchange } from "../common/MessageExchange";
 import { MatterController } from "../MatterController";
 import { MatterDevice } from "../MatterDevice";
-import { TlvInvokeRequest, TlvInvokeResponse, TlvReadRequest, TlvDataReport, TlvSubscribeRequest, TlvSubscribeResponse, StatusCode, TlvStatusResponse, TlvTimedRequest, TlvAttributeReport } from "./InteractionMessages";
+import {
+    TlvInvokeRequest,
+    TlvInvokeResponse,
+    TlvReadRequest,
+    TlvDataReport,
+    TlvSubscribeRequest,
+    TlvSubscribeResponse,
+    StatusCode,
+    TlvStatusResponse,
+    TlvTimedRequest,
+    TlvAttributeReport,
+    TlvWriteRequest,
+    TlvWriteResponse
+} from "./InteractionMessages";
 import { ByteArray, TlvSchema, TypeFromSchema } from "@project-chip/matter.js";
 import { Message } from "../../codec/MessageCodec";
 
@@ -32,6 +45,8 @@ export type SubscribeResponse = TypeFromSchema<typeof TlvSubscribeResponse>;
 export type InvokeRequest = TypeFromSchema<typeof TlvInvokeRequest>;
 export type InvokeResponse = TypeFromSchema<typeof TlvInvokeResponse>;
 export type TimedRequest = TypeFromSchema<typeof TlvTimedRequest>;
+export type WriteRequest = TypeFromSchema<typeof TlvWriteRequest>;
+export type WriteResponse = TypeFromSchema<typeof TlvWriteResponse>;
 
 const MAX_SPDU_LENGTH = 1024;
 
@@ -80,6 +95,7 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
 
     async handleRequest(
         handleReadRequest: (request: ReadRequest) => DataReport,
+        handleWriteRequest: (request: WriteRequest) => WriteResponse,
         handleSubscribeRequest: (request: SubscribeRequest) => SubscribeResponse | undefined,
         handleInvokeRequest: (request: InvokeRequest, message: Message) => Promise<InvokeResponse>,
         handleTimedRequest: (request: TimedRequest) => Promise<void>,
@@ -93,6 +109,11 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
                     case MessageType.ReadRequest:
                         const readRequest = TlvReadRequest.decode(message.payload);
                         await this.sendDataReport(handleReadRequest(readRequest));
+                        break;
+                    case MessageType.WriteRequest:
+                        const writeRequest = TlvWriteRequest.decode(message.payload);
+                        const writeResponse = handleWriteRequest(writeRequest);
+                        await this.exchange.send(MessageType.WriteResponse, TlvWriteResponse.encode(writeResponse));
                         break;
                     case MessageType.SubscribeRequest:
                         const subscribeRequest = TlvSubscribeRequest.decode(message.payload);
@@ -129,7 +150,7 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
     async sendDataReport(dataReport: DataReport) {
         const messageBytes = TlvDataReport.encode(dataReport);
         if (messageBytes.length > MAX_SPDU_LENGTH) {
-            // DataReport is too long, it needs to be sent in chunked
+            // DataReport is too long, it needs to be sent in chunks
             const attributeReportsToSend = [...dataReport.values];
             dataReport.values.length = 0;
             dataReport.moreChunkedMessages = true;

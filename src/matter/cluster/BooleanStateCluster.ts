@@ -8,7 +8,7 @@ import { Attribute, OptionalEvent, EventPriority, OptionalAttribute, Cluster, Co
 import { TlvField, TlvBoolean, MatterApplicationClusterSpecificationV1_0 } from "@project-chip/matter.js";
 
 /**
- * Attributes and commands for Illuminance Measurement.
+ * Attributes and commands for Boolean State.
  *
  * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.7
  */
@@ -16,7 +16,6 @@ export const BooleanStateCluster = Cluster({
     id: 0x0045,
     name: "BooleanState",
     revision: 1,
-    features: { }, // no features
 
     /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.7.5 */
     attributes: {
@@ -29,7 +28,4 @@ export const BooleanStateCluster = Cluster({
         /** generated when the StateValue attribute changes */
         stateChange: OptionalEvent(0, EventPriority.Info, { stateValue: TlvField(0, TlvBoolean)  }),
     },
-
-    /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.7.6 */
-    commands: { },
 });

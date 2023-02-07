@@ -173,3 +173,32 @@ export const TlvInvokeResponse = TlvObject({
 export const TlvTimedRequest = TlvObject({
     timeout: TlvField(0, TlvUInt16),
 });
+
+/**
+ * @see {@link MatterCoreSpecificationV1_0} 10.6.6
+ */
+export const TlvWriteRequest = TlvObject({
+    suppressResponse: TlvOptionalField(0, TlvBoolean),
+    timedRequest: TlvOptionalField(1, TlvBoolean),
+    writeRequests: TlvField(2, TlvArray(TlvObject({
+        dataVersion: TlvOptionalField(0, TlvUInt32),
+        path: TlvField(1, TlvAttributePath),
+        data: TlvField(2, TlvAny),
+    }))),
+    moreChunkedMessages: TlvOptionalField(3, TlvBoolean),
+    interactionModelRevision: TlvField(0xFF, TlvUInt8),
+});
+
+/**
+ * @see {@link MatterCoreSpecificationV1_0} 10.6.7
+ */
+export const TlvWriteResponse = TlvObject({
+    writeResponses: TlvField(0, TlvArray(TlvObject({
+        path: TlvField(0, TlvAttributePath),
+        status: TlvField(1, TlvList({
+            status: TlvOptionalField(0, TlvEnum<StatusCode>()),
+            clusterStatus: TlvOptionalField(1, TlvEnum<StatusCode>()),
+        })),
+    }))),
+    interactionModelRevision: TlvField(0xFF, TlvUInt8),
+});

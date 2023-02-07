@@ -21,7 +21,7 @@ export class ChannelManager {
 
     getChannel(fabric: Fabric, nodeId: NodeId) {
         const result = this.channels.get(`${fabric.fabricId}/${nodeId}`);
-        if (result === undefined) throw new Error(`Can't find find a channel to node ${nodeId}`);
+        if (result === undefined) throw new Error(`Can't find a channel to node ${nodeId}`);
         return result;
     }
 

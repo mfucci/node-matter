@@ -207,7 +207,7 @@ export const ScenesCluster = Cluster({
         nameSupport: Attribute(4, TlvNameSupportBitmap, { default: { sceneNames: true } }),
 
         /** Holds the Node ID (the IEEE address in case of Zigbee) of the node that last configured the Scene Table. */
-        lastConfiguredBy: OptionalAttribute(5, TlvNullable(TlvNodeId)),
+        lastConfiguredBy: OptionalAttribute(5, TlvNullable(TlvNodeId), { default: null }),
     },
 
     /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.4.9 */

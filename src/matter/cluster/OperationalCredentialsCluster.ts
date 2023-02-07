@@ -8,7 +8,7 @@ import { TlvVendorId } from "../common/VendorId";
 import { TlvNodeId } from "../common/NodeId";
 import { TlvSubjectId } from "../common/SubjectId";
 import { TlvFabricId } from "../common/FabricId";
-import { TlvFabricIndex } from "../common/FabricIndex";
+import { FabricIndex, TlvFabricIndex } from "../common/FabricIndex";
 import { AccessLevel, Attribute, Cluster, Command, TlvNoResponse } from "./Cluster";
 import { MatterCoreSpecificationV1_0, TlvArray, TlvBoolean, TlvByteString, TlvEnum, TlvField, TlvNullable, TlvObject, TlvOptionalField, TlvString, TlvString32max, TlvUInt32, TlvUInt8 } from "@project-chip/matter.js";
 
@@ -242,22 +242,22 @@ export const OperationalCredentialsCluster = Cluster({
     /** @see {@link MatterCoreSpecificationV1_0} § 11.17.6 */
     attributes: {
         /** Contains all NOCs applicable to this Node. */
-        nocs: Attribute(0, TlvArray(TlvNoc), { readAcl: AccessLevel.Administer }),
+        nocs: Attribute(0, TlvArray(TlvNoc), { persistent: true, omitChanges: true, readAcl: AccessLevel.Administer }),
 
         /** Describes all fabrics to which this Node is commissioned. */
-        fabrics: Attribute(1, TlvArray(TlvFabricDescriptor)),
+        fabrics: Attribute(1, TlvArray(TlvFabricDescriptor), { persistent: true }),
 
         /** Contains the number of Fabrics that are supported by the device. */
         supportedFabrics: Attribute(2, TlvUInt8.bound({ min: 5, max: 254 })),
 
         /** Contains the number of Fabrics to which the device is currently commissioned. */
-        commissionedFabrics: Attribute(3, TlvUInt8),
+        commissionedFabrics: Attribute(3, TlvUInt8, { persistent: true }),
 
         /** Contains a read-only list of Trusted Root CA Certificates installed on the Node. */
-        trustedRootCertificates: Attribute(4, TlvArray(TlvByteString, { maxLength: 400 })),
+        trustedRootCertificates: Attribute(4, TlvArray(TlvByteString, { maxLength: 400 }), { persistent: true, omitChanges: true }),
 
         /** Contain accessing fabric index. */
-        currentFabricIndex: Attribute(5, TlvFabricIndex),
+        currentFabricIndex: Attribute(5, TlvFabricIndex, { default: new FabricIndex(0)}),
     },
 
     /** @see {@link MatterCoreSpecificationV1_0} § 11.17.7 */

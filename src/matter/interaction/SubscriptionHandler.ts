@@ -115,6 +115,7 @@ export class SubscriptionHandler {
         logger.debug(`Sending subscription update message for ID ${this.subscriptionId} with ${values.length} values`);
         const exchange = this.server.initiateExchange(this.fabric, this.peerNodeId, INTERACTION_PROTOCOL_ID);
         if (exchange === undefined) return;
+        logger.debug(`Sending subscription changes: ${Logger.toJSON(values)}`);
         const messenger = new InteractionServerMessenger(exchange);
         await messenger.sendDataReport({
             suppressResponse: !values.length, // suppressResponse ok for empty DataReports

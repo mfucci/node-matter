@@ -17,6 +17,9 @@ import {
 import { ClusterServerHandlers } from "./ClusterServer";
 import { ByteArray } from "@project-chip/matter.js";
 import { FabricIndex } from "../../common/FabricIndex";
+import { Logger } from "../../../log/Logger";
+
+const logger = Logger.get("OperationalCredentialsServer");
 
 interface OperationalCredentialsServerConf {
     devicePrivateKey: ByteArray,

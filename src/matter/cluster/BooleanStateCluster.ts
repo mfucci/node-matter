@@ -17,7 +17,7 @@ export const BooleanStateCluster = Cluster({
     name: "BooleanState",
     revision: 1,
 
-    /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.7.5 */
+    /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.7.4 */
     attributes: {
        /** The semantics of this boolean state are defined by the device type using this cluster.
         * For example, in a Contact Sensor device type, FALSE=open or no contact, TRUE=closed or contact */

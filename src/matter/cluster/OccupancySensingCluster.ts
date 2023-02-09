@@ -48,7 +48,7 @@ export const OccupancySensingCluster = Cluster({
        /** bitmap allowing for specification of combination of sensor types */
        occupancySensorTypeBitmap: Attribute(0x0002, OccupancySensorTypeBitmap),
 
-       /** @see {@link MatterApplicationClusterSpecificationV1_0} § 2.7.6 */
+       // @see {@link MatterApplicationClusterSpecificationV1_0} § 2.7.6
 
        /** delay in seconds before the sensor changes back to unoccupied state. */
        pirOccupiedToUnoccupiedDelay: OptionalWritableAttribute(0x0010, TlvUInt16, { default: 0 }),

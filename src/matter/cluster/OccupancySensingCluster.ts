@@ -57,7 +57,7 @@ export const OccupancySensingCluster = Cluster({
        /** number of events in the period pirUnoccupiedToOccupiedDelay before the sensor changes to occupied */
        pirUnoccupiedToOccupiedThreshold: OptionalWritableAttribute(0x0012, TlvUInt8.bound({ min: 1, max: 254 }), { default: 1 }),
 
-       /** @see {@link MatterApplicationClusterSpecificationV1_0} § 2.7.7 */
+       // @see {@link MatterApplicationClusterSpecificationV1_0} § 2.7.7
 
        /** delay, in seconds, before the sensor changes back to unoccupied state. */
        ultrasonicOccupiedToUnoccupiedDelay: OptionalWritableAttribute(0x0020, TlvUInt16, { default: 0 }), 

@@ -27,7 +27,7 @@ export const PressureMeasurementCluster = Cluster({
        measuredValue: Attribute(0x0, TlvNullable(TlvInt16)),
        
        /** Indicates the minimum value of MeasuredValue that can be measured. */
-       minMeasuredValue: Attribute(0x1, TlvNullable(TlvInt16)),
+       minMeasuredValue: Attribute(0x1, TlvNullable(TlvInt16.bound({ min: -32767}))),
        
        /** Indicates the maximum value of MeasuredValue that can be measured. */
        maxMeasuredValue: Attribute(0x2, TlvNullable(TlvInt16)),
@@ -39,7 +39,7 @@ export const PressureMeasurementCluster = Cluster({
        scaledValue: OptionalAttribute(0x10, TlvNullable(TlvInt16), { default: 0 }),
 
        /** Indicates the minimum value of ScaledValue that can be measured */
-       minScaledValue: OptionalAttribute(0x11, TlvNullable(TlvInt16), { default: 0 }),
+       minScaledValue: OptionalAttribute(0x11, TlvNullable(TlvInt16.bound({ min: -32767})), { default: 0 }),
 
        /** Indicates the maximum value of ScaledValue that can be measured. */
        maxScaledValue: OptionalAttribute(0x12, TlvNullable(TlvInt16), { default: 0 }),
@@ -48,6 +48,6 @@ export const PressureMeasurementCluster = Cluster({
        scaledTolerance: OptionalAttribute(0x13, TlvUInt16.bound({ min: 0, max: 2048 }), { default: 0 }),
 
        /** Indicates the base 10 exponent used to obtain ScaledValue */
-       scale: OptionalAttribute(0x14, TlvUInt8.bound({ min:-127, max: 127 }), { default: 0 }),
+       scale: OptionalAttribute(0x14, TlvUInt8.bound({ min: -127, max: 127 }), { default: 0 }),
     },
 });

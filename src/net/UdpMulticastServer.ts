@@ -9,6 +9,9 @@ import { Network } from "./Network";
 import { UdpChannel } from "./UdpChannel";
 import { ByteArray } from "@project-chip/matter.js";
 import { isIPv4 } from "../util/Ip";
+import { Logger } from "../log/Logger";
+
+const logger = Logger.get("UdpMulticastServer");
 
 export interface UdpMulticastServerOptions {
     listeningPort: number,
@@ -52,7 +55,11 @@ export class UdpMulticastServer {
             const { ips } = this.network.getIpMac(netInterface) ?? { ips: [] };
             await Promise.all(ips.map(async ip => {
                 const iPv4 = isIPv4(ip);
-                await (await this.broadcastChannels.get(netInterface, iPv4)).send(iPv4 ? this.broadcastAddressIpv4 : this.broadcastAddressIpv6, this.broadcastPort, message);
+                try {
+                    await (await this.broadcastChannels.get(netInterface, iPv4)).send(iPv4 ? this.broadcastAddressIpv4 : this.broadcastAddressIpv6, this.broadcastPort, message);
+                } catch (err) {
+                    logger.info(`${netInterface}: ${(err as Error).message}`);
+                }
             }));
         }));
     }

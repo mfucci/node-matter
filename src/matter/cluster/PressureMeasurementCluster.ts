@@ -8,7 +8,7 @@ import { Attribute, OptionalAttribute, Cluster, Command, TlvNoArguments, TlvNoRe
 import { BitFlag, MatterApplicationClusterSpecificationV1_0, TlvBitmap, TlvInt16, TlvUInt16, TlvEnum, TlvField, TlvNullable, TlvObject, TlvSchema, TlvUInt8 } from "@project-chip/matter.js";
 
 /**
- * Attributes and commands for Pressure Measurement.
+ * This cluster provides an interface to pressure measurement functionality.
  *
  * @see {@link MatterApplicationClusterSpecificationV1_0} § 2.4
  */

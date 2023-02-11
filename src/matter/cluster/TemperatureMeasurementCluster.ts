@@ -8,7 +8,7 @@ import { Attribute, OptionalAttribute, Cluster, Command } from "./Cluster";
 import { MatterApplicationClusterSpecificationV1_0, TlvInt16, TlvUInt16, TlvNullable, TlvUInt8 } from "@project-chip/matter.js";
 
 /**
- * Attributes for Temperature Measurement.
+ * This cluster provides an interface to temperature measurement functionality.
  *
  * @see {@link MatterApplicationClusterSpecificationV1_0} § 2.3
  */

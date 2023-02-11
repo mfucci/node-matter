@@ -70,7 +70,7 @@ export class InteractionClient {
     }
 
     async getAllAttributes(): Promise<{}> {
-        return this.withMessenger<{ endpointId: number, clusterId: number, attributeId: number, version: number, value: TlvStream }[]>(async messenger => {
+        return this.withMessenger<{ endpointId: number | undefined, clusterId: number | undefined, attributeId: number | undefined, version: number, value: TlvStream }[]>(async messenger => {
             const response = await messenger.sendReadRequest({
                 attributes: [ {} ],
                 interactionModelRevision: 1,

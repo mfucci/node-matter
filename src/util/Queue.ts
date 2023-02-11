@@ -1,6 +1,6 @@
 /**
  * Promise-based blocking queue.
- * 
+ *
  * @license
  * Copyright 2022 The node-matter Authors
  * SPDX-License-Identifier: Apache-2.0
@@ -16,7 +16,7 @@ export class Queue<T> implements Stream<T> {
 
     async read(): Promise<T> {
         const { promise, resolver, rejecter } = await getPromiseResolver<T>();
-        if (this.closed) throw END_OF_STREAM;
+        if (this.closed) throw new Error(END_OF_STREAM);
         const data = this.queue.shift();
         if (data !== undefined) {
             return data;
@@ -26,7 +26,7 @@ export class Queue<T> implements Stream<T> {
     }
 
     async write(data: T) {
-        if (this.closed) throw END_OF_STREAM;
+        if (this.closed) throw new Error(END_OF_STREAM);
         if (this.pendingRead !== undefined) {
             this.pendingRead.resolver(data);
             this.pendingRead = undefined;
@@ -39,6 +39,6 @@ export class Queue<T> implements Stream<T> {
         if (this.closed) return;
         this.closed = true;
         if (this.pendingRead === undefined) return;
-        this.pendingRead.rejecter(END_OF_STREAM);
+        this.pendingRead.rejecter(new Error(END_OF_STREAM));
     }
 }

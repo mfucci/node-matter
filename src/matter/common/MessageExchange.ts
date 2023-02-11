@@ -99,7 +99,11 @@ export class MessageExchange<ContextT> {
         if (messageId === this.receivedMessageToAck?.packetHeader.messageId) {
             // Received a message retransmission but the reply is not ready yet, ignoring
             if (requiresAck) {
-                await this.send(MessageType.StandaloneAck, new ByteArray(0));
+                try {
+                    await this.send(MessageType.StandaloneAck, new ByteArray(0));
+                } catch (error) {
+                    logger.error("Failed to send ack", error);
+                }
             }
             return;
         }
@@ -161,7 +165,9 @@ export class MessageExchange<ContextT> {
             },
             payload,
         };
-        this.receivedMessageToAck = undefined;
+        if (messageType !== MessageType.StandaloneAck) {
+            this.receivedMessageToAck = undefined;
+        }
         let ackPromise: Promise<void> | undefined;
         if (message.payloadHeader.requiresAck) {
             this.sentMessageToAck = message;

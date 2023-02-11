@@ -82,7 +82,8 @@ export class ExchangeManager<ContextT> {
     }
 
     private async onMessage(channel: Channel<ByteArray>, messageBytes: ByteArray) {
-        var packet = MessageCodec.decodePacket(messageBytes);
+        const packet = MessageCodec.decodePacket(messageBytes);
+
         if (packet.header.sessionType === SessionType.Group) throw new Error("Group messages are not supported");
 
         const session = this.sessionManager.getSession(packet.header.sessionId);

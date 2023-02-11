@@ -193,7 +193,7 @@ export class MessageExchange<ContextT> {
         let ackPromise: Promise<void> | undefined;
         if (message.payloadHeader.requiresAck) {
             this.sentMessageToAck = message;
-            this.retransmissionTimer = Time.getTimer(this.getResubmissionBackOffTime(0), () => this.retransmitMessage(message, 1));
+            this.retransmissionTimer = Time.getTimer(this.getResubmissionBackOffTime(0), () => this.retransmitMessage(message, 0));
             const { promise, resolver, rejecter } = await getPromiseResolver<void>();
             ackPromise = promise;
             this.sentMessageAckSuccess = resolver;
@@ -246,12 +246,14 @@ export class MessageExchange<ContextT> {
 
         this.session.touchSessionTimestamps(true);
 
+        if (retransmissionCount === 1) {
+            // this.session.getContext().announce(); // TODO: announce
+        }
+        const resubmissionBackoffTime = this.getResubmissionBackOffTime(retransmissionCount);
+        logger.debug(`Resubmit message ${message.packetHeader.messageId} (attempt ${retransmissionCount}, next backoff time ${resubmissionBackoffTime}ms))`);
+
         this.channel.send(message)
             .then(() => {
-                if (retransmissionCount === 1) {
-                    // this.session.getContext().announce(); // TODO: announce
-                }
-                const resubmissionBackoffTime = this.getResubmissionBackOffTime(retransmissionCount);
                 this.retransmissionTimer = Time.getTimer(resubmissionBackoffTime, () => this.retransmitMessage(message, retransmissionCount))
                     .start();
             })

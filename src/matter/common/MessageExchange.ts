@@ -161,7 +161,9 @@ export class MessageExchange<ContextT> {
             },
             payload,
         };
-        this.receivedMessageToAck = undefined;
+        if (messageType !== MessageType.StandaloneAck) {
+            this.receivedMessageToAck = undefined;
+        }
         let ackPromise: Promise<void> | undefined;
         if (message.payloadHeader.requiresAck) {
             this.sentMessageToAck = message;

@@ -22,6 +22,14 @@ export class UnsecureSession<T> implements Session<T> {
         return false;
     }
 
+    notifyActivity(messageReceived: boolean) {
+        // Do nothing
+    }
+
+    isPeerActive(): boolean {
+        return true;
+    }
+
     decode(packet: Packet): Message {
         return MessageCodec.decodePayload(packet);
     }

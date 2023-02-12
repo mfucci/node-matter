@@ -7,6 +7,20 @@
 import { MessageExchange } from "../../common/MessageExchange";
 import { GeneralStatusCode, ProtocolStatusCode, MessageType, SECURE_CHANNEL_PROTOCOL_ID } from "./SecureChannelMessages";
 import { ByteArray, DataReader, DataWriter, Endian, TlvSchema } from "@project-chip/matter.js";
+import { MatterError } from "../../../error/MatterError";
+
+/** Error base Class for all errors related to the status response messages. */
+export class ChannelStatusResponseError extends MatterError {
+    public constructor(
+        public readonly message: string,
+        public readonly generalStatusCode: GeneralStatusCode,
+        public readonly protocolStatusCode: ProtocolStatusCode,
+    ) {
+        super();
+
+        this.message = `(${generalStatusCode}/${protocolStatusCode}) ${message}`;
+    }
+}
 
 export class SecureChannelMessenger<ContextT> {
     constructor(
@@ -25,9 +39,18 @@ export class SecureChannelMessenger<ContextT> {
         return schema.decode((await this.nextMessage(expectedMessageType)).payload);
     }
 
+    async waitForStatusResponse() {
+        const response = await this.nextMessage(MessageType.StatusReport);
+        return this.decodeStatusReport(response.payload);
+    }
+
     async waitForSuccess() {
-        // If the status is not Success, this would throw an Error.
-        await this.nextMessage(MessageType.StatusReport);
+        const { generalStatus, protocolStatus } = await this.waitForStatusResponse();
+        console.log(`Received status response ${generalStatus}/${protocolStatus}`);
+        if (generalStatus !== GeneralStatusCode.Success) {
+            throw new ChannelStatusResponseError(`Received status response ${generalStatus}, but expected Success (0)`, generalStatus, protocolStatus);
+        }
+        return protocolStatus;
     }
 
     async send<T>(message: T, type: number, schema: TlvSchema<T>) {
@@ -60,13 +83,23 @@ export class SecureChannelMessenger<ContextT> {
         await this.exchange.send(MessageType.StatusReport, writer.toByteArray());
     }
 
-    protected throwIfError(messageType: number, payload: ByteArray) {
-        if (messageType !== MessageType.StatusReport) return;
+    decodeStatusReport(payload: ByteArray) {
         const reader = new DataReader(payload, Endian.Little);
         const generalStatus = reader.readUInt16();
-        if (generalStatus === GeneralStatusCode.Success) return;
         const protocolId = reader.readUInt32();
         const protocolStatus = reader.readUInt16();
+        return { generalStatus, protocolId, protocolStatus };
+    }
+
+    protected throwIfError(messageType: number, payload: ByteArray) {
+        if (messageType !== MessageType.StatusReport) return;
+        const { generalStatus, protocolId, protocolStatus } = this.decodeStatusReport(payload);
+        if (generalStatus === GeneralStatusCode.Success) {
+            if (protocolStatus !== ProtocolStatusCode.Success) {
+                throw new Error(`Received success status, but protocol status is not Success: ${protocolStatus}`);
+            }
+            return;
+        }
         throw new Error(`Received error status: ${generalStatus} ${protocolId} ${protocolStatus}`);
     }
 }

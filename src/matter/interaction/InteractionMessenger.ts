@@ -139,8 +139,18 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
                         break;
                     case MessageType.InvokeCommandRequest:
                         const invokeRequest = TlvInvokeRequest.decode(message.payload);
-                        const invokeResponse = await handleInvokeRequest(invokeRequest, message);
-                        await this.exchange.send(MessageType.InvokeCommandResponse, TlvInvokeResponse.encode(invokeResponse));
+                        try {
+                            const invokeResponse = await handleInvokeRequest(invokeRequest, message);
+                            await this.exchange.send(MessageType.InvokeCommandResponse, TlvInvokeResponse.encode(invokeResponse));
+                        } catch (error) {
+                            if (error instanceof StatusResponseError) {
+                                const statusCode = error.code;
+                                logger.info(`Sending status response ${statusCode} for invoke error: ${error}`);
+                                await this.sendStatus(statusCode);
+                            } else {
+                                throw error;
+                            }
+                        }
                         break;
                     case MessageType.TimedRequest:
                         const timedRequest = TlvTimedRequest.decode(message.payload);

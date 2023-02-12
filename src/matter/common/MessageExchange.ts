@@ -99,11 +99,7 @@ export class MessageExchange<ContextT> {
         if (messageId === this.receivedMessageToAck?.packetHeader.messageId) {
             // Received a message retransmission but the reply is not ready yet, ignoring
             if (requiresAck) {
-                try {
-                    await this.send(MessageType.StandaloneAck, new ByteArray(0));
-                } catch (error) {
-                    logger.error("Failed to send ack", error);
-                }
+                await this.send(MessageType.StandaloneAck, new ByteArray(0));
             }
             return;
         }

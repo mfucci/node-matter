@@ -37,6 +37,6 @@ export interface Session<T> {
     getPeerSessionId(): number;
     getNodeId(): NodeId | undefined;
     getPeerNodeId(): NodeId | undefined;
-    touchSessionTimestamps(messageSent: boolean): void;
+    notifyActivity(messageReceived: boolean): void;
     isPeerActive(): boolean;
 }

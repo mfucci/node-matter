@@ -22,7 +22,7 @@ export class UnsecureSession<T> implements Session<T> {
         return false;
     }
 
-    touchSessionTimestamps(messageSent: boolean) {
+    notifyActivity(messageReceived: boolean) {
         // Do nothing
     }
 

@@ -36,6 +36,9 @@ const MRP_BACKOFF_THRESHOLD = 1;
  */
 const MRP_STANDALONE_ACK_TIMEOUT = 200;
 
+/** @see {@link MatterCoreSpecificationV1_0}, section 4.11.2.1 */
+const MAXIMUM_TRANSMISSION_TIME_MS = 9495; // 413 + 825 + 1485 + 2541 + 4231 ms as per specs
+
 export class MessageExchange<ContextT> {
     static async fromInitialMessage<ContextT>(
         channel: MessageChannel<ContextT>,
@@ -67,7 +70,7 @@ export class MessageExchange<ContextT> {
         messageCounter: MessageCounter,
         closeCallback: () => void,
     ) {
-        const {session} = channel;
+        const { session } = channel;
         return new MessageExchange(
             session,
             channel,
@@ -91,7 +94,6 @@ export class MessageExchange<ContextT> {
     private sentMessageAckSuccess: ((...args: any[]) => void) | undefined;
     private sentMessageAckFailure: ((error?: Error) => void) | undefined;
     private retransmissionTimer: Timer | undefined;
-    private closeAfterRetransmissionCompleted: boolean = false;
 
     constructor(
         readonly session: Session<ContextT>,
@@ -116,7 +118,7 @@ export class MessageExchange<ContextT> {
         const { packetHeader: { messageId }, payloadHeader: { requiresAck, ackedMessageId, protocolId, messageType } } = message;
 
         logger.debug("onMessageReceived", this.protocolId, MessageCodec.messageToString(message));
-        this.session.touchSessionTimestamps(false);
+        this.session.notifyActivity(true);
 
         if (messageId === this.receivedMessageToAck?.packetHeader.messageId) {
             // Received a message retransmission but the reply is not ready yet, ignoring
@@ -147,7 +149,6 @@ export class MessageExchange<ContextT> {
                 // The other side has received our previous message
                 this.sentMessageAckSuccess?.();
                 this.retransmissionTimer?.stop();
-                this.retransmissionTimer = undefined;
                 this.sentMessageAckSuccess = undefined;
                 this.sentMessageAckFailure = undefined;
                 this.sentMessageToAck = undefined;
@@ -169,7 +170,7 @@ export class MessageExchange<ContextT> {
     async send(messageType: number, payload: ByteArray) {
         if (this.sentMessageToAck !== undefined) throw new Error("The previous message has not been acked yet, cannot send a new message");
 
-        this.session.touchSessionTimestamps(true);
+        this.session.notifyActivity(false);
 
         const message = {
             packetHeader: {
@@ -206,7 +207,6 @@ export class MessageExchange<ContextT> {
             this.retransmissionTimer?.start();
             await ackPromise;
             this.retransmissionTimer?.stop();
-            this.retransmissionTimer = undefined;
             this.sentMessageAckSuccess = undefined;
             this.sentMessageAckFailure = undefined;
         }
@@ -231,12 +231,10 @@ export class MessageExchange<ContextT> {
     }
 
     private retransmitMessage(message: Message, retransmissionCount: number) {
-        this.retransmissionTimer = undefined;
         retransmissionCount++;
         if (retransmissionCount === this.retransmissionRetries) {
-            if (this.closeAfterRetransmissionCompleted) {
-                this.closeInternal(new Error("Message retransmission limit reached"));
-            } if (this.sentMessageToAck !== undefined && this.sentMessageAckFailure !== undefined) {
+            if (this.sentMessageToAck !== undefined && this.sentMessageAckFailure !== undefined) {
+                this.receivedMessageToAck = undefined;
                 this.sentMessageAckFailure(new Error("Message retransmission limit reached"));
                 this.sentMessageAckFailure = undefined;
                 this.sentMessageAckSuccess = undefined;
@@ -244,7 +242,13 @@ export class MessageExchange<ContextT> {
             return;
         }
 
-        this.session.touchSessionTimestamps(true);
+        this.session.notifyActivity(false);
+
+        if (retransmissionCount === 1) {
+            // this.session.getContext().announce(); // TODO: announce
+        }
+        const resubmissionBackoffTime = this.getResubmissionBackOffTime(retransmissionCount);
+        logger.debug(`Resubmit message ${message.packetHeader.messageId} (attempt ${retransmissionCount}, next backoff time ${resubmissionBackoffTime}ms))`);
 
         if (retransmissionCount === 1) {
             // this.session.getContext().announce(); // TODO: announce
@@ -265,22 +269,13 @@ export class MessageExchange<ContextT> {
             this.send(MessageType.StandaloneAck, new ByteArray(0))
                 .catch(error => logger.error("An error happened when closing the exchange", error));
         }
-        if (this.retransmissionTimer) {
-            this.closeAfterRetransmissionCompleted = true;
-            logger.debug("Close message exchange delayed to after retransmission completed");
-        }
+
+        // Wait until all potential Resubmissions are done, also for Standalone-Acks
+        Time.getTimer(MAXIMUM_TRANSMISSION_TIME_MS, () => this.closeInternal()).start();
     }
 
-    private closeInternal(error?: Error) {
+    private closeInternal() {
         this.retransmissionTimer?.stop();
-        this.retransmissionTimer = undefined;
-        if (this.sentMessageToAck !== undefined && this.sentMessageAckFailure !== undefined) {
-            this.sentMessageAckSuccess = undefined;
-            this.sentMessageAckFailure(error ?? new Error("Exchange closed"));
-            this.sentMessageAckFailure = undefined;
-        } else if (error !== undefined) {
-            logger.error("Close message exchange because of error: ", error);
-        }
         this.messagesQueue.close();
         this.closeCallback();
     }

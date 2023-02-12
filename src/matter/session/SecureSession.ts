@@ -18,6 +18,7 @@ import {
 import { UNDEFINED_NODE_ID } from "./SessionManager";
 import { NodeId } from "../common/NodeId";
 import { ByteArray, DataWriter, Endian } from "@project-chip/matter.js";
+import { Time } from "../../time/Time";
 
 const SESSION_KEYS_INFO = ByteArray.fromString("SessionKeys");
 const SESSION_RESUMPTION_KEYS_INFO = ByteArray.fromString("SessionResumptionKeys");
@@ -25,8 +26,8 @@ const SESSION_RESUMPTION_KEYS_INFO = ByteArray.fromString("SessionResumptionKeys
 export class SecureSession<T> implements Session<T> {
     private nextSubscriptionId = 0;
     private readonly subscriptions = new Array<SubscriptionHandler>();
-    private timestamp = Date.now();
-    private activeTimestamp = Date.now();
+    private timestamp = Time.nowMs();
+    private activeTimestamp = this.timestamp;
 
     static async create<T>(context: T, id: number, fabric: Fabric | undefined, peerNodeId: NodeId, peerSessionId: number, sharedSecret: ByteArray, salt: ByteArray, isInitiator: boolean, isResumption: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
         const keys = await Crypto.hkdf(sharedSecret, salt, isResumption ? SESSION_RESUMPTION_KEYS_INFO : SESSION_KEYS_INFO, 16 * 3);
@@ -55,15 +56,15 @@ export class SecureSession<T> implements Session<T> {
         return true;
     }
 
-    touchSessionTimestamps(messageSent: boolean) {
-        this.timestamp = Date.now();
-        if (messageSent) {
+    notifyActivity(messageReceived: boolean) {
+        this.timestamp = Time.nowMs();
+        if (messageReceived) { // only update active timestamp if we received a message
             this.activeTimestamp = this.timestamp;
         }
     }
 
     isPeerActive(): boolean {
-        return (Date.now() - this.activeTimestamp) < SLEEPY_ACTIVE_THRESHOLD_MS;
+        return (Time.nowMs() - this.activeTimestamp) < SLEEPY_ACTIVE_THRESHOLD_MS;
     }
 
     decode({ header, bytes }: Packet): Message {

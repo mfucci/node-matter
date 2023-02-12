@@ -4,28 +4,18 @@
 * SPDX-License-Identifier: Apache-2.0
 */
 import { KeyValueStorage } from "./KeyValueStorage";
-import {singleton} from "../util/Singleton";
 
 export class Persistence {
-    private storage: KeyValueStorage | undefined;
 
-    static get: () => Persistence = singleton(() => new Persistence());
-
-    init(storage: KeyValueStorage) {
-        if (this.storage !== undefined) {
-            throw new Error("Persistence already initialized, can not change it on runtime");
-        }
-        this.storage = storage;
-    }
+    constructor(
+        private storage: KeyValueStorage
+    ) {}
 
     getPersistenceContext(context: string): PersistenceContext {
         return new PersistenceContext(this, context);
     }
 
     getStorage(): KeyValueStorage {
-        if (this.storage === undefined) {
-            throw new Error("Persistence not initialized");
-        }
         return this.storage;
     }
 }

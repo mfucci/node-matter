@@ -5,7 +5,7 @@
  */
 
 import { Logger } from "../../log/Logger";
-import { MessageExchange } from "../common/MessageExchange";
+import { MessageExchange, UnexpectedMessageResponseError } from "../common/MessageExchange";
 import { MatterController } from "../MatterController";
 import { MatterDevice } from "../MatterDevice";
 import {
@@ -191,7 +191,20 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
             }
         }
 
-        await this.exchange.send(MessageType.ReportData, TlvDataReport.encode(dataReport));
+        try {
+            await this.exchange.send(MessageType.ReportData, TlvDataReport.encode(dataReport), dataReport.suppressResponse);
+            if (!dataReport.suppressResponse) {
+                await this.waitForSuccess();
+            }
+        } catch (error: any) {
+            if (error instanceof UnexpectedMessageResponseError) {
+                const message = error.data;
+                const messageType = message.payloadHeader.messageType;
+                this.throwIfError(messageType, message.payload);
+            } else {
+                throw error;
+            }
+        }
     }
 }
 

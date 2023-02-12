@@ -80,7 +80,6 @@ export class SubscriptionHandler {
                 },
             })),
         });
-        await messenger.waitForSuccess();
         messenger.close();
     }
 }

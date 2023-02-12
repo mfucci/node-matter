@@ -15,8 +15,20 @@ import { Logger } from "../../log/Logger";
 import { NodeId } from "./NodeId";
 import { ByteArray } from "@project-chip/matter.js";
 import { SecureChannelProtocol } from "../session/secure/SecureChannelProtocol";
+import { MatterError } from "../../error/MatterError";
 
 const logger = Logger.get("MessageExchange");
+
+export class UnexpectedMessageResponseError extends MatterError {
+    public constructor(
+        public readonly message: string,
+        public readonly data: Message,
+    ) {
+        super();
+
+        this.message = `(${MessageCodec.messageToString(data)}) ${message}`;
+    }
+}
 
 /** The base number for the exponential backoff equation. */
 const MRP_BACKOFF_BASE = 1.6;
@@ -91,6 +103,7 @@ export class MessageExchange<ContextT> {
     private readonly messagesQueue = new Queue<Message>();
     private receivedMessageToAck: Message | undefined;
     private sentMessageToAck: Message | undefined;
+    private expectAckOnly: boolean = false;
     private sentMessageAckSuccess: ((...args: any[]) => void) | undefined;
     private sentMessageAckFailure: ((error?: Error) => void) | undefined;
     private retransmissionTimer: Timer | undefined;
@@ -146,12 +159,25 @@ export class MessageExchange<ContextT> {
                     throw new Error(`Incorrect ack received. Expected ${sentMessageIdToAck}, received: ${ackedMessageId}`);
                 }
             } else {
-                // The other side has received our previous message
-                this.sentMessageAckSuccess?.();
-                this.retransmissionTimer?.stop();
-                this.sentMessageAckSuccess = undefined;
-                this.sentMessageAckFailure = undefined;
-                this.sentMessageToAck = undefined;
+                // If we only expect an Ack without data but got data, reject with this
+                if (this.expectAckOnly && !SecureChannelProtocol.isStandaloneAck(protocolId, messageType)) {
+                    if (requiresAck) {
+                        await this.send(MessageType.StandaloneAck, new ByteArray(0));
+                    }
+                    this.sentMessageAckFailure?.(new UnexpectedMessageResponseError("Expected ack only", message));
+                    this.retransmissionTimer?.stop();
+                    this.sentMessageAckFailure = undefined;
+                    this.sentMessageAckSuccess = undefined;
+                    this.sentMessageToAck = undefined;
+                    return;
+                } else {
+                    // The other side has received our previous message
+                    this.sentMessageAckSuccess?.();
+                    this.retransmissionTimer?.stop();
+                    this.sentMessageAckSuccess = undefined;
+                    this.sentMessageAckFailure = undefined;
+                    this.sentMessageToAck = undefined;
+                }
             }
         }
         if (SecureChannelProtocol.isStandaloneAck(protocolId, messageType)) {
@@ -167,7 +193,7 @@ export class MessageExchange<ContextT> {
         await this.messagesQueue.write(message);
     }
 
-    async send(messageType: number, payload: ByteArray) {
+    async send(messageType: number, payload: ByteArray, expectAckOnly: boolean = false) {
         if (this.sentMessageToAck !== undefined) throw new Error("The previous message has not been acked yet, cannot send a new message");
 
         this.session.notifyActivity(false);
@@ -201,6 +227,9 @@ export class MessageExchange<ContextT> {
             ackPromise = promise;
             this.sentMessageAckSuccess = resolver;
             this.sentMessageAckFailure = rejecter;
+            this.expectAckOnly = expectAckOnly;
+        } else {
+            this.expectAckOnly = false;
         }
 
         await this.channel.send(message);

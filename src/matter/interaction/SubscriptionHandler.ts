@@ -16,6 +16,8 @@ import { SecureSession } from "../session/SecureSession";
 
 const logger = Logger.get("SubscriptionHandler");
 
+const SUBSCRIPTION_MAX_INTERVAL_PUBLISHER_LIMIT_MS = 1000 * 60 * 60;
+
 interface PathValueVersion<T> {
     path: AttributePath,
     schema: TlvSchema<T>,
@@ -27,8 +29,10 @@ export class SubscriptionHandler {
     private lastUpdateTimeMs = 0;
     private updateTimer: Timer | null = null;
     private outstandingAttributeUpdates = new Map<string, PathValueVersion<any>>();
-
     private attributeListeners = new Map<string, (value: any, version: number) => void>();
+    private isActive = false;
+    readonly maxInterval: number;
+    readonly sendInterval: number;
 
     constructor(
         readonly subscriptionId: number,
@@ -39,6 +43,15 @@ export class SubscriptionHandler {
         private readonly minIntervalFloorMs: number,
         private readonly maxIntervalCeilingMs: number,
     ) {
+        // The final Max interval needs to be between min-floor and the MAX of max-ceiling and the defined publisher
+        // maximum of 60 minutes - this is to ensure that the publisher is not flooded with updates. But spec also
+        // says that it should be more frequent than the max interval.
+        // So let's calculate a maximum in the second half of the range between the two, but then already send at
+        // half of that time (so ideally we have 2 updates per max interval, so one could fail, and we still are good).
+        const halfMaxIntervalCeilingMs = (Math.max(SUBSCRIPTION_MAX_INTERVAL_PUBLISHER_LIMIT_MS, maxIntervalCeilingMs) - minIntervalFloorMs) / 2;
+        this.maxInterval = Math.floor(minIntervalFloorMs + halfMaxIntervalCeilingMs + halfMaxIntervalCeilingMs * Math.random());
+        this.sendInterval = Math.floor(this.maxInterval / 2);
+
         attributes.forEach(({ path, attribute }) => {
             // TODO: handle attributes with "getter" methods
             const listener = (value: any, version: number) => this.attributeChangeListener(path, attribute.schema, version, value);
@@ -47,7 +60,14 @@ export class SubscriptionHandler {
         });
     }
 
+    getMaxInterval():number {
+        return Math.ceil(this.maxInterval / 1000);
+    }
+
     async sendUpdate() {
+        if (!this.isActive) {
+            return;
+        }
         const now = Date.now();
         if (this.updateTimer) {
             this.updateTimer.stop();
@@ -63,7 +83,7 @@ export class SubscriptionHandler {
         this.outstandingAttributeUpdates.clear();
         this.lastUpdateTimeMs = now;
         await this.sendUpdateMessage(updatesToSend);
-        this.updateTimer = Time.getTimer(this.maxIntervalCeilingMs, () => this.sendUpdate()).start();
+        this.updateTimer = Time.getTimer(this.sendInterval, () => this.sendUpdate()).start();
     }
 
     async sendInitialReport(messenger: InteractionServerMessenger, session: SecureSession<MatterDevice>) {
@@ -91,7 +111,8 @@ export class SubscriptionHandler {
 
         await messenger.waitForSuccess();
 
-        this.updateTimer = Time.getTimer(this.maxIntervalCeilingMs, () => this.sendUpdate()).start();
+        this.isActive = true;
+        this.updateTimer = Time.getTimer(this.sendInterval, () => this.sendUpdate()).start();
     }
 
     async attributeChangeListener(path: AttributePath, schema: TlvSchema<any>, version: number, value: any) {
@@ -101,6 +122,7 @@ export class SubscriptionHandler {
     }
 
     cancel() {
+        this.isActive = false;
         this.attributes.forEach(({ path, attribute }) => {
             const pathId = attributePathToId(path);
             attribute.removeMatterListener(this.attributeListeners.get(pathId)!);
@@ -115,7 +137,7 @@ export class SubscriptionHandler {
         logger.debug(`Sending subscription update message for ID ${this.subscriptionId} with ${values.length} values`);
         const exchange = this.server.initiateExchange(this.fabric, this.peerNodeId, INTERACTION_PROTOCOL_ID);
         if (exchange === undefined) return;
-        logger.debug(`Sending subscription changes: ${Logger.toJSON(values)}`);
+        logger.debug(`Sending subscription changes for ID ${this.subscriptionId}: ${Logger.toJSON(values)}`);
         const messenger = new InteractionServerMessenger(exchange);
         await messenger.sendDataReport({
             suppressResponse: !values.length, // suppressResponse ok for empty DataReports

@@ -265,8 +265,10 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
             // Send initial data report to prime the subscription with initial data
             await subscriptionHandler.sendInitialReport(messenger, session);
 
+            const maxInterval = subscriptionHandler.getMaxInterval();
+            logger.info(`Created subscription ${subscriptionId} for Session ${session.getId()} with ${attributes.length} attributes. Updates: ${minIntervalFloorSeconds} - ${maxIntervalCeilingSeconds} => ${maxInterval} seconds`);
             // Then send the subscription response
-            return { subscriptionId, maxIntervalCeilingSeconds, interactionModelRevision: 1 };
+            return { subscriptionId, maxInterval, interactionModelRevision: 1 };
         }
     }
 

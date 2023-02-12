@@ -180,6 +180,9 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
                 }
                 const attributeReportBytes = TlvAttributeReport.encode(attributeReport).length;
                 if (messageSize + attributeReportBytes > MAX_SPDU_LENGTH) {
+                    if (messageSize === emptyDataReportBytes.length) {
+                        throw new Error(`Attribute report for is too long to fit in a single chunk, Array chunking not yet supported`);
+                    }
                     // Report doesn't fit, sending this chunk
                     await this.exchange.send(MessageType.ReportData, TlvDataReport.encode(dataReport));
                     await this.waitForSuccess();

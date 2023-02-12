@@ -28,6 +28,7 @@ import { Network } from "./net/Network";
 import { NetworkNode } from "./net/node/NetworkNode";
 import { commandExecutor } from "./util/CommandLine";
 import { OnOffCluster } from "./matter/cluster/OnOffCluster";
+import { LevelControlCluster } from "./matter/cluster/LevelControlCluster";
 import { GeneralCommissioningClusterHandler } from "./matter/cluster/server/GeneralCommissioningServer";
 import { OperationalCredentialsClusterHandler } from "./matter/cluster/server/OperationalCredentialsServer";
 import { MdnsScanner } from "./matter/mdns/MdnsScanner";
@@ -35,7 +36,8 @@ import packageJson from "../package.json";
 import { Logger } from "./log/Logger";
 import { VendorId } from "./matter/common/VendorId";
 import { OnOffClusterHandler } from "./matter/cluster/server/OnOffServer";
-import { ByteArray } from "@project-chip/matter.js";
+import { LevelControlClusterHandler } from "./matter/cluster/server/LevelControlServer";
+import { BitFlag, ByteArray } from "@project-chip/matter.js";
 import { CommissionningFlowType, DiscoveryCapabilitiesSchema, ManualPairingCodeCodec, QrPairingCodeCodec } from "./codec/PairingCode.js";
 import { QrCode } from "./codec/QrCode.js";
 import { NetworkCommissioningCluster, NetworkCommissioningStatus } from "./matter/cluster/NetworkCommissioningCluster";
@@ -65,7 +67,7 @@ class Device {
         logger.info(`node-matter@${packageJson.version}`);
 
         const deviceName = "Matter test device";
-        const deviceType = 257 /* Dimmable bulb */;
+        const deviceType = DEVICE.DIMMABLE_LIGHT.code/* Dimmable bulb */;
         const vendorName = "node-matter";
         const passcode = 20202021;
         const discriminator = 3840;
@@ -77,14 +79,36 @@ class Device {
         // Barebone implementation of the On/Off cluster
         const onOffClusterServer = new ClusterServer(
             OnOffCluster,
-            { lightingLevelControl: false },
+            { lightingLevelControl: true },
             { onOff: false }, // Off by default
             OnOffClusterHandler()
         );
 
+        // Barebone implementation of the Level Control cluster
+        const levelControlClusterServer = new ClusterServer(
+            LevelControlCluster,
+            {
+                // FIXME - Not sure values should be and how they affect operation
+                OnOff: true,
+                Lighting: true,
+                Frequency: false,
+            },
+            { 
+                currentLevel: 50,
+                remainingTime: 0,
+                currentFrequency: 0,
+                minFrequency:0 ,
+                maxFrequency: 0,
+                onLevel: 0,
+                options: 0,
+                startUpCurrentLevel: 0,
+            }, 
+            LevelControlClusterHandler()
+        );
+
         // We listen to the attribute update to trigger an action. This could also have been done in the method invokations in the server.
         onOffClusterServer.attributes.onOff.addListener(on => commandExecutor(on ? "on" : "off")?.());
-
+        
         const secureChannelProtocol = new SecureChannelProtocol(
             await PaseServer.fromPin(passcode, { iterations: 1000, salt: Crypto.getRandomData(32) }),
             new CaseServer(),
@@ -172,7 +196,7 @@ class Device {
                         AdminCommissioningHandler(secureChannelProtocol),
                     )
                 ])
-                .addEndpoint(0x01, DEVICE.ON_OFF_LIGHT, [ onOffClusterServer ])
+                .addEndpoint(0x01, DEVICE.ON_OFF_LIGHT, [ onOffClusterServer, levelControlClusterServer   ])
             )
             .start()
 

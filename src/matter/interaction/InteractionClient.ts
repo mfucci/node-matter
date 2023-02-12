@@ -17,6 +17,14 @@ import { ProtocolHandler } from "../common/ProtocolHandler";
 import { StatusCode } from "./InteractionMessages";
 import { TlvSchema, TlvStream } from "@project-chip/matter.js";
 
+interface GetRawValueResponse { // TODO Remove when restructuring Responses
+    endpointId: number;
+    clusterId: number;
+    attributeId: number;
+    version: number;
+    value: TlvStream;
+}
+
 export function ClusterClient<CommandT extends Commands, AttributeT extends Attributes>(interactionClient: InteractionClient, endpointId: number, clusterDef: Cluster<any, AttributeT, CommandT, any>): ClusterClient<CommandT, AttributeT> {
     const result: any = {};
     const { id: clusterId, commands, attributes } = clusterDef;
@@ -70,14 +78,17 @@ export class InteractionClient {
     }
 
     async getAllAttributes(): Promise<{}> {
-        return this.withMessenger<{ endpointId: number, clusterId: number, attributeId: number, version: number, value: TlvStream }[]>(async messenger => {
+        return this.withMessenger<GetRawValueResponse[]>(async messenger => {
             const response = await messenger.sendReadRequest({
                 attributes: [ {} ],
                 interactionModelRevision: 1,
                 isFabricFiltered: true,
             });
 
-            return response.values.map(({ value: { path: {endpointId, clusterId, attributeId}, version, value }}) => ({ endpointId, clusterId, attributeId, version, value }));
+            return response.values.map(({ value: { path: {endpointId, clusterId, attributeId}, version, value }}) => {
+                if (endpointId === undefined || clusterId === undefined || attributeId === undefined ) throw new Error("Invalid response");
+                return { endpointId, clusterId, attributeId, version, value };
+            });
         });
     }
 

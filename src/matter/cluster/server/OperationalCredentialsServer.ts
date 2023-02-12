@@ -21,7 +21,7 @@ import { tryCatch } from "../../../error/TryCatchHandler";
 import { FabricNotFoundError } from "../../fabric/FabricManager";
 import { Logger } from "../../../log/Logger";
 
-const logger = Logger.get("OperationalCredentialsServer");
+const logger = Logger.get("OperationalCredentialClusterServer");
 
 interface OperationalCredentialsServerConf {
     devicePrivateKey: ByteArray,

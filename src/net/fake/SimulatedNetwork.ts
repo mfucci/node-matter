@@ -22,7 +22,7 @@ export class SimulatedNetwork {
 
     onUdpData(address: string | undefined, port: number, listener: Listener): NetListener {
         const ipPort = `${address ?? "*"}:${port}`;
-        var listeners = this.listenersMap.get(ipPort);
+        let listeners = this.listenersMap.get(ipPort);
         if (listeners === undefined) {
             listeners = new Array<Listener>();
             this.listenersMap.set(ipPort, listeners);
@@ -35,7 +35,7 @@ export class SimulatedNetwork {
 
     private offUdpData(address: string | undefined, port: number, listenerToRemove: Listener) {
         const ipPort = `${address ?? "*"}:${port}`;
-        var listeners = this.listenersMap.get(ipPort);
+        const listeners = this.listenersMap.get(ipPort);
         if (listeners === undefined) return;
         const newListeners = listeners.filter(listener => listener !== listenerToRemove);
         if (newListeners.length === 0) {

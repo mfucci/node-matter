@@ -8,10 +8,17 @@ import { Message, MessageCodec, Packet } from "../../codec/MessageCodec";
 import { Crypto } from "../../crypto/Crypto";
 import { Fabric } from "../fabric/Fabric";
 import { SubscriptionHandler } from "../interaction/SubscriptionHandler";
-import { DEFAULT_ACTIVE_RETRANSMISSION_TIMEOUT_MS, DEFAULT_IDLE_RETRANSMISSION_TIMEOUT_MS, DEFAULT_RETRANSMISSION_RETRIES, Session } from "./Session";
+import {
+    DEFAULT_ACTIVE_RETRANSMISSION_TIMEOUT_MS,
+    DEFAULT_IDLE_RETRANSMISSION_TIMEOUT_MS,
+    DEFAULT_RETRANSMISSION_RETRIES,
+    SLEEPY_ACTIVE_THRESHOLD_MS,
+    Session,
+} from "./Session";
 import { UNDEFINED_NODE_ID } from "./SessionManager";
 import { NodeId } from "../common/NodeId";
 import { ByteArray, DataWriter, Endian } from "@project-chip/matter.js";
+import { Time } from "../../time/Time";
 import { Logger } from "../../log/Logger";
 
 const logger = Logger.get("SecureSession");
@@ -22,6 +29,8 @@ const SESSION_RESUMPTION_KEYS_INFO = ByteArray.fromString("SessionResumptionKeys
 export class SecureSession<T> implements Session<T> {
     private nextSubscriptionId = 0;
     private readonly subscriptions = new Array<SubscriptionHandler>();
+    private timestamp = Time.nowMs();
+    private activeTimestamp = this.timestamp;
 
     static async create<T>(context: T, id: number, fabric: Fabric | undefined, peerNodeId: NodeId, peerSessionId: number, sharedSecret: ByteArray, salt: ByteArray, isInitiator: boolean, isResumption: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
         const keys = await Crypto.hkdf(sharedSecret, salt, isResumption ? SESSION_RESUMPTION_KEYS_INFO : SESSION_KEYS_INFO, 16 * 3);
@@ -48,6 +57,17 @@ export class SecureSession<T> implements Session<T> {
 
     isSecure(): boolean {
         return true;
+    }
+
+    notifyActivity(messageReceived: boolean) {
+        this.timestamp = Time.nowMs();
+        if (messageReceived) { // only update active timestamp if we received a message
+            this.activeTimestamp = this.timestamp;
+        }
+    }
+
+    isPeerActive(): boolean {
+        return (Time.nowMs() - this.activeTimestamp) < SLEEPY_ACTIVE_THRESHOLD_MS;
     }
 
     decode({ header, bytes }: Packet): Message {

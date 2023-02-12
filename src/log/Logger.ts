@@ -20,6 +20,8 @@ function logFormater(now: Date, level: Level, logger: string, values: any[]) {
     const formattedValues = values.map(value => {
         if (value instanceof ByteArray) {
             return value.toHex();
+        } else if (value instanceof Error) {
+            return value.stack;
         }
         return value.toString()
     });

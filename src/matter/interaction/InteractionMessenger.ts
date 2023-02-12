@@ -9,21 +9,22 @@ import { MessageExchange } from "../common/MessageExchange";
 import { MatterController } from "../MatterController";
 import { MatterDevice } from "../MatterDevice";
 import {
+    StatusCode,
+    TlvAttributeReport,
+    TlvDataReport,
     TlvInvokeRequest,
     TlvInvokeResponse,
     TlvReadRequest,
-    TlvDataReport,
+    TlvStatusResponse,
     TlvSubscribeRequest,
     TlvSubscribeResponse,
-    StatusCode,
-    TlvStatusResponse,
     TlvTimedRequest,
-    TlvAttributeReport,
     TlvWriteRequest,
     TlvWriteResponse
 } from "./InteractionMessages";
 import { ByteArray, TlvSchema, TypeFromSchema } from "@project-chip/matter.js";
 import { Message } from "../../codec/MessageCodec";
+import { MatterError } from "../../error/MatterError";
 
 export const enum MessageType {
     StatusResponse = 0x01,
@@ -47,6 +48,18 @@ export type InvokeResponse = TypeFromSchema<typeof TlvInvokeResponse>;
 export type TimedRequest = TypeFromSchema<typeof TlvTimedRequest>;
 export type WriteRequest = TypeFromSchema<typeof TlvWriteRequest>;
 export type WriteResponse = TypeFromSchema<typeof TlvWriteResponse>;
+
+/** Error base Class for all errors related to the status response messages. */
+export class StatusResponseError extends MatterError {
+    public constructor(
+        public readonly message: string,
+        public readonly code: StatusCode,
+    ) {
+        super();
+
+        this.message = `(${code}) ${message}`;
+    }
+}
 
 const MAX_SPDU_LENGTH = 1024;
 

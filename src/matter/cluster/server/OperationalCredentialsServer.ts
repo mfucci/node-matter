@@ -17,6 +17,8 @@ import {
 import { ClusterServerHandlers } from "./ClusterServer";
 import { ByteArray } from "@project-chip/matter.js";
 import { FabricIndex } from "../../common/FabricIndex";
+import { tryCatch } from "../../../error/TryCatchHandler";
+import { FabricNotFoundError } from "../../fabric/FabricManager";
 import { Logger } from "../../../log/Logger";
 
 const logger = Logger.get("OperationalCredentialsServer");
@@ -112,16 +114,18 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
     removeFabric: async ({ request: {fabricIndex}, session }) => {
         const device = session.getContext();
 
-        try {
-            device.removeFabric(fabricIndex);
-        } catch {
-            return { status: OperationalCertStatus.InvalidFabricIndex };
-        }
+        const status = tryCatch(() => {
+                device.removeFabric(fabricIndex);
 
-        // TODO persist fabrics
-        // TODO: depending on cases destroy the secure session and delete all data!
+                // TODO persist fabrics
+                // TODO: depending on cases destroy the secure session and delete all data!
 
-        return { status: OperationalCertStatus.Success };
+                return OperationalCertStatus.Success;
+            },
+            FabricNotFoundError, OperationalCertStatus.InvalidFabricIndex
+        );
+
+        return { status };
     },
 
     addRootCert: async ({ request: {certificate}, session} ) => {

@@ -250,12 +250,6 @@ export class MessageExchange<ContextT> {
         const resubmissionBackoffTime = this.getResubmissionBackOffTime(retransmissionCount);
         logger.debug(`Resubmit message ${message.packetHeader.messageId} (attempt ${retransmissionCount}, next backoff time ${resubmissionBackoffTime}ms))`);
 
-        if (retransmissionCount === 1) {
-            // this.session.getContext().announce(); // TODO: announce
-        }
-        const resubmissionBackoffTime = this.getResubmissionBackOffTime(retransmissionCount);
-        logger.debug(`Resubmit message ${message.packetHeader.messageId} (attempt ${retransmissionCount}, next backoff time ${resubmissionBackoffTime}ms))`);
-
         this.channel.send(message)
             .then(() => {
                 this.retransmissionTimer = Time.getTimer(resubmissionBackoffTime, () => this.retransmitMessage(message, retransmissionCount))

@@ -227,7 +227,7 @@ describe("Integration", () => {
         it("try to remove invalid fabric", async () => {
             const operationalCredentialsCluster = ClusterClient(await client.connect(new NodeId(BigInt(1))), 0, OperationalCredentialsCluster);
 
-            const result = await operationalCredentialsCluster.removeFabric({ fabricIndex: new FabricIndex(99999) });
+            const result = await operationalCredentialsCluster.removeFabric({ fabricIndex: new FabricIndex(250) });
             assert.equal(result.status, OperationalCertStatus.InvalidFabricIndex);
             assert.equal(result.fabricIndex, undefined);
             assert.equal(result.debugText, undefined);

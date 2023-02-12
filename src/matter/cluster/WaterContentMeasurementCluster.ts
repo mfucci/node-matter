@@ -19,8 +19,10 @@ const  attributes = {
     /** Indicates the maximum value of MeasuredValue that can be measured. */
     maxMeasuredValue: Attribute(2, TlvNullable(TlvUInt16.bound({max: 10000}))),
 
-    /** The magnitude of the possible error that is associated with MeasuredValue 
-    * attribute using the same unit */
+    /** 
+     * The magnitude of the possible error that is associated with MeasuredValue 
+     * attribute using the same unit 
+     */
     tolerance: OptionalAttribute(3, TlvUInt16.bound({min: 0, max: 2048})),
 };
 

@@ -59,12 +59,37 @@ export class SessionManager<ContextT> {
         return this.sessions.get(sessionId);
     }
 
+    destroySession(sessionId: number) {
+        const session = this.sessions.get(sessionId);
+        if (session) {
+            session.destroy();
+            this.sessions.delete(sessionId);
+        }
+    }
+
+    destroyAllSessions() {
+        for (const session of this.sessions.values()) {
+            session.destroy();
+        }
+        this.sessions.clear();
+    }
+
     getSessionForNode(fabric: Fabric, nodeId: NodeId) {
+        //TODO: It can have multiple sessions for one node ...
         return [...this.sessions.values()].find(session => {
             if (!session.isSecure()) return false;
             const secureSession = session as SecureSession<any>;
-            return secureSession.getFabric() === fabric && secureSession.getPeerNodeId() === nodeId;
+            return secureSession.getFabric()?.fabricId.id === fabric.fabricId.id && secureSession.getPeerNodeId().id === nodeId.id;
         });
+    }
+
+    removeFormerSessionForNode(fabric: Fabric, nodeId: NodeId, newSessionId: number) {
+        const formerSession = this.getSessionForNode(fabric, nodeId);
+        if (formerSession && formerSession.getId() !== newSessionId) {
+            console.log("destroying former session", formerSession.getName(), "replaced by new session", newSessionId);
+            formerSession.destroy();
+            this.sessions.delete(formerSession.getId());
+        }
     }
 
     getUnsecureSession() {

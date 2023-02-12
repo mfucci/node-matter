@@ -74,6 +74,18 @@ export class MatterDevice {
         return this.sessionManager.createSecureSession(sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, salt, isInitiator, isResumption, idleRetransTimeoutMs, activeRetransTimeoutMs);
     }
 
+    removeFormerSessionForNode(fabric: Fabric, nodeId: NodeId, newSessionId: number) {
+        this.sessionManager.removeFormerSessionForNode(fabric, nodeId, newSessionId);
+    }
+
+    destroySession(sessionId: number) {
+        this.sessionManager.destroySession(sessionId);
+    }
+
+    destroyAllSessions() {
+        this.sessionManager.destroyAllSessions();
+    }
+
     findFabricFromDestinationId(destinationId: ByteArray, peerRandom: ByteArray) {
         return this.fabricManager.findFabricFromDestinationId(destinationId, peerRandom);
     }

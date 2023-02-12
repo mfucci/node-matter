@@ -127,6 +127,10 @@ export class SecureSession<T> implements Session<T> {
         return subscriptionId;
     }
 
+    destroy() {
+        this.clearSubscriptions();
+    }
+
     clearSubscriptions() {
         this.subscriptions.forEach(subscription => subscription.cancel());
         this.subscriptions.length = 0;

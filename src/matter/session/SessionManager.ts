@@ -11,6 +11,7 @@ import { SecureSession } from "./SecureSession";
 import { Session } from "./Session";
 import { UnsecureSession } from "./UnsecureSession";
 import { ByteArray } from "@project-chip/matter.js";
+import {FabricIndex} from "../common/FabricIndex";
 
 export const UNDEFINED_NODE_ID = new NodeId(BigInt(0));
 
@@ -67,6 +68,17 @@ export class SessionManager<ContextT> {
         }
     }
 
+    destroySessionForFabricIndex(fabricIndex: FabricIndex) {
+        [...this.sessions.values()].forEach(session => {
+            if (!session.isSecure()) return false;
+            const secureSession = session as SecureSession<any>;
+            if (secureSession.getFabric()?.fabricIndex.index === fabricIndex.index) {
+                session.destroy();
+                this.sessions.delete(session.getId());
+            }
+        });
+    }
+
     destroyAllSessions() {
         for (const session of this.sessions.values()) {
             session.destroy();
@@ -81,15 +93,6 @@ export class SessionManager<ContextT> {
             const secureSession = session as SecureSession<any>;
             return secureSession.getFabric()?.fabricId.id === fabric.fabricId.id && secureSession.getPeerNodeId().id === nodeId.id;
         });
-    }
-
-    removeFormerSessionForNode(fabric: Fabric, nodeId: NodeId, newSessionId: number) {
-        const formerSession = this.getSessionForNode(fabric, nodeId);
-        if (formerSession && formerSession.getId() !== newSessionId) {
-            console.log("destroying former session", formerSession.getName(), "replaced by new session", newSessionId);
-            formerSession.destroy();
-            this.sessions.delete(formerSession.getId());
-        }
     }
 
     getUnsecureSession() {

@@ -123,8 +123,8 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
                     logger.info(`Expire all sessions because deleted fabric ${fabricIndex.index} was the last one`);
                     device.destroyAllSessions();
                 } else {
-                    logger.info(`Expire Session ${session.getId()} for deleted fabric ${fabricIndex.index}`);
-                    device.destroySession(session.getId());
+                    logger.info(`Expire Sessions for deleted fabric ${fabricIndex.index}`);
+                    device.destroySessionForFabricIndex(fabricIndex);
                 }
                 return OperationalCertStatus.Success;
             },

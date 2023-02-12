@@ -31,8 +31,8 @@ export class SubscriptionHandler {
     private outstandingAttributeUpdates = new Map<string, PathValueVersion<any>>();
     private attributeListeners = new Map<string, (value: any, version: number) => void>();
     private isActive = false;
-    readonly maxInterval: number;
-    readonly sendInterval: number;
+    private readonly maxInterval: number;
+    private readonly sendInterval: number;
 
     constructor(
         readonly subscriptionId: number,

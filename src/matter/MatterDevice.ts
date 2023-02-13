@@ -20,6 +20,9 @@ import { VendorId } from "./common/VendorId";
 import { NodeId } from "./common/NodeId";
 import { ByteArray } from "@project-chip/matter.js";
 import { FabricIndex } from "./common/FabricIndex";
+import { Logger } from "../log/Logger";
+
+const logger = Logger.get("MatterDevice");
 
 requireMinNodeVersion(16);
 
@@ -78,14 +81,6 @@ export class MatterDevice {
         this.sessionManager.destroySession(sessionId);
     }
 
-    destroySessionForFabricIndex(fabricIndex: FabricIndex) {
-        this.sessionManager.destroySessionForFabricIndex(fabricIndex);
-    }
-
-    destroyAllSessions() {
-        this.sessionManager.destroyAllSessions();
-    }
-
     findFabricFromDestinationId(destinationId: ByteArray, peerRandom: ByteArray) {
         return this.fabricManager.findFabricFromDestinationId(destinationId, peerRandom);
     }
@@ -101,9 +96,14 @@ export class MatterDevice {
 
     removeFabric(fabricIndex: FabricIndex) {
         this.fabricManager.removeFabric(fabricIndex);
+
+        logger.info(`Expire Sessions for deleted fabric ${fabricIndex.index}`);
+        this.sessionManager.getSessionIdsForFabricIndex(fabricIndex).forEach(sessionId => {
+            this.sessionManager.destroySession(sessionId);
+        });
     }
 
-    getFabricbyIndex(fabricIndex: FabricIndex) {
+    getFabricByIndex(fabricIndex: FabricIndex) {
         return this.fabricManager.getFabrics().find(fabric => fabric.fabricIndex === fabricIndex);
     }
 

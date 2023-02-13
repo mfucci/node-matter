@@ -79,6 +79,6 @@ export class UnsecureSession<T> implements Session<T> {
     }
 
     destroy() {
-        // Nothing to do
+        throw new Error("The unsecure session should never be destroyed.");
     }
 }

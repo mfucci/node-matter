@@ -68,22 +68,12 @@ export class SessionManager<ContextT> {
         }
     }
 
-    destroySessionForFabricIndex(fabricIndex: FabricIndex) {
-        [...this.sessions.values()].forEach(session => {
+    getSessionIdsForFabricIndex(fabricIndex: FabricIndex) {
+        return [...this.sessions.values()].filter(session => {
             if (!session.isSecure()) return false;
             const secureSession = session as SecureSession<any>;
-            if (secureSession.getFabric()?.fabricIndex.index === fabricIndex.index) {
-                session.destroy();
-                this.sessions.delete(session.getId());
-            }
-        });
-    }
-
-    destroyAllSessions() {
-        for (const session of this.sessions.values()) {
-            session.destroy();
-        }
-        this.sessions.clear();
+            return secureSession.getFabric()?.fabricIndex.index === fabricIndex.index;
+        }).map(session => session.getId());
     }
 
     getSessionForNode(fabric: Fabric, nodeId: NodeId) {

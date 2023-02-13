@@ -118,14 +118,7 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
                 device.removeFabric(fabricIndex);
 
                 // TODO persist fabrics
-                // TODO: depending on cases destroy the secure session and delete all data!
-                if (device.getFabrics().length === 0) {
-                    logger.info(`Expire all sessions because deleted fabric ${fabricIndex.index} was the last one`);
-                    device.destroyAllSessions();
-                } else {
-                    logger.info(`Expire Sessions for deleted fabric ${fabricIndex.index}`);
-                    device.destroySessionForFabricIndex(fabricIndex);
-                }
+
                 return OperationalCertStatus.Success;
             },
             FabricNotFoundError, OperationalCertStatus.InvalidFabricIndex

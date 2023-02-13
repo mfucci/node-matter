@@ -5,7 +5,7 @@
  */
 
 import { Logger } from "../../log/Logger";
-import { MessageExchange, UnexpectedMessageResponseError } from "../common/MessageExchange";
+import { MessageExchange, UnexpectedMessageError } from "../common/MessageExchange";
 import { MatterController } from "../MatterController";
 import { MatterDevice } from "../MatterDevice";
 import {
@@ -197,7 +197,7 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
                 await this.waitForSuccess();
             }
         } catch (error: any) {
-            if (error instanceof UnexpectedMessageResponseError) {
+            if (error instanceof UnexpectedMessageError) {
                 const message = error.data;
                 const messageType = message.payloadHeader.messageType;
                 this.throwIfError(messageType, message.payload);

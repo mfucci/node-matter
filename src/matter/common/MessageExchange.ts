@@ -19,14 +19,12 @@ import { MatterError } from "../../error/MatterError";
 
 const logger = Logger.get("MessageExchange");
 
-export class UnexpectedMessageResponseError extends MatterError {
+export class UnexpectedMessageError extends MatterError {
     public constructor(
         public readonly message: string,
         public readonly data: Message,
     ) {
-        super();
-
-        this.message = `(${MessageCodec.messageToString(data)}) ${message}`;
+        super(`(${MessageCodec.messageToString(data)}) ${message}`);
     }
 }
 
@@ -164,7 +162,7 @@ export class MessageExchange<ContextT> {
                     if (requiresAck) {
                         await this.send(MessageType.StandaloneAck, new ByteArray(0));
                     }
-                    this.sentMessageAckFailure?.(new UnexpectedMessageResponseError("Expected ack only", message));
+                    this.sentMessageAckFailure?.(new UnexpectedMessageError("Expected ack only", message));
                     this.retransmissionTimer?.stop();
                     this.sentMessageAckFailure = undefined;
                     this.sentMessageAckSuccess = undefined;

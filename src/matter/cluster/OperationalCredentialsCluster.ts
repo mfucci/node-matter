@@ -49,7 +49,7 @@ const TlvNoc = TlvObject({ /* fabricScoped: true */
     /** Contains the NOC for the struct’s associated fabric. */
     noc: TlvField(1, TlvByteString.bound({ maxLength: 400 })), /* fabricSensitive: true */
 
-    /** Contain the ICAC or the struct’s associated fabric. */
+    /** Contains the ICAC or the struct’s associated fabric. */
     icac: TlvField(2, TlvNullable(TlvByteString.bound({ maxLength: 400 }))), /* default(not present): null, fabricSensitive: true */
 });
 
@@ -77,7 +77,7 @@ const TlvAttestationResponse = TlvObject({
     /** Contains the octet string of the serialized attestation_elements_message. */
     elements: TlvField(0, TlvByteString.bound({ maxLength: RESP_MAX })),
 
-    /** Contain the octet string of the necessary attestation_signature. */
+    /** Contains the octet string of the necessary attestation_signature. */
     signature: TlvField(1, TlvByteString.bound({ length: 64 })),
 });
 
@@ -99,7 +99,7 @@ const TlvCertSigningRequestResponse = TlvObject({
     /** Contains the octet string of the serialized nocsr_elements_message. */
     elements: TlvField(0, TlvByteString.bound({ maxLength: RESP_MAX })),
 
-    /** Contain the octet string of the necessary attestation_signature. */
+    /** Contains the octet string of the necessary attestation_signature. */
     signature: TlvField(1, TlvByteString.bound({ length: 64 })),
 });
 
@@ -256,7 +256,7 @@ export const OperationalCredentialsCluster = Cluster({
         /** Contains a read-only list of Trusted Root CA Certificates installed on the Node. */
         trustedRootCertificates: Attribute(4, TlvArray(TlvByteString, { maxLength: 400 }), { persistent: true, omitChanges: true }),
 
-        /** Contain accessing fabric index. */
+        /** Contains accessing fabric index. */
         currentFabricIndex: Attribute(5, TlvFabricIndex, { default: new FabricIndex(0)}),
     },
 

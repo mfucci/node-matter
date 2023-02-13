@@ -16,9 +16,7 @@ export class ChannelStatusResponseError extends MatterError {
         public readonly generalStatusCode: GeneralStatusCode,
         public readonly protocolStatusCode: ProtocolStatusCode,
     ) {
-        super();
-
-        this.message = `(${generalStatusCode}/${protocolStatusCode}) ${message}`;
+        super(`(${generalStatusCode}/${protocolStatusCode}) ${message}`);
     }
 }
 
@@ -39,18 +37,8 @@ export class SecureChannelMessenger<ContextT> {
         return schema.decode((await this.nextMessage(expectedMessageType)).payload);
     }
 
-    async waitForStatusResponse() {
-        const response = await this.nextMessage(MessageType.StatusReport);
-        return this.decodeStatusReport(response.payload);
-    }
-
     async waitForSuccess() {
-        const { generalStatus, protocolStatus } = await this.waitForStatusResponse();
-        console.log(`Received status response ${generalStatus}/${protocolStatus}`);
-        if (generalStatus !== GeneralStatusCode.Success) {
-            throw new ChannelStatusResponseError(`Received status response ${generalStatus}, but expected Success (0)`, generalStatus, protocolStatus);
-        }
-        return protocolStatus;
+        await this.nextMessage(MessageType.StatusReport); // this also throws if the status is not success
     }
 
     async send<T>(message: T, type: number, schema: TlvSchema<T>) {
@@ -94,12 +82,11 @@ export class SecureChannelMessenger<ContextT> {
     protected throwIfError(messageType: number, payload: ByteArray) {
         if (messageType !== MessageType.StatusReport) return;
         const { generalStatus, protocolId, protocolStatus } = this.decodeStatusReport(payload);
-        if (generalStatus === GeneralStatusCode.Success) {
-            if (protocolStatus !== ProtocolStatusCode.Success) {
-                throw new Error(`Received success status, but protocol status is not Success: ${protocolStatus}`);
-            }
-            return;
+        if (generalStatus !== GeneralStatusCode.Success) {
+            throw new ChannelStatusResponseError(`Received error status: ${generalStatus} ${protocolId} ${protocolStatus}`, generalStatus, protocolStatus);
         }
-        throw new Error(`Received error status: ${generalStatus} ${protocolId} ${protocolStatus}`);
+        if (protocolStatus !== ProtocolStatusCode.Success) {
+            throw new ChannelStatusResponseError(`Received success status, but protocol status is not Success: ${protocolStatus}`, generalStatus, protocolStatus);
+        }
     }
 }

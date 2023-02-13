@@ -74,16 +74,16 @@ class InteractionMessenger<ContextT> {
         return this.exchangeBase.send(MessageType.StatusResponse, TlvStatusResponse.encode({status, interactionModelRevision: 1}));
     }
 
-    async waitForStatusResponse() {
+    async waitForSuccess() {
         const response = await this.nextMessage(MessageType.StatusResponse);
-        const { status } = TlvStatusResponse.decode(response.payload);
-        return status;
+        this.throwIfError(response.payloadHeader.messageType, response.payload);
     }
 
-    async waitForSuccess() {
-        const status = await this.waitForStatusResponse()
+    protected throwIfError(messageType: number, payload: ByteArray) {
+        if (messageType !== MessageType.StatusResponse) return;
+        const { status } = TlvStatusResponse.decode(payload);
         if (status !== StatusCode.Success) {
-            throw new StatusResponseError(`Received status response ${status}, but expected Success (0)`, status);
+            throw new StatusResponseError(`Received error status: ${ status }`, status);
         }
     }
 
@@ -97,12 +97,6 @@ class InteractionMessenger<ContextT> {
 
     close() {
         this.exchangeBase.close();
-    }
-
-    protected throwIfError(messageType: number, payload: ByteArray) {
-        if (messageType !== MessageType.StatusResponse) return;
-        const { status } = TlvStatusResponse.decode(payload);
-        if (status !== StatusCode.Success) throw new StatusResponseError(`Received error status: ${ status }`, status);
     }
 }
 

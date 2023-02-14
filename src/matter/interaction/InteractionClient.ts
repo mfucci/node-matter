@@ -62,21 +62,17 @@ export class SubscriptionClient implements ProtocolHandler<MatterController> {
         let dataReport = await messenger.readDataReport();
         const subscriptionId = dataReport.subscriptionId;
         if (subscriptionId === undefined) {
-            return messenger.sendStatus(StatusCode.InvalidSubscription);
+            await messenger.sendStatus(StatusCode.InvalidSubscription);
+            throw new Error("Invalid Datareport without Subscription ID");
         }
         const listener = this.subscriptionListeners.get(subscriptionId);
         if (listener === undefined) {
-            return messenger.sendStatus(StatusCode.InvalidSubscription);
+            await messenger.sendStatus(StatusCode.InvalidSubscription);
+            throw new Error(`Unknown subscription ID ${subscriptionId}`);
         }
-        while (true) {
-            await messenger.sendStatus(StatusCode.Success);
-            listener(dataReport);
-            if (!dataReport.moreChunkedMessages) break;
-            dataReport = await messenger.readDataReport();
-            if (dataReport.subscriptionId !== subscriptionId) {
-                return messenger.sendStatus(StatusCode.InvalidSubscription);
-            }
-        }
+        await messenger.sendStatus(StatusCode.Success);
+
+        listener(dataReport);
     }
 }
 

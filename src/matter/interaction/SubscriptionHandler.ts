@@ -124,7 +124,6 @@ export class SubscriptionHandler {
     }
 
     async attributeChangeListener(path: AttributePath, schema: TlvSchema<any>, version: number, value: any) {
-        console.log(`Attribute change listener for subscription ${this.subscriptionId}`, path, version, value);
         this.outstandingAttributeUpdates.set(attributePathToId(path), { path, schema, version, value });
         await this.sendUpdate();
     }
@@ -158,12 +157,9 @@ export class SubscriptionHandler {
             })),
         });
 
-        console.log('SENDING UPDATE MESSAGE', values.length);
         // Only expect answer for non-empty data reports
         if (values.length) {
-            console.log('WAITING FOR SUCCESS')
             await messenger.waitForSuccess();
-            console.log('GOT SUCCESS');
         }
         messenger.close();
     }

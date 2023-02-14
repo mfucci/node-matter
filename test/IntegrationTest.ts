@@ -218,7 +218,7 @@ describe("Integration", () => {
             onOffServer.attributes.onOff.set(false);
             const lastReport = await lastPromise;
 
-            assert.deepEqual(lastReport, { value: false, version: 2, time: startTime + 10 * 1000});
+            assert.deepEqual(lastReport, { value: false, version: 2, time: startTime + (60 * 60 + 4) * 1000});
         });
     });
 

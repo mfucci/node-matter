@@ -215,6 +215,8 @@ export class InteractionClientMessenger extends InteractionMessenger<MatterContr
         const report = await this.readDataReport();
         const { subscriptionId } = report;
 
+        await this.sendStatus(StatusCode.Success);
+
         const subscribeResponseMessage = await this.nextMessage(MessageType.SubscribeResponse);
         const subscribeResponse = TlvSubscribeResponse.decode(subscribeResponseMessage.payload);
 
@@ -237,30 +239,25 @@ export class InteractionClientMessenger extends InteractionMessenger<MatterContr
         const values: TypeFromSchema<typeof TlvAttributeReport>[] = [];
 
         while (true) {
-            console.log('WAITING FOR DATA REPORT');
             const dataReportMessage = await this.exchange.waitFor(MessageType.ReportData);
             const report =  TlvDataReport.decode(dataReportMessage.payload);
             if (subscriptionId === undefined && report.subscriptionId !== undefined) {
                 subscriptionId = report.subscriptionId;
             } else {
                 if (report.subscriptionId === undefined || report.subscriptionId !== subscriptionId) {
-                    await this.sendStatus(StatusCode.Failure);
                     throw new Error(`Invalid subscription ID ${report.subscriptionId} received`);
                 }
             }
-            console.log('READ SENDING SUCCESS');
-            await this.sendStatus(StatusCode.Success);
-            console.log('READ SUCCESS SENT')
 
             if (Array.isArray(report.values) && report.values.length > 0) {
                 values.push(...report.values);
             }
-            console.log('READ DATA REPORT', report);
             if (!report.moreChunkedMessages) {
-                console.log('READ DONE');
                 report.values = values;
                 return report;
             }
+
+            await this.sendStatus(StatusCode.Success);
         }
     }
 

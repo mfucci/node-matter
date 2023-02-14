@@ -76,7 +76,7 @@ describe("Integration", () => {
     var client: MatterController;
 
     before(async () => {
-        Logger.defaultLogLevel = Level.INFO;
+        Logger.defaultLogLevel = Level.DEBUG;
         Time.get = () => fakeTime;
         Network.get = () => clientNetwork;
         client = await MatterController.create(
@@ -210,8 +210,8 @@ describe("Integration", () => {
             const { promise: lastPromise, resolver: lastResolver } = await getPromiseResolver<{value: boolean, version: number, time: number}>();
             callback = (value: boolean, version: number) => lastResolver({ value, version, time: Time.nowMs() });
 
-            // Verify that no update comes in after max cycle time 5s
-            await fakeTime.advanceTime(6 * 1000);
+            // Verify that no update comes in after max cycle time 1h
+            await fakeTime.advanceTime(60 * 60 * 1000);
 
             // ... but on next change immediately then
             await fakeTime.advanceTime(2 * 1000);

@@ -7,7 +7,19 @@
 import { MatterDevice } from "../MatterDevice";
 import { ProtocolHandler } from "../common/ProtocolHandler";
 import { MessageExchange } from "../common/MessageExchange";
-import { InteractionServerMessenger, InvokeRequest, InvokeResponse, ReadRequest, DataReport, SubscribeRequest, SubscribeResponse, TimedRequest, WriteRequest, WriteResponse } from "./InteractionMessenger";
+import {
+    InteractionServerMessenger,
+    InvokeRequest,
+    InvokeResponse,
+    ReadRequest,
+    DataReport,
+    SubscribeRequest,
+    SubscribeResponse,
+    TimedRequest,
+    WriteRequest,
+    WriteResponse,
+    StatusResponseError, MessageType
+} from "./InteractionMessenger";
 import { CommandServer, ResultCode } from "../cluster/server/CommandServer";
 import { DescriptorCluster } from "../cluster/DescriptorCluster";
 import { AttributeGetterServer, AttributeServer } from "../cluster/server/AttributeServer";
@@ -21,8 +33,9 @@ import { ClusterId } from "../common/ClusterId";
 import { BitSchema, TlvStream, TypeFromBitSchema, TypeFromSchema} from "@project-chip/matter.js";
 import { EndpointNumber } from "../common/EndpointNumber";
 import { capitalize } from "../../util/String";
-import { StatusCode, TlvAttributePath } from "./InteractionMessages";
+import {StatusCode, TlvAttributePath, TlvSubscribeResponse} from "./InteractionMessages";
 import { Message } from "../../codec/MessageCodec";
+import { Crypto } from "../../crypto/Crypto";
 
 export const INTERACTION_PROTOCOL_ID = 0x0001;
 
@@ -101,7 +114,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
     private readonly attributePaths = new Array<AttributePath>();
     private readonly commands = new Map<string, CommandServer<any, any>>();
     private readonly commandPaths = new Array<CommandPath>();
-    private nextSubscriptionId = Math.floor(Math.random() * 0xFFFFFFFF);
+    private nextSubscriptionId = Crypto.getRandomUInt32();
 
     constructor() {}
 
@@ -226,7 +239,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
         };
     }
 
-    async handleSubscribeRequest(exchange: MessageExchange<MatterDevice>, { minIntervalFloorSeconds, maxIntervalCeilingSeconds, attributeRequests, eventRequests, keepSubscriptions }: SubscribeRequest, messenger: InteractionServerMessenger): Promise<SubscribeResponse | undefined> {
+    async handleSubscribeRequest(exchange: MessageExchange<MatterDevice>, { minIntervalFloorSeconds, maxIntervalCeilingSeconds, attributeRequests, eventRequests, keepSubscriptions }: SubscribeRequest, messenger: InteractionServerMessenger): Promise<void> {
         logger.debug(`Received subscribe request from ${exchange.channel.getName()}`);
 
         if (!exchange.session.isSecure()) throw new Error("Subscriptions are only implemented on secure sessions");
@@ -234,9 +247,8 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
         const fabric = session.getFabric();
         if (fabric === undefined) throw new Error("Subscriptions are only implemented after a fabric has been assigned");
 
-        if ((!attributeRequests || attributeRequests.length === 0) && (!eventRequests || eventRequests.length === 0)) {
-            await messenger.sendStatus(StatusCode.InvalidAction);
-            return;
+        if ((!Array.isArray(attributeRequests) || attributeRequests.length === 0) && (!Array.isArray(eventRequests) || eventRequests.length === 0)) {
+            throw new StatusResponseError("No attributes or events requested", StatusCode.InvalidAction);
         }
 
         if (!keepSubscriptions) {
@@ -258,9 +270,9 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
             // The publisher SHALL compute an appropriate value for the MaxInterval field in the action. This SHALL respect the following constraint: MinIntervalFloor ≤ MaxInterval ≤ MAX(SUBSCRIPTION_MAX_INTERVAL_PUBLISHER_LIMIT=60mn, MaxIntervalCeiling)
 
             if (this.nextSubscriptionId === 0xFFFFFFFF) this.nextSubscriptionId = 0;
-            const subscriptionHandler = new SubscriptionHandler(this.nextSubscriptionId++, session.getContext(), fabric, session.getPeerNodeId(), attributes, minIntervalFloorSeconds * 1000, maxIntervalCeilingSeconds * 1000);
+            const subscriptionId = this.nextSubscriptionId++;
+            const subscriptionHandler = new SubscriptionHandler(subscriptionId, session.getContext(), fabric, session.getPeerNodeId(), attributes, minIntervalFloorSeconds, maxIntervalCeilingSeconds);
             session.addSubscription(subscriptionHandler);
-            const subscriptionId = subscriptionHandler.subscriptionId;
 
             // Send initial data report to prime the subscription with initial data
             await subscriptionHandler.sendInitialReport(messenger, session);
@@ -268,7 +280,8 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
             const maxInterval = subscriptionHandler.getMaxInterval();
             logger.info(`Created subscription ${subscriptionId} for Session ${session.getId()} with ${attributes.length} attributes. Updates: ${minIntervalFloorSeconds} - ${maxIntervalCeilingSeconds} => ${maxInterval} seconds`);
             // Then send the subscription response
-            return { subscriptionId, maxInterval, interactionModelRevision: 1 };
+            await messenger.send(MessageType.SubscribeResponse, TlvSubscribeResponse.encode({ subscriptionId, maxInterval, interactionModelRevision: 1 }));
+            subscriptionHandler.activateSendingUpdates();
         }
     }
 

@@ -109,7 +109,7 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
     async handleRequest(
         handleReadRequest: (request: ReadRequest) => DataReport,
         handleWriteRequest: (request: WriteRequest) => WriteResponse,
-        handleSubscribeRequest: (request: SubscribeRequest, messenger: InteractionServerMessenger) => Promise<SubscribeResponse | undefined>,
+        handleSubscribeRequest: (request: SubscribeRequest, messenger: InteractionServerMessenger) => Promise<void>,
         handleInvokeRequest: (request: InvokeRequest, message: Message) => Promise<InvokeResponse>,
         handleTimedRequest: (request: TimedRequest) => Promise<void>,
     ) {
@@ -130,12 +130,8 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
                         break;
                     case MessageType.SubscribeRequest:
                         const subscribeRequest = TlvSubscribeRequest.decode(message.payload);
-                        const subscribeResponse = await handleSubscribeRequest(subscribeRequest, this);
-                        if (subscribeResponse === undefined) {
-                            await this.sendStatus(StatusCode.Success);
-                        } else {
-                            await this.exchange.send(MessageType.SubscribeResponse, TlvSubscribeResponse.encode(subscribeResponse));
-                        }
+                        await handleSubscribeRequest(subscribeRequest, this);
+                        // response is sent by handler
                         break;
                     case MessageType.InvokeCommandRequest:
                         const invokeRequest = TlvInvokeRequest.decode(message.payload);
@@ -196,6 +192,10 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
 
         await this.exchange.send(MessageType.ReportData, TlvDataReport.encode(dataReport));
     }
+
+    async send(messageType: number, payload: ByteArray) {
+        return this.exchange.send(messageType, payload);
+    }
 }
 
 export class InteractionClientMessenger extends InteractionMessenger<MatterController> {
@@ -211,39 +211,20 @@ export class InteractionClientMessenger extends InteractionMessenger<MatterContr
 
     async sendSubscribeRequest(subscribeRequest: SubscribeRequest) {
         await this.exchange.send(MessageType.SubscribeRequest, TlvSubscribeRequest.encode(subscribeRequest));
-        const initialSubscriptionValues = await this.readDataReport();
-        if (!initialSubscriptionValues.values) initialSubscriptionValues.values = [];
-        const subscriptionId = initialSubscriptionValues.subscriptionId;
-        if (subscriptionId === undefined) {
-            await this.sendStatus(StatusCode.Failure);
-            throw new Error('Subscription ID not provided');
-        }
-        await this.sendStatus(StatusCode.Success);
-        if (initialSubscriptionValues.moreChunkedMessages) {
-            while (true) {
-                const dataReport = await this.readDataReport();
-                if (dataReport.subscriptionId !== subscriptionId) {
-                    await this.sendStatus(StatusCode.Failure);
-                    throw new Error(`Received subscription ID ${dataReport.subscriptionId} instead of ${subscriptionId}`);
-                }
-                await this.sendStatus(StatusCode.Success);
-                if (dataReport.values && dataReport.values.length > 0) {
-                    initialSubscriptionValues.values.push(...dataReport.values);
-                }
-                if (!dataReport.moreChunkedMessages) {
-                    initialSubscriptionValues.moreChunkedMessages = false;
-                    break;
-                }
-            }
-        }
+
+        const report = await this.readDataReport();
+        const { subscriptionId } = report;
+
         const subscribeResponseMessage = await this.nextMessage(MessageType.SubscribeResponse);
         const subscribeResponse = TlvSubscribeResponse.decode(subscribeResponseMessage.payload);
+
         if (subscribeResponse.subscriptionId !== subscriptionId) {
             throw new Error(`Received subscription ID ${subscribeResponse.subscriptionId} instead of ${subscriptionId}`);
         }
+
         return {
             subscribeResponse,
-            initialSubscriptionValues,
+            report,
         };
     }
 
@@ -252,8 +233,35 @@ export class InteractionClientMessenger extends InteractionMessenger<MatterContr
     }
 
     async readDataReport(): Promise<DataReport> {
-        const dataReportMessage = await this.exchange.waitFor(MessageType.ReportData);
-        return TlvDataReport.decode(dataReportMessage.payload);
+        let subscriptionId: number | undefined;
+        const values: TypeFromSchema<typeof TlvAttributeReport>[] = [];
+
+        while (true) {
+            console.log('WAITING FOR DATA REPORT');
+            const dataReportMessage = await this.exchange.waitFor(MessageType.ReportData);
+            const report =  TlvDataReport.decode(dataReportMessage.payload);
+            if (subscriptionId === undefined && report.subscriptionId !== undefined) {
+                subscriptionId = report.subscriptionId;
+            } else {
+                if (report.subscriptionId === undefined || report.subscriptionId !== subscriptionId) {
+                    await this.sendStatus(StatusCode.Failure);
+                    throw new Error(`Invalid subscription ID ${report.subscriptionId} received`);
+                }
+            }
+            console.log('READ SENDING SUCCESS');
+            await this.sendStatus(StatusCode.Success);
+            console.log('READ SUCCESS SENT')
+
+            if (Array.isArray(report.values) && report.values.length > 0) {
+                values.push(...report.values);
+            }
+            console.log('READ DATA REPORT', report);
+            if (!report.moreChunkedMessages) {
+                console.log('READ DONE');
+                report.values = values;
+                return report;
+            }
+        }
     }
 
     private async request<RequestT, ResponseT>(requestMessageType: number, requestSchema: TlvSchema<RequestT>, responseMessageType: number, responseSchema: TlvSchema<ResponseT>, request: RequestT): Promise<ResponseT> {

@@ -16,7 +16,7 @@ import { SecureSession } from "../session/SecureSession";
 
 const logger = Logger.get("SubscriptionHandler");
 
-const SUBSCRIPTION_MAX_INTERVAL_PUBLISHER_LIMIT_MS = 1000 * 60 * 60;
+const SUBSCRIPTION_MAX_INTERVAL_PUBLISHER_LIMIT_MS = 1000 * 60 * 60; /** 1 hour */
 
 interface PathValueVersion<T> {
     path: AttributePath,
@@ -27,12 +27,14 @@ interface PathValueVersion<T> {
 
 export class SubscriptionHandler {
     private lastUpdateTimeMs = 0;
-    private updateTimer: Timer | null = null;
+    private updateTimer: Timer;
     private outstandingAttributeUpdates = new Map<string, PathValueVersion<any>>();
     private attributeListeners = new Map<string, (value: any, version: number) => void>();
-    private isActive = false;
+    private sendUpdatesActivated = false;
     private readonly maxInterval: number;
     private readonly sendInterval: number;
+    private readonly minIntervalFloorMs: number;
+    private readonly maxIntervalCeilingMs: number;
 
     constructor(
         readonly subscriptionId: number,
@@ -40,17 +42,20 @@ export class SubscriptionHandler {
         private readonly fabric: Fabric,
         private readonly peerNodeId: NodeId,
         private readonly attributes: AttributeWithPath[],
-        private readonly minIntervalFloorMs: number,
-        private readonly maxIntervalCeilingMs: number,
+        minIntervalFloor: number,
+        maxIntervalCeiling: number,
     ) {
+        this.minIntervalFloorMs = minIntervalFloor * 1000;
+        this.maxIntervalCeilingMs = maxIntervalCeiling * 1000;
         // The final Max interval needs to be between min-floor and the MAX of max-ceiling and the defined publisher
         // maximum of 60 minutes - this is to ensure that the publisher is not flooded with updates. But spec also
         // says that it should be more frequent than the max interval.
         // So let's calculate a maximum in the second half of the range between the two, but then already send at
         // half of that time (so ideally we have 2 updates per max interval, so one could fail, and we still are good).
-        const halfMaxIntervalCeilingMs = (Math.max(SUBSCRIPTION_MAX_INTERVAL_PUBLISHER_LIMIT_MS, maxIntervalCeilingMs) - minIntervalFloorMs) / 2;
-        this.maxInterval = Math.floor(minIntervalFloorMs + halfMaxIntervalCeilingMs + halfMaxIntervalCeilingMs * Math.random());
+        const halfMaxIntervalCeilingMs = (Math.max(SUBSCRIPTION_MAX_INTERVAL_PUBLISHER_LIMIT_MS, this.maxIntervalCeilingMs) - this.minIntervalFloorMs) / 2;
+        this.maxInterval = Math.floor(this.minIntervalFloorMs + halfMaxIntervalCeilingMs + halfMaxIntervalCeilingMs * Math.random());
         this.sendInterval = Math.floor(this.maxInterval / 2);
+        this.updateTimer = Time.getTimer(this.sendInterval, () => this.sendUpdate()); // will be started later
 
         attributes.forEach(({ path, attribute }) => {
             // TODO: handle attributes with "getter" methods
@@ -64,18 +69,25 @@ export class SubscriptionHandler {
         return Math.ceil(this.maxInterval / 1000);
     }
 
+    activateSendingUpdates() {
+        this.sendUpdatesActivated = true;
+        if (this.outstandingAttributeUpdates.size > 0) {
+            this.sendUpdate();
+        } else {
+            this.updateTimer = Time.getTimer(this.sendInterval, () => this.sendUpdate()).start();
+        }
+    }
+
     async sendUpdate() {
-        if (!this.isActive) {
-            return;
-        }
-        const now = Date.now();
-        if (this.updateTimer) {
-            this.updateTimer.stop();
-            this.updateTimer = null;
-        }
+        this.updateTimer.stop();
+        const now = Time.nowMs();
         const timeSinceLastUpdateMs = now - this.lastUpdateTimeMs;
         if (timeSinceLastUpdateMs < this.minIntervalFloorMs) {
             this.updateTimer = Time.getTimer(this.minIntervalFloorMs - timeSinceLastUpdateMs, () => this.sendUpdate()).start();
+            return;
+        }
+
+        if (!this.sendUpdatesActivated) {
             return;
         }
 
@@ -87,15 +99,14 @@ export class SubscriptionHandler {
     }
 
     async sendInitialReport(messenger: InteractionServerMessenger, session: SecureSession<MatterDevice>) {
-        if (this.updateTimer) {
-            this.updateTimer.stop();
-            this.updateTimer = null;
-        }
+        this.updateTimer.stop();
 
         const values = this.attributes.map(({ path, attribute }) => {
             const { value, version } = attribute.getWithVersion(session);
             return { path, value, version, schema: attribute.schema };
         }).filter(({ value }) => value !== undefined) as PathValueVersion<any>[];
+        this.lastUpdateTimeMs = Time.nowMs();
+
         await messenger.sendDataReport({
             suppressResponse: false,
             subscriptionId: this.subscriptionId,
@@ -110,9 +121,6 @@ export class SubscriptionHandler {
         });
 
         await messenger.waitForSuccess();
-
-        this.isActive = true;
-        this.updateTimer = Time.getTimer(this.sendInterval, () => this.sendUpdate()).start();
     }
 
     async attributeChangeListener(path: AttributePath, schema: TlvSchema<any>, version: number, value: any) {
@@ -122,15 +130,13 @@ export class SubscriptionHandler {
     }
 
     cancel() {
-        this.isActive = false;
+        this.sendUpdatesActivated = false;
         this.attributes.forEach(({ path, attribute }) => {
             const pathId = attributePathToId(path);
             attribute.removeMatterListener(this.attributeListeners.get(pathId)!);
             this.attributeListeners.delete(pathId);
         });
-        if (this.updateTimer) {
-            this.updateTimer.stop();
-        }
+        this.updateTimer.stop();
     }
 
     private async sendUpdateMessage(values: PathValueVersion<any>[]) {
@@ -152,9 +158,12 @@ export class SubscriptionHandler {
             })),
         });
 
+        console.log('SENDING UPDATE MESSAGE', values.length);
         // Only expect answer for non-empty data reports
         if (values.length) {
+            console.log('WAITING FOR SUCCESS')
             await messenger.waitForSuccess();
+            console.log('GOT SUCCESS');
         }
         messenger.close();
     }

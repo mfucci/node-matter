@@ -43,6 +43,7 @@ import { AdminCommissioningCluster, CommissioningWindowStatus } from "./matter/c
 import { AdminCommissioningHandler } from "./matter/cluster/server/AdminCommissioningServer";
 import { NetworkCommissioningHandler } from "./matter/cluster/server/NetworkCommissioningServer";
 import { FabricIndex } from "./matter/common/FabricIndex";
+import { isMacOSX } from "./util/Platform";
 
 // From Chip-Test-DAC-FFF1-8000-0007-Key.der
 const DevicePrivateKey = ByteArray.fromHex("727F1005CBA47ED7822A9D930943621617CFD3B79D9AF528B801ECF9F1992204");
@@ -64,7 +65,7 @@ class Device {
     async start() {
         logger.info(`node-matter@${packageJson.version}`);
 
-        const deviceName = "Matter test device";
+        const deviceName = `${isMacOSX()?'OSX':''} Matter test device`;
         const deviceType = 257 /* Dimmable bulb */;
         const vendorName = "node-matter";
         const passcode = 20202021;
@@ -94,7 +95,7 @@ class Device {
             .addNetInterface(await UdpInterface.create(5540, "udp4"))
             .addNetInterface(await UdpInterface.create(5540, "udp6"))
             .addScanner(await MdnsScanner.create())
-            .addBroadcaster(await MdnsBroadcaster.create())
+            .addBroadcaster(await MdnsBroadcaster.create(isMacOSX()?"en0":undefined))
             .addProtocolHandler(secureChannelProtocol)
             .addProtocolHandler(new InteractionServer()
                .addEndpoint(0x00, DEVICE.ROOT, [

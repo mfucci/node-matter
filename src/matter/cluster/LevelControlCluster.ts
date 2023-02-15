@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { OptionalAttribute, Attribute, Cluster, Command, OptionalCommand, TlvNoArguments, TlvNoResponse } from "./Cluster";
-import { BitFlag, MatterApplicationClusterSpecificationV1_0, TlvBitmap, TlvBoolean, TlvEnum, TlvField, TlvNullable, TlvObject, TlvSchema, TlvUInt16, TlvUInt8 } from "@project-chip/matter.js";
+import { OptionalAttribute, Attribute, Cluster, OptionalCommand, TlvNoResponse } from "./Cluster";
+import { BitFlag, MatterApplicationClusterSpecificationV1_0, TlvField, TlvNullable, TlvObject,  TlvOptionalField,  TlvUInt16, TlvUInt8 } from "@project-chip/matter.js";
 
 /** @see {@link MatterCoreSpecificationV1_0} § XXXX  */
 const  MoveToLevelCommand = TlvObject({
     level: TlvField(0, TlvUInt8),
-    transitionTime: TlvField(1, TlvUInt16),
+    transitionTime: TlvField(1, TlvNullable(TlvUInt16)),
     optionsMask: TlvField(2, TlvUInt8),
     optionsOverride: TlvField(3, TlvUInt8),
 });
@@ -18,7 +18,7 @@ const  MoveToLevelCommand = TlvObject({
 /** @see {@link MatterCoreSpecificationV1_0} § XXXX */
 const  MoveCommand = TlvObject({
     moveMode: TlvField(0, TlvUInt8),
-    rate: TlvField(1, TlvUInt8),
+    rate: TlvField(1, TlvNullable(TlvUInt8)),
     optionsMask: TlvField(2, TlvUInt8),
     optionsOverride: TlvField(3, TlvUInt8),
 });
@@ -27,7 +27,7 @@ const  MoveCommand = TlvObject({
 const  StepCommand = TlvObject({
     stepMode: TlvField(0, TlvUInt8),
     stepSize: TlvField(1, TlvUInt8),
-    transitionTime: TlvField(2, TlvUInt16),
+    transitionTime: TlvField(2, TlvNullable(TlvUInt16)),
     optionsMask: TlvField(3, TlvUInt8),
     optionsOverride: TlvField(4, TlvUInt8),
 });
@@ -36,15 +36,6 @@ const  StepCommand = TlvObject({
 const  StopCommand = TlvObject({
     optionsMask: TlvField(0, TlvUInt8),
     optionsOverride: TlvField(1, TlvUInt8),
-});
-
-/** @see {@link MatterCoreSpecificationV1_0} § XXXX  */
-const  MoveWithOnOff = TlvObject({
-    stepeMode: TlvField(0, TlvUInt8),
-    stepSize: TlvField(1, TlvUInt8),
-    transitionTime: TlvField(2, TlvUInt16),
-    optionsMask: TlvField(3, TlvUInt8),
-    optionsOverride: TlvField(4, TlvUInt8),
 });
 
 /** @see {@link MatterCoreSpecificationV1_0} § XXXX  */
@@ -57,7 +48,7 @@ const attributes = {
 
 // FIXME - Need to update the comments
 
-    /** the current level of this device  */
+    /** the current level of this device */
     currentLevel: Attribute(0x0,  TlvUInt8, { default: 0 }), 
 
     /** time until the current command is complete in 1/10ths of sec */
@@ -84,7 +75,7 @@ const attributes = {
     /** CurrentLevel when OnOff attr of On/Off cluster on the same endpoint is TRUE */
     onLevel: Attribute(0x11,  TlvNullable(TlvUInt8),),
 
-        /** time taken to move the current level from the min level to the max level */
+    /** time taken to move the current level from the min level to the max level */
     onTransitionTime: OptionalAttribute(0x12,  TlvNullable(TlvUInt16,)),
 
     /** time taken to move the current level from the max level to the minlevel  */
@@ -116,14 +107,15 @@ export const LevelControlCluster = Cluster({
 
     /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.6.6 */
     commands: {
-        moveToLevel: OptionalCommand(0x0, MoveToLevelCommand, 0, TlvNoResponse), // FIXME - all need resposne
-        move: OptionalCommand(0x1, MoveCommand, 1,TlvNoResponse),
-        step: OptionalCommand(0x2, StepCommand, 2, TlvNoResponse),
-        stop: OptionalCommand(0x3, StopCommand, 3, TlvNoResponse),
-//        moveToLevelWithOnOff: OptionalCommand( 0x4, MoveToLevelCommand, 4, TlvNoResponse ),
-//        moveWithOnOff: OptionalCommand(0x5, MoveCommand, 5,TlvNoResponse),            
-//        stepWithOnOff: OptionalCommand(0x6, StepCommand, 6, TlvNoResponse),
-//        stopWithOnOff: OptionalCommand(0x7, StopCommand, 7, TlvNoResponse),
-//        moveToClosestFrequencyCommand: OptionalCommand(0x8, MoveToClosestFrequencyCommand, 8, TlvNoResponse),
+        moveToLevel: OptionalCommand(0x0, MoveToLevelCommand, 0x0, TlvNoResponse), // FIXME - all need resposne?
+        move: OptionalCommand(0x1, MoveCommand, 0x1, TlvNoResponse),
+        step: OptionalCommand(0x2, StepCommand, 0x2, TlvNoResponse),
+        stop: OptionalCommand(0x3, StopCommand, 0x3, TlvNoResponse),
+        moveToLevelWithOnOff: OptionalCommand( 0x4, MoveToLevelCommand, 0x4, TlvNoResponse ),
+        moveWithOnOff: OptionalCommand(0x5, MoveCommand, 0x5,TlvNoResponse),            
+        stepWithOnOff: OptionalCommand(0x6, StepCommand, 0x6, TlvNoResponse),
+        stopWithOnOff: OptionalCommand(0x7, StopCommand, 0x7, TlvNoResponse),
+        moveToClosestFrequency: OptionalCommand(0x8, MoveToClosestFrequencyCommand, 0x8, TlvNoResponse),
+  
     },
 });

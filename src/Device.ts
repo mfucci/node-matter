@@ -26,8 +26,9 @@ import { DEVICE } from "./matter/common/DeviceTypes";
 import { MdnsBroadcaster } from "./matter/mdns/MdnsBroadcaster";
 import { Network } from "./net/Network";
 import { NetworkNode } from "./net/node/NetworkNode";
-import { commandExecutor } from "./util/CommandLine";
+import { commandExecutor, commandExecutorWithParameters } from "./util/CommandLine";
 import { OnOffCluster } from "./matter/cluster/OnOffCluster";
+import {GlobalAttributes} from "./matter/cluster/Cluster";
 import { LevelControlCluster } from "./matter/cluster/LevelControlCluster";
 import { GeneralCommissioningClusterHandler } from "./matter/cluster/server/GeneralCommissioningServer";
 import { OperationalCredentialsClusterHandler } from "./matter/cluster/server/OperationalCredentialsServer";
@@ -103,11 +104,20 @@ class Device {
                 options: 0,
                 startUpCurrentLevel: 0,
             }, 
-            LevelControlClusterHandler()
+           LevelControlClusterHandler()
         );
+
+        function myTest( newValue: number, oldValue: number ) {
+           console.log( `JPB +++++++++++++  old = ${oldValue} New = ${newValue}` );
+        };
 
         // We listen to the attribute update to trigger an action. This could also have been done in the method invokations in the server.
         onOffClusterServer.attributes.onOff.addListener(on => commandExecutor(on ? "on" : "off")?.());
+
+        levelControlClusterServer.attributes.currentLevel.addListener( 
+            inten=>commandExecutorWithParameters("intensity", 
+                                                 [levelControlClusterServer.attributes.currentLevel.get().toString()])?.()
+                                            );
         
         const secureChannelProtocol = new SecureChannelProtocol(
             await PaseServer.fromPin(passcode, { iterations: 1000, salt: Crypto.getRandomData(32) }),

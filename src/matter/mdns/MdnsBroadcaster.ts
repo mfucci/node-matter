@@ -30,7 +30,7 @@ export class MdnsBroadcaster implements Broadcaster {
     ) {}
 
     setCommissionMode(mode: number,deviceName: string, deviceType: number, vendorId: VendorId, productId: number, discriminator: number) {
-        logger.debug(`announce commissioning mode ${mode} ${deviceName} ${deviceType} ${vendorId} ${productId} ${discriminator}`);
+        logger.debug(`announce commissioning mode ${mode} ${deviceName} ${deviceType} ${vendorId.id} ${productId} ${discriminator}`);
 
         const shortDiscriminator = (discriminator >> 8) & 0x0F;
         const instanceId = Crypto.getRandomData(8).toHex().toUpperCase();
@@ -46,6 +46,8 @@ export class MdnsBroadcaster implements Broadcaster {
             if (ipMac === undefined) return [];
             const { mac, ips } = ipMac;
             const hostname = mac.replace(/:/g, "").toUpperCase() + "0000.local";
+            logger.debug(`on IP Addr: ${ips}`)
+            logger.debug(`using hostname ${hostname}`)
             const records = [
                 PtrRecord(SERVICE_DISCOVERY_QNAME, MATTER_COMMISSION_SERVICE_QNAME),
                 PtrRecord(SERVICE_DISCOVERY_QNAME, vendorQname),

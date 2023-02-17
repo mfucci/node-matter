@@ -25,7 +25,9 @@
   "scripts": {
     "clean": "rm -rf build",
     "build": "npm run clean; tsc",
-    "test": "TZ=utc mocha"
+    "test": "TZ=utc mocha",
+    "device": "npm run build; node build/Device.js",
+    "list-c-nodes": "dns-sd -B _matterc._udp"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0",

@@ -75,16 +75,8 @@ class InteractionMessenger<ContextT> {
     }
 
     async waitForSuccess() {
-        const response = await this.nextMessage(MessageType.StatusResponse);
-        this.throwIfError(response.payloadHeader.messageType, response.payload);
-    }
-
-    protected throwIfError(messageType: number, payload: ByteArray) {
-        if (messageType !== MessageType.StatusResponse) return;
-        const { status } = TlvStatusResponse.decode(payload);
-        if (status !== StatusCode.Success) {
-            throw new StatusResponseError(`Received error status: ${ status }`, status);
-        }
+        // If the status is not Success, this would throw an Error.
+        await this.nextMessage(MessageType.StatusResponse);
     }
 
     async nextMessage(expectedMessageType?: number) {
@@ -93,6 +85,12 @@ class InteractionMessenger<ContextT> {
         this.throwIfError(messageType, message.payload);
         if (expectedMessageType !== undefined && messageType !== expectedMessageType) throw new Error(`Received unexpected message type: ${messageType}, expected: ${expectedMessageType}`);
         return message;
+    }
+
+    protected throwIfError(messageType: number, payload: ByteArray) {
+        if (messageType !== MessageType.StatusResponse) return;
+        const { status } = TlvStatusResponse.decode(payload);
+        if (status !== StatusCode.Success) throw new StatusResponseError(`Received error status: ${ status }`, status);
     }
 
     close() {

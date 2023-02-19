@@ -38,7 +38,8 @@ export class SecureChannelMessenger<ContextT> {
     }
 
     async waitForSuccess() {
-        await this.nextMessage(MessageType.StatusReport); // this also throws if the status is not success
+        // If the status is not Success, this would throw an Error.
+        await this.nextMessage(MessageType.StatusReport);
     }
 
     async send<T>(message: T, type: number, schema: TlvSchema<T>) {

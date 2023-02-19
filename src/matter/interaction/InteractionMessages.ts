@@ -222,7 +222,7 @@ export const TlvSubscribeRequest = TlvObject({
 /** @see {@link MatterCoreSpecificationV1_0}, section 10.6.5 */
 export const TlvSubscribeResponse = TlvObject({
     subscriptionId: TlvField(0, TlvUInt32),
-    maxIntervalCeilingSeconds: TlvField(2, TlvUInt16),
+    maxInterval: TlvField(2, TlvUInt16),
     interactionModelRevision: TlvField(0xFF, TlvUInt8),
 });
 

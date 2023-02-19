@@ -87,14 +87,14 @@ class InteractionMessenger<ContextT> {
         return message;
     }
 
+    close() {
+        this.exchangeBase.close();
+    }
+
     protected throwIfError(messageType: number, payload: ByteArray) {
         if (messageType !== MessageType.StatusResponse) return;
         const { status } = TlvStatusResponse.decode(payload);
         if (status !== StatusCode.Success) throw new StatusResponseError(`Received error status: ${ status }`, status);
-    }
-
-    close() {
-        this.exchangeBase.close();
     }
 }
 

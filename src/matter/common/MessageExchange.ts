@@ -232,7 +232,7 @@ export class MessageExchange<ContextT> {
                             logger.warn("Error sending ack for unexpected response", error);
                         }
                     }
-                    throw new UnexpectedMessageError("Expected ack only", message);
+                    throw new UnexpectedMessageError("Expected ack only", responseMessage);
                 }
             } finally {
                 this.sentMessageAckSuccess = undefined;

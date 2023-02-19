@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { MessageExchange } from "../common/MessageExchange";
+import { MessageExchange, RetransmissionLimitReachedError } from "../common/MessageExchange";
 import { MatterController } from "../MatterController";
 import { capitalize } from "../../util/String";
 import { Attribute, AttributeJsType, Attributes, Cluster, Command, Commands, TlvNoResponse, RequestType, ResponseType } from "../cluster/Cluster";
@@ -81,13 +81,14 @@ export class InteractionClient {
 
     constructor(
         private readonly exchangeManager: ExchangeManager<MatterController>,
-        private readonly channel: MessageChannel<MatterController>,
+        private channel: MessageChannel<MatterController>,
+        private readonly reconnect?: () => Promise<MessageChannel<MatterController>>,
     ) {
         this.exchangeManager.addProtocolHandler(new SubscriptionClient(this.subscriptionListeners));
     }
 
     async getAllAttributes(): Promise<{}> {
-        return this.withMessenger<GetRawValueResponse[]>(async messenger => {
+        return this.withMessengerAndReconnect<GetRawValueResponse[]>(async messenger => {
             const response = await messenger.sendReadRequest({
                 attributes: [ {} ],
                 interactionModelRevision: 1,
@@ -102,7 +103,7 @@ export class InteractionClient {
     }
 
     async get<A extends Attribute<any>>(endpointId: number, clusterId: number, { id, schema, optional, default: conformanceValue }: A): Promise<AttributeJsType<A>> {
-        return this.withMessenger<AttributeJsType<A>>(async messenger => {
+        return this.withMessengerAndReconnect<AttributeJsType<A>>(async messenger => {
             const response = await messenger.sendReadRequest({
                 attributes: [ {endpointId , clusterId, attributeId: id} ],
                 interactionModelRevision: 1,
@@ -131,7 +132,7 @@ export class InteractionClient {
         minIntervalFloorSeconds: number,
         maxIntervalCeilingSeconds: number,
     ): Promise<void> {
-        return this.withMessenger<void>(async messenger => {
+        return this.withMessengerAndReconnect<void>(async messenger => {
             const { report, subscribeResponse: { subscriptionId } } = await messenger.sendSubscribeRequest({
                 attributeRequests: [ {endpointId , clusterId, attributeId: id} ],
                 keepSubscriptions: true,
@@ -152,7 +153,7 @@ export class InteractionClient {
     }
 
     async invoke<C extends Command<any, any>>(endpointId: number, clusterId: number, request: RequestType<C>, id: number, requestSchema: TlvSchema<RequestType<C>>, responseId: number, responseSchema: TlvSchema<ResponseType<C>>, optional: boolean): Promise<ResponseType<C>> {
-        return this.withMessenger<ResponseType<C>>(async messenger => {
+        return this.withMessengerAndReconnect<ResponseType<C>>(async messenger => {
             const { responses } = await messenger.sendInvokeCommand({
                 invokes: [
                     { path: { endpointId, clusterId, commandId: id }, args: requestSchema.encodeTlv(request) }
@@ -183,6 +184,19 @@ export class InteractionClient {
             return await invoke(messenger);
         } finally {
             messenger.close();
+        }
+    }
+
+    private async withMessengerAndReconnect<T>(invoke: (messenger: InteractionClientMessenger) => Promise<T>): Promise<T> {
+        try {
+            return await this.withMessenger(invoke);
+        } catch (error) {
+            if (error instanceof RetransmissionLimitReachedError && typeof this.reconnect ===  'function') {
+                this.channel = await this.reconnect();
+                return await this.withMessenger(invoke);
+            } else {
+                throw error;
+            }
         }
     }
 }

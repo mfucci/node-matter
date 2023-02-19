@@ -220,7 +220,6 @@ export class MessageExchange<ContextT> {
             try {
                 // Await Response to be received (or Message retransmit limit reached which rejects the promise)
                 const responseMessage = await ackPromise;
-                this.retransmissionTimer?.stop();
                 // If we only expect an Ack without data but got data, throw an error
                 const { payloadHeader: { requiresAck, protocolId, messageType } } = responseMessage;
                 if (expectAckOnly && !SecureChannelProtocol.isStandaloneAck(protocolId, messageType)) {
@@ -236,8 +235,6 @@ export class MessageExchange<ContextT> {
                     throw new UnexpectedMessageError("Expected ack only", message);
                 }
             } finally {
-                // Make sure to stop the timer in all cases and clean up the ack promise
-                this.retransmissionTimer?.stop();
                 this.sentMessageAckSuccess = undefined;
                 this.sentMessageAckFailure = undefined;
             }

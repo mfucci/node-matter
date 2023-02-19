@@ -101,7 +101,6 @@ export class MessageExchange<ContextT> {
     private readonly messagesQueue = new Queue<Message>();
     private receivedMessageToAck: Message | undefined;
     private sentMessageToAck: Message | undefined;
-    private expectAckOnly: boolean = false;
     private sentMessageAckSuccess: ((...args: any[]) => void) | undefined;
     private sentMessageAckFailure: ((error?: Error) => void) | undefined;
     private retransmissionTimer: Timer | undefined;
@@ -157,25 +156,12 @@ export class MessageExchange<ContextT> {
                     throw new Error(`Incorrect ack received. Expected ${sentMessageIdToAck}, received: ${ackedMessageId}`);
                 }
             } else {
-                // If we only expect an Ack without data but got data, reject with this
-                if (this.expectAckOnly && !SecureChannelProtocol.isStandaloneAck(protocolId, messageType)) {
-                    if (requiresAck) {
-                        await this.send(MessageType.StandaloneAck, new ByteArray(0));
-                    }
-                    this.sentMessageAckFailure?.(new UnexpectedMessageError("Expected ack only", message));
-                    this.retransmissionTimer?.stop();
-                    this.sentMessageAckFailure = undefined;
-                    this.sentMessageAckSuccess = undefined;
-                    this.sentMessageToAck = undefined;
-                    return;
-                } else {
-                    // The other side has received our previous message
-                    this.sentMessageAckSuccess?.();
-                    this.retransmissionTimer?.stop();
-                    this.sentMessageAckSuccess = undefined;
-                    this.sentMessageAckFailure = undefined;
-                    this.sentMessageToAck = undefined;
-                }
+                // The other side has received our previous message
+                this.retransmissionTimer?.stop();
+                this.sentMessageAckSuccess?.(message);
+                this.sentMessageAckSuccess = undefined;
+                this.sentMessageAckFailure = undefined;
+                this.sentMessageToAck = undefined;
             }
         }
         if (SecureChannelProtocol.isStandaloneAck(protocolId, messageType)) {
@@ -217,27 +203,44 @@ export class MessageExchange<ContextT> {
         if (messageType !== MessageType.StandaloneAck) {
             this.receivedMessageToAck = undefined;
         }
-        let ackPromise: Promise<void> | undefined;
+        let ackPromise: Promise<Message> | undefined;
         if (message.payloadHeader.requiresAck) {
             this.sentMessageToAck = message;
             this.retransmissionTimer = Time.getTimer(this.getResubmissionBackOffTime(0), () => this.retransmitMessage(message, 0));
-            const { promise, resolver, rejecter } = await getPromiseResolver<void>();
+            const { promise, resolver, rejecter } = await getPromiseResolver<Message>();
             ackPromise = promise;
             this.sentMessageAckSuccess = resolver;
             this.sentMessageAckFailure = rejecter;
-            this.expectAckOnly = expectAckOnly;
-        } else {
-            this.expectAckOnly = false;
         }
 
         await this.channel.send(message);
 
         if (ackPromise !== undefined) {
             this.retransmissionTimer?.start();
-            await ackPromise;
-            this.retransmissionTimer?.stop();
-            this.sentMessageAckSuccess = undefined;
-            this.sentMessageAckFailure = undefined;
+            try {
+                // Await Response to be received (or Message retransmit limit reached which rejects the promise)
+                const responseMessage = await ackPromise;
+                this.retransmissionTimer?.stop();
+                // If we only expect an Ack without data but got data, throw an error
+                const { payloadHeader: { requiresAck, protocolId, messageType } } = responseMessage;
+                if (expectAckOnly && !SecureChannelProtocol.isStandaloneAck(protocolId, messageType)) {
+                    // Send the ack because we received the message and process in upper level code
+                    if (requiresAck) {
+                        try {
+                            await this.send(MessageType.StandaloneAck, new ByteArray(0));
+                        } catch (error) {
+                            // Catch in this case because the "response not as expected" error is more important
+                            logger.warn("Error sending ack for unexpected response", error);
+                        }
+                    }
+                    throw new UnexpectedMessageError("Expected ack only", message);
+                }
+            } finally {
+                // Make sure to stop the timer in all cases and clean up the ack promise
+                this.retransmissionTimer?.stop();
+                this.sentMessageAckSuccess = undefined;
+                this.sentMessageAckFailure = undefined;
+            }
         }
     }
 

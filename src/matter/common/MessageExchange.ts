@@ -15,8 +15,11 @@ import { Logger } from "../../log/Logger";
 import { NodeId } from "./NodeId";
 import { ByteArray } from "@project-chip/matter.js";
 import { SecureChannelProtocol } from "../session/secure/SecureChannelProtocol";
+import { MatterError } from "../../error/MatterError";
 
 const logger = Logger.get("MessageExchange");
+
+export class RetransmissionLimitReachedError extends MatterError {};
 
 /** The base number for the exponential backoff equation. */
 const MRP_BACKOFF_BASE = 1.6;
@@ -236,7 +239,7 @@ export class MessageExchange<ContextT> {
         if (retransmissionCount === this.retransmissionRetries) {
             if (this.sentMessageToAck !== undefined && this.sentMessageAckFailure !== undefined) {
                 this.receivedMessageToAck = undefined;
-                this.sentMessageAckFailure(new Error("Message retransmission limit reached"));
+                this.sentMessageAckFailure(new RetransmissionLimitReachedError());
                 this.sentMessageAckFailure = undefined;
                 this.sentMessageAckSuccess = undefined;
             }

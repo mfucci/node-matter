@@ -40,7 +40,7 @@ const MRP_STANDALONE_ACK_TIMEOUT = 200;
 const MAXIMUM_TRANSMISSION_TIME_MS = 9495; // 413 + 825 + 1485 + 2541 + 4231 ms as per specs
 
 export class MessageExchange<ContextT> {
-    static async fromInitialMessage<ContextT>(
+    static fromInitialMessage<ContextT>(
         channel: MessageChannel<ContextT>,
         messageCounter: MessageCounter,
         initialMessage: Message,
@@ -59,7 +59,6 @@ export class MessageExchange<ContextT> {
             initialMessage.payloadHeader.protocolId,
             closeCallback,
         )
-        await exchange.onMessageReceived(initialMessage);
         return exchange;
     }
 

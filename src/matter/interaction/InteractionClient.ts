@@ -59,11 +59,20 @@ export class SubscriptionClient implements ProtocolHandler<MatterController> {
 
     async onNewExchange(exchange: MessageExchange<MatterController>) {
         const messenger = new InteractionClientMessenger(exchange);
-        const dataReport = await messenger.readDataReport();
-        await messenger.sendStatus(StatusCode.Success);
+        let dataReport = await messenger.readDataReport();
         const subscriptionId = dataReport.subscriptionId;
-        if (subscriptionId === undefined) return;
-        this.subscriptionListeners.get(subscriptionId)?.(dataReport);
+        if (subscriptionId === undefined) {
+            await messenger.sendStatus(StatusCode.InvalidSubscription);
+            throw new Error("Invalid Datareport without Subscription ID");
+        }
+        const listener = this.subscriptionListeners.get(subscriptionId);
+        if (listener === undefined) {
+            await messenger.sendStatus(StatusCode.InvalidSubscription);
+            throw new Error(`Unknown subscription ID ${subscriptionId}`);
+        }
+        await messenger.sendStatus(StatusCode.Success);
+
+        listener(dataReport);
     }
 }
 
@@ -123,19 +132,21 @@ export class InteractionClient {
         maxIntervalCeilingSeconds: number,
     ): Promise<void> {
         return this.withMessenger<void>(async messenger => {
-            const { subscriptionId } = await messenger.sendSubscribeRequest({
+            const { report, subscribeResponse: { subscriptionId } } = await messenger.sendSubscribeRequest({
                 attributeRequests: [ {endpointId , clusterId, attributeId: id} ],
                 keepSubscriptions: true,
                 minIntervalFloorSeconds,
                 maxIntervalCeilingSeconds,
                 isFabricFiltered: true,
-            });
+            }); // TODO: also initialize all values
 
-            this.subscriptionListeners.set(subscriptionId, (dataReport: DataReport) => {
+            const subscriptionListener = (dataReport: DataReport) => {
                 const value = dataReport.values.map(({value}) => value).find(({ path }) => endpointId === path.endpointId && clusterId === path.clusterId && id === path.attributeId);
                 if (value === undefined) return;
                 listener(schema.decodeTlv(value.value), value.version);
-            });
+            };
+            this.subscriptionListeners.set(subscriptionId, subscriptionListener);
+            subscriptionListener(report);
             return;
         });
     }

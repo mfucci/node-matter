@@ -109,7 +109,7 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
     async handleRequest(
         handleReadRequest: (request: ReadRequest) => DataReport,
         handleWriteRequest: (request: WriteRequest) => WriteResponse,
-        handleSubscribeRequest: (request: SubscribeRequest) => SubscribeResponse | undefined,
+        handleSubscribeRequest: (request: SubscribeRequest, messenger: InteractionServerMessenger) => Promise<void>,
         handleInvokeRequest: (request: InvokeRequest, message: Message) => Promise<InvokeResponse>,
         handleTimedRequest: (request: TimedRequest) => Promise<void>,
     ) {
@@ -130,12 +130,8 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
                         break;
                     case MessageType.SubscribeRequest:
                         const subscribeRequest = TlvSubscribeRequest.decode(message.payload);
-                        const subscribeResponse = handleSubscribeRequest(subscribeRequest);
-                        if (subscribeResponse === undefined) {
-                            await this.sendStatus(StatusCode.Success);
-                        } else {
-                            await this.exchange.send(MessageType.SubscribeResponse, TlvSubscribeResponse.encode(subscribeResponse));
-                        }
+                        await handleSubscribeRequest(subscribeRequest, this);
+                        // response is sent by handler
                         break;
                     case MessageType.InvokeCommandRequest:
                         const invokeRequest = TlvInvokeRequest.decode(message.payload);
@@ -180,6 +176,9 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
                 }
                 const attributeReportBytes = TlvAttributeReport.encode(attributeReport).length;
                 if (messageSize + attributeReportBytes > MAX_SPDU_LENGTH) {
+                    if (messageSize === emptyDataReportBytes.length) {
+                        throw new Error(`Attribute report for is too long to fit in a single chunk, Array chunking not yet supported`);
+                    }
                     // Report doesn't fit, sending this chunk
                     await this.exchange.send(MessageType.ReportData, TlvDataReport.encode(dataReport));
                     await this.waitForSuccess();
@@ -192,6 +191,10 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
         }
 
         await this.exchange.send(MessageType.ReportData, TlvDataReport.encode(dataReport));
+    }
+
+    async send(messageType: number, payload: ByteArray) {
+        return this.exchange.send(messageType, payload);
     }
 }
 
@@ -206,8 +209,25 @@ export class InteractionClientMessenger extends InteractionMessenger<MatterContr
         return this.request(MessageType.ReadRequest, TlvReadRequest, MessageType.ReportData, TlvDataReport, readRequest);
     }
 
-    sendSubscribeRequest(subscribeRequest: SubscribeRequest) {
-        return this.request(MessageType.SubscribeRequest, TlvSubscribeRequest, MessageType.SubscribeResponse, TlvSubscribeResponse, subscribeRequest);
+    async sendSubscribeRequest(subscribeRequest: SubscribeRequest) {
+        await this.exchange.send(MessageType.SubscribeRequest, TlvSubscribeRequest.encode(subscribeRequest));
+
+        const report = await this.readDataReport();
+        const { subscriptionId } = report;
+
+        await this.sendStatus(StatusCode.Success);
+
+        const subscribeResponseMessage = await this.nextMessage(MessageType.SubscribeResponse);
+        const subscribeResponse = TlvSubscribeResponse.decode(subscribeResponseMessage.payload);
+
+        if (subscribeResponse.subscriptionId !== subscriptionId) {
+            throw new Error(`Received subscription ID ${subscribeResponse.subscriptionId} instead of ${subscriptionId}`);
+        }
+
+        return {
+            subscribeResponse,
+            report,
+        };
     }
 
     sendInvokeCommand(invokeRequest: InvokeRequest) {
@@ -215,8 +235,30 @@ export class InteractionClientMessenger extends InteractionMessenger<MatterContr
     }
 
     async readDataReport(): Promise<DataReport> {
-        const dataReportMessage = await this.exchange.waitFor(MessageType.ReportData);
-        return TlvDataReport.decode(dataReportMessage.payload);
+        let subscriptionId: number | undefined;
+        const values: TypeFromSchema<typeof TlvAttributeReport>[] = [];
+
+        while (true) {
+            const dataReportMessage = await this.exchange.waitFor(MessageType.ReportData);
+            const report =  TlvDataReport.decode(dataReportMessage.payload);
+            if (subscriptionId === undefined && report.subscriptionId !== undefined) {
+                subscriptionId = report.subscriptionId;
+            } else {
+                if (report.subscriptionId === undefined || report.subscriptionId !== subscriptionId) {
+                    throw new Error(`Invalid subscription ID ${report.subscriptionId} received`);
+                }
+            }
+
+            if (Array.isArray(report.values) && report.values.length > 0) {
+                values.push(...report.values);
+            }
+            if (!report.moreChunkedMessages) {
+                report.values = values;
+                return report;
+            }
+
+            await this.sendStatus(StatusCode.Success);
+        }
     }
 
     private async request<RequestT, ResponseT>(requestMessageType: number, requestSchema: TlvSchema<RequestT>, responseMessageType: number, responseSchema: TlvSchema<ResponseT>, request: RequestT): Promise<ResponseT> {

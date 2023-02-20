@@ -95,7 +95,7 @@ export class AttributeGetterServer<T> extends AttributeServer<T> {
 
     get(session?: SecureSession<MatterDevice>): T {
         // TODO: check ACL
-        
+        // TODO handle "version" for getter
         return this.getter(session);
     }
 }

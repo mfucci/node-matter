@@ -4,101 +4,126 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { OptionalAttribute, Attribute, Cluster, OptionalCommand, TlvNoResponse } from "./Cluster";
-import { BitFlag, MatterApplicationClusterSpecificationV1_0, TlvField, TlvNullable, TlvObject, TlvUInt16, TlvUInt8 } from "@project-chip/matter.js";
+import { OptionalAttribute, WritableAttribute, OptionalWritableAttribute, Attribute, Cluster, OptionalCommand, TlvNoResponse } from "./Cluster";
+import { BitFlag, MatterApplicationClusterSpecificationV1_0, TlvBitmap, TlvEnum, TlvField, TlvNullable, TlvObject, TlvUInt16, TlvUInt8 } from "@project-chip/matter.js";
+
+/** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.6.5.8 */
+export const OptionsBitmap = {
+    /** Command execution control - see 1.6.5.8.1. */
+    ExecuteIfOff: BitFlag(0), // TODO default: true.
+
+    /** level effect on color - see 1.6.5.8.2 */
+    CoupleColorTempToLevel: BitFlag(1),
+};
 
 /** @see {@link MatterCoreSpecificationV1_0} § 1.6.6.1 */
 const  MoveToLevelCommand = TlvObject({
-    level: TlvField(0, TlvUInt8),
+    level: TlvField(0, TlvUInt8.bound({min:0, max:254})),
     transitionTime: TlvField(1, TlvNullable(TlvUInt16)),
-    optionsMask: TlvField(2, TlvUInt8),
-    optionsOverride: TlvField(3, TlvUInt8),
+    optionsMask: TlvField(2, TlvBitmap(TlvUInt8, OptionsBitmap)),
+    optionsOverride: TlvField(3, TlvBitmap(TlvUInt8, OptionsBitmap)), // TODO: 0 Default - all optionsOverride
 });
 
 /** @see {@link MatterCoreSpecificationV1_0} § 1.6.6.2 */
 const  MoveCommand = TlvObject({
-    moveMode: TlvField(0, TlvUInt8),
+    moveMode: TlvField(0, TlvEnum<MoveMode>()),
     rate: TlvField(1, TlvNullable(TlvUInt8)),
-    optionsMask: TlvField(2, TlvUInt8),
-    optionsOverride: TlvField(3, TlvUInt8),
+    optionsMask: TlvField(2, TlvBitmap(TlvUInt8, OptionsBitmap)),
+    optionsOverride: TlvField(3, TlvBitmap(TlvUInt8, OptionsBitmap)),
 });
 
 /** @see {@link MatterCoreSpecificationV1_0} § 1.6.6.3 */
 const  StepCommand = TlvObject({
-    stepMode: TlvField(0, TlvUInt8),
+    stepMode: TlvField(0, TlvEnum<StepMode>()),
     stepSize: TlvField(1, TlvUInt8),
     transitionTime: TlvField(2, TlvNullable(TlvUInt16)),
-    optionsMask: TlvField(3, TlvUInt8),
-    optionsOverride: TlvField(4, TlvUInt8),
+    optionsMask: TlvField(3, TlvBitmap(TlvUInt8, OptionsBitmap)),
+    optionsOverride: TlvField(4, TlvBitmap(TlvUInt8, OptionsBitmap)),
 });
 
 /** @see {@link MatterCoreSpecificationV1_0} § 1.6.6.4 */
 const  StopCommand = TlvObject({
-    optionsMask: TlvField(0, TlvUInt8),
-    optionsOverride: TlvField(1, TlvUInt8),
+    optionsMask: TlvField(0, TlvBitmap(TlvUInt8, OptionsBitmap)),
+    optionsOverride: TlvField(1, TlvBitmap(TlvUInt8, OptionsBitmap)),
 });
 
 /** @see {@link MatterCoreSpecificationV1_0} § 1.6.6.5  */
 const MoveToClosestFrequencyCommand = TlvObject({
-    frequency: TlvField(0,TlvUInt16),
+    frequency: TlvField(0, TlvUInt16 ), // FIXME - Default 0, how to set TlvField default?
 })
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.6.4 */
 const features = {
     /** Dependency with the On/Off cluster */
-    OnOff: BitFlag(0),
+    OnOff: BitFlag(0), // TODO default: true.
+
     /** Behavior that supports lighting applications */
     Lighting: BitFlag(1),
+
     /** Supports frequency attributes and behavior. */
     Frequency: BitFlag(2)
+};
+
+/** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.6.6.2.1 */
+const enum MoveMode {
+    up = 0x0,
+    down = 0x1,
+};
+/** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.6.6.3 */
+const enum StepMode {
+    up = 0x0,
+    down = 0x1,
 };
 
  /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.6.5 */
 const attributes = {
     /** the current level of this device */
-    currentLevel: Attribute(0x0,  TlvUInt8, {default: 0}), 
+    currentLevel: Attribute(0x0,  TlvNullable(TlvUInt8), {default: null}), 
 
     /** time until the current command is complete in 1/10ths of sec */
-    remainingTime: Attribute(0x01, TlvUInt16, {default: 0}),
+    remainingTime: OptionalAttribute(0x01, TlvUInt16, {default: 0}),
 
     /** the minimum value of CurrentLevel  */
-    minLevel: OptionalAttribute(0x02, TlvUInt8),
+    minLevel: OptionalAttribute(0x02, TlvUInt8.bound({ min: 0})),
 
     /** the maximum value of CurrentLevel */
-    maxLevel: OptionalAttribute(0x03, TlvUInt8, {default: 254}),
+    maxLevel: Attribute(0x03, TlvUInt8.bound({ max: 254}), {default: 254}),
 
     /** the frequency at which the device is at CurrentLevel */
-    currentFrequency: Attribute(0x04, TlvUInt16, {default: 0}),
+    currentFrequency: OptionalAttribute(0x04, TlvUInt16, {default: 0}),
 
     /** min value of CurrentFrequency capable of being assigned */
-    minFrequency: Attribute(0x05, TlvUInt16, {default: 0}),
+    minFrequency: OptionalAttribute(0x05, TlvUInt16.bound({min: 0}), {default: 0}),
 
     /** max value of CurrentFrequency capable of being assigned */
-    maxFrequency: Attribute(0x06, TlvUInt16, {default: 0}),
+    maxFrequency: OptionalAttribute(0x06, TlvUInt16, {default: 0}),
 
     /** time to move to/from the target when On/Off received by On/Off cluster on the same endpoint */
     onOffTransitionTime: OptionalAttribute(0x10, TlvUInt16, {default: 0}),
 
     /** CurrentLevel when OnOff attr of On/Off cluster on the same endpoint is TRUE */
-    onLevel: Attribute(0x11,  TlvNullable(TlvUInt8)),
+    onLevel: WritableAttribute(0x11,  TlvNullable(TlvUInt8), {default: null}),
 
     /** time taken to move the current level from the min level to the max level */
-    onTransitionTime: OptionalAttribute(0x12, TlvNullable(TlvUInt16,)),
+    onTransitionTime: OptionalWritableAttribute(0x12, TlvNullable(TlvUInt16,), {default: null}),
 
     /** time taken to move the current level from the max level to the minlevel  */
-    offTransitionTime: OptionalAttribute(0x13, TlvNullable(TlvUInt16),),
+    offTransitionTime: OptionalWritableAttribute(0x13, TlvNullable(TlvUInt16), {default: null}),
 
     /** default rate in units per second when a Move command has a null Rate */
-    defaultMoveRate: OptionalAttribute(0x14, TlvNullable(TlvUInt8),),
+    defaultMoveRate: OptionalWritableAttribute(0x14, TlvNullable(TlvUInt8)),
 
-    options: Attribute(0x0f,  TlvUInt8, {default: 0 }),
-    startUpCurrentLevel: Attribute(0x4000, TlvNullable(TlvUInt8),),  
+    options: Attribute(0x0f,  TlvBitmap(TlvUInt8, OptionsBitmap) ),
+
+    startUpCurrentLevel: OptionalAttribute(0x4000, TlvNullable(TlvUInt8),),  
 };
+
+/* TODO - Implement all below and change from Optional to Mandatory */
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.6.6 */
 const commands = {
     /** Move from the current level to the specified level */
-    moveToLevel: OptionalCommand(0x0, MoveToLevelCommand, 0x0, TlvNoResponse), // FIXME - all need resposne?
+    moveToLevel: OptionalCommand(0x0, MoveToLevelCommand, 0x0, TlvNoResponse),
     
     /** move from the current level up or down in a continuous fashion */
     move: OptionalCommand(0x1, MoveCommand, 0x1, TlvNoResponse),
@@ -144,7 +169,7 @@ export const LevelControlCluster = Cluster({
  *
  * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.6.3
  */
- export const PulseWidthModulation = Cluster({
+ export const PulseWidthModulationLevelControlCluster = Cluster({
     id: 0x001c, 
     name: "PulseWidthModulation",
     revision: 5,

@@ -26,7 +26,7 @@ import { DEVICE } from "./matter/common/DeviceTypes";
 import { MdnsBroadcaster } from "./matter/mdns/MdnsBroadcaster";
 import { Network } from "./net/Network";
 import { NetworkNode } from "./net/node/NetworkNode";
-import { commandExecutor } from "./util/CommandLine";
+import { commandExecutor, getParameter } from "./util/CommandLine";
 import { OnOffCluster } from "./matter/cluster/OnOffCluster";
 import { GeneralCommissioningClusterHandler } from "./matter/cluster/server/GeneralCommissioningServer";
 import { OperationalCredentialsClusterHandler } from "./matter/cluster/server/OperationalCredentialsServer";
@@ -43,7 +43,6 @@ import { AdminCommissioningCluster, CommissioningWindowStatus } from "./matter/c
 import { AdminCommissioningHandler } from "./matter/cluster/server/AdminCommissioningServer";
 import { NetworkCommissioningHandler } from "./matter/cluster/server/NetworkCommissioningServer";
 import { FabricIndex } from "./matter/common/FabricIndex";
-import { Platform } from "./util/Platform";
 
 // From Chip-Test-DAC-FFF1-8000-0007-Key.der
 const DevicePrivateKey = ByteArray.fromHex("727F1005CBA47ED7822A9D930943621617CFD3B79D9AF528B801ECF9F1992204");
@@ -62,10 +61,10 @@ Network.get = singleton(() => new NetworkNode());
 const logger = Logger.get("Device");
 
 class Device {
-    async start(networkInterface : string|undefined = undefined) {
+    async start(networkInterface? : string) {
         logger.info(`node-matter@${packageJson.version}`);
 
-        const deviceName = `Matter test device`;
+        const deviceName = "Matter test device";
         const deviceType = 257 /* Dimmable bulb */;
         const vendorName = "node-matter";
         const passcode = 20202021;
@@ -198,11 +197,6 @@ class Device {
     }
 }
 
+const networkInterface = getParameter("interface");
 
-const demo = async () => {
-    const cli = new Platform()
-    const selectedInterface = await cli.selectInterface()
-    new Device().start(selectedInterface);
-}
-
-demo()
+new Device().start(networkInterface);

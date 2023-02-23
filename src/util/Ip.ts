@@ -23,7 +23,7 @@ export function iPv4ToNumber(ip: string) {
     return dataView.getUint32(0);
 }
 
-export function iPv6ToArray(ip: string) {
+export function iPv6ToArray(ip: string) : Uint16Array {
     const array = new Uint16Array(8);
     let ipParts = ip.split(":");
     const valueCount = ipParts.filter(value => value !== "").length;
@@ -60,4 +60,11 @@ export function onSameNetwork(ip1: string, ip2: string, mask: string) {
             if ((ip1Array[i] & mask) !== (ip2Array[i] & mask)) return false;
         }
     }
+    return false
 }
+
+export function isLocalIPv6Address(ipv6Address: string): boolean {
+    const localAddressPrefixes = ["fc", "fd"];
+    const firstTwoBytes = ipv6Address.slice(0, 2);
+    return localAddressPrefixes.includes(firstTwoBytes);
+  }

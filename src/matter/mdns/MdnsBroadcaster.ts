@@ -112,9 +112,7 @@ export class MdnsBroadcaster implements Broadcaster {
                 if (isIPv4(ip)) {
                     records.push(ARecord(hostname, ip));
                 } else {
-                    if(ip.startsWith('fe80::')){ // only add the local address
-                        records.push(AAAARecord(hostname, ip));
-                    }
+                    records.push(AAAARecord(hostname, ip));
                 }
             });
             return records;

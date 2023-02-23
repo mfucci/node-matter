@@ -8,7 +8,7 @@ import { networkInterfaces, NetworkInterfaceInfo } from "os";
 import { UdpChannelOptions, UdpChannel } from "../UdpChannel";
 import { UdpChannelNode } from "./UdpChannelNode";
 import { Network } from "../Network";
-import { onSameNetwork } from "../../util/Ip.js";
+import { isLocalIPv6Address, onSameNetwork } from "../../util/Ip.js";
 import { Cache } from "../../util/Cache.js";
 
 export class NetworkNode extends Network {
@@ -38,7 +38,7 @@ export class NetworkNode extends Network {
         (ip: string) => this.getNetInterfaceForIpInternal(ip),
         5 * 60 * 1000, /* 5mn */
     )
-    
+
     private static getNetInterfaceForIpInternal(ip: string) {
         if (ip.indexOf("%") !== -1) {
             // IPv6 address with scope
@@ -72,7 +72,9 @@ export class NetworkNode extends Network {
     getIpMac(netInterface: string): { mac: string; ips: string[]; } | undefined {
         const netInterfaceInfo = networkInterfaces()[netInterface];
         if (netInterfaceInfo === undefined) return undefined;
-        return { mac: netInterfaceInfo[0].mac, ips: netInterfaceInfo.map(({address}) => address) };
+        // only use local IPv6 address
+        const ips = netInterfaceInfo.map(({address}) => address).filter(ip => isLocalIPv6Address(ip))
+        return { mac: netInterfaceInfo[0].mac, ips: ips };
     }
 
     override createUdpChannel(options: UdpChannelOptions): Promise<UdpChannel> {

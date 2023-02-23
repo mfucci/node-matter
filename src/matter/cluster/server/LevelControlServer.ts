@@ -20,13 +20,13 @@ export const LevelControlClusterHandler: () => ClusterServerHandlers<typeof Leve
     // underlying hardware. But how to expose these paramters to the caller of the library? Callback with
     // temporary options?
     move: async ({ request:{}, attributes: {} }) => {
-      throw new Error("Not implementated")
+      throw new Error("Not implemented")
     },
     step: async ({ request:{}, attributes: {} }) => {
-      throw new Error("Not implementated")
+      throw new Error("Not implemented")
     },
     stop: async ({ request:{}, attributes: {} }) => {
-      throw new Error("Not implementated")
+      throw new Error("Not implemented")
     },
     
     moveToLevelWithOnOff: async function ({ request: {level}, attributes: {currentLevel} }) {
@@ -43,18 +43,18 @@ export const LevelControlClusterHandler: () => ClusterServerHandlers<typeof Leve
     },
     
     moveWithOnOff: async ({ request:{}, attributes: { currentLevel } }) => {
-      throw new Error("Not implementated")
+      throw new Error("Not implemented")
     },
     stepWithOnOff: async ({ request:{}, attributes: { currentLevel } }) => {
-      throw new Error("Not implementated")
+      throw new Error("Not implemented")
     },
     stopWithOnOff: async ({ request:{}, attributes: { currentLevel } }) => {
-      throw new Error("Not implementated")
+      throw new Error("Not implemented")
     },
     moveToClosestFrequency: async ({request:{}, attributes: { /* currentFrequency */ } }) => { 
     // TODO: How to access or check existance of optional attribute?
 
       /* currentFrequency = frequency */
-      throw new Error("Not implementated")
+      throw new Error("Not implemented")
     }, 
 });

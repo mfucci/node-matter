@@ -61,9 +61,12 @@ Network.get = singleton(() => new NetworkNode());
 const logger = Logger.get("Device");
 
 class Device {
-    async start(networkInterface? : string) {
+
+
+    async start() {
         logger.info(`node-matter@${packageJson.version}`);
 
+        const networkInterface = getParameter("interface");
         const deviceName = "Matter test device";
         const deviceType = 257 /* Dimmable bulb */;
         const vendorName = "node-matter";
@@ -197,6 +200,4 @@ class Device {
     }
 }
 
-const networkInterface = getParameter("interface");
-
-new Device().start(networkInterface);
+new Device().start();

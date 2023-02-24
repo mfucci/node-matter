@@ -148,6 +148,21 @@ export class Crypto {
         });
     }
 
+    static signSec1(privateKey: ByteArray, data: ByteArray | ByteArray[], dsaEncoding: ("ieee-p1363" | "der")  = "ieee-p1363") {
+        const signer = crypto.createSign(HASH_ALGORITHM);
+        if (Array.isArray(data)) {
+            data.forEach(chunk => signer.update(chunk));
+        } else {
+            signer.update(data);
+        }
+        return signer.sign({
+            key: Buffer.from(privateKey), // key has to be a node.js Buffer object
+            format: "der",
+            type: "sec1",
+            dsaEncoding,
+        });
+    }
+
     static verify(publicKey: ByteArray, data: ByteArray, signature: ByteArray, dsaEncoding: ("ieee-p1363" | "der")  = "ieee-p1363") {
         const verifier = crypto.createVerify(HASH_ALGORITHM);
         verifier.update(data);

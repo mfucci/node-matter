@@ -81,9 +81,6 @@ const commonAttributes = {
     /** Current level of this device. */
     currentLevel: Attribute(0x0, TlvNullable(TlvUInt8), { default: null }),
 
-    /** Time until the current command is complete in 1/10ths of sec. */
-    remainingTime: OptionalAttribute(0x01, TlvUInt16, { default: 0 }),
-
     /** Minimum value of {@link attributes.currentLevel}. */
     minLevel: OptionalAttribute(0x02, TlvUInt8),
 
@@ -107,9 +104,6 @@ const commonAttributes = {
 
     /** Determines the default behavior of some cluster commands. */
     options: Attribute(0x0f, OptionsBitmap),
-
-    /** Desired startup level for a device when it is supplied with power. */
-    startUpCurrentLevel: OptionalWritableAttribute(0x4000, TlvNullable(TlvUInt8)),
 };
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.6.6 */
@@ -150,7 +144,15 @@ export const LevelControlCluster = Cluster({
     name: "LevelControl",
     revision: 5,
     features,
-    attributes: commonAttributes,
+    attributes: {
+        ... commonAttributes,
+
+        /** Time until the current command is complete in 1/10ths of sec. */
+        remainingTime: OptionalAttribute(0x01, TlvUInt16, { default: 0 }),
+
+        /** Desired startup level for a device when it is supplied with power. */
+        startUpCurrentLevel: OptionalWritableAttribute(0x4000, TlvNullable(TlvUInt8)),
+    },
     commands: commonCommands,
  });
 

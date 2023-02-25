@@ -6,11 +6,12 @@
 
 import { OptionalAttribute, WritableAttribute, OptionalWritableAttribute, Attribute, Cluster, Command, OptionalCommand, TlvNoResponse } from "./Cluster";
 import { BitFlag, MatterApplicationClusterSpecificationV1_0, TlvBitmap, TlvEnum, TlvField, TlvNullable, TlvObject, TlvUInt16, TlvUInt8 } from "@project-chip/matter.js";
+import { Merge } from "../../util/Type";
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.6.5.8 */
 const optionsBitmap = TlvBitmap(TlvUInt8, {
     /** Dependency on On/Off cluster. */
-    executeIfOff: BitFlag(0), // TODO default: true.
+    executeIfOff: BitFlag(0), 
 
     /** Level effect on color. */
     coupleColorTempToLevel: BitFlag(1),
@@ -21,7 +22,7 @@ const MoveToLevelCommandRequest = TlvObject({
     level: TlvField(0, TlvUInt8.bound({max:254})),
     transitionTime: TlvField(1, TlvNullable(TlvUInt16)),
     optionsMask: TlvField(2, optionsBitmap),
-    optionsOverride: TlvField(3, optionsBitmap), // TODO: 0 Default - all optionsOverride
+    optionsOverride: TlvField(3, optionsBitmap), // TODO: 0 Default for all optionsOverride below
 });
 
 /** @see {@link MatterCoreSpecificationV1_0} § 1.6.6.2 */
@@ -77,7 +78,7 @@ const enum StepMode {
 };
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.6.5 */
-const attributes = {
+var attributes = {
     /** Current level of this device. */
     currentLevel: Attribute(0x0, TlvNullable(TlvUInt8), {default: null}), 
 
@@ -88,16 +89,7 @@ const attributes = {
     minLevel: OptionalAttribute(0x02, TlvUInt8),
 
     /** Maximum value of {@link attributes.currentLevel}. */
-    maxLevel: Attribute(0x03, TlvUInt8.bound({max: 254}), {default: 254}),
-
-    /** Frequency at which the device is at CurrentLevel. */
-    currentFrequency: OptionalAttribute(0x04, TlvUInt16, {default: 0}),
-
-    /** Min value of CurrentFrequency capable of being assigned. */
-    minFrequency: OptionalAttribute(0x05, TlvUInt16, {default: 0}),
-
-    /** Max value of CurrentFrequency capable of being assigned. */
-    maxFrequency: OptionalAttribute(0x06, TlvUInt16, {default: 0}),
+    maxLevel: OptionalAttribute(0x03, TlvUInt8.bound({max: 254}), {default: 254}),
 
     /** Time to move to/from the target when On/Off received by On/Off cluster on the same endpoint. */
     onOffTransitionTime: OptionalWritableAttribute(0x10, TlvUInt16, {default: 0}),
@@ -106,7 +98,7 @@ const attributes = {
     onLevel: WritableAttribute(0x11, TlvNullable(TlvUInt8), {default: null}),
 
     /** Time taken to move the current level from the min level to the max level. */
-    onTransitionTime: OptionalWritableAttribute(0x12, TlvNullable(TlvUInt16,), {default: null}),
+    onTransitionTime: OptionalWritableAttribute(0x12, TlvNullable(TlvUInt16), {default: null}),
 
     /** Time taken to move the current level from the max level to the minlevel. */
     offTransitionTime: OptionalWritableAttribute(0x13, TlvNullable(TlvUInt16), {default: null}),
@@ -121,9 +113,21 @@ const attributes = {
     startUpCurrentLevel: OptionalWritableAttribute(0x4000, TlvNullable(TlvUInt8)),  
 };
 
+// attributes specic to the PulseWidth Modulation Level Control Cluster 
+const freqAttributes = {
+  /** Frequency at which the device is at CurrentLevel. */
+  currentFrequency: Attribute(0x04, TlvUInt16, {default: 0}),
+
+  /** Min value of CurrentFrequency capable of being assigned. */
+  minFrequency: Attribute(0x05, TlvUInt16, {default: 0}),
+
+  /** Max value of CurrentFrequency capable of being assigned. */
+  maxFrequency: Attribute(0x06, TlvUInt16, {default: 0}),
+}
+
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.6.6 */
-const commands = {
-    
+var commands = {
+
     /** Moves from the current level to the specified level.*/
     moveToLevel: Command(0x0, MoveToLevelCommandRequest, 0x0, TlvNoResponse),
     
@@ -147,10 +151,13 @@ const commands = {
 
     /** Same as {@link commands.stop}, but change the status of OnOff device on same endpoint. */
     stopWithOnOff: Command(0x7, StopCommandRequest, 0x7, TlvNoResponse),
-
-    /** Changes current frequency to the requested frequency, or to the closest frequency. */
-    moveToClosestFrequency: OptionalCommand(0x8, MoveToClosestFrequencyCommandRequest, 0x8, TlvNoResponse),
 };
+
+// comand specific tp the PulseWidth Modulation Level Control Cluster 
+const freqCommand = {
+    /** Changes current frequency to the requested frequency, or to the closest frequency. */
+    moveToClosestFrequency: Command(0x8, MoveToClosestFrequencyCommandRequest, 0x8, TlvNoResponse),
+}
 
 /**
  * Attributes and commands for changing the level of devices, e.g. light intensity
@@ -166,6 +173,12 @@ export const LevelControlCluster = Cluster({
     commands,
  });
 
+ // merge the frequency command to the rest
+ commands = Merge(commands, freqCommand);
+
+// merge the frequency specific attributes to the rest
+ attributes= Merge(attributes, freqAttributes);
+ 
  /**
  * Attributes and commands for Pulse Width Modulation (Provisional)
  *

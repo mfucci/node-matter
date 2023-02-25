@@ -5,8 +5,8 @@
  */
 
 import { LevelControlCluster } from "../LevelControlCluster";
-import { ClusterServerHandlers } from "./ClusterServer";
-import { UseOptionalAttributes } from "./ClusterServer";
+import { ClusterServerHandlers, UseOptionalAttributes } from "./ClusterServer";
+
 
 // TODO: Create temporary options based on mask and override. How to expose to user of the library?
 

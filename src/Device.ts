@@ -82,7 +82,7 @@ class Device {
 
         const paa = new AttestationCertificateManager(vendorId);
         const { keyPair: dacKeyPair, dac } = paa.getDACert(productId)
-        const certificateDeclaration = CertificationDeclarationManager.generate(vendorId, productId);
+        const certificationDeclaration = CertificationDeclarationManager.generate(vendorId, productId);
 
         (new MatterDevice(deviceName, deviceType, vendorId, productId, discriminator))
             .addNetInterface(await UdpInterface.create(5540, "udp4"))
@@ -133,7 +133,7 @@ class Device {
                            devicePrivateKey: dacKeyPair.privateKey,
                            deviceCertificate: dac,
                            deviceIntermediateCertificate: paa.getPAICert(),
-                           certificateDeclaration,
+                           certificationDeclaration,
                        }),
                    ),
                    new ClusterServer(NetworkCommissioningCluster,

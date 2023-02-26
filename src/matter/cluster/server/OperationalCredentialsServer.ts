@@ -27,7 +27,7 @@ interface OperationalCredentialsServerConf {
     devicePrivateKey: ByteArray,
     deviceCertificate: ByteArray,
     deviceIntermediateCertificate: ByteArray,
-    certificateDeclaration: ByteArray,
+    certificationDeclaration: ByteArray,
 }
 
 function signWithDeviceKey(conf: OperationalCredentialsServerConf,session: SecureSession<MatterDevice>, data: ByteArray) {
@@ -36,7 +36,7 @@ function signWithDeviceKey(conf: OperationalCredentialsServerConf,session: Secur
 
 export const OperationalCredentialsClusterHandler: (conf: OperationalCredentialsServerConf) => ClusterServerHandlers<typeof OperationalCredentialsCluster> = (conf) => ({
     requestAttestation: async ({ request: {attestationNonce}, session }) => {
-        const elements = TlvAttestation.encode({ declaration: conf.certificateDeclaration, attestationNonce, timestamp: 0 });
+        const elements = TlvAttestation.encode({ declaration: conf.certificationDeclaration, attestationNonce, timestamp: 0 });
         return {elements: elements, signature: signWithDeviceKey(conf, session as SecureSession<MatterDevice>, elements)};
     },
 

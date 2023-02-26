@@ -93,6 +93,9 @@ export class InteractionClient {
                 interactionModelRevision: 1,
                 isFabricFiltered: true,
             });
+            if (!Array.isArray(response.values)) {
+                return []; // TODO handle Errors correctly
+            }
 
             return response.values.flatMap(({ value: reportValue} ) => {
                 if (reportValue === undefined) return [];
@@ -111,12 +114,15 @@ export class InteractionClient {
                 isFabricFiltered: true,
             });
 
-            const value = response.values.map(({ value }) => value).find((value) => {
-                if (value === undefined) return false;
-                const { path } = value;
-                return endpointId === path.endpointId && clusterId === path.clusterId && id === path.attributeId;
-            });
-            // Todo add proper handling for returned attributeStatus information
+            let value;
+            if (Array.isArray(response.values)) {
+                value = response.values.map(({ value }) => value).find((value) => {
+                    if (value === undefined) return false;
+                    const { path } = value;
+                    return endpointId === path.endpointId && clusterId === path.clusterId && id === path.attributeId;
+                });
+                // Todo add proper handling for returned attributeStatus information
+            }
 
             if (value === undefined) {
                 if (optional) return undefined;
@@ -149,6 +155,9 @@ export class InteractionClient {
             }); // TODO: also initialize all values
 
             const subscriptionListener = (dataReport: DataReport) => {
+                if (!Array.isArray(dataReport.values)) {
+                    return;
+                }
                 const value = dataReport.values.map(({ value }) => value).find((value) => {
                     if (value === undefined) return false;
                     const { path } = value;

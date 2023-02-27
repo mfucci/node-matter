@@ -25,6 +25,8 @@ const ADDITIONAL_AUTH_DATA_2 = ByteArray.fromHex("00c7a200ec8ceb00");
 const PRIVATE_KEY = ByteArray.fromHex("727F1005CBA47ED7822A9D930943621617CFD3B79D9AF528B801ECF9F1992204");
 const PUBLIC_KEY = ByteArray.fromHex("0462e2b6e1baff8d74a6fd8216c4cb67a3363a31e691492792e61aee610261481396725ef95e142686ba98f339b0ff65bc338bec7b9e8be0bdf3b2774982476220");
 
+const SEC1_KEY = ByteArray.fromHex("30770201010420aef3484116e9481ec57be0472df41bf499064e5024ad869eca5e889802d48075a00a06082a8648ce3d030107a144034200043c398922452b55caf389c25bd1bca4656952ccb90e8869249ad8474653014cbf95d687965e036b521c51037e6b8cedefca1eb44046694fa08882eed6519decba");
+
 describe("Crypto", () => {
 
     context("encrypt", () => {
@@ -43,19 +45,34 @@ describe("Crypto", () => {
         });
     });
 
-    context("sign / verify", () => {
+    context("signPkcs8 / verifySpki", () => {
         it("signs data with known private key", () => {
-            const result = Crypto.sign(PRIVATE_KEY, ENCRYPTED_DATA);
+            const result = Crypto.signPkcs8(PRIVATE_KEY, ENCRYPTED_DATA);
 
-            Crypto.verify(PUBLIC_KEY, ENCRYPTED_DATA, result);
+            Crypto.verifySpki(PUBLIC_KEY, ENCRYPTED_DATA, result);
         });
 
         it("signs data with generated private key", () => {
             const ecdh = crypto.createECDH("prime256v1");
             ecdh.generateKeys();
-            const result = Crypto.sign(ecdh.getPrivateKey(), ENCRYPTED_DATA);
+            const result = Crypto.signPkcs8(ecdh.getPrivateKey(), ENCRYPTED_DATA);
 
-            Crypto.verify(ecdh.getPublicKey(), ENCRYPTED_DATA, result);
+            Crypto.verifySpki(ecdh.getPublicKey(), ENCRYPTED_DATA, result);
+        });
+    });
+
+    context("signSec1 / verifySpki", () => {
+        it("signs data with known sec1 key", () => {
+            const result = Crypto.signSec1(SEC1_KEY, ENCRYPTED_DATA, "der");
+
+            const privateKeyObject = crypto.createPrivateKey({
+                key: Buffer.from(SEC1_KEY),
+                format: "der",
+                type: "sec1",
+            });
+            const publicKey = crypto.createPublicKey(privateKeyObject).export({ format: "der", type: "spki" });
+
+            Crypto.verifySpkiEc(publicKey, ENCRYPTED_DATA, result, "der");
         });
     });
 
@@ -63,7 +80,7 @@ describe("Crypto", () => {
         it("generates a working key pair", () => {
             const { privateKey, publicKey } = Crypto.createKeyPair();
 
-            Crypto.verify(publicKey, ENCRYPTED_DATA, Crypto.sign(privateKey, ENCRYPTED_DATA));
+            Crypto.verifySpki(publicKey, ENCRYPTED_DATA, Crypto.signPkcs8(privateKey, ENCRYPTED_DATA));
         });
     });
 });

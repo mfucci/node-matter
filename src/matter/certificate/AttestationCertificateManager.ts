@@ -16,7 +16,6 @@ import { Time } from "../../time/Time";
 import { ByteArray } from "@project-chip/matter.js";
 import { CertificateManager, jsToMatterDate } from "./CertificateManager";
 
-
 // DAC for Vendor ID 0xFFF1 and Product ID 0x8000 from Chip project
 // There are included here for reference and are no longer used in the code
 

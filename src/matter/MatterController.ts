@@ -122,8 +122,8 @@ export class MatterController {
         return peerNodeId;
     }
 
-    async resume(peerNodeId: NodeId, timeout = 60) {
-        const scanResult = await this.scanner.findDevice(this.fabric, peerNodeId, timeout);
+    async resume(peerNodeId: NodeId, timeoutS = 60) {
+        const scanResult = await this.scanner.findDevice(this.fabric, peerNodeId, timeoutS);
         if (scanResult === undefined) throw new Error("The device being commissioned cannot be found on the network");
         const { ip: operationalIp, port: operationalPort } = scanResult;
 
@@ -141,13 +141,13 @@ export class MatterController {
         return channel;
     }
 
-    async connect(nodeId: NodeId, timeout?: number) {
+    async connect(nodeId: NodeId, timeoutS?: number) {
         let channel: MessageChannel<any>;
         try {
             channel = this.channelManager.getChannel(this.fabric, nodeId);
         } catch (error) {
             if (error instanceof NoChannelError) {
-                channel = await this.resume(nodeId, timeout);
+                channel = await this.resume(nodeId, timeoutS);
             } else {
                 throw error;
             }

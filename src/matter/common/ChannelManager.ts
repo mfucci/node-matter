@@ -18,7 +18,7 @@ export class NoChannelError extends MatterError {};
 export class ChannelManager {
     private readonly channels = new Map<string, MessageChannel<any>>();
 
-    getChannelKey(fabric: Fabric, nodeId: NodeId) {
+    private getChannelKey(fabric: Fabric, nodeId: NodeId) {
         return `${fabric.fabricId}/${nodeId}`;
     }
 

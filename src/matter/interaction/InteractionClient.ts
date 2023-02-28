@@ -191,6 +191,7 @@ export class InteractionClient {
         try {
             return await this.withMessenger(invoke);
         } catch (error) {
+            // TODO Move this retry/reconnect logic into InteractionMessenger or such
             if (error instanceof RetransmissionLimitReachedError && typeof this.reconnect ===  'function') {
                 this.channel = await this.reconnect();
                 return await this.withMessenger(invoke);

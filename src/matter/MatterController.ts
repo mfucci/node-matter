@@ -9,7 +9,7 @@ import { ResumptionRecord, SessionManager } from "./session/SessionManager";
 import { NetInterface } from "../net/NetInterface";
 import { ExchangeManager, MessageChannel } from "./common/ExchangeManager";
 import { PaseClient } from "./session/secure/PaseClient";
-import { ClusterClient, InteractionClient } from "./interaction/InteractionClient";
+import {ClusterClient, ExchangeProvider, InteractionClient} from "./interaction/InteractionClient";
 import { BasicInformationCluster } from "./cluster/BasicInformationCluster";
 import { CommissioningError, GeneralCommissioningCluster, RegulatoryLocationType, CommissioningSuccessFailureResponse } from "./cluster/GeneralCommissioningCluster";
 import { CertificateChainType, TlvCertSigningRequest, OperationalCredentialsCluster } from "./cluster/OperationalCredentialsCluster";
@@ -77,7 +77,7 @@ export class MatterController {
 
         // Use the created secure session to do the commissioning
         const paseSecureMessageChannel = new MessageChannel(paseChannel, paseSecureSession);
-        let interactionClient = new InteractionClient(this.exchangeManager, paseSecureMessageChannel);
+        let interactionClient = new InteractionClient(new ExchangeProvider(this.exchangeManager, paseSecureMessageChannel));
 
         // Get and display the product name (just for debugging)
         const basicClusterClient = ClusterClient(interactionClient, 0, BasicInformationCluster);
@@ -152,11 +152,11 @@ export class MatterController {
                 throw error;
             }
         }
-        return new InteractionClient(this.exchangeManager, channel, async () => {
+        return new InteractionClient(new ExchangeProvider(this.exchangeManager, channel, async () => {
             this.channelManager.removeChannel(this.fabric, nodeId);
             await this.resume(nodeId);
             return this.channelManager.getChannel(this.fabric, nodeId);
-        });
+        }));
     }
 
     private ensureSuccess({ errorCode, debugText }: CommissioningSuccessFailureResponse) {

@@ -76,15 +76,35 @@ export class SubscriptionClient implements ProtocolHandler<MatterController> {
     }
 }
 
+export class ExchangeProvider {
+    constructor(
+        private readonly exchangeManager: ExchangeManager<MatterController>,
+        private channel: MessageChannel<MatterController>,
+        private readonly reconnectChannelFunc?: () => Promise<MessageChannel<MatterController>>,
+    ) {}
+
+    addProtocolHandlerToExchangeManager(handler: ProtocolHandler<MatterController>) {
+        this.exchangeManager.addProtocolHandler(handler);
+    }
+
+    initiateExchange(): MessageExchange<MatterController> {
+        return this.exchangeManager.initiateExchangeWithChannel(this.channel, INTERACTION_PROTOCOL_ID);
+    }
+
+    async reconnectChannel() {
+        if (this.reconnectChannelFunc === undefined) return false;
+        this.channel = await this.reconnectChannelFunc();
+        return true;
+    }
+}
+
 export class InteractionClient {
     private readonly subscriptionListeners = new Map<number, (dataReport: DataReport) => void>();
 
     constructor(
-        private readonly exchangeManager: ExchangeManager<MatterController>,
-        private channel: MessageChannel<MatterController>,
-        private readonly reconnect?: () => Promise<MessageChannel<MatterController>>,
+        private readonly exchangeProvider: ExchangeProvider,
     ) {
-        this.exchangeManager.addProtocolHandler(new SubscriptionClient(this.subscriptionListeners));
+        this.exchangeProvider.addProtocolHandlerToExchangeManager(new SubscriptionClient(this.subscriptionListeners));
     }
 
     async getAllAttributes(): Promise<{}> {
@@ -179,7 +199,7 @@ export class InteractionClient {
     }
 
     private async withMessenger<T>(invoke: (messenger: InteractionClientMessenger) => Promise<T>): Promise<T> {
-        const messenger = new InteractionClientMessenger(this.exchangeManager.initiateExchangeWithChannel(this.channel, INTERACTION_PROTOCOL_ID));
+        const messenger = new InteractionClientMessenger(this.exchangeProvider.initiateExchange());
         try {
             return await invoke(messenger);
         } finally {
@@ -192,12 +212,10 @@ export class InteractionClient {
             return await this.withMessenger(invoke);
         } catch (error) {
             // TODO Move this retry/reconnect logic into InteractionMessenger or such
-            if (error instanceof RetransmissionLimitReachedError && typeof this.reconnect ===  'function') {
-                this.channel = await this.reconnect();
+            if (error instanceof RetransmissionLimitReachedError && await this.exchangeProvider.reconnectChannel()) {
                 return await this.withMessenger(invoke);
-            } else {
-                throw error;
             }
+            throw error;
         }
     }
 }

@@ -130,14 +130,14 @@ export class SecureSession<T> implements Session<T> {
         return subscriptionId;
     }
 
-    destroy() {
-        this.clearSubscriptions();
-        this.closeCallback();
-    }
-
     clearSubscriptions() {
         this.subscriptions.forEach(subscription => subscription.cancel());
         this.subscriptions.length = 0;
+    }
+
+    destroy() {
+        this.clearSubscriptions();
+        this.closeCallback();
     }
 
     private generateNonce(securityFlags: number, messageId: number, nodeId: NodeId) {

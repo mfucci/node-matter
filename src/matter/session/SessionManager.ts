@@ -11,7 +11,6 @@ import { SecureSession } from "./SecureSession";
 import { Session } from "./Session";
 import { UnsecureSession } from "./UnsecureSession";
 import { ByteArray } from "@project-chip/matter.js";
-import {FabricIndex} from "../common/FabricIndex";
 
 export const UNDEFINED_NODE_ID = new NodeId(BigInt(0));
 

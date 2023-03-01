@@ -8,7 +8,7 @@ import { MessageExchange, RetransmissionLimitReachedError } from "../common/Mess
 import { MatterController } from "../MatterController";
 import { capitalize } from "../../util/String";
 import { Attribute, AttributeJsType, Attributes, Cluster, Command, Commands, TlvNoResponse, RequestType, ResponseType } from "../cluster/Cluster";
-import { DataReport, InteractionClientMessenger } from "./InteractionMessenger";
+import {DataReport, InteractionClientMessenger, IncomingInteractionClientMessenger} from "./InteractionMessenger";
 import { ResultCode } from "../cluster/server/CommandServer";
 import { ClusterClient } from "../cluster/client/ClusterClient";
 import { ExchangeManager, MessageChannel } from "../common/ExchangeManager";
@@ -58,7 +58,7 @@ export class SubscriptionClient implements ProtocolHandler<MatterController> {
     }
 
     async onNewExchange(exchange: MessageExchange<MatterController>) {
-        const messenger = new InteractionClientMessenger(exchange);
+        const messenger = new IncomingInteractionClientMessenger(exchange);
         let dataReport = await messenger.readDataReport();
         const subscriptionId = dataReport.subscriptionId;
         if (subscriptionId === undefined) {
@@ -199,7 +199,7 @@ export class InteractionClient {
     }
 
     private async withMessenger<T>(invoke: (messenger: InteractionClientMessenger) => Promise<T>): Promise<T> {
-        const messenger = new InteractionClientMessenger(this.exchangeProvider.initiateExchange());
+        const messenger = new InteractionClientMessenger(this.exchangeProvider);
         try {
             return await invoke(messenger);
         } finally {

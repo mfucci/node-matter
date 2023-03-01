@@ -131,10 +131,6 @@ export class SecureSession<T> implements Session<T> {
         logger.debug(`Added subscription ${subscription.subscriptionId} to ${this.getName()}/${this.id}`);
     }
 
-    destroy() {
-        this.clearSubscriptions();
-    }
-
     clearSubscriptions() {
         this.subscriptions.forEach(subscription => subscription.cancel());
         this.subscriptions.length = 0;

@@ -60,7 +60,13 @@ export class CaseServer implements ProtocolHandler<MatterDevice> {
             const resumeSalt = ByteArray.concat(peerRandom, resumptionId);
             const resumeKey = await Crypto.hkdf(sharedSecret, resumeSalt, KDFSR2_KEY_INFO);
             const resumeMic = Crypto.encrypt(resumeKey, new ByteArray(0), RESUME2_MIC_NONCE);
-            await messenger.sendSigma2Resume({ resumptionId, resumeMic, sessionId });
+            try {
+                await messenger.sendSigma2Resume({resumptionId, resumeMic, sessionId});
+            } catch (error) {
+                // If we fail to send the resume, we destroy the session
+                secureSession.destroy();
+                throw error;
+            }
 
             logger.info(`Case server: session ${secureSession.getId()} resumed with ${messenger.getChannelName()}`);
             resumptionRecord.resumptionId = resumptionId; /* Update the ID */

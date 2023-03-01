@@ -38,7 +38,7 @@ export class SessionManager<ContextT> {
     }
 
     async createSecureSession(sessionId: number, fabric: Fabric | undefined, peerNodeId: NodeId, peerSessionId: number, sharedSecret: ByteArray, salt: ByteArray, isInitiator: boolean, isResumption: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
-        const session = await SecureSession.create(this.context, sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, salt, isInitiator, isResumption, idleRetransTimeoutMs, activeRetransTimeoutMs);
+        const session = await SecureSession.create(this.context, sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, salt, isInitiator, isResumption, () => this.sessions.delete(sessionId), idleRetransTimeoutMs, activeRetransTimeoutMs);
         this.sessions.set(sessionId, session);
 
         // TODO: close previous secure channel for
@@ -58,22 +58,6 @@ export class SessionManager<ContextT> {
 
     getSession(sessionId: number) {
         return this.sessions.get(sessionId);
-    }
-
-    destroySession(sessionId: number) {
-        const session = this.sessions.get(sessionId);
-        if (session) {
-            session.destroy();
-            this.sessions.delete(sessionId);
-        }
-    }
-
-    getSessionIdsForFabricIndex(fabricIndex: FabricIndex) {
-        return [...this.sessions.values()].filter(session => {
-            if (!session.isSecure()) return false;
-            const secureSession = session as SecureSession<any>;
-            return secureSession.getFabric()?.fabricIndex.index === fabricIndex.index;
-        }).map(session => session.getId());
     }
 
     getSessionForNode(fabric: Fabric, nodeId: NodeId) {

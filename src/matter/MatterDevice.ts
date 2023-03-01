@@ -77,10 +77,6 @@ export class MatterDevice {
         return this.sessionManager.createSecureSession(sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, salt, isInitiator, isResumption, idleRetransTimeoutMs, activeRetransTimeoutMs);
     }
 
-    destroySession(sessionId: number) {
-        this.sessionManager.destroySession(sessionId);
-    }
-
     findFabricFromDestinationId(destinationId: ByteArray, peerRandom: ByteArray) {
         return this.fabricManager.findFabricFromDestinationId(destinationId, peerRandom);
     }
@@ -94,17 +90,8 @@ export class MatterDevice {
         return fabricIndex;
     }
 
-    removeFabric(fabricIndex: FabricIndex) {
-        this.fabricManager.removeFabric(fabricIndex);
-
-        logger.info(`Expire Sessions for deleted fabric ${fabricIndex.index}`);
-        this.sessionManager.getSessionIdsForFabricIndex(fabricIndex).forEach(sessionId => {
-            this.sessionManager.destroySession(sessionId);
-        });
-    }
-
     getFabricByIndex(fabricIndex: FabricIndex) {
-        return this.fabricManager.getFabrics().find(fabric => fabric.fabricIndex === fabricIndex);
+        return this.fabricManager.getFabrics().find(fabric => fabric.fabricIndex.index === fabricIndex.index);
     }
 
     initiateExchange(fabric: Fabric, nodeId: NodeId, protocolId: number) {

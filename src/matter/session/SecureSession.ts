@@ -19,6 +19,9 @@ import { UNDEFINED_NODE_ID } from "./SessionManager";
 import { NodeId } from "../common/NodeId";
 import { ByteArray, DataWriter, Endian } from "@project-chip/matter.js";
 import { Time } from "../../time/Time";
+import { Logger } from "../../log/Logger";
+
+const logger = Logger.get("SecureSession");
 
 const SESSION_KEYS_INFO = ByteArray.fromString("SessionKeys");
 const SESSION_RESUMPTION_KEYS_INFO = ByteArray.fromString("SessionResumptionKeys");
@@ -123,11 +126,13 @@ export class SecureSession<T> implements Session<T> {
         return this.peerNodeId;
     }
 
-    addSubscription(subscriptionBuilder: (subscriptionId: number) => SubscriptionHandler): number {
-        const subscriptionId = this.nextSubscriptionId++;
-        const subscription = subscriptionBuilder(subscriptionId);
+    addSubscription(subscription: SubscriptionHandler) {
         this.subscriptions.push(subscription);
-        return subscriptionId;
+        logger.debug(`Added subscription ${subscription.subscriptionId} to ${this.getName()}/${this.id}`);
+    }
+
+    destroy() {
+        this.clearSubscriptions();
     }
 
     clearSubscriptions() {

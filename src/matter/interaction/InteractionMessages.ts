@@ -134,7 +134,7 @@ export const TlvAttributeReportValue = TlvObject({ // TODO consolidate with TlvA
 /** @see {@link MatterCoreSpecificationV1_0}, section 10.5.5 */
 export const TlvAttributeReport = TlvObject({ // AttributeReportIB
     attributeStatus: TlvOptionalField(0, TlvAttributeStatus),
-    value: TlvField(1, TlvAttributeReportValue), // AttributeDataIB, TODO rename to attributeData, formally Optional
+    value: TlvOptionalField(1, TlvAttributeReportValue), // AttributeDataIB, TODO rename to attributeData
 });
 
 /** @see {@link MatterCoreSpecificationV1_0}, section 10.5.15 */
@@ -200,7 +200,7 @@ export const TlvReadRequest = TlvObject({
 /** @see {@link MatterCoreSpecificationV1_0}, section 10.6.3 */
 export const TlvDataReport = TlvObject({
     subscriptionId: TlvOptionalField(0, TlvUInt32),
-    values: TlvField(1, TlvArray(TlvAttributeReport)), // TODO: rename to attributeReports, formally optional
+    values: TlvOptionalField(1, TlvArray(TlvAttributeReport)), // TODO: rename to attributeReports
     eventReports: TlvOptionalField(2, TlvArray(TlvEventReport)),
     moreChunkedMessages: TlvOptionalField(3, TlvBoolean),
     suppressResponse: TlvOptionalField(4, TlvBoolean),
@@ -222,7 +222,7 @@ export const TlvSubscribeRequest = TlvObject({
 /** @see {@link MatterCoreSpecificationV1_0}, section 10.6.5 */
 export const TlvSubscribeResponse = TlvObject({
     subscriptionId: TlvField(0, TlvUInt32),
-    maxIntervalCeilingSeconds: TlvField(2, TlvUInt16),
+    maxInterval: TlvField(2, TlvUInt16),
     interactionModelRevision: TlvField(0xFF, TlvUInt8),
 });
 

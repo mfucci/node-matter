@@ -79,7 +79,7 @@ describe("Integration", () => {
     var client: MatterController;
 
     before(async () => {
-        Logger.defaultLogLevel = Level.INFO;
+        Logger.defaultLogLevel = Level.DEBUG;
         Time.get = () => fakeTime;
         Network.get = () => clientNetwork;
         client = await MatterController.create(
@@ -184,42 +184,44 @@ describe("Integration", () => {
     });
 
     context("subscription", () => {
-        /*it("subscription sends regular updates", async () => {
-            const interactionClient = await client.connect(BigInt(1));
-            const onOffClient = ClusterClient(interactionClient, 1, OnOffCluster);
-            const startTime = Time.nowMs();
-            let lastReport: { value: boolean, version: number, time: number } | undefined;
-
-            await onOffClient.subscribeOn((value, version) => lastReport = { value, version, time: Time.nowMs() }, 0, 5);
-            await fakeTime.advanceTime(0);
-
-            assert.deepEqual(lastReport, { value: false, version: 0, time: startTime});
-
-            await fakeTime.advanceTime(8 * 1000);
-
-            assert.deepEqual(lastReport, { value: false, version: 0, time: startTime + 5 * 1000});
-
-            await fakeTime.advanceTime(5 * 1000);
-
-            assert.deepEqual(lastReport, { value: false, version: 0, time: startTime + 10 * 1000});
-        });*/
-
         it("subscription sends updates when the value changes", async () => {
             const interactionClient = await client.connect(new NodeId(BigInt(1)));
             const onOffClient = ClusterClient(interactionClient, 1, OnOffCluster);
             const startTime = Time.nowMs();
-            let callback = (value: boolean, version: number) => {};
-            await onOffClient.subscribeOnOff((value, version) => callback(value, version), 0, 5);
-            await fakeTime.advanceTime(0);
 
-            const { promise, resolver } = await getPromiseResolver<{value: boolean, version: number, time: number}>();
-            callback = (value: boolean, version: number) => resolver({ value, version, time: Time.nowMs() });
+            // Await initial Datareport
+            const { promise: firstPromise, resolver: firstResolver } = await getPromiseResolver<{value: boolean, version: number, time: number}>();
+            let callback = (value: boolean, version: number) => firstResolver({ value, version, time: Time.nowMs() });
+
+            await onOffClient.subscribeOnOff((value, version) => callback(value, version), 0, 5);
+
+            await fakeTime.advanceTime(0);
+            const firstReport = await firstPromise;
+            assert.deepEqual(firstReport, { value: false, version: 0, time: startTime});
+
+            // Await update Report on value change
+            const { promise: updatePromise, resolver: updateResolver } = await getPromiseResolver<{value: boolean, version: number, time: number}>();
+            callback = (value: boolean, version: number) => updateResolver({ value, version, time: Time.nowMs() });
 
             await fakeTime.advanceTime(2 * 1000);
             onOffServer.attributes.onOff.set(true);
-            const lastReport = await promise;
+            const updateReport = await updatePromise;
 
-            assert.deepEqual(lastReport, { value: true, version: 1, time: startTime + 2 * 1000});
+            assert.deepEqual(updateReport, { value: true, version: 1, time: startTime + 2 * 1000});
+
+            // Await update Report on value change without in between update
+            const { promise: lastPromise, resolver: lastResolver } = await getPromiseResolver<{value: boolean, version: number, time: number}>();
+            callback = (value: boolean, version: number) => lastResolver({ value, version, time: Time.nowMs() });
+
+            // Verify that no update comes in after max cycle time 1h
+            await fakeTime.advanceTime(60 * 60 * 1000);
+
+            // ... but on next change immediately then
+            await fakeTime.advanceTime(2 * 1000);
+            onOffServer.attributes.onOff.set(false);
+            const lastReport = await lastPromise;
+
+            assert.deepEqual(lastReport, { value: false, version: 2, time: startTime + (60 * 60 + 4) * 1000});
         });
     });
 

@@ -67,7 +67,7 @@ const TlvOffWithEffectRequest = TlvObject({
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.5.7.4.2 */
 const TlvOnOffControlBitmap = TlvBitmap(TlvUInt8, {
     acceptOnlyWhenOn: BitFlag(1),
-})
+});
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.5.7.6. */
 const TlvOnWithTimedOffRequest = TlvObject({

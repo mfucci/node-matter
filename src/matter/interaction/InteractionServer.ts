@@ -7,24 +7,43 @@
 import { MatterDevice } from "../MatterDevice";
 import { ProtocolHandler } from "../common/ProtocolHandler";
 import { MessageExchange } from "../common/MessageExchange";
-import { InteractionServerMessenger, InvokeRequest, InvokeResponse, ReadRequest, DataReport, SubscribeRequest, SubscribeResponse, TimedRequest, WriteRequest, WriteResponse } from "./InteractionMessenger";
+import {
+    DataReport,
+    InteractionServerMessenger,
+    InvokeRequest,
+    InvokeResponse,
+    ReadRequest,
+    SubscribeRequest,
+    TimedRequest,
+    WriteRequest,
+    WriteResponse,
+    StatusResponseError, MessageType
+} from "./InteractionMessenger";
 import { CommandServer, ResultCode } from "../cluster/server/CommandServer";
 import { DescriptorCluster } from "../cluster/DescriptorCluster";
 import { AttributeGetterServer, AttributeServer } from "../cluster/server/AttributeServer";
 import { Attributes, Cluster, Commands, Events } from "../cluster/Cluster";
-import { AttributeServers, AttributeInitialValues, ClusterServerHandlers } from "../cluster/server/ClusterServer";
+import { AttributeInitialValues, AttributeServers, ClusterServerHandlers } from "../cluster/server/ClusterServer";
 import { SecureSession } from "../session/SecureSession";
 import { SubscriptionHandler } from "./SubscriptionHandler";
 import { Logger } from "../../log/Logger";
 import { DeviceTypeId } from "../common/DeviceTypeId";
 import { ClusterId } from "../common/ClusterId";
-import { BitSchema, TlvStream, TypeFromBitSchema, TypeFromSchema} from "@project-chip/matter.js";
+import { BitSchema, TlvStream, TypeFromBitSchema, TypeFromSchema } from "@project-chip/matter.js";
 import { EndpointNumber } from "../common/EndpointNumber";
 import { capitalize } from "../../util/String";
-import { StatusCode, TlvAttributePath } from "./InteractionMessages";
+import {
+    StatusCode,
+    TlvAttributePath,
+    TlvAttributeReport,
+    TlvSubscribeResponse
+} from "./InteractionMessages";
 import { Message } from "../../codec/MessageCodec";
+import { Crypto } from "../../crypto/Crypto";
 
 export const INTERACTION_PROTOCOL_ID = 0x0001;
+
+const logger = Logger.get("InteractionProtocol");
 
 export class ClusterServer<F extends BitSchema, A extends Attributes, C extends Commands, E extends Events> {
     readonly id: number;
@@ -93,14 +112,13 @@ function toHex(value: number | undefined) {
     return value === undefined ? "*" : `0x${value.toString(16)}`;
 }
 
-const logger = Logger.get("InteractionProtocol");
-
 export class InteractionServer implements ProtocolHandler<MatterDevice> {
     private readonly endpoints = new Map<number, { name: string, code: number, clusters: Map<number, ClusterServer<any, any, any, any>> }>();
     private readonly attributes = new Map<string, AttributeServer<any>>();
     private readonly attributePaths = new Array<AttributePath>();
     private readonly commands = new Map<string, CommandServer<any, any>>();
     private readonly commandPaths = new Array<CommandPath>();
+    private nextSubscriptionId = Crypto.getRandomUInt32();
 
     constructor() {}
 
@@ -155,7 +173,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
         await new InteractionServerMessenger(exchange).handleRequest(
             readRequest => this.handleReadRequest(exchange, readRequest),
             writeRequest => this.handleWriteRequest(exchange, writeRequest),
-            subscribeRequest => this.handleSubscribeRequest(exchange, subscribeRequest),
+            (subscribeRequest, messenger) => this.handleSubscribeRequest(exchange, subscribeRequest, messenger),
             (invokeRequest, message) => this.handleInvokeRequest(exchange, invokeRequest, message),
             timedRequest => this.handleTimedRequest(exchange, timedRequest),
         );
@@ -164,22 +182,26 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
     handleReadRequest(exchange: MessageExchange<MatterDevice>, {attributes: attributePaths, isFabricFiltered}: ReadRequest): DataReport {
         logger.debug(`Received read request from ${exchange.channel.getName()}: ${attributePaths.map(path => this.resolveAttributeName(path)).join(", ")}, isFabricFiltered=${isFabricFiltered}`);
 
-        const values = this.getAttributes(attributePaths)
-            .map(({ path, attribute }) => {
-                const { value, version } = attribute.getWithVersion(exchange.session);
-                return { path, value, version, schema: attribute.schema };
-            });
+        // UnsupportedNode/UnsupportedEndpoint/UnsupportedCluster/UnsupportedAttribute/UnsupportedRead
 
-        logger.debug(`Read request from ${exchange.channel.getName()} resolved to: ${values.map(({ path, value, version }) => `${this.resolveAttributeName(path)}=${Logger.toJSON(value)} (${version})`).join(", ")}`);
+        const reportValues = attributePaths.flatMap((path: TypeFromSchema<typeof TlvAttributePath>): TypeFromSchema<typeof TlvAttributeReport>[] => {
+            const attributes = this.getAttributes([ path ]);
+            if (attributes.length === 0) {
+                logger.debug(`Read from ${exchange.channel.getName()}: ${this.resolveAttributeName(path)} unsupported path`);
+                return [{ attributeStatus: { path, status: {status: StatusCode.UnsupportedAttribute} } }]; // TODO: Find correct status code
+            }
+
+            return attributes.map(({ path, attribute }) => {
+                const { value, version } = attribute.getWithVersion(exchange.session); // TODO check ACL
+                logger.debug(`Read from ${exchange.channel.getName()}: ${this.resolveAttributeName(path)}=${Logger.toJSON(value)} (version=${version})`);
+                return { value: { path, value: attribute.schema.encodeTlv(value), version } };
+            });
+        });
+
         return {
             interactionModelRevision: 1,
-            values: values.map(({ path, value, version, schema }) => ({
-                value: {
-                    path,
-                    version,
-                    value: schema.encodeTlv(value),
-                },
-            })),
+            suppressResponse: false,
+            values: reportValues,
         };
     }
 
@@ -224,7 +246,7 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
         };
     }
 
-    handleSubscribeRequest(exchange: MessageExchange<MatterDevice>, { minIntervalFloorSeconds, maxIntervalCeilingSeconds, attributeRequests, keepSubscriptions }: SubscribeRequest): SubscribeResponse | undefined {
+    async handleSubscribeRequest(exchange: MessageExchange<MatterDevice>, { minIntervalFloorSeconds, maxIntervalCeilingSeconds, attributeRequests, eventRequests, keepSubscriptions }: SubscribeRequest, messenger: InteractionServerMessenger): Promise<void> {
         logger.debug(`Received subscribe request from ${exchange.channel.getName()}`);
 
         if (!exchange.session.isSecure()) throw new Error("Subscriptions are only implemented on secure sessions");
@@ -232,22 +254,41 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
         const fabric = session.getFabric();
         if (fabric === undefined) throw new Error("Subscriptions are only implemented after a fabric has been assigned");
 
+        if ((!Array.isArray(attributeRequests) || attributeRequests.length === 0) && (!Array.isArray(eventRequests) || eventRequests.length === 0)) {
+            throw new StatusResponseError("No attributes or events requested", StatusCode.InvalidAction);
+        }
+
         if (!keepSubscriptions) {
             session.clearSubscriptions();
         }
 
+        // TODO add eventsRequest and other missing supports
         if (attributeRequests !== undefined) {
             logger.debug(`Subscribe to ${attributeRequests.map(path => this.resolveAttributeName(path)).join(", ")}`);
-            let attributes = this.getAttributes(attributeRequests);
 
-            if (attributeRequests.length === 0) throw new Error("Invalid subscription request");
+            if (attributeRequests.length === 0) throw new Error("Unsupported subscription request with empty attribute list");
             if (minIntervalFloorSeconds < 0) throw new Error("minIntervalFloorSeconds should be greater or equal to 0");
             if (maxIntervalCeilingSeconds < 0) throw new Error("maxIntervalCeilingSeconds should be greater or equal to 1");
             if (maxIntervalCeilingSeconds < minIntervalFloorSeconds) throw new Error("maxIntervalCeilingSeconds should be greater or equal to minIntervalFloorSeconds");
 
-            const subscriptionId = session.addSubscription(SubscriptionHandler.Builder(session.getContext(), fabric, session.getPeerNodeId(), attributes, minIntervalFloorSeconds, maxIntervalCeilingSeconds));
+            let attributes = this.getAttributes(attributeRequests);
 
-            return { subscriptionId, maxIntervalCeilingSeconds, interactionModelRevision: 1 };
+            // TODO: Interpret specs:
+            // The publisher SHALL compute an appropriate value for the MaxInterval field in the action. This SHALL respect the following constraint: MinIntervalFloor ≤ MaxInterval ≤ MAX(SUBSCRIPTION_MAX_INTERVAL_PUBLISHER_LIMIT=60mn, MaxIntervalCeiling)
+
+            if (this.nextSubscriptionId === 0xFFFFFFFF) this.nextSubscriptionId = 0;
+            const subscriptionId = this.nextSubscriptionId++;
+            const subscriptionHandler = new SubscriptionHandler(subscriptionId, session.getContext(), fabric, session.getPeerNodeId(), attributes, minIntervalFloorSeconds, maxIntervalCeilingSeconds);
+            session.addSubscription(subscriptionHandler);
+
+            // Send initial data report to prime the subscription with initial data
+            await subscriptionHandler.sendInitialReport(messenger, session);
+
+            const maxInterval = subscriptionHandler.getMaxInterval();
+            logger.info(`Created subscription ${subscriptionId} for Session ${session.getId()} with ${attributes.length} attributes. Updates: ${minIntervalFloorSeconds} - ${maxIntervalCeilingSeconds} => ${maxInterval} seconds`);
+            // Then send the subscription response
+            await messenger.send(MessageType.SubscribeResponse, TlvSubscribeResponse.encode({ subscriptionId, maxInterval, interactionModelRevision: 1 }));
+            subscriptionHandler.activateSendingUpdates();
         }
     }
 

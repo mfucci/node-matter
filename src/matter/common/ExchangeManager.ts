@@ -95,8 +95,9 @@ export class ExchangeManager<ContextT> {
         if (exchange !== undefined) {
             await exchange.onMessageReceived(message);
         } else {
-            const exchange = await MessageExchange.fromInitialMessage(this.channelManager.getOrCreateChannel(channel, session), this.messageCounter, message, () => this.exchanges.delete(exchangeIndex));
+            const exchange = MessageExchange.fromInitialMessage(this.channelManager.getOrCreateChannel(channel, session), this.messageCounter, message, () => this.exchanges.delete(exchangeIndex));
             this.exchanges.set(exchangeIndex, exchange);
+            await exchange.onMessageReceived(message);
             const protocolHandler = this.protocols.get(message.payloadHeader.protocolId);
             if (protocolHandler === undefined) throw new Error(`Unsupported protocol ${message.payloadHeader.protocolId}`);
             await protocolHandler.onNewExchange(exchange, message);

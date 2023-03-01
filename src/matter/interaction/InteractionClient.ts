@@ -108,7 +108,7 @@ export class InteractionClient {
     }
 
     async getAllAttributes(): Promise<{}> {
-        return this.withMessengerAndReconnect<GetRawValueResponse[]>(async messenger => {
+        return this.withMessenger<GetRawValueResponse[]>(async messenger => {
             const response = await messenger.sendReadRequest({
                 attributes: [ {} ],
                 interactionModelRevision: 1,
@@ -123,7 +123,7 @@ export class InteractionClient {
     }
 
     async get<A extends Attribute<any>>(endpointId: number, clusterId: number, { id, schema, optional, default: conformanceValue }: A): Promise<AttributeJsType<A>> {
-        return this.withMessengerAndReconnect<AttributeJsType<A>>(async messenger => {
+        return this.withMessenger<AttributeJsType<A>>(async messenger => {
             const response = await messenger.sendReadRequest({
                 attributes: [ {endpointId , clusterId, attributeId: id} ],
                 interactionModelRevision: 1,
@@ -152,7 +152,7 @@ export class InteractionClient {
         minIntervalFloorSeconds: number,
         maxIntervalCeilingSeconds: number,
     ): Promise<void> {
-        return this.withMessengerAndReconnect<void>(async messenger => {
+        return this.withMessenger<void>(async messenger => {
             const { report, subscribeResponse: { subscriptionId } } = await messenger.sendSubscribeRequest({
                 attributeRequests: [ {endpointId , clusterId, attributeId: id} ],
                 keepSubscriptions: true,
@@ -173,7 +173,7 @@ export class InteractionClient {
     }
 
     async invoke<C extends Command<any, any>>(endpointId: number, clusterId: number, request: RequestType<C>, id: number, requestSchema: TlvSchema<RequestType<C>>, responseId: number, responseSchema: TlvSchema<ResponseType<C>>, optional: boolean): Promise<ResponseType<C>> {
-        return this.withMessengerAndReconnect<ResponseType<C>>(async messenger => {
+        return this.withMessenger<ResponseType<C>>(async messenger => {
             const { responses } = await messenger.sendInvokeCommand({
                 invokes: [
                     { path: { endpointId, clusterId, commandId: id }, args: requestSchema.encodeTlv(request) }
@@ -204,18 +204,6 @@ export class InteractionClient {
             return await invoke(messenger);
         } finally {
             messenger.close();
-        }
-    }
-
-    private async withMessengerAndReconnect<T>(invoke: (messenger: InteractionClientMessenger) => Promise<T>): Promise<T> {
-        try {
-            return await this.withMessenger(invoke);
-        } catch (error) {
-            // TODO Move this retry/reconnect logic into InteractionMessenger or such
-            if (error instanceof RetransmissionLimitReachedError && await this.exchangeProvider.reconnectChannel()) {
-                return await this.withMessenger(invoke);
-            }
-            throw error;
         }
     }
 }

@@ -21,10 +21,10 @@ const logger = Logger.get("MessageExchange");
 
 export class UnexpectedMessageError extends MatterError {
     public constructor(
-        public readonly message: string,
-        public readonly data: Message,
+        message: string,
+        public readonly receivedMessage: Message,
     ) {
-        super(`(${MessageCodec.messageToString(data)}) ${message}`);
+        super(`(${MessageCodec.messageToString(receivedMessage)}) ${message}`);
     }
 }
 
@@ -216,26 +216,14 @@ export class MessageExchange<ContextT> {
 
         if (ackPromise !== undefined) {
             this.retransmissionTimer?.start();
-            try {
-                // Await Response to be received (or Message retransmit limit reached which rejects the promise)
-                const responseMessage = await ackPromise;
-                // If we only expect an Ack without data but got data, throw an error
-                const { payloadHeader: { requiresAck, protocolId, messageType } } = responseMessage;
-                if (expectAckOnly && !SecureChannelProtocol.isStandaloneAck(protocolId, messageType)) {
-                    // Send the ack because we received the message and process in upper level code
-                    if (requiresAck) {
-                        try {
-                            await this.send(MessageType.StandaloneAck, new ByteArray(0));
-                        } catch (error) {
-                            // Catch in this case because the "response not as expected" error is more important
-                            logger.warn("Error sending ack for unexpected response", error);
-                        }
-                    }
-                    throw new UnexpectedMessageError("Expected ack only", responseMessage);
-                }
-            } finally {
-                this.sentMessageAckSuccess = undefined;
-                this.sentMessageAckFailure = undefined;
+            // Await Response to be received (or Message retransmit limit reached which rejects the promise)
+            const responseMessage = await ackPromise;
+            this.sentMessageAckSuccess = undefined;
+            this.sentMessageAckFailure = undefined;
+            // If we only expect an Ack without data but got data, throw an error
+            const { payloadHeader: { protocolId, messageType } } = responseMessage;
+            if (expectAckOnly && !SecureChannelProtocol.isStandaloneAck(protocolId, messageType)) {
+                throw new UnexpectedMessageError("Expected ack only", responseMessage);
             }
         }
     }

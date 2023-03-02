@@ -25,6 +25,7 @@ import {
 import { ByteArray, TlvSchema, TypeFromSchema } from "@project-chip/matter.js";
 import { Message } from "../../codec/MessageCodec";
 import { MatterError } from "../../error/MatterError";
+import { tryCatchAsync } from "../../error/TryCatchHandler";
 
 export const enum MessageType {
     StatusResponse = 0x01,
@@ -190,19 +191,15 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
             }
         }
 
-        try {
-            await this.exchange.send(MessageType.ReportData, TlvDataReport.encode(dataReport), dataReport.suppressResponse);
-            if (!dataReport.suppressResponse) {
-                await this.waitForSuccess();
-            }
-        } catch (error: any) {
-            if (error instanceof UnexpectedMessageError) {
-                const message = error.data;
-                const messageType = message.payloadHeader.messageType;
-                this.throwIfError(messageType, message.payload);
-            } else {
-                throw error;
-            }
+        if (dataReport.suppressResponse) {
+            // We do not expect a response other than a Standalone Ack, so if we receive anything else, we throw an error
+            await tryCatchAsync(async () => await this.exchange.send(MessageType.ReportData, TlvDataReport.encode(dataReport), true), UnexpectedMessageError, error => {
+                const { payloadHeader: { messageType }, payload } = (error as UnexpectedMessageError).receivedMessage;
+                this.throwIfError(messageType, payload);
+            });
+        } else {
+            await this.exchange.send(MessageType.ReportData, TlvDataReport.encode(dataReport));
+            await this.waitForSuccess();
         }
     }
 

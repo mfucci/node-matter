@@ -5,14 +5,15 @@
  */
 
 import { MessageExchange } from "../../common/MessageExchange";
-import { GeneralStatusCode, ProtocolStatusCode, MessageType, SECURE_CHANNEL_PROTOCOL_ID } from "./SecureChannelMessages";
-import { ByteArray, DataReader, DataWriter, Endian, TlvSchema } from "@project-chip/matter.js";
+import { GeneralStatusCode, ProtocolStatusCode, MessageType } from "./SecureChannelMessages";
+import { ByteArray, TlvSchema } from "@project-chip/matter.js";
 import { MatterError } from "../../../error/MatterError";
+import { decodeStatusReport, encodeStatusReport } from "./SecureChannelStatusMessageSchema";
 
 /** Error base Class for all errors related to the status response messages. */
 export class ChannelStatusResponseError extends MatterError {
     public constructor(
-        public readonly message: string,
+        message: string,
         public readonly generalStatusCode: GeneralStatusCode,
         public readonly protocolStatusCode: ProtocolStatusCode,
     ) {
@@ -65,29 +66,17 @@ export class SecureChannelMessenger<ContextT> {
     }
 
     private async sendStatusReport(generalStatus: GeneralStatusCode, protocolStatus: ProtocolStatusCode) {
-        const writer = new DataWriter(Endian.Little);
-        writer.writeUInt16(generalStatus);
-        writer.writeUInt32(SECURE_CHANNEL_PROTOCOL_ID);
-        writer.writeUInt16(protocolStatus);
-        await this.exchange.send(MessageType.StatusReport, writer.toByteArray());
-    }
-
-    decodeStatusReport(payload: ByteArray) {
-        const reader = new DataReader(payload, Endian.Little);
-        const generalStatus = reader.readUInt16();
-        const protocolId = reader.readUInt32();
-        const protocolStatus = reader.readUInt16();
-        return { generalStatus, protocolId, protocolStatus };
+        await this.exchange.send(MessageType.StatusReport, encodeStatusReport(generalStatus, protocolStatus));
     }
 
     protected throwIfError(messageType: number, payload: ByteArray) {
         if (messageType !== MessageType.StatusReport) return;
-        const { generalStatus, protocolId, protocolStatus } = this.decodeStatusReport(payload);
+        const { generalStatus, protocolId, protocolStatus } = decodeStatusReport(payload);
         if (generalStatus !== GeneralStatusCode.Success) {
-            throw new ChannelStatusResponseError(`Received error status: ${generalStatus} ${protocolId} ${protocolStatus}`, generalStatus, protocolStatus);
+            throw new ChannelStatusResponseError(`Received general error status (${protocolId})`, generalStatus, protocolStatus);
         }
         if (protocolStatus !== ProtocolStatusCode.Success) {
-            throw new ChannelStatusResponseError(`Received success status, but protocol status is not Success: ${protocolStatus}`, generalStatus, protocolStatus);
+            throw new ChannelStatusResponseError(`Received general success status, but protocol status is not Success`, generalStatus, protocolStatus);
         }
     }
 }

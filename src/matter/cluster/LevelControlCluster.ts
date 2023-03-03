@@ -21,7 +21,7 @@ const MoveToLevelCommandRequest = TlvObject({
     level: TlvField(0, TlvUInt8.bound({ max:254 })),
     transitionTime: TlvField(1, TlvNullable(TlvUInt16)),
     optionsMask: TlvField(2, OptionsBitmap),
-    optionsOverride: TlvField(3, OptionsBitmap), // TODO: 0 Default for all optionsOverride below
+    optionsOverride: TlvField(3, OptionsBitmap), // TODO: 0 Default
 });
 
 /** @see {@link MatterCoreSpecificationV1_0} § 1.6.6.2 */
@@ -29,7 +29,7 @@ const MoveCommandRequest = TlvObject({
     moveMode: TlvField(0, TlvEnum<MoveMode>()),
     rate: TlvField(1, TlvNullable(TlvUInt8)),
     optionsMask: TlvField(2, OptionsBitmap),
-    optionsOverride: TlvField(3, OptionsBitmap),
+    optionsOverride: TlvField(3, OptionsBitmap), // TODO: 0 Default
 });
 
 /** @see {@link MatterCoreSpecificationV1_0} § 1.6.6.3 */
@@ -38,24 +38,24 @@ const StepCommandRequest = TlvObject({
     stepSize: TlvField(1, TlvUInt8),
     transitionTime: TlvField(2, TlvNullable(TlvUInt16)),
     optionsMask: TlvField(3, OptionsBitmap),
-    optionsOverride: TlvField(4, OptionsBitmap),
+    optionsOverride: TlvField(4, OptionsBitmap), // TODO: 0 Default
 });
 
 /** @see {@link MatterCoreSpecificationV1_0} § 1.6.6.4 */
 const StopCommandRequest = TlvObject({
     optionsMask: TlvField(0, OptionsBitmap),
-    optionsOverride: TlvField(1, OptionsBitmap),
+    optionsOverride: TlvField(1, OptionsBitmap), // TODO: 0 Default
 });
 
 /** @see {@link MatterCoreSpecificationV1_0} § 1.6.6.5  */
 const MoveToClosestFrequencyCommandRequest = TlvObject({
-    frequency: TlvField(0, TlvUInt16), // TODO - Default 0, how to set TlvField default?
+    frequency: TlvField(0, TlvUInt16), // TODO: Default 0
 })
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.6.4 */
 const features = {
     /** Dependency with the On/Off cluster */
-    onOffClusterDependency: BitFlag(0), // default: true.
+    onOffClusterDependency: BitFlag(0), // default: true
 
     /** Behavior that supports lighting applications. */
     lighting: BitFlag(1),

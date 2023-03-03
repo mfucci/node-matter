@@ -8,6 +8,7 @@ export abstract class Storage {
     static get: () => Storage = () => { throw new Error("No provider configured"); };
 
     abstract initialize(): Promise<void>;
+    abstract close(): Promise<void>;
     abstract get<T>(context: string, key: string): T | undefined;
     abstract getAll(context: string): { key: string, value: any}[];
     abstract set<T>(context: string, key: string, value: T): void;

@@ -19,6 +19,7 @@ const logger = Logger.get("StorageNode");
 export class StorageNode extends StorageInMemory {
     private readonly commitTimer = Time.getTimer(COMMIT_DELAY, () => this.commit());
     private waitForCommit = false;
+    private allowToCommit = false;
 
     constructor(
         private readonly path: string,
@@ -30,7 +31,14 @@ export class StorageNode extends StorageInMemory {
         if (Object.keys(this.store).length > 0) {
             throw new Error("Storage contains already values, can not initialize!");
         }
-        this.store = this.fromJson(await readFile(this.path, "utf-8"));
+        try {
+            this.store = this.fromJson(await readFile(this.path, "utf-8"));
+        } catch (error: any) {
+            if (error.code !== "ENOENT") {
+                throw error;
+            }
+        }
+        this.allowToCommit = true;
     }
 
     set<T>(context: string, key: string, value: T): void {
@@ -42,6 +50,7 @@ export class StorageNode extends StorageInMemory {
     }
 
     private async commit() {
+        if (!this.allowToCommit) return;
         this.waitForCommit = false;
         try {
             await writeFile(this.path, this.toJson(this.store), "utf-8");
@@ -50,9 +59,10 @@ export class StorageNode extends StorageInMemory {
         }
     }
 
-    async storeData() {
+    async close() {
         this.commitTimer.stop();
         await this.commit();
+        this.allowToCommit = false;
     }
 
     private toJson(object: any): string {
@@ -72,15 +82,16 @@ export class StorageNode extends StorageInMemory {
 
     private fromJson(json: string): any {
         return JSON.parse(json, (_key, value) => {
-            if (typeof value === "object" && value !== null && value.__object__ !== undefined) {
-                const object = value.__object__;
+            if (typeof value === "string" && value.startsWith('{"__object__":"') && value.endsWith('"}')) {
+                const data = JSON.parse(value);
+                const object = data.__object__;
                 switch (object) {
                     case "BigInt":
-                        return BigInt(value.__value__);
+                        return BigInt(data.__value__);
                     case "Buffer":
-                        return Buffer.from(value.__value__, 'base64');
+                        return Buffer.from(data.__value__, 'base64');
                     case "Uint8Array":
-                        return new Uint8Array(Buffer.from(value.__value__, 'base64'));
+                        return new Uint8Array(Buffer.from(data.__value__, 'base64'));
                     default:
                         throw new Error(`Unknown object type: ${object}`);
                 }

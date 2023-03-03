@@ -11,6 +11,8 @@ export class StorageInMemory implements Storage {
 
     async initialize() {}
 
+    async close() {}
+
     get<T>(context: string, key: string): T | undefined {
         return this.store[context]?.[key];
     }

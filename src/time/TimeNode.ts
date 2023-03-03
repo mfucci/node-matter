@@ -8,7 +8,6 @@ import { Time, Timer, TimerCallback } from "./Time";
 
 class TimerNode implements Timer {
     private timerId: NodeJS.Timer | undefined;
-    private callCount: number = 0;
 
     constructor(
             private readonly intervalMs: number,

@@ -25,25 +25,29 @@ import { Time } from "../time/Time";
 import { NodeId } from "./common/NodeId";
 import { VendorId } from "./common/VendorId";
 import { ByteArray } from "@project-chip/matter.js";
+import { FabricIndex } from "./common/FabricIndex";
+import { isIPv6 } from "../util/Ip";
 
 requireMinNodeVersion(16);
 
+const FABRIC_INDEX = new FabricIndex(1);
 const FABRIC_ID = BigInt(1);
-const CONTROLLER_NODE_ID = new NodeId(BigInt(0));
+const CONTROLLER_NODE_ID = new NodeId(BigInt(1));
 const ADMIN_VENDOR_ID = new VendorId(752);
 const logger = Logger.get("MatterController");
 
 export class MatterController {
-    public static async create(scanner: Scanner, netInterface: NetInterface) {
+    public static async create(scanner: Scanner, netInterfaceIpv4: NetInterface, netInterfaceIpv6: NetInterface) {
         const certificateManager = new RootCertificateManager();
         const ipkValue = Crypto.getRandomData(16);
-        const fabricBuilder = new FabricBuilder()
+        const fabricBuilder = new FabricBuilder(FABRIC_INDEX)
             .setRootCert(certificateManager.getRootCert())
+            .setRootNodeId(CONTROLLER_NODE_ID)
             .setIdentityProtectionKey(ipkValue)
-            .setVendorId(ADMIN_VENDOR_ID);
+            .setRootVendorId(ADMIN_VENDOR_ID);
         fabricBuilder.setOperationalCert(certificateManager.generateNoc(fabricBuilder.getPublicKey(), FABRIC_ID, CONTROLLER_NODE_ID));
         const fabric = await fabricBuilder.build();
-        return new MatterController(scanner, netInterface, certificateManager, fabric);
+        return new MatterController(scanner, netInterfaceIpv4, netInterfaceIpv6, certificateManager, fabric);
     }
 
     private readonly sessionManager = new SessionManager(this);
@@ -54,15 +58,18 @@ export class MatterController {
 
     constructor(
         private readonly scanner: Scanner,
-        private readonly netInterface: NetInterface,
+        private readonly netInterfaceIpv4: NetInterface,
+        private readonly netInterfaceIpv6: NetInterface,
         private readonly certificateManager: RootCertificateManager,
         private readonly fabric: Fabric,
     ) {
-        this.exchangeManager.addNetInterface(netInterface);
+        this.exchangeManager.addNetInterface(netInterfaceIpv4);
+        this.exchangeManager.addNetInterface(netInterfaceIpv6);
     }
 
     async commission(commissionAddress: string, commissionPort: number, discriminator: number, setupPin: number) {
-        const paseChannel = await this.netInterface.openChannel(commissionAddress, commissionPort);
+        const paseInterface = isIPv6(commissionAddress) ? this.netInterfaceIpv6 : this.netInterfaceIpv4;
+        const paseChannel = await paseInterface.openChannel(commissionAddress, commissionPort);
 
         // Do PASE paring
         const paseUnsecureMessageChannel = new MessageChannel(paseChannel, this.sessionManager.getUnsecureSession());
@@ -111,7 +118,8 @@ export class MatterController {
         const { ip: operationalIp, port: operationalPort } = scanResult;
 
         // Do CASE pairing
-        const operationalChannel = await this.netInterface.openChannel(operationalIp, operationalPort);
+        const operationalInterface = isIPv6(operationalIp) ? this.netInterfaceIpv6 : this.netInterfaceIpv4;
+        const operationalChannel = await operationalInterface.openChannel(operationalIp, operationalPort);
         const operationalUnsecureMessageExchange = new MessageChannel(operationalChannel, this.sessionManager.getUnsecureSession());
         const operationalSecureSession = await this.caseClient.pair(this, this.exchangeManager.initiateExchangeWithChannel(operationalUnsecureMessageExchange, SECURE_CHANNEL_PROTOCOL_ID), this.fabric, peerNodeId);
         this.channelManager.setChannel(this.fabric, peerNodeId, new MessageChannel(operationalChannel, operationalSecureSession));
@@ -120,6 +128,7 @@ export class MatterController {
         // Complete the commission
         generalCommissioningClusterClient = ClusterClient(interactionClient, 0, GeneralCommissioningCluster);
         this.ensureSuccess(await generalCommissioningClusterClient.commissioningComplete({}));
+        return peerNodeId;
     }
 
     async connect(nodeId: NodeId) {
@@ -175,7 +184,7 @@ class RootCertificateManager {
             signatureAlgorithm: 1 /* EcdsaWithSHA256 */ ,
             publicKeyAlgorithm: 1 /* EC */,
             ellipticCurveIdentifier: 1 /* P256v1 */,
-            issuer: { },
+            issuer: { issuerRcacId: this.rootCertId },
             notBefore: jsToMatterDate(now, -1),
             notAfter: jsToMatterDate(now, 10),
             subject: { rcacId: this.rootCertId },

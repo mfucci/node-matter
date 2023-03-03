@@ -16,12 +16,12 @@ export class ChannelManager {
     private readonly channels = new Map<string, MessageChannel<any>>();
 
     setChannel(fabric: Fabric, nodeId: NodeId, channel: MessageChannel<any>) {
-        this.channels.set(`${fabric.id}/${nodeId}`, channel);
+        this.channels.set(`${fabric.fabricId}/${nodeId}`, channel);
     }
 
     getChannel(fabric: Fabric, nodeId: NodeId) {
-        const result = this.channels.get(`${fabric.id}/${nodeId}`);
-        if (result === undefined) throw new Error(`Can't find find a channel to node ${nodeId}`);
+        const result = this.channels.get(`${fabric.fabricId}/${nodeId}`);
+        if (result === undefined) throw new Error(`Can't find a channel to node ${nodeId}`);
         return result;
     }
 
@@ -32,7 +32,7 @@ export class ChannelManager {
         const nodeId = secureSession.getPeerNodeId();
         if (fabric === undefined) return new MessageChannel(byteArrayChannel, session);
 
-        let result = this.channels.get(`${fabric.id}/${nodeId}`);
+        let result = this.channels.get(`${fabric.fabricId}/${nodeId}`);
         if (result === undefined || result.session.getId() !== session.getId()) {
             result = new MessageChannel(byteArrayChannel, session);
             this.setChannel(fabric, nodeId, result);

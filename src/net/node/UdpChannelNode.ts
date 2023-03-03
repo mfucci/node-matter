@@ -8,6 +8,7 @@ import dgram from "dgram";
 import { Logger } from "../../log/Logger";
 import { UdpChannel, UdpChannelOptions } from "../UdpChannel";
 import { ByteArray } from "@project-chip/matter.js";
+import { NetworkNode } from "./NetworkNode";
 
 const logger = Logger.get("UdpChannelNode");
 
@@ -28,16 +29,23 @@ function createDgramSocket(address: string | undefined, port: number, options: d
 }
 
 export class UdpChannelNode implements UdpChannel {
-    static async create({listeningPort, listeningAddress, multicastInterface}: UdpChannelOptions) {
-        const socket = await createDgramSocket(listeningAddress, listeningPort, { type: "udp4", reuseAddr: true });
-        if (multicastInterface !== undefined) socket.setMulticastInterface(multicastInterface);
+    static async create({listeningPort, type, listeningAddress, netInterface}: UdpChannelOptions) {
+        const socket = await createDgramSocket(listeningAddress, listeningPort, { type, reuseAddr: true });
+        if (netInterface !== undefined) socket.setMulticastInterface(NetworkNode.getMulticastInterface(netInterface, type === "udp4"));
         return new UdpChannelNode(socket);
     }
 
-    constructor(private readonly socket: dgram.Socket) {}
+    constructor(
+        private readonly socket: dgram.Socket,
+        private readonly netInterface?: string,
+    ) {}
 
-    onData(listener: (peerAddress: string, peerPort: number, data: ByteArray) => void) {
-        const messageListener = (data: ByteArray, { address, port }: { address: string, port: number }) => listener(address, port, data);
+    onData(listener: (netInterface: string, peerAddress: string, peerPort: number, data: ByteArray) => void) {
+        const messageListener = (data: ByteArray, { address, port }: { address: string, port: number }) => {
+            const netInterface = this.netInterface ?? NetworkNode.getNetInterfaceForIp(address);
+            if (netInterface === undefined) return;
+            listener(netInterface, address, port, data);
+        };
 
         this.socket.on("message", messageListener);
         return {

@@ -5,14 +5,28 @@
  */
 
 import { ByteArray } from "@project-chip/matter.js";
+import { FabricIndex } from "../common/FabricIndex";
 import { Fabric, FabricBuilder } from "./Fabric";
+import { MatterError } from "../../error/MatterError";
+
+/** Specific Error for when a fabric is not found. */
+export class FabricNotFoundError extends MatterError {}
+
 
 export class FabricManager {
+    private nextFabricIndex = 1;
     private readonly fabrics = new Array<Fabric>();
     private fabricBuilder?: FabricBuilder;
 
     addFabric(fabric: Fabric) {
         this.fabrics.push(fabric);
+        return new FabricIndex(this.fabrics.length);
+    }
+
+    removeFabric(fabricIndex: FabricIndex) {
+        const index = this.fabrics.findIndex(fabric => fabric.fabricIndex.index === fabricIndex.index);
+        if (index === -1) throw new FabricNotFoundError(`Fabric with index ${fabricIndex} cannot be removed because it does not exist.`);
+        this.fabrics.splice(index, 1);
     }
 
     getFabrics() {
@@ -25,12 +39,12 @@ export class FabricManager {
             if (!candidateDestinationId.equals(destinationId)) continue;
             return fabric;
         }
-        
+
         throw new Error("Fabric cannot be found from destinationId");
     }
 
     armFailSafe() {
-        this.fabricBuilder = new FabricBuilder();
+        this.fabricBuilder = new FabricBuilder(new FabricIndex(this.nextFabricIndex++));
     }
 
     getFabricBuilder() {

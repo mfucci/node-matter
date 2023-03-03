@@ -7,24 +7,25 @@
 import { UdpChannelOptions, UdpChannel } from "../UdpChannel";
 import { Network } from "../Network";
 import { UdpChannelFake } from "./UdpChannelFake";
+import { FAKE_INTERFACE_NAME } from "./SimulatedNetwork";
 
 export class NetworkFake extends Network {
     constructor(
-        private readonly ipMacs: {ip: string, mac: string}[],
+        private readonly mac: string,
+        private readonly ips: string[],
     ) {
         super();
     }
 
-    createUdpChannel(options: UdpChannelOptions): Promise<UdpChannel> {
-        return UdpChannelFake.create(options);
+    getNetInterfaces(): string[] {
+        return [ FAKE_INTERFACE_NAME ];
     }
 
-    getIpMacAddresses(): {ip: string, mac: string}[] {
-        return this.ipMacs;
+    getIpMac(_netInterface: string): { mac: string; ips: string[]; } {
+        return { mac: this.mac, ips: this.ips };
     }
 
-    getIpMacOnInterface(remoteAddress: string): {ip: string, mac: string} | undefined {
-        const remoteAddressPrefix = remoteAddress.slice(0, 6);
-        return this.ipMacs.find(({ ip, mac }) => ip.slice(0, 6) === remoteAddressPrefix);
+    override createUdpChannel(options: UdpChannelOptions): Promise<UdpChannel> {
+        return UdpChannelFake.create(this, options);
     }
 }

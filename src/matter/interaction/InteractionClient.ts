@@ -15,7 +15,15 @@ import { ExchangeManager, MessageChannel } from "../common/ExchangeManager";
 import { INTERACTION_PROTOCOL_ID } from "./InteractionServer";
 import { ProtocolHandler } from "../common/ProtocolHandler";
 import { StatusCode } from "./InteractionMessages";
-import { TlvSchema } from "@project-chip/matter.js";
+import { TlvSchema, TlvStream } from "@project-chip/matter.js";
+
+interface GetRawValueResponse { // TODO Remove when restructuring Responses
+    endpointId: number;
+    clusterId: number;
+    attributeId: number;
+    version: number;
+    value: TlvStream;
+}
 
 export function ClusterClient<CommandT extends Commands, AttributeT extends Attributes>(interactionClient: InteractionClient, endpointId: number, clusterDef: Cluster<any, AttributeT, CommandT, any>): ClusterClient<CommandT, AttributeT> {
     const result: any = {};
@@ -24,10 +32,10 @@ export function ClusterClient<CommandT extends Commands, AttributeT extends Attr
     // Add accessors
     for (const attributeName in attributes) {
         const attribute = attributes[attributeName];
-        const captilizedAttributeName = capitalize(attributeName);
-        result[`get${captilizedAttributeName}`] = async () => interactionClient.get(endpointId, clusterId, attribute);
-        result[`set${captilizedAttributeName}`] = async <T,>(value: T) => interactionClient.set<T>(endpointId, clusterId, attribute, value);
-        result[`subscribe${captilizedAttributeName}`] = async <T,>(listener: (value: T, version: number) => void, minIntervalS: number, maxIntervalS: number) => interactionClient.subscribe(endpointId, clusterId, attribute, listener, minIntervalS, maxIntervalS);
+        const capitalizedAttributeName = capitalize(attributeName);
+        result[`get${capitalizedAttributeName}`] = async () => interactionClient.get(endpointId, clusterId, attribute);
+        result[`set${capitalizedAttributeName}`] = async <T,>(value: T) => interactionClient.set<T>(endpointId, clusterId, attribute, value);
+        result[`subscribe${capitalizedAttributeName}`] = async <T,>(listener: (value: T, version: number) => void, minIntervalS: number, maxIntervalS: number) => interactionClient.subscribe(endpointId, clusterId, attribute, listener, minIntervalS, maxIntervalS);
     }
 
     // Add command calls
@@ -51,11 +59,20 @@ export class SubscriptionClient implements ProtocolHandler<MatterController> {
 
     async onNewExchange(exchange: MessageExchange<MatterController>) {
         const messenger = new InteractionClientMessenger(exchange);
-        const dataReport = await messenger.readDataReport();
-        await messenger.sendStatus(StatusCode.Success);
+        let dataReport = await messenger.readDataReport();
         const subscriptionId = dataReport.subscriptionId;
-        if (subscriptionId === undefined) return;
-        this.subscriptionListeners.get(subscriptionId)?.(dataReport);
+        if (subscriptionId === undefined) {
+            await messenger.sendStatus(StatusCode.InvalidSubscription);
+            throw new Error("Invalid Datareport without Subscription ID");
+        }
+        const listener = this.subscriptionListeners.get(subscriptionId);
+        if (listener === undefined) {
+            await messenger.sendStatus(StatusCode.InvalidSubscription);
+            throw new Error(`Unknown subscription ID ${subscriptionId}`);
+        }
+        await messenger.sendStatus(StatusCode.Success);
+
+        listener(dataReport);
     }
 }
 
@@ -69,15 +86,44 @@ export class InteractionClient {
         this.exchangeManager.addProtocolHandler(new SubscriptionClient(this.subscriptionListeners));
     }
 
+    async getAllAttributes(): Promise<{}> {
+        return this.withMessenger<GetRawValueResponse[]>(async messenger => {
+            const response = await messenger.sendReadRequest({
+                attributes: [ {} ],
+                interactionModelRevision: 1,
+                isFabricFiltered: true,
+            });
+            if (!Array.isArray(response.values)) {
+                return []; // TODO handle Errors correctly
+            }
+
+            return response.values.flatMap(({ value: reportValue} ) => {
+                if (reportValue === undefined) return [];
+                const { path: { endpointId, clusterId, attributeId }, version, value } = reportValue;
+                if (endpointId === undefined || clusterId === undefined || attributeId === undefined ) throw new Error("Invalid response");
+                return { endpointId, clusterId, attributeId, version, value };
+            });
+        });
+    }
+
     async get<A extends Attribute<any>>(endpointId: number, clusterId: number, { id, schema, optional, default: conformanceValue }: A): Promise<AttributeJsType<A>> {
         return this.withMessenger<AttributeJsType<A>>(async messenger => {
             const response = await messenger.sendReadRequest({
-                attributes: [ {endpointId , clusterId, id} ],
+                attributes: [ {endpointId , clusterId, attributeId: id} ],
                 interactionModelRevision: 1,
                 isFabricFiltered: true,
             });
 
-            const value = response.values.map(({value}) => value).find(({ path }) => endpointId === path.endpointId && clusterId === path.clusterId && id === path.id);
+            let value;
+            if (Array.isArray(response.values)) {
+                value = response.values.map(({ value }) => value).find((value) => {
+                    if (value === undefined) return false;
+                    const { path } = value;
+                    return endpointId === path.endpointId && clusterId === path.clusterId && id === path.attributeId;
+                });
+                // Todo add proper handling for returned attributeStatus information
+            }
+
             if (value === undefined) {
                 if (optional) return undefined;
                 if (conformanceValue === undefined) throw new Error(`Attribute ${endpointId}/${clusterId}/${id} not found`);
@@ -96,23 +142,32 @@ export class InteractionClient {
         clusterId: number,
         { id, schema, default: conformanceValue }: A,
         listener: (value: AttributeJsType<A>, version: number) => void,
-        minIntervalFloorSeconds: number,  
-        maxIntervalCeilingSeconds: number, 
+        minIntervalFloorSeconds: number,
+        maxIntervalCeilingSeconds: number,
     ): Promise<void> {
         return this.withMessenger<void>(async messenger => {
-            const { subscriptionId } = await messenger.sendSubscribeRequest({
-                attributeRequests: [ {endpointId , clusterId, id} ],
+            const { report, subscribeResponse: { subscriptionId } } = await messenger.sendSubscribeRequest({
+                attributeRequests: [ {endpointId , clusterId, attributeId: id} ],
                 keepSubscriptions: true,
-                minIntervalFloorSeconds,  
-                maxIntervalCeilingSeconds,              
+                minIntervalFloorSeconds,
+                maxIntervalCeilingSeconds,
                 isFabricFiltered: true,
-            });
+            }); // TODO: also initialize all values
 
-            this.subscriptionListeners.set(subscriptionId, (dataReport: DataReport) => {
-                const value = dataReport.values.map(({value}) => value).find(({ path }) => endpointId === path.endpointId && clusterId === path.clusterId && id === path.id);
+            const subscriptionListener = (dataReport: DataReport) => {
+                if (!Array.isArray(dataReport.values)) {
+                    return;
+                }
+                const value = dataReport.values.map(({ value }) => value).find((value) => {
+                    if (value === undefined) return false;
+                    const { path } = value;
+                    return endpointId === path.endpointId && clusterId === path.clusterId && id === path.attributeId;
+                });
                 if (value === undefined) return;
                 listener(schema.decodeTlv(value.value), value.version);
-            });
+            };
+            this.subscriptionListeners.set(subscriptionId, subscriptionListener);
+            subscriptionListener(report);
             return;
         });
     }
@@ -121,7 +176,7 @@ export class InteractionClient {
         return this.withMessenger<ResponseType<C>>(async messenger => {
             const { responses } = await messenger.sendInvokeCommand({
                 invokes: [
-                    { path: { endpointId, clusterId, id }, args: requestSchema.encodeTlv(request) }
+                    { path: { endpointId, clusterId, commandId: id }, args: requestSchema.encodeTlv(request) }
                 ],
                 timedRequest: false,
                 suppressResponse: false,

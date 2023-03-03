@@ -16,7 +16,7 @@ import { MatterCoreSpecificationV1_0, TlvArray, TlvObject, TlvOptionalField } fr
  *
  * @see {@link MatterCoreSpecificationV1_0} § 9.5.5.1
  */
-const TlvTarget = TlvObject({
+const TlvTarget = TlvObject({ /* fabricScoped: true */
     /**  Contains the remote target node ID. If the Endpoint field is present, this field SHALL be present. */
     node: TlvOptionalField(1, TlvNodeId),
 
@@ -49,6 +49,6 @@ export const BindingCluster = Cluster({
     /** @see {@link MatterCoreSpecificationV1_0} § 9.6.5 */
     attributes: {
         /** List of device types and corresponding revisions declaring endpoint conformance. */
-        binding: WritableAttribute(0, TlvArray(TlvTarget), { default: [] }), /* non-volatile */
+        binding: WritableAttribute(0, TlvArray(TlvTarget), { persistent: true, default: [] }),
     },
 });

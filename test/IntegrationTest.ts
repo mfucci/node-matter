@@ -34,14 +34,16 @@ import { VendorId } from "../src/matter/common/VendorId";
 import { NodeId } from "../src/matter/common/NodeId";
 import { OnOffClusterHandler } from "../src/matter/cluster/server/OnOffServer";
 import { ByteArray } from "@project-chip/matter.js";
+import { FabricIndex } from "../src/matter/common/FabricIndex";
+import {DescriptorCluster} from "../src/matter/cluster/DescriptorCluster";
 
 const SERVER_IP = "192.168.200.1";
 const SERVER_MAC = "00:B0:D0:63:C2:26";
 const CLIENT_IP = "192.168.200.2";
 const CLIENT_MAC = "CA:FE:00:00:BE:EF";
 
-const serverNetwork = new NetworkFake([ {ip: SERVER_IP, mac: SERVER_MAC} ]);
-const clientNetwork = new NetworkFake([ {ip: CLIENT_IP, mac: CLIENT_MAC} ]);
+const serverNetwork = new NetworkFake(SERVER_MAC, [SERVER_IP]);
+const clientNetwork = new NetworkFake(CLIENT_MAC, [CLIENT_IP]);
 
 // From Chip-Test-DAC-FFF1-8000-0007-Key.der
 const DevicePrivateKey = ByteArray.fromHex("727F1005CBA47ED7822A9D930943621617CFD3B79D9AF528B801ECF9F1992204");
@@ -70,16 +72,17 @@ const fakeTime = new TimeFake(TIME_START);
 
 describe("Integration", () => {
     var server: MatterDevice;
-    var onOffServer: ClusterServer<typeof OnOffCluster>;
+    var onOffServer: ClusterServer<any, any, any, any>;
     var client: MatterController;
 
     before(async () => {
-        Logger.defaultLogLevel = Level.INFO;
+        Logger.defaultLogLevel = Level.DEBUG;
         Time.get = () => fakeTime;
         Network.get = () => clientNetwork;
         client = await MatterController.create(
             await MdnsScanner.create(CLIENT_IP),
-            await UdpInterface.create(5540, CLIENT_IP),
+            await UdpInterface.create(5540, "udp4", CLIENT_IP),
+            await UdpInterface.create(5540, "udp6", CLIENT_IP),
         );
 
         Network.get = () => serverNetwork;
@@ -90,10 +93,10 @@ describe("Integration", () => {
             OnOffClusterHandler()
         );
         server = new MatterDevice(deviceName, deviceType, vendorId, productId, discriminator)
-            .addNetInterface(await UdpInterface.create(matterPort, SERVER_IP))
-            .addBroadcaster(await MdnsBroadcaster.create(SERVER_IP))
+            .addNetInterface(await UdpInterface.create(matterPort, "udp6", SERVER_IP))
+            .addBroadcaster(await MdnsBroadcaster.create())
             .addProtocolHandler(new SecureChannelProtocol(
-                    new PaseServer(setupPin, { iteration: 1000, salt: Crypto.getRandomData(32) }),
+                    await PaseServer.fromPin(setupPin, { iterations: 1000, salt: Crypto.getRandomData(32) }),
                     new CaseServer(),
                 ))
             .addProtocolHandler(new InteractionServer()
@@ -132,7 +135,7 @@ describe("Integration", () => {
                              supportedFabrics: 254,
                              commissionedFabrics: 0,
                              trustedRootCertificates: [],
-                             currentFabricIndex: 0,
+                             currentFabricIndex: FabricIndex.NO_FABRIC,
                          },
                          OperationalCredentialsClusterHandler({
                              devicePrivateKey: DevicePrivateKey,
@@ -150,9 +153,9 @@ describe("Integration", () => {
 
     context("commission", () => {
         it("the client commissions a new device", async () => {
-            await client.commission(SERVER_IP, matterPort, discriminator, setupPin);
+            const nodeId = await client.commission(SERVER_IP, matterPort, discriminator, setupPin);
 
-            assert.ok(true);
+            assert.equal(nodeId.id, BigInt(1));
         });
 
         it("the session is resumed if it has been established previously", async () => {
@@ -162,43 +165,60 @@ describe("Integration", () => {
         });
     });
 
+
+    context("attributes", () => {
+        it("get one specific attribute including schema parsing", async () => {
+            const descriptorCluster = ClusterClient(await client.connect(new NodeId(BigInt(1))), 0, BasicInformationCluster);
+
+            assert.equal(await descriptorCluster.getSoftwareVersionString(), "v1");
+        });
+
+        it("get all attributes", async () => {
+            await (await client.connect(new NodeId(BigInt(1)))).getAllAttributes();
+
+            assert.ok(true);
+        });
+    });
+
     context("subscription", () => {
-        /*it("subscription sends regular updates", async () => {
-            const interactionClient = await client.connect(BigInt(1));
-            const onOffClient = ClusterClient(interactionClient, 1, OnOffCluster);
-            const startTime = Time.nowMs();
-            let lastReport: { value: boolean, version: number, time: number } | undefined;
-
-            await onOffClient.subscribeOn((value, version) => lastReport = { value, version, time: Time.nowMs() }, 0, 5);
-            await fakeTime.advanceTime(0);
-
-            assert.deepEqual(lastReport, { value: false, version: 0, time: startTime});
-
-            await fakeTime.advanceTime(8 * 1000);
-
-            assert.deepEqual(lastReport, { value: false, version: 0, time: startTime + 5 * 1000});
-
-            await fakeTime.advanceTime(5 * 1000);
-
-            assert.deepEqual(lastReport, { value: false, version: 0, time: startTime + 10 * 1000});
-        });*/
-
         it("subscription sends updates when the value changes", async () => {
             const interactionClient = await client.connect(new NodeId(BigInt(1)));
             const onOffClient = ClusterClient(interactionClient, 1, OnOffCluster);
             const startTime = Time.nowMs();
-            let callback = (value: boolean, version: number) => {};
-            await onOffClient.subscribeOnOff((value, version) => callback(value, version), 0, 5);
-            await fakeTime.advanceTime(0);
 
-            const { promise, resolver } = await getPromiseResolver<{value: boolean, version: number, time: number}>();
-            callback = (value: boolean, version: number) => resolver({ value, version, time: Time.nowMs() });
+            // Await initial Datareport
+            const { promise: firstPromise, resolver: firstResolver } = await getPromiseResolver<{value: boolean, version: number, time: number}>();
+            let callback = (value: boolean, version: number) => firstResolver({ value, version, time: Time.nowMs() });
+
+            await onOffClient.subscribeOnOff((value, version) => callback(value, version), 0, 5);
+
+            await fakeTime.advanceTime(0);
+            const firstReport = await firstPromise;
+            assert.deepEqual(firstReport, { value: false, version: 0, time: startTime});
+
+            // Await update Report on value change
+            const { promise: updatePromise, resolver: updateResolver } = await getPromiseResolver<{value: boolean, version: number, time: number}>();
+            callback = (value: boolean, version: number) => updateResolver({ value, version, time: Time.nowMs() });
 
             await fakeTime.advanceTime(2 * 1000);
             onOffServer.attributes.onOff.set(true);
-            const lastReport = await promise;
+            const updateReport = await updatePromise;
 
-            assert.deepEqual(lastReport, { value: true, version: 1, time: startTime + 2 * 1000});
+            assert.deepEqual(updateReport, { value: true, version: 1, time: startTime + 2 * 1000});
+
+            // Await update Report on value change without in between update
+            const { promise: lastPromise, resolver: lastResolver } = await getPromiseResolver<{value: boolean, version: number, time: number}>();
+            callback = (value: boolean, version: number) => lastResolver({ value, version, time: Time.nowMs() });
+
+            // Verify that no update comes in after max cycle time 1h
+            await fakeTime.advanceTime(60 * 60 * 1000);
+
+            // ... but on next change immediately then
+            await fakeTime.advanceTime(2 * 1000);
+            onOffServer.attributes.onOff.set(false);
+            const lastReport = await lastPromise;
+
+            assert.deepEqual(lastReport, { value: false, version: 2, time: startTime + (60 * 60 + 4) * 1000});
         });
     });
 

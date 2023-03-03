@@ -6,33 +6,37 @@
 
 import { UdpChannel, UdpChannelOptions } from "../UdpChannel";
 import { NetListener } from "../NetInterface";
-import { SimulatedNetwork } from "./SimulatedNetwork";
+import { FAKE_INTERFACE_NAME, SimulatedNetwork } from "./SimulatedNetwork";
 import { ByteArray } from "@project-chip/matter.js";
+import { isIPv4 } from "../../util/Ip";
+import { NetworkFake } from "./NetworkFake";
 
 export class UdpChannelFake implements UdpChannel {
-    static async create({listeningAddress: address, listeningPort: port, multicastInterface}: UdpChannelOptions) {
-        if (address === undefined) throw new Error("Device IP address should be specified for fake UdpSocket");
-        return new UdpChannelFake(SimulatedNetwork.get(), address, port, multicastInterface);
+    static async create(network: NetworkFake, {listeningAddress, listeningPort, netInterface, type}: UdpChannelOptions) {
+        const { ips } = network.getIpMac(netInterface ?? FAKE_INTERFACE_NAME);
+        const ipv4 = type === "udp4";
+        const localAddress = ips.filter(ip => isIPv4(ip) || !ipv4)[0];
+        if (localAddress === undefined) throw new Error("No matching IP on the specified interface");
+        return new UdpChannelFake(localAddress, listeningAddress, listeningPort);
     }
 
     private readonly netListeners = new Array<NetListener>();
+    private readonly simulatedNetwork = SimulatedNetwork.get();
 
     constructor(
-        private readonly network: SimulatedNetwork,
-        private readonly address: string,
-        private readonly port: number,
-        private readonly multicastInterface?: string) {
-    }
+        private readonly localAddress: string,
+        private readonly listeningAddress: string | undefined,
+        private readonly listeningPort: number,
+    ) {}
 
-    onData(listener: (peerAddress: string, peerPort: number, data: ByteArray) => void) {
-        const netListener = this.network.onUdpData(this.address, this.port, listener);
+    onData(listener: (netInterface: string, peerAddress: string, peerPort: number, data: ByteArray) => void) {
+        const netListener = this.simulatedNetwork.onUdpData(this.listeningAddress, this.listeningPort, listener);
         this.netListeners.push(netListener);
         return netListener;
     }
 
     async send(address: string, port: number, data: ByteArray) {
-        if (this.multicastInterface === undefined) throw new Error("Device interface should be specified to send data with a fake UdpSocket");
-        this.network.sendUdp(this.multicastInterface, this.port, address, port, data);
+        this.simulatedNetwork.sendUdp(this.localAddress, this.listeningPort, address, port, data);
     }
 
     close() {

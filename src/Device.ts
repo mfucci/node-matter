@@ -6,6 +6,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { singleton } from "./util/Singleton";
+import { Time } from "./time/Time";
+import { TimeNode } from "./time/TimeNode";
+
+Time.get = singleton(() => new TimeNode());
+
 import { MatterDevice } from "./matter/MatterDevice";
 import { UdpInterface } from "./net/UdpInterface";
 import { SecureChannelProtocol } from "./matter/session/secure/SecureChannelProtocol";
@@ -21,18 +27,22 @@ import { MdnsBroadcaster } from "./matter/mdns/MdnsBroadcaster";
 import { Network } from "./net/Network";
 import { NetworkNode } from "./net/node/NetworkNode";
 import { commandExecutor } from "./util/CommandLine";
-import { singleton } from "./util/Singleton";
 import { OnOffCluster } from "./matter/cluster/OnOffCluster";
 import { GeneralCommissioningClusterHandler } from "./matter/cluster/server/GeneralCommissioningServer";
 import { OperationalCredentialsClusterHandler } from "./matter/cluster/server/OperationalCredentialsServer";
 import { MdnsScanner } from "./matter/mdns/MdnsScanner";
-import { Time } from "./time/Time";
-import { TimeNode } from "./time/TimeNode";
 import packageJson from "../package.json";
 import { Logger } from "./log/Logger";
 import { VendorId } from "./matter/common/VendorId";
 import { OnOffClusterHandler } from "./matter/cluster/server/OnOffServer";
 import { ByteArray } from "@project-chip/matter.js";
+import { CommissionningFlowType, DiscoveryCapabilitiesSchema, ManualPairingCodeCodec, QrPairingCodeCodec } from "./codec/PairingCode.js";
+import { QrCode } from "./codec/QrCode.js";
+import { NetworkCommissioningCluster, NetworkCommissioningStatus } from "./matter/cluster/NetworkCommissioningCluster";
+import { AdminCommissioningCluster, CommissioningWindowStatus } from "./matter/cluster/AdminCommissioningCluster";
+import { AdminCommissioningHandler } from "./matter/cluster/server/AdminCommissioningServer";
+import { NetworkCommissioningHandler } from "./matter/cluster/server/NetworkCommissioningServer";
+import { FabricIndex } from "./matter/common/FabricIndex";
 
 // From Chip-Test-DAC-FFF1-8000-0007-Key.der
 const DevicePrivateKey = ByteArray.fromHex("727F1005CBA47ED7822A9D930943621617CFD3B79D9AF528B801ECF9F1992204");
@@ -47,7 +57,6 @@ const ProductIntermediateCertificate = ByteArray.fromHex("308201d43082017aa00302
 const CertificateDeclaration = ByteArray.fromHex("3082021906092a864886f70d010702a082020a30820206020103310d300b06096086480165030402013082017106092a864886f70d010701a08201620482015e152400012501f1ff3602050080050180050280050380050480050580050680050780050880050980050a80050b80050c80050d80050e80050f80051080051180051280051380051480051580051680051780051880051980051a80051b80051c80051d80051e80051f80052080052180052280052380052480052580052680052780052880052980052a80052b80052c80052d80052e80052f80053080053180053280053380053480053580053680053780053880053980053a80053b80053c80053d80053e80053f80054080054180054280054380054480054580054680054780054880054980054a80054b80054c80054d80054e80054f80055080055180055280055380055480055580055680055780055880055980055a80055b80055c80055d80055e80055f80056080056180056280056380182403162c04135a494732303134325a423333303030332d32342405002406002507942624080018317d307b020103801462fa823359acfaa9963e1cfa140addf504f37160300b0609608648016503040201300a06082a8648ce3d04030204473045022024e5d1f47a7d7b0d206a26ef699b7c9757b72d469089de3192e678c745e7f60c022100f8aa2fa711fcb79b97e397ceda667bae464e2bd3ffdfc3cced7aa8ca5f4c1a7c");
 
 Network.get = singleton(() => new NetworkNode());
-Time.get = singleton(() => new TimeNode());
 
 const logger = Logger.get("Device");
 
@@ -58,10 +67,12 @@ class Device {
         const deviceName = "Matter test device";
         const deviceType = 257 /* Dimmable bulb */;
         const vendorName = "node-matter";
-        const vendorId = new VendorId(0xFFF1);
-        const productName = "Matter test device";
-        const productId = 0X8001;
+        const passcode = 20202021;
         const discriminator = 3840;
+        // product name / id and vendor id should match what is in the device certificate
+        const vendorId = new VendorId(0xFFF1);
+        const productName = "Matter Test DAC 0007";
+        const productId = 0X8000;
 
         // Barebone implementation of the On/Off cluster
         const onOffClusterServer = new ClusterServer(
@@ -74,14 +85,17 @@ class Device {
         // We listen to the attribute update to trigger an action. This could also have been done in the method invokations in the server.
         onOffClusterServer.attributes.onOff.addListener(on => commandExecutor(on ? "on" : "off")?.());
 
+        const secureChannelProtocol = new SecureChannelProtocol(
+            await PaseServer.fromPin(passcode, { iterations: 1000, salt: Crypto.getRandomData(32) }),
+            new CaseServer(),
+        );
+
         (new MatterDevice(deviceName, deviceType, vendorId, productId, discriminator))
-            .addNetInterface(await UdpInterface.create(5540))
+            .addNetInterface(await UdpInterface.create(5540, "udp4"))
+            .addNetInterface(await UdpInterface.create(5540, "udp6"))
             .addScanner(await MdnsScanner.create())
             .addBroadcaster(await MdnsBroadcaster.create())
-            .addProtocolHandler(new SecureChannelProtocol(
-                    new PaseServer(20202021, { iteration: 1000, salt: Crypto.getRandomData(32) }),
-                    new CaseServer(),
-                ))
+            .addProtocolHandler(secureChannelProtocol)
             .addProtocolHandler(new InteractionServer()
                .addEndpoint(0x00, DEVICE.ROOT, [
                    new ClusterServer(BasicInformationCluster, {}, {
@@ -100,7 +114,8 @@ class Device {
                        capabilityMinima: {
                            caseSessionsPerFabric: 3,
                            subscriptionsPerFabric: 3,
-                       }
+                       },
+                       serialNumber: `node-matter-${packageJson.version}`,
                    }, {}),
                    new ClusterServer(GeneralCommissioningCluster, {}, {
                        breadcrumb: BigInt(0),
@@ -118,21 +133,67 @@ class Device {
                            supportedFabrics: 254,
                            commissionedFabrics: 0,
                            trustedRootCertificates: [],
-                           currentFabricIndex: 0,
+                           currentFabricIndex: FabricIndex.NO_FABRIC,
                        },
                        OperationalCredentialsClusterHandler({
                            devicePrivateKey: DevicePrivateKey,
                            deviceCertificate: DeviceCertificate,
                            deviceIntermediateCertificate: ProductIntermediateCertificate,
                            certificateDeclaration: CertificateDeclaration,
-                       })
+                       }),
                    ),
+                   new ClusterServer(NetworkCommissioningCluster,
+                        {
+                            wifi: false,
+                            thread: false,
+                            ethernet: true,
+                        },
+                        {
+                            maxNetworks: 1,
+                            connectMaxTimeSeconds: 20,
+                            interfaceEnabled: true,
+                            lastConnectErrorValue: 0,
+                            lastNetworkId: Buffer.alloc(32),
+                            lastNetworkingStatus: NetworkCommissioningStatus.Success,
+                            networks: [{ networkId: Buffer.alloc(32), connected: true }],
+                            scanMaxTimeSeconds: 5,
+                        },
+                        NetworkCommissioningHandler(),
+                    ),
+                    new ClusterServer(AdminCommissioningCluster,
+                        {
+                            basic: true,
+                        },
+                        {
+                            windowStatus: CommissioningWindowStatus.WindowNotOpen,
+                            adminFabricIndex: null,
+                            adminVendorId: null,
+                        },
+                        AdminCommissioningHandler(secureChannelProtocol),
+                    )
                 ])
                 .addEndpoint(0x01, DEVICE.ON_OFF_LIGHT, [ onOffClusterServer ])
             )
             .start()
 
         logger.info("Listening");
+
+        const qrPairingCode = QrPairingCodeCodec.encode({
+            version: 0,
+            vendorId: vendorId.id,
+            productId,
+            flowType: CommissionningFlowType.Standard,
+            discriminator,
+            passcode,
+            discoveryCapabilities: DiscoveryCapabilitiesSchema.encode({
+                ble: false,
+                softAccessPoint: false,
+                onIpNetwork: true,
+            }),
+        });
+        console.log(QrCode.encode(qrPairingCode));
+        console.log(`QR Code URL: https://project-chip.github.io/connectedhomeip/qrcode.html?data=${qrPairingCode}`);
+        console.log(`Manual pairing code: ${ManualPairingCodeCodec.encode({ discriminator, passcode })}`);
     }
 }
 

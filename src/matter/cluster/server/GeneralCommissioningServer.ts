@@ -26,7 +26,7 @@ export const GeneralCommissioningClusterHandler: ClusterServerHandlers<typeof Ge
         return SuccessResponse;
     },
 
-    setRegulatoryConfig: async ({request: {breadcrumbStep, newRegulatoryConfig, countryCode}, attributes: {breadcrumb, regulatoryConfig, locationCapability}}) => {
+    setRegulatoryConfig: async ({request: {breadcrumbStep, newRegulatoryConfig, countryCode}, attributes: {breadcrumb, regulatoryConfig, locationCapability} }) => {
         const locationCapabilityValue = locationCapability.get();
 
         let validValues;
@@ -52,13 +52,17 @@ export const GeneralCommissioningClusterHandler: ClusterServerHandlers<typeof Ge
         return SuccessResponse;
     },
 
-    commissioningComplete: async ({session}) => {
+    commissioningComplete: async ({session, attributes: {breadcrumb}}) => {
         // TODO Add error handling as defined in 11.9.7.6
 
         if (!session.isSecure()) throw new Error("commissioningComplete can only be called on a secure session");
         const fabric = (session as SecureSession<MatterDevice>).getFabric();
         if (fabric === undefined) throw new Error("commissioningComplete is called but the fabric has not been defined yet");
-        logger.info(`Commissioning completed on fabric #${fabric.id} as node #${fabric.nodeId}.`)
+        breadcrumb.set(BigInt(0));
+        logger.info(`Commissioning completed on fabric #${fabric.fabricId.id} as node #${fabric.nodeId}.`);
+
+        // TODO persist fabrics
+
         return SuccessResponse;
     },
 };

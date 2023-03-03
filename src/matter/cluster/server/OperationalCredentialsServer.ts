@@ -16,6 +16,12 @@ import {
 } from "../OperationalCredentialsCluster";
 import { ClusterServerHandlers } from "./ClusterServer";
 import { ByteArray } from "@project-chip/matter.js";
+import { FabricIndex } from "../../common/FabricIndex";
+import { tryCatch } from "../../../error/TryCatchHandler";
+import { FabricNotFoundError } from "../../fabric/FabricManager";
+import { Logger } from "../../../log/Logger";
+
+const logger = Logger.get("OperationalCredentialsServer");
 
 interface OperationalCredentialsServerConf {
     devicePrivateKey: ByteArray,
@@ -51,31 +57,75 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
         }
     },
 
-    addOperationalCert: async ({ request: {operationalCert, intermediateCaCert, identityProtectionKey, caseAdminNode, adminVendorId}, session}) => {
-        const fabricBuilder = session.getContext().getFabricBuilder();
+    addOperationalCert: async ({ request: {operationalCert, intermediateCaCert, identityProtectionKey, caseAdminNode, adminVendorId}, session }) => {
+        if (!session.isSecure()) throw new Error("addOperationalCert should be called on a secure session.");
+        const device = session.getContext();
+        const fabricBuilder = device.getFabricBuilder();
         fabricBuilder.setOperationalCert(operationalCert);
         if (intermediateCaCert && intermediateCaCert.length > 0) fabricBuilder.setIntermediateCACert(intermediateCaCert);
-        fabricBuilder.setVendorId(adminVendorId);
+        fabricBuilder.setRootVendorId(adminVendorId);
         fabricBuilder.setIdentityProtectionKey(identityProtectionKey);
+        fabricBuilder.setRootNodeId(caseAdminNode);
 
         const fabric = await fabricBuilder.build();
-        session.getContext().setFabric(fabric);
+        const fabricIndex = device.addFabric(fabric);
 
         // TODO: create ACL with caseAdminNode
+        console.log("addOperationalCert success")
 
-        return {status: OperationalCertStatus.Success};
+        return { status: OperationalCertStatus.Success, fabricIndex };
+    },
+
+    getFabrics: (session) => {
+        if (session === undefined || !session.isSecure()) return []; // ???
+        return session.getContext().getFabrics().map(fabric => ({
+            fabricId: fabric.fabricId,
+            label: fabric.label,
+            nodeId: fabric.nodeId,
+            rootPublicKey: fabric.rootPublicKey,
+            vendorId: fabric.rootVendorId,
+            // TODO: this is a hack. Fabric-scoped data need to be handled automatically
+            fabricIndex: fabric.fabricIndex,
+        }));
+    },
+
+    getCurrentFabricIndex: (session) => {
+        if (session === undefined || !session.isSecure()) return FabricIndex.NO_FABRIC;
+        return (session as SecureSession<MatterDevice>).getFabric()?.fabricIndex ?? FabricIndex.NO_FABRIC;
     },
 
     updateOperationalCert: async ({ request: {operationalCert, intermediateCaCert, }, session}) => {
         throw new Error("Not implemented");
     },
 
-    updateFabricLabel: async ({ request: {label} }) => {
-        throw new Error("Not implemented");
+    updateFabricLabel: async ({ request: {label}, session }) => {
+        if (!session.isSecure()) throw new Error("updateOperationalCert should be called on a secure session.");
+        const secureSession = session as SecureSession<MatterDevice>;
+        const fabric = secureSession.getFabric();
+        if (fabric === undefined) throw new Error("updateOperationalCert on a session linked to a fabric.");
+
+        fabric.label = label;
+
+        // TODO persist fabrics
+
+        return { status: OperationalCertStatus.Success };
     },
 
-    removeFabric: async ({ request: {fabricIndex} }) => {
-        throw new Error("Not implemented");
+    removeFabric: async ({ request: {fabricIndex}, session }) => {
+        const device = session.getContext();
+
+        const status = tryCatch(() => {
+                device.removeFabric(fabricIndex);
+
+                // TODO persist fabrics
+                // TODO: depending on cases destroy the secure session and delete all data!
+
+                return OperationalCertStatus.Success;
+            },
+            FabricNotFoundError, OperationalCertStatus.InvalidFabricIndex
+        );
+
+        return { status };
     },
 
     addRootCert: async ({ request: {certificate}, session} ) => {

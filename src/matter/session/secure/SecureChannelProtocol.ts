@@ -15,26 +15,34 @@ import { MatterDevice } from "../../MatterDevice";
 export class SecureChannelProtocol implements ProtocolHandler<MatterDevice> {
 
     constructor(
-        private readonly paseCommissioner: PaseServer,
+        private paseCommissioner: PaseServer,
         private readonly caseCommissioner: CaseServer,
     ) {}
 
     getId(): number {
         return SECURE_CHANNEL_PROTOCOL_ID;
     }
+    
+    updatePaseCommissioner(paseServer: PaseServer) {
+        this.paseCommissioner = paseServer;
+    }
 
-    onNewExchange(exchange: MessageExchange<MatterDevice>, message: Message) {
+    async onNewExchange(exchange: MessageExchange<MatterDevice>, message: Message) {
         const messageType = message.payloadHeader.messageType;
 
         switch (messageType) {
             case MessageType.PbkdfParamRequest:
-                this.paseCommissioner.onNewExchange(exchange);
+                await this.paseCommissioner.onNewExchange(exchange);
                 break;
             case MessageType.Sigma1:
-                this.caseCommissioner.onNewExchange(exchange);
+                await this.caseCommissioner.onNewExchange(exchange);
                 break;
             default:
                 throw new Error(`Unexpected initial message on secure channel protocol: ${messageType.toString(16)}`);
         }
+    }
+
+    static isStandaloneAck(protocolId: number, messageType: number) {
+        return protocolId === SECURE_CHANNEL_PROTOCOL_ID && messageType === MessageType.StandaloneAck;
     }
 }

@@ -19,6 +19,7 @@ import { ChannelManager } from "./common/ChannelManager";
 import { VendorId } from "./common/VendorId";
 import { NodeId } from "./common/NodeId";
 import { ByteArray } from "@project-chip/matter.js";
+import { FabricIndex } from "./common/FabricIndex";
 
 requireMinNodeVersion(16);
 
@@ -45,7 +46,7 @@ export class MatterDevice {
     }
 
     addBroadcaster(broadcaster: Broadcaster) {
-        broadcaster.setCommissionMode(this.deviceName, this.deviceType, this.vendorId, this.productId, this.discriminator);
+        broadcaster.setCommissionMode(1, this.deviceName, this.deviceType, this.vendorId, this.productId, this.discriminator);
         this.broadcasters.push(broadcaster);
         return this;
     }
@@ -77,12 +78,17 @@ export class MatterDevice {
         return this.fabricManager.findFabricFromDestinationId(destinationId, peerRandom);
     }
 
-    setFabric(fabric: Fabric) {
-        this.fabricManager.addFabric(fabric);
+    addFabric(fabric: Fabric) {
+        const fabricIndex = this.fabricManager.addFabric(fabric);
         this.broadcasters.forEach(broadcaster => {
             broadcaster.setFabric(fabric.operationalId, fabric.nodeId);
             broadcaster.announce();
         });
+        return fabricIndex;
+    }
+
+    removeFabric(fabricIndex: FabricIndex) {
+        this.fabricManager.removeFabric(fabricIndex);
     }
 
     initiateExchange(fabric: Fabric, nodeId: NodeId, protocolId: number) {
@@ -105,8 +111,19 @@ export class MatterDevice {
         return this.fabricManager.getFabricBuilder();
     }
 
+    getFabrics() {
+        return this.fabricManager.getFabrics();
+    }
+
     completeCommission() {
         return this.fabricManager.completeCommission();
+    }
+
+    openCommissioningModeWindow(mode: number, discriminator: number) {
+        this.broadcasters.forEach(broadcaster => {
+            broadcaster.setCommissionMode(mode, this.deviceName, this.deviceType, this.vendorId, this.productId, discriminator);
+            broadcaster.announce();
+        });
     }
 
     async findDevice(fabric: Fabric, nodeId: NodeId): Promise<undefined | {session: Session<MatterDevice>, channel: Channel<ByteArray>}> {

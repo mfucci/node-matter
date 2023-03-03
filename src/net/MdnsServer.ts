@@ -10,57 +10,64 @@ import { UdpMulticastServer } from "./UdpMulticastServer";
 import { Cache } from "../util/Cache";
 import { ByteArray } from "@project-chip/matter.js";
 
-export const MDNS_BROADCAST_IP = "224.0.0.251";
+export const MDNS_BROADCAST_IPV4 = "224.0.0.251";
+export const MDNS_BROADCAST_IPV6 = "ff02::fb";
 export const MDNS_BROADCAST_PORT = 5353;
 
 export class MdnsServer {
-    static async create(multicastInterface?: string) {
-        return new MdnsServer(multicastInterface, await UdpMulticastServer.create({multicastInterface, broadcastAddress: MDNS_BROADCAST_IP, listeningPort: MDNS_BROADCAST_PORT}));
+    static async create(netInterface?: string) {
+        return new MdnsServer(
+            await UdpMulticastServer.create({
+                netInterface: netInterface,
+                broadcastAddressIpv4: MDNS_BROADCAST_IPV4,
+                broadcastAddressIpv6: MDNS_BROADCAST_IPV6,
+                listeningPort: MDNS_BROADCAST_PORT
+            }),
+            netInterface,
+        );
     }
 
     private readonly network = Network.get();
-    private recordsGenerator: (ip: string, mac: string) => Record<any>[] = () => [];
-    private readonly records = new Cache<Record<any>[]>((ip, mac) => this.recordsGenerator(ip, mac), 5 * 60 * 1000 /* 5mn */);
+    private recordsGenerator: (netInterface: string) => Record<any>[] = () => [];
+    private readonly records = new Cache<Record<any>[]>((multicastInterface) => this.recordsGenerator(multicastInterface), 5 * 60 * 1000 /* 5mn */);
 
     constructor(
-        private readonly multicastInterface: string | undefined,
         private readonly multicastServer: UdpMulticastServer,
+        private readonly netInterface: string | undefined,
     ) {
-        multicastServer.onMessage((message, remoteIp) => this.handleDnsMessage(message, remoteIp));
+        multicastServer.onMessage((message, remoteIp, netInterface) => this.handleDnsMessage(message, remoteIp, netInterface));
     }
 
-    private handleDnsMessage(messageBytes: ByteArray, remoteIp: string) {
-        const ipMac = this.network.getIpMacOnInterface(remoteIp);
+    private handleDnsMessage(messageBytes: ByteArray, remoteIp: string, netInterface: string) {
         // This message was on a subnet not supported by this device
-        if (ipMac === undefined) return;
-
-        const { ip, mac } = ipMac;
-        const records = this.records.get(ip, mac);
+        if (netInterface === undefined) return;
+        const records = this.records.get(netInterface);
 
         // No need to process the DNS message if there are no records to serve
         if (records.length === 0) return;
 
         const message = DnsCodec.decode(messageBytes);
         if (message === undefined) return; // The message cannot be parsed
-        if (message.messageType !== MessageType.Query) return;
-        
+        const { transactionId, messageType, queries } = message;
+        if (messageType !== MessageType.Query) return;
+
         const answers = message.queries.flatMap(query => this.queryRecords(query, records));
         if (answers.length === 0) return;
 
         const additionalRecords = records.filter(record => !answers.includes(record));
-        this.multicastServer.send(DnsCodec.encode({ answers, additionalRecords }), ip);
+        this.multicastServer.send(DnsCodec.encode({ transactionId, answers, additionalRecords }), netInterface);
     }
 
     async announce() {
-        await Promise.all(this.getIpMacsForAnnounce().map(({ip, mac}) => {
-            const records = this.records.get(ip, mac);
+        await Promise.all(this.getMulticastInterfacesForAnnounce().map(netInterface => {
+            const records = this.records.get(netInterface);
             const answers = records.filter(({recordType}) => recordType === RecordType.PTR);
             const additionalRecords = records.filter(({recordType}) => recordType !== RecordType.PTR);
-            return this.multicastServer.send(DnsCodec.encode({ answers, additionalRecords }), ip);
+            return this.multicastServer.send(DnsCodec.encode({ answers, additionalRecords }), netInterface);
         }));
     }
 
-    setRecordsGenerator(generator: (ip: string, mac: string) => Record<any>[]) {
+    setRecordsGenerator(generator: (netInterface: string) => Record<any>[]) {
         this.records.clear();
         this.recordsGenerator = generator;
     }
@@ -70,11 +77,8 @@ export class MdnsServer {
         this.multicastServer.close();
     }
 
-    private getIpMacsForAnnounce() {
-        if (this.multicastInterface === undefined) return this.network.getIpMacAddresses();
-        const ipMac = this.network.getIpMacOnInterface(this.multicastInterface);
-        if (ipMac === undefined) return [];
-        return [ipMac];
+    private getMulticastInterfacesForAnnounce() {
+        return this.netInterface === undefined ? this.network.getNetInterfaces() : [this.netInterface];
     }
 
     private queryRecords({name, recordType}: {name: string, recordType: RecordType}, records: Record<any>[]) {

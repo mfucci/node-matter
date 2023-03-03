@@ -93,8 +93,13 @@ export class InteractionClient {
                 interactionModelRevision: 1,
                 isFabricFiltered: true,
             });
+            if (!Array.isArray(response.values)) {
+                return []; // TODO handle Errors correctly
+            }
 
-            return response.values.map(({ value: { path: {endpointId, clusterId, attributeId}, version, value }}) => {
+            return response.values.flatMap(({ value: reportValue} ) => {
+                if (reportValue === undefined) return [];
+                const { path: { endpointId, clusterId, attributeId }, version, value } = reportValue;
                 if (endpointId === undefined || clusterId === undefined || attributeId === undefined ) throw new Error("Invalid response");
                 return { endpointId, clusterId, attributeId, version, value };
             });
@@ -109,7 +114,16 @@ export class InteractionClient {
                 isFabricFiltered: true,
             });
 
-            const value = response.values.map(({value}) => value).find(({ path }) => endpointId === path.endpointId && clusterId === path.clusterId && id === path.attributeId);
+            let value;
+            if (Array.isArray(response.values)) {
+                value = response.values.map(({ value }) => value).find((value) => {
+                    if (value === undefined) return false;
+                    const { path } = value;
+                    return endpointId === path.endpointId && clusterId === path.clusterId && id === path.attributeId;
+                });
+                // Todo add proper handling for returned attributeStatus information
+            }
+
             if (value === undefined) {
                 if (optional) return undefined;
                 if (conformanceValue === undefined) throw new Error(`Attribute ${endpointId}/${clusterId}/${id} not found`);
@@ -141,7 +155,14 @@ export class InteractionClient {
             }); // TODO: also initialize all values
 
             const subscriptionListener = (dataReport: DataReport) => {
-                const value = dataReport.values.map(({value}) => value).find(({ path }) => endpointId === path.endpointId && clusterId === path.clusterId && id === path.attributeId);
+                if (!Array.isArray(dataReport.values)) {
+                    return;
+                }
+                const value = dataReport.values.map(({ value }) => value).find((value) => {
+                    if (value === undefined) return false;
+                    const { path } = value;
+                    return endpointId === path.endpointId && clusterId === path.clusterId && id === path.attributeId;
+                });
                 if (value === undefined) return;
                 listener(schema.decodeTlv(value.value), value.version);
             };

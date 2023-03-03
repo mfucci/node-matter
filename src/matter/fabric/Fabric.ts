@@ -39,7 +39,7 @@ export class Fabric {
     }
 
     sign(data: ByteArray) {
-        return Crypto.sign(this.keyPair.privateKey, data);
+        return Crypto.signPkcs8(this.keyPair.privateKey, data);
     }
 
     verifyCredentials(operationalCert: ByteArray, intermediateCACert: ByteArray | undefined) {
@@ -65,12 +65,12 @@ export class FabricBuilder {
     private operationalCert?: ByteArray;
     private fabricId?: FabricId;
     private nodeId?: NodeId;
-    private rootNodeId?: NodeId; 
+    private rootNodeId?: NodeId;
     private rootPublicKey?: ByteArray;
     private identityProtectionKey?: ByteArray;
 
     constructor(
-        private readonly fabricIndex: FabricIndex, 
+        private readonly fabricIndex: FabricIndex,
     ) {}
 
     getPublicKey() {

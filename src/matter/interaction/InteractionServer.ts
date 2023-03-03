@@ -8,13 +8,12 @@ import { MatterDevice } from "../MatterDevice";
 import { ProtocolHandler } from "../common/ProtocolHandler";
 import { MessageExchange } from "../common/MessageExchange";
 import {
+    DataReport,
     InteractionServerMessenger,
     InvokeRequest,
     InvokeResponse,
     ReadRequest,
-    DataReport,
     SubscribeRequest,
-    SubscribeResponse,
     TimedRequest,
     WriteRequest,
     WriteResponse,
@@ -24,16 +23,21 @@ import { CommandServer, ResultCode } from "../cluster/server/CommandServer";
 import { DescriptorCluster } from "../cluster/DescriptorCluster";
 import { AttributeGetterServer, AttributeServer } from "../cluster/server/AttributeServer";
 import { Attributes, Cluster, Commands, Events } from "../cluster/Cluster";
-import { AttributeServers, AttributeInitialValues, ClusterServerHandlers } from "../cluster/server/ClusterServer";
+import { AttributeInitialValues, AttributeServers, ClusterServerHandlers } from "../cluster/server/ClusterServer";
 import { SecureSession } from "../session/SecureSession";
 import { SubscriptionHandler } from "./SubscriptionHandler";
 import { Logger } from "../../log/Logger";
 import { DeviceTypeId } from "../common/DeviceTypeId";
 import { ClusterId } from "../common/ClusterId";
-import { BitSchema, TlvStream, TypeFromBitSchema, TypeFromSchema} from "@project-chip/matter.js";
+import { BitSchema, TlvStream, TypeFromBitSchema, TypeFromSchema } from "@project-chip/matter.js";
 import { EndpointNumber } from "../common/EndpointNumber";
 import { capitalize } from "../../util/String";
-import {StatusCode, TlvAttributePath, TlvSubscribeResponse} from "./InteractionMessages";
+import {
+    StatusCode,
+    TlvAttributePath,
+    TlvAttributeReport,
+    TlvSubscribeResponse
+} from "./InteractionMessages";
 import { Message } from "../../codec/MessageCodec";
 import { Crypto } from "../../crypto/Crypto";
 
@@ -178,23 +182,26 @@ export class InteractionServer implements ProtocolHandler<MatterDevice> {
     handleReadRequest(exchange: MessageExchange<MatterDevice>, {attributes: attributePaths, isFabricFiltered}: ReadRequest): DataReport {
         logger.debug(`Received read request from ${exchange.channel.getName()}: ${attributePaths.map(path => this.resolveAttributeName(path)).join(", ")}, isFabricFiltered=${isFabricFiltered}`);
 
-        const values = this.getAttributes(attributePaths)
-            .map(({ path, attribute }) => {
-                const { value, version } = attribute.getWithVersion(exchange.session);
-                return { path, value, version, schema: attribute.schema };
-            });
+        // UnsupportedNode/UnsupportedEndpoint/UnsupportedCluster/UnsupportedAttribute/UnsupportedRead
 
-        logger.debug(`Read request from ${exchange.channel.getName()} resolved to: ${values.map(({ path, value, version }) => `${this.resolveAttributeName(path)}=${Logger.toJSON(value)} (${version})`).join(", ")}`);
+        const reportValues = attributePaths.flatMap((path: TypeFromSchema<typeof TlvAttributePath>): TypeFromSchema<typeof TlvAttributeReport>[] => {
+            const attributes = this.getAttributes([ path ]);
+            if (attributes.length === 0) {
+                logger.debug(`Read from ${exchange.channel.getName()}: ${this.resolveAttributeName(path)} unsupported path`);
+                return [{ attributeStatus: { path, status: {status: StatusCode.UnsupportedAttribute} } }]; // TODO: Find correct status code
+            }
+
+            return attributes.map(({ path, attribute }) => {
+                const { value, version } = attribute.getWithVersion(exchange.session); // TODO check ACL
+                logger.debug(`Read from ${exchange.channel.getName()}: ${this.resolveAttributeName(path)}=${Logger.toJSON(value)} (version=${version})`);
+                return { value: { path, value: attribute.schema.encodeTlv(value), version } };
+            });
+        });
+
         return {
             interactionModelRevision: 1,
             suppressResponse: false,
-            values: values.map(({ path, value, version, schema }) => ({
-                value: {
-                    path,
-                    version,
-                    value: schema.encodeTlv(value),
-                },
-            })),
+            values: reportValues,
         };
     }
 

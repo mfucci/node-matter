@@ -70,9 +70,7 @@ export class Fabric {
     }
 
     remove() {
-        for (const session of this.sessions) {
-            session.destroy();
-        }
+        this.sessions.forEach(session => session.destroy());
         this.removeCallback?.();
     }
 }

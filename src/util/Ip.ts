@@ -63,7 +63,7 @@ export function onSameNetwork(ip1: string, ip2: string, mask: string) {
     return false
 }
 
-export function isLocalIPv6Address(ipv6Address: string): boolean {
+export function isIpV6UniqueLocalAddress(ipv6Address: string): boolean {
     const localAddressPrefixes = ["fc", "fd"];
     const firstTwoBytes = ipv6Address.slice(0, 2);
     return localAddressPrefixes.includes(firstTwoBytes);

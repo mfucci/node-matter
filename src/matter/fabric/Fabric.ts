@@ -65,6 +65,13 @@ export class Fabric {
         this.sessions.push(session);
     }
 
+    removeSession(session: SecureSession<any>) {
+        const index = this.sessions.indexOf(session);
+        if (index >= 0) {
+            this.sessions.splice(index, 1);
+        }
+    }
+
     setRemoveCallback(callback: () => void) {
         this.removeCallback = callback;
     }

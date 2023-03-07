@@ -37,11 +37,16 @@ export class SessionManager<ContextT> {
     }
 
     async createSecureSession(sessionId: number, fabric: Fabric | undefined, peerNodeId: NodeId, peerSessionId: number, sharedSecret: ByteArray, salt: ByteArray, isInitiator: boolean, isResumption: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
-        const session = await SecureSession.create(this.context, sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, salt, isInitiator, isResumption, () => this.sessions.delete(sessionId), idleRetransTimeoutMs, activeRetransTimeoutMs);
+        const session = await SecureSession.create(this.context, sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, salt, isInitiator, isResumption, () => this.removeSession(sessionId, peerNodeId), idleRetransTimeoutMs, activeRetransTimeoutMs);
         this.sessions.set(sessionId, session);
 
         // TODO: close previous secure channel for
         return session;
+    }
+
+    removeSession(sessionId: number, peerNodeId: NodeId) {
+        this.sessions.delete(sessionId);
+        this.resumptionRecords.delete(peerNodeId);
     }
 
     getNextAvailableSessionId() {

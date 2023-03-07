@@ -37,9 +37,7 @@ export class SecureSession<T> implements Session<T> {
         const decryptKey = isInitiator ? keys.slice(16, 32) : keys.slice(0, 16);
         const encryptKey = isInitiator ? keys.slice(0, 16) : keys.slice(16, 32);
         const attestationKey = keys.slice(32, 48);
-        const session = new SecureSession(context, id, fabric, peerNodeId, peerSessionId, sharedSecret, decryptKey, encryptKey, attestationKey, closeCallback, idleRetransTimeoutMs, activeRetransTimeoutMs);
-        fabric?.addSession(session);
-        return session;
+        return new SecureSession(context, id, fabric, peerNodeId, peerSessionId, sharedSecret, decryptKey, encryptKey, attestationKey, closeCallback, idleRetransTimeoutMs, activeRetransTimeoutMs);
     }
 
     constructor(
@@ -56,7 +54,9 @@ export class SecureSession<T> implements Session<T> {
         private readonly idleRetransmissionTimeoutMs: number = DEFAULT_IDLE_RETRANSMISSION_TIMEOUT_MS,
         private readonly activeRetransmissionTimeoutMs: number = DEFAULT_ACTIVE_RETRANSMISSION_TIMEOUT_MS,
         private readonly retransmissionRetries: number = DEFAULT_RETRANSMISSION_RETRIES,
-    ) {}
+    ) {
+        fabric?.addSession(this);
+    }
 
     isSecure(): boolean {
         return true;
@@ -138,6 +138,7 @@ export class SecureSession<T> implements Session<T> {
 
     destroy() {
         this.clearSubscriptions();
+        this.fabric?.removeSession(this);
         this.closeCallback();
     }
 

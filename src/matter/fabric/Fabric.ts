@@ -44,7 +44,7 @@ export class Fabric {
     }
 
     sign(data: ByteArray) {
-        return Crypto.sign(this.keyPair.privateKey, data);
+        return Crypto.signPkcs8(this.keyPair.privateKey, data);
     }
 
     verifyCredentials(operationalCert: ByteArray, intermediateCACert: ByteArray | undefined) {

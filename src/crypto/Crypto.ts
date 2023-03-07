@@ -133,7 +133,7 @@ export class Crypto {
         return hmac.digest();
     }
 
-    static sign(privateKey: ByteArray, data: ByteArray | ByteArray[], dsaEncoding: ("ieee-p1363" | "der")  = "ieee-p1363") {
+    static signPkcs8(privateKey: ByteArray, data: ByteArray | ByteArray[], dsaEncoding: ("ieee-p1363" | "der")  = "ieee-p1363") {
         const signer = crypto.createSign(HASH_ALGORITHM);
         if (Array.isArray(data)) {
             data.forEach(chunk => signer.update(chunk));
@@ -148,7 +148,34 @@ export class Crypto {
         });
     }
 
-    static verify(publicKey: ByteArray, data: ByteArray, signature: ByteArray, dsaEncoding: ("ieee-p1363" | "der")  = "ieee-p1363") {
+    static signSec1(privateKey: ByteArray, data: ByteArray | ByteArray[], dsaEncoding: ("ieee-p1363" | "der")  = "ieee-p1363") {
+        const signer = crypto.createSign(HASH_ALGORITHM);
+        if (Array.isArray(data)) {
+            data.forEach(chunk => signer.update(chunk));
+        } else {
+            signer.update(data);
+        }
+        return signer.sign({
+            key: Buffer.from(privateKey), // key has to be a node.js Buffer object
+            format: "der",
+            type: "sec1",
+            dsaEncoding,
+        });
+    }
+
+    static verifySpkiEc(publicKey: ByteArray, data: ByteArray, signature: ByteArray, dsaEncoding: ("ieee-p1363" | "der")  = "ieee-p1363") {
+        const verifier = crypto.createVerify(HASH_ALGORITHM);
+        verifier.update(data);
+        const success = verifier.verify({
+            key: Buffer.from(publicKey), // key has to be a node.js Buffer object
+            format: "der",
+            type: "spki",
+            dsaEncoding,
+        }, signature);
+        if (!success) throw new Error("Signature verification failed");
+    }
+
+    static verifySpki(publicKey: ByteArray, data: ByteArray, signature: ByteArray, dsaEncoding: ("ieee-p1363" | "der")  = "ieee-p1363") {
         const verifier = crypto.createVerify(HASH_ALGORITHM);
         verifier.update(data);
         const success = verifier.verify({

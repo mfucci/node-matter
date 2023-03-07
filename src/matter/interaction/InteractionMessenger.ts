@@ -157,7 +157,7 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
                 logger.info(`Sending status response ${error.code} for interaction error: ${error}`);
                 await this.sendStatus(error.code);
             } else {
-                logger.error(error.stack ?? error);
+                logger.error(error);
                 await this.sendStatus(StatusCode.Failure);
             }
         } finally {

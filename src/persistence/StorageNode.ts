@@ -18,8 +18,7 @@ const logger = Logger.get("StorageNode");
 
 export class StorageNode extends StorageInMemory {
     private readonly commitTimer = Time.getTimer(COMMIT_DELAY, () => this.commit());
-    private waitForCommit = false;
-    private allowToCommit = false;
+    private waitForCommit = false; // TODO: replace by commitTimer.isRunning() method (needs to be added)
 
     constructor(
         private readonly path: string,
@@ -28,17 +27,16 @@ export class StorageNode extends StorageInMemory {
     }
 
     async initialize() {
-        if (Object.keys(this.store).length > 0) {
-            throw new Error("Storage contains already values, can not initialize!");
-        }
+        if (this.initialized) throw new Error("Storage already initialized!");
         try {
             this.store = this.fromJson(await readFile(this.path, "utf-8"));
         } catch (error: any) {
+            // We accept that the file does not exist yet to initialize with an empty store.
             if (error.code !== "ENOENT") {
                 throw error;
             }
         }
-        this.allowToCommit = true;
+        this.initialized = true;
     }
 
     set<T>(context: string, key: string, value: T): void {
@@ -50,19 +48,15 @@ export class StorageNode extends StorageInMemory {
     }
 
     private async commit() {
-        if (!this.allowToCommit) return;
+        if (!this.initialized) return;
         this.waitForCommit = false;
-        try {
-            await writeFile(this.path, this.toJson(this.store), "utf-8");
-        } catch (error) {
-            logger.error("Failed to write storage file", error);
-        }
+        await writeFile(this.path, this.toJson(this.store), "utf-8");
     }
 
     async close() {
         this.commitTimer.stop();
         await this.commit();
-        this.allowToCommit = false;
+        this.initialized = false;
     }
 
     private toJson(object: any): string {

@@ -27,7 +27,7 @@ export const PowerSourceConfigurationCluster = Cluster({
     /** @see {@link MatterCoreSpecificationV1_0} § 11.6.5.1 */
     attributes: {
         /** The set of all power sources capable of participating in the power system of this Node. */
-        sources: Attribute(0x0, TlvArray(TlvEndpointNumber), { default: [] }), // max 6
+        sources: Attribute(0x0, TlvArray(TlvEndpointNumber,{maxLength:6}), { default: [] }),
     },
 });
 

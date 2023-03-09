@@ -18,6 +18,10 @@ export class PersistenceManager {
         this.initialized = true;
     }
 
+    async close() {
+        await this.storage.close();
+    }
+
     createPersistence(context: string) {
         if (!this.initialized) throw new Error("The persistence should be initialized first!");
         return new Persistence(this.storage, context);

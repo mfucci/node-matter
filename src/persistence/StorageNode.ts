@@ -19,6 +19,7 @@ const logger = Logger.get("StorageNode");
 export class StorageNode extends StorageInMemory {
     private readonly commitTimer = Time.getTimer(COMMIT_DELAY, () => this.commit());
     private waitForCommit = false; // TODO: replace by commitTimer.isRunning() method (needs to be added)
+    private closed = false;
 
     constructor(
         private readonly path: string,
@@ -48,7 +49,7 @@ export class StorageNode extends StorageInMemory {
     }
 
     private async commit() {
-        if (!this.initialized) return;
+        if (!this.initialized || this.closed) return;
         this.waitForCommit = false;
         await writeFile(this.path, this.toJson(this.store), "utf-8");
     }
@@ -56,7 +57,7 @@ export class StorageNode extends StorageInMemory {
     async close() {
         this.commitTimer.stop();
         await this.commit();
-        this.initialized = false;
+        this.closed = true;
     }
 
     private toJson(object: any): string {

@@ -17,7 +17,7 @@ import { MatterCoreSpecificationV1_0, TlvArray, TlvField, TlvObject, TlvUInt16 }
  */
 const TlvDeviceType = TlvObject({
     /** Indicates the device type definition */
-    type: TlvField(0, TlvDeviceTypeId),
+    type: TlvField(0, TlvDeviceTypeId), // TODO rename deviceType
 
     /** Indicates the implemented revision of the device type definition */
     revision: TlvField(1, TlvUInt16.bound({ min: 1 })),

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Attribute, OptionalEvent, EventPriority, OptionalAttribute, Cluster, Command, TlvNoArguments, TlvNoResponse } from "./Cluster";
+import { Attribute, Event, EventPriority, OptionalAttribute, Cluster, Command, TlvNoArguments, TlvNoResponse } from "./Cluster";
 import { TlvField, TlvBoolean, MatterApplicationClusterSpecificationV1_0 } from "@project-chip/matter.js";
 
 /**
@@ -19,15 +19,16 @@ export const BooleanStateCluster = Cluster({
 
     /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.7.4 */
     attributes: {
-       /** 
+       /**
         * The semantics of this boolean state are defined by the device type using this cluster.
-        * For example, in a Contact Sensor device type, FALSE=open or no contact, TRUE=closed or contact 
+        * For example, in a Contact Sensor device type, FALSE=open or no contact, TRUE=closed or contact
         */
-       stateValue: Attribute(0x00, TlvBoolean),
+       stateValue: Attribute(0, TlvBoolean, { default: false }),
     },
-        /** @see {@link MatterApplicationClusterSpecificationV1_0 1.7.5} */
+
+    /** @see {@link MatterApplicationClusterSpecificationV1_0 1.7.5} */
     events: {
         /** generated when the StateValue attribute changes */
-        stateChange: OptionalEvent(0, EventPriority.Info, { stateValue: TlvField(0, TlvBoolean)  }),
+        stateChange: Event(0, EventPriority.Info, { stateValue: TlvField(0, TlvBoolean) }),
     },
 });

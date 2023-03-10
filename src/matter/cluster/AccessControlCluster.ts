@@ -79,7 +79,7 @@ const TlvTarget = TlvObject({
     endpoint: TlvField(1, TlvNullable(TlvEndpointNumber)),
 
     /** Device type to grant access on. */
-    deviceType: TlvField(1, TlvNullable(TlvDeviceTypeId)),
+    deviceType: TlvField(2, TlvNullable(TlvDeviceTypeId)),
 });
 
 /** @see {@link MatterCoreSpecificationV1_0} § 9.10.5.3 */
@@ -131,7 +131,7 @@ const AccessChangeEvent = <T>(entrySchema: TlvSchema<T>) => ({
  */
 export const AccessControlCluster = Cluster({
     id: 0x1f,
-    name: "Access Control",
+    name: "AccessControl",
     revision: 1,
 
     /** @see {@link MatterCoreSpecificationV1_0} § 9.10.5 */

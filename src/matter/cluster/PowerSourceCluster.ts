@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Event, EventPriority, Cluster, Attribute, OptionalAttribute} from "./Cluster";
+import { OptionalEvent, Event, EventPriority, Cluster, Attribute, OptionalAttribute} from "./Cluster";
 import { MatterCoreSpecificationV1_0, BitFlag, TlvBoolean, TlvString, TlvEnum, TlvField, TlvNullable, TlvUInt8, TlvUInt16, TlvUInt32, TlvArray } from "@project-chip/matter.js";
 
 /** @see {@link MatterCoreSpecificationV1_0} § 11.7.5.1 */

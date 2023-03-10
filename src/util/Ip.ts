@@ -63,8 +63,11 @@ export function onSameNetwork(ip1: string, ip2: string, mask: string) {
     return false
 }
 
-export function isIpV6UniqueLocalAddress(ipv6Address: string): boolean {
-    const localAddressPrefixes = ["fc", "fd"];
-    const firstTwoBytes = ipv6Address.slice(0, 2);
-    return localAddressPrefixes.includes(firstTwoBytes);
+
+/**
+ * return true if ipV6 address meets the Matter Spec to advertise in MDNS
+ * filter out IPv6 Loopback addresses - fe80 -  for obvious reasons
+ */
+export function isMatterAddressableIPv6Address(ipv6Address: string): boolean {
+    return !ipv6Address.toLowerCase().startsWith("fe80")
   }

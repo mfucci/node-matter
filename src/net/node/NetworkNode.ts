@@ -8,7 +8,7 @@ import { networkInterfaces, NetworkInterfaceInfo } from "os";
 import { UdpChannelOptions, UdpChannel } from "../UdpChannel";
 import { UdpChannelNode } from "./UdpChannelNode";
 import { Network } from "../Network";
-import { isIpV6UniqueLocalAddress, onSameNetwork } from "../../util/Ip.js";
+import { isMatterAddressableIPv6Address, onSameNetwork } from "../../util/Ip.js";
 import { Cache } from "../../util/Cache.js";
 
 export class NetworkNode extends Network {
@@ -72,8 +72,7 @@ export class NetworkNode extends Network {
     getIpMac(netInterface: string): { mac: string; ips: string[]; } | undefined {
         const netInterfaceInfo = networkInterfaces()[netInterface];
         if (netInterfaceInfo === undefined) return undefined;
-        // only use local IPv6 address
-        const ips = netInterfaceInfo.map(({address}) => address).filter(ip => isIpV6UniqueLocalAddress(ip))
+        const ips = netInterfaceInfo.map(({address}) => address).filter(ip => isMatterAddressableIPv6Address(ip))
         return { mac: netInterfaceInfo[0].mac, ips: ips };
     }
 

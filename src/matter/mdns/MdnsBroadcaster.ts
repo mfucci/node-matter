@@ -45,9 +45,11 @@ export class MdnsBroadcaster implements Broadcaster {
             const ipMac = this.network.getIpMac(netInterface);
             if (ipMac === undefined) return [];
             const { mac, ips } = ipMac;
+            if( ips.length === 0) {
+                return []; // post filtering the mac might not have any valid ips.
+            }
             const hostname = mac.replace(/:/g, "").toUpperCase() + "0000.local";
-            logger.debug(`on IP Addr: ${ips}`)
-            logger.debug(`using hostname ${hostname}`)
+            logger.debug(`${netInterface} on IP Addrs: ${ips.join(", ")} host: ${hostname}`)
             const records = [
                 PtrRecord(SERVICE_DISCOVERY_QNAME, MATTER_COMMISSION_SERVICE_QNAME),
                 PtrRecord(SERVICE_DISCOVERY_QNAME, vendorQname),

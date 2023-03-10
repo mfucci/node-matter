@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Attribute, Event, EventPriority, OptionalAttribute, Cluster, Command, TlvNoArguments, TlvNoResponse } from "./Cluster";
+import { Attribute, EventPriority, Cluster, OptionalEvent } from "./Cluster";
 import { TlvField, TlvBoolean, MatterApplicationClusterSpecificationV1_0 } from "@project-chip/matter.js";
 
 /**
@@ -29,6 +29,6 @@ export const BooleanStateCluster = Cluster({
     /** @see {@link MatterApplicationClusterSpecificationV1_0 1.7.5} */
     events: {
         /** generated when the StateValue attribute changes */
-        stateChange: Event(0, EventPriority.Info, { stateValue: TlvField(0, TlvBoolean) }),
+        stateChange: OptionalEvent(0, EventPriority.Info, { stateValue: TlvField(0, TlvBoolean) }),
     },
 });

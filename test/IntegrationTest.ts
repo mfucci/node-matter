@@ -116,7 +116,7 @@ describe("Integration", () => {
                     }, {}),
                     new ClusterServer(GeneralCommissioningCluster, {}, {
                         breadcrumb: BigInt(0),
-                        commissioningInfo: {
+                        basicCommissioningInfo: {
                             failSafeExpiryLengthSeconds: 60 /* 1min */,
                             maxCumulativeFailsafeSeconds: 60 * 60 /* 1h */,
                         },

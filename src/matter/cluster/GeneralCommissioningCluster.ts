@@ -79,7 +79,7 @@ const TlvArmFailSafeRequest = TlvObject({
     expiryLengthSeconds: TlvField(0, TlvUInt16), /* default: 900 */
 
     /** Value to atomically set the Breadcrumb attribute on success of this command. */
-    breadcrumbStep: TlvField(1, TlvUInt64), // TODO rename breadcrumb
+    breadcrumb: TlvField(1, TlvUInt64),
 });
 
 /** @see {@link MatterCoreSpecificationV1_0} § 11.9.7.4 */
@@ -91,7 +91,7 @@ const TlvSetRegulatoryConfigRequest = TlvObject({
     countryCode: TlvField(1, TlvString.bound({ length: 2 })),
 
     /** Value to atomically set the Breadcrumb attribute on success of this command. */
-    breadcrumbStep: TlvField(2, TlvUInt64), // TODO rename breadcrumb
+    breadcrumb: TlvField(2, TlvUInt64),
 });
 
 /**
@@ -112,7 +112,7 @@ export const GeneralCommissioningCluster = Cluster({
         breadcrumb: WritableAttribute(0, TlvUInt64, { default: BigInt(0), writeAcl: AccessLevel.Administer }),
 
         /** Describe critical parameters needed at the beginning of commissioning flow. */
-        commissioningInfo: Attribute(1, TlvBasicCommissioningInfo), // TODO rename basicCommissioningInfo
+        basicCommissioningInfo: Attribute(1, TlvBasicCommissioningInfo),
 
         /** Indicates the regulatory configuration for the product. */
         regulatoryConfig: Attribute(2, TlvEnum<RegulatoryLocationType>()), /* default: value of locationCapability */

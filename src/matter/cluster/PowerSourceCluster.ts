@@ -31,7 +31,7 @@ export const enum BatFaultEnum {
   UnderTemp = 0x02,
 }
 
-/** @see {@link MatterCoreSpecificationV1_0} § 11.7.5.3*/
+/** @see {@link MatterCoreSpecificationV1_0} § 11.7.5.3 */
 export const enum BatChargeFaultEnum {
   /** Unspecified fault on this battery source.*/
   Unspecified = 0x00,
@@ -67,7 +67,7 @@ export const enum BatChargeFaultEnum {
   SafetyTimeout = 0x0A,
 }
 
-  /** @see {@link MatterCoreSpecificationV1_0} § Table 92 */
+  /** @see {@link MatterCoreSpecificationV1_0} § 11.7.6.1. Table 92 */
 export const enum PowerSourceStatusEnum {
   /** SHALL indicate the source status is not specified */
   Unspecified = 0x00,
@@ -82,7 +82,7 @@ export const enum PowerSourceStatusEnum {
   Unavailable = 0x03,
 }
 
-/** @see {@link MatterCoreSpecificationV1_0} § Table 93 */
+/** @see {@link MatterCoreSpecificationV1_0} § 11.7.6.1. Table 93 */
 export const enum WiredCurrentTypeEnum {
   /** SHALL indicate AC current */
   AC = 0x00,
@@ -91,7 +91,7 @@ export const enum WiredCurrentTypeEnum {
   DC = 0x01,
 }
 
-/** @see {@link MatterCoreSpecificationV1_0} § Table 94 */
+/** @see {@link MatterCoreSpecificationV1_0} § 11.7.6.1. Table 94 */
 export const enum BatChargeLevelEnum {
   /** Charge level is nominal */
   OK = 0x00,
@@ -118,7 +118,7 @@ export const enum BatReplaceabilityEnum {
   FactoryReplaceable = 0x03,
 }
 
-/** @see {@link MatterCoreSpecificationV1_0} § Table 98 */
+/** @see {@link MatterCoreSpecificationV1_0} § 11.7.6.1. Table 98 */
 export const enum BatChargeStateEnum {
   /** Unable to determine the charging state */
   Unknown = 0x00,
@@ -133,7 +133,7 @@ export const enum BatChargeStateEnum {
   IsNotCharging = 0x03,
 }
 
-/** @see {@link MatterCoreSpecificationV1_0} § Table 96 */
+/** @see {@link MatterCoreSpecificationV1_0} § 11.7.6.1. Table 96 */
 export const enum BatCommonDesignationEnum {
   BatteryDesignationUnspecified = 0,
   BatteryDesignationAAA = 1,
@@ -218,7 +218,7 @@ export const enum BatCommonDesignationEnum {
   BatteryDesignation32600 = 80,
 }
 
-/** @see {@link MatterCoreSpecificationV1_0} § Tbale 97 */
+/** @see {@link MatterCoreSpecificationV1_0} § 11.7.6.1. Table 97 */
 export const enum BatApprovedChemistryEnum {
   Unspecified = 0,
   Alkaline = 1,
@@ -255,21 +255,21 @@ export const enum BatApprovedChemistryEnum {
   ZincCerium = 32,
 }
 
-/** @see {@link MatterCoreSpecificationV1_0} § Table 99 */
+/** @see {@link MatterCoreSpecificationV1_0} § 11.7.6.2 Table 99 */
 const WiredFaultChangeEvent = { 
   /** SHALL indicate a change in the set of wired faults  */
   current: TlvField(0, TlvArray(TlvEnum<WiredFaultEnum>(), { maxLength: 8 })),
   previous: TlvField(1, TlvArray(TlvEnum<WiredFaultEnum>(), { maxLength: 8 })),
 };
 
- /** @see {@link MatterCoreSpecificationV1_0} § Table 100 */
+ /** @see {@link MatterCoreSpecificationV1_0} § 11.7.6.2 Table 100 */
  const BatFaultChangeEvent = { 
   /** SHALL indicate a change in the set of battery faults */
   current: TlvField(0, TlvArray(TlvEnum<BatFaultEnum>(), { maxLength: 8 })),
   previous: TlvField(1, TlvArray(TlvEnum<BatFaultEnum>(), { maxLength: 8 })),
 };
 
-/** @see {@link MatterCoreSpecificationV1_0} § Table 101 */
+/** @see {@link MatterCoreSpecificationV1_0} § 11.7.6.2 Table 101 */
 const BatChargeFaultChangeEvent = { 
   /**  SHALL indicate a change in the set of charge faults */
   current: TlvField(0, TlvArray(TlvEnum<BatChargeFaultEnum>(), { maxLength: 16 })),
@@ -286,7 +286,7 @@ const BatChargeFaultChangeEvent = {
 */
 export const PowerSourceCluster = Cluster({
     id: 0x2f,
-    name: "Power Source",
+    name: "PowerSource",
     revision: 1,
 
     /** @see {@link MatterCoreSpecificationV1_0} § 11.7.4 */
@@ -313,7 +313,7 @@ export const PowerSourceCluster = Cluster({
       order: Attribute(0x0001, TlvUInt8),
       
       /** SHALL provide a user-facing description of this source */
-      description: Attribute(0x0002, TlvString.bound({ maxLength: 60})),
+      description: Attribute(0x0002, TlvString.bound({ maxLength: 60 })),
       
       /** SHALL indicate the assessed RMS or DC voltage currently provided by the hard-wired source, in mV (millivolts) */
       wiredAssessedInputVoltage: OptionalAttribute(0x0003, TlvNullable(TlvUInt32)),
@@ -343,7 +343,7 @@ export const PowerSourceCluster = Cluster({
       batVoltage: OptionalAttribute(0x000B, TlvNullable(TlvUInt32)),
       
       /**  SHALL indicate the estimated percentage of battery charge remaining until the battery will no longer be able to provide power to the Node*/
-      batPercentRemaining: OptionalAttribute(0x000C, TlvNullable(TlvUInt8.bound({ max: 0xC8 }))),
+      batPercentRemaining: OptionalAttribute(0x000C, TlvNullable(TlvUInt8.bound({ max: 0xc8 }))),
       
       /** SHALL indicate the estimated time in seconds before the battery will no longer be able to provide power to the Node.  */
       batTimeRemaining: OptionalAttribute(0x000D, TlvNullable(TlvUInt32)),
@@ -404,12 +404,12 @@ export const PowerSourceCluster = Cluster({
     /** @see {@link MatterCoreSpecificationV1_0} § 11.7.6.2. */
     events: {
       /** SHALL indicate a change in the set of wired faults currently detected  */
-      wiredFaultChange: Event(0x0, EventPriority.Info, WiredFaultChangeEvent), 
+      wiredFaultChange: OptionalEvent(0x0, EventPriority.Info, WiredFaultChangeEvent), 
 
       /** SHALL indicate a change in the set of battery faults currently detected */
-      batFaultChange: Event(0x1, EventPriority.Info, BatFaultChangeEvent), 
+      batFaultChange: OptionalEvent(0x1, EventPriority.Info, BatFaultChangeEvent), 
   
       /** SHALL indicate a change in the set of charge faults currently detected*/
-      batChargeFaultChange: Event(0x2, EventPriority.Info, BatChargeFaultChangeEvent), 
+      batChargeFaultChange: OptionalEvent(0x2, EventPriority.Info, BatChargeFaultChangeEvent), 
     },
 });

@@ -68,6 +68,10 @@ export function onSameNetwork(ip1: string, ip2: string, mask: string) {
  * return true if ipV6 address meets the Matter Spec to advertise in MDNS
  * filter out IPv6 Loopback addresses - fe80 -  for obvious reasons
  */
-export function isMatterAddressableIPv6Address(ipv6Address: string): boolean {
-    return !ipv6Address.toLowerCase().startsWith("fe80")
+export function isMatterAddressableIPv6Address(targetIpAddr: string): boolean {
+    return !(
+        targetIpAddr.toLowerCase().startsWith("fe80") ||
+        targetIpAddr.startsWith('::1') ||
+        targetIpAddr.startsWith('0::1') ||
+        targetIpAddr.startsWith('127.'))
   }

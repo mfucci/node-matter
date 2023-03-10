@@ -79,7 +79,7 @@ const TlvKeySetRemoveResponse= TlvObject({
 });
 
  /** @see {@link MatterApplicationClusterSpecificationV1_0} § 11.2.9.5 */
- const TlvKeySetReadAllIndicesRequest= TlvObject({
+const TlvKeySetReadAllIndicesRequest= TlvObject({
     // Spec says no payload which seems correct but chip XML shows the following
     // groupKeySetIds: TlvField(0, TlvArray(TlvUInt16), )
 });

@@ -24,7 +24,10 @@ import { MdnsScanner } from "../src/matter/mdns/MdnsScanner";
 import { OnOffCluster } from "../src/matter/cluster/OnOffCluster";
 import { BasicInformationCluster } from "../src/matter/cluster/BasicInformationCluster";
 import { GeneralCommissioningCluster, RegulatoryLocationType } from "../src/matter/cluster/GeneralCommissioningCluster";
-import { OperationalCredentialsCluster } from "../src/matter/cluster/OperationalCredentialsCluster";
+import {
+    OperationalCertStatus,
+    OperationalCredentialsCluster
+} from "../src/matter/cluster/OperationalCredentialsCluster";
 import { GeneralCommissioningClusterHandler } from "../src/matter/cluster/server/GeneralCommissioningServer";
 import { OperationalCredentialsClusterHandler } from "../src/matter/cluster/server/OperationalCredentialsServer";
 import { ClusterClient } from "../src/matter/interaction/InteractionClient";
@@ -35,7 +38,7 @@ import { NodeId } from "../src/matter/common/NodeId";
 import { OnOffClusterHandler } from "../src/matter/cluster/server/OnOffServer";
 import { ByteArray } from "@project-chip/matter.js";
 import { FabricIndex } from "../src/matter/common/FabricIndex";
-import {DescriptorCluster} from "../src/matter/cluster/DescriptorCluster";
+import { DescriptorCluster } from "../src/matter/cluster/DescriptorCluster";
 import {AttestationCertificateManager} from "../src/matter/certificate/AttestationCertificateManager";
 import {CertificationDeclarationManager} from "../src/matter/certificate/CertificationDeclarationManager";
 
@@ -214,6 +217,29 @@ describe("Integration", () => {
             const lastReport = await lastPromise;
 
             assert.deepEqual(lastReport, { value: false, version: 2, time: startTime + (60 * 60 + 4) * 1000});
+        });
+    });
+
+    context("remove Fabric", () => {
+        it("try to remove invalid fabric", async () => {
+            const operationalCredentialsCluster = ClusterClient(await client.connect(new NodeId(BigInt(1))), 0, OperationalCredentialsCluster);
+
+            const result = await operationalCredentialsCluster.removeFabric({ fabricIndex: new FabricIndex(250) });
+            assert.equal(result.status, OperationalCertStatus.InvalidFabricIndex);
+            assert.equal(result.fabricIndex, undefined);
+            assert.equal(result.debugText, undefined);
+        });
+
+        it("read and remove fabric", async () => {
+            const operationalCredentialsCluster = ClusterClient(await client.connect(new NodeId(BigInt(1))), 0, OperationalCredentialsCluster);
+
+            const fabricIndex = await operationalCredentialsCluster.getCurrentFabricIndex();
+            assert.equal(fabricIndex.index, 1);
+
+            const result = await operationalCredentialsCluster.removeFabric({ fabricIndex });
+            assert.equal(result.status, OperationalCertStatus.Success);
+            assert.equal(result.fabricIndex, undefined);
+            assert.equal(result.debugText, undefined);
         });
     });
 

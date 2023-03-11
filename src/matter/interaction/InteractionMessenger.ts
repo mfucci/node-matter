@@ -93,8 +93,8 @@ class InteractionMessenger<ContextT> {
 
     protected throwIfError(messageType: number, payload: ByteArray) {
         if (messageType !== MessageType.StatusResponse) return;
-        const {status} = TlvStatusResponse.decode(payload);
-        if (status !== StatusCode.Success) new Error(`Received error status: ${status}`);
+        const { status } = TlvStatusResponse.decode(payload);
+        if (status !== StatusCode.Success) throw new StatusResponseError(`Received error status: ${ status }`, status);
     }
 }
 

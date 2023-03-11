@@ -83,7 +83,7 @@ class InteractionMessenger<ContextT> {
     async nextMessage(expectedMessageType?: number) {
         const message = await this.exchangeBase.nextMessage();
         const messageType = message.payloadHeader.messageType;
-        this.throwIfError(messageType, message.payload);
+        this.throwIfErrorStatusMessage(message);
         if (expectedMessageType !== undefined && messageType !== expectedMessageType) throw new Error(`Received unexpected message type: ${messageType}, expected: ${expectedMessageType}`);
         return message;
     }
@@ -92,7 +92,9 @@ class InteractionMessenger<ContextT> {
         this.exchangeBase.close();
     }
 
-    protected throwIfError(messageType: number, payload: ByteArray) {
+    protected throwIfErrorStatusMessage(message: Message) {
+        const { payloadHeader: { messageType}, payload } = message;
+
         if (messageType !== MessageType.StatusResponse) return;
         const { status } = TlvStatusResponse.decode(payload);
         if (status !== StatusCode.Success) throw new StatusResponseError(`Received error status: ${ status }`, status);
@@ -202,8 +204,8 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
         if (dataReport.suppressResponse) {
             // We do not expect a response other than a Standalone Ack, so if we receive anything else, we throw an error
             await tryCatchAsync(async () => await this.exchange.send(MessageType.ReportData, TlvDataReport.encode(dataReport), true), UnexpectedMessageError, error => {
-                const { payloadHeader: { messageType }, payload } = error.receivedMessage;
-                this.throwIfError(messageType, payload);
+                const { receivedMessage } = error;
+                this.throwIfErrorStatusMessage(receivedMessage);
             });
         } else {
             await this.exchange.send(MessageType.ReportData, TlvDataReport.encode(dataReport));

@@ -45,20 +45,29 @@ export class CaseServer implements ProtocolHandler<MatterDevice> {
         // Try to resume a previous session
         const resumptionId = Crypto.getRandomData(16);
         let resumptionRecord;
+
+        // We try to resume the session
         if (peerResumptionId !== undefined && peerResumeMic !== undefined && (resumptionRecord = server.findResumptionRecordById(peerResumptionId)) !== undefined) {
             const { sharedSecret, fabric, peerNodeId } = resumptionRecord;
             const peerResumeKey = await Crypto.hkdf(sharedSecret, ByteArray.concat(peerRandom, peerResumptionId), KDFSR1_KEY_INFO);
             Crypto.decrypt(peerResumeKey, peerResumeMic, RESUME1_MIC_NONCE);
 
+            // All good! Create secure session
+            const secureSessionSalt = ByteArray.concat(peerRandom, peerResumptionId);
+            const secureSession = await server.createSecureSession(sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, false, true, mrpParams?.idleRetransTimeoutMs, mrpParams?.activeRetransTimeoutMs);
+
             // Generate sigma 2 resume
             const resumeSalt = ByteArray.concat(peerRandom, resumptionId);
             const resumeKey = await Crypto.hkdf(sharedSecret, resumeSalt, KDFSR2_KEY_INFO);
             const resumeMic = Crypto.encrypt(resumeKey, new ByteArray(0), RESUME2_MIC_NONCE);
-            await messenger.sendSigma2Resume({ resumptionId, resumeMic, sessionId });
+            try {
+                await messenger.sendSigma2Resume({resumptionId, resumeMic, sessionId});
+            } catch (error) {
+                // If we fail to send the resume, we destroy the session
+                secureSession.destroy();
+                throw error;
+            }
 
-            // All good! Create secure session
-            const secureSessionSalt = ByteArray.concat(peerRandom, peerResumptionId);
-            const secureSession = await server.createSecureSession(sessionId, fabric, peerNodeId, peerSessionId, sharedSecret, secureSessionSalt, false, true, mrpParams?.idleRetransTimeoutMs, mrpParams?.activeRetransTimeoutMs);
             logger.info(`Case server: session ${secureSession.getId()} resumed with ${messenger.getChannelName()}`);
             resumptionRecord.resumptionId = resumptionId; /* Update the ID */
 
@@ -86,7 +95,7 @@ export class CaseServer implements ProtocolHandler<MatterDevice> {
             fabric.verifyCredentials(peerNewOpCert, peerIntermediateCACert);
             const peerSignatureData = TlvSignedData.encode({ nodeOpCert: peerNewOpCert, intermediateCACert: peerIntermediateCACert, ecdhPublicKey: peerEcdhPublicKey, peerEcdhPublicKey: ecdhPublicKey });
             const { ellipticCurvePublicKey: peerPublicKey, subject: { nodeId: peerNodeId } } = TlvOperationalCertificate.decode(peerNewOpCert);
-            Crypto.verify(peerPublicKey, peerSignatureData, peerSignature);
+            Crypto.verifySpki(peerPublicKey, peerSignatureData, peerSignature);
 
             // All good! Create secure session
             const secureSessionSalt = ByteArray.concat(operationalIdentityProtectionKey, Crypto.hash([ sigma1Bytes, sigma2Bytes, sigma3Bytes ]));

@@ -32,12 +32,12 @@ export class SecureSession<T> implements Session<T> {
     private timestamp = Time.nowMs();
     private activeTimestamp = this.timestamp;
 
-    static async create<T>(context: T, id: number, fabric: Fabric | undefined, peerNodeId: NodeId, peerSessionId: number, sharedSecret: ByteArray, salt: ByteArray, isInitiator: boolean, isResumption: boolean, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
+    static async create<T>(context: T, id: number, fabric: Fabric | undefined, peerNodeId: NodeId, peerSessionId: number, sharedSecret: ByteArray, salt: ByteArray, isInitiator: boolean, isResumption: boolean, closeCallback: () => void, idleRetransTimeoutMs?: number, activeRetransTimeoutMs?: number) {
         const keys = await Crypto.hkdf(sharedSecret, salt, isResumption ? SESSION_RESUMPTION_KEYS_INFO : SESSION_KEYS_INFO, 16 * 3);
         const decryptKey = isInitiator ? keys.slice(16, 32) : keys.slice(0, 16);
         const encryptKey = isInitiator ? keys.slice(0, 16) : keys.slice(16, 32);
         const attestationKey = keys.slice(32, 48);
-        return new SecureSession(context, id, fabric, peerNodeId, peerSessionId, sharedSecret, decryptKey, encryptKey, attestationKey, idleRetransTimeoutMs, activeRetransTimeoutMs);
+        return new SecureSession(context, id, fabric, peerNodeId, peerSessionId, sharedSecret, decryptKey, encryptKey, attestationKey, closeCallback, idleRetransTimeoutMs, activeRetransTimeoutMs);
     }
 
     constructor(
@@ -50,10 +50,13 @@ export class SecureSession<T> implements Session<T> {
         private readonly decryptKey: ByteArray,
         private readonly encryptKey: ByteArray,
         private readonly attestationKey: ByteArray,
+        private readonly closeCallback: () => void,
         private readonly idleRetransmissionTimeoutMs: number = DEFAULT_IDLE_RETRANSMISSION_TIMEOUT_MS,
         private readonly activeRetransmissionTimeoutMs: number = DEFAULT_ACTIVE_RETRANSMISSION_TIMEOUT_MS,
         private readonly retransmissionRetries: number = DEFAULT_RETRANSMISSION_RETRIES,
-    ) {}
+    ) {
+        fabric?.addSession(this);
+    }
 
     isSecure(): boolean {
         return true;
@@ -128,13 +131,15 @@ export class SecureSession<T> implements Session<T> {
         logger.debug(`Added subscription ${subscription.subscriptionId} to ${this.getName()}/${this.id}`);
     }
 
-    destroy() {
-        this.clearSubscriptions();
-    }
-
     clearSubscriptions() {
         this.subscriptions.forEach(subscription => subscription.cancel());
         this.subscriptions.length = 0;
+    }
+
+    destroy() {
+        this.clearSubscriptions();
+        this.fabric?.removeSession(this);
+        this.closeCallback();
     }
 
     private generateNonce(securityFlags: number, messageId: number, nodeId: NodeId) {

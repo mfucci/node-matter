@@ -94,8 +94,8 @@ class InteractionMessenger<ContextT> {
 
     protected throwIfError(messageType: number, payload: ByteArray) {
         if (messageType !== MessageType.StatusResponse) return;
-        const {status} = TlvStatusResponse.decode(payload);
-        if (status !== StatusCode.Success) new Error(`Received error status: ${status}`);
+        const { status } = TlvStatusResponse.decode(payload);
+        if (status !== StatusCode.Success) throw new StatusResponseError(`Received error status: ${ status }`, status);
     }
 }
 
@@ -150,8 +150,13 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
                 }
             }
         } catch (error: any) {
-            logger.error(error.stack ?? error);
-            await this.sendStatus(StatusCode.Failure);
+            if (error instanceof StatusResponseError) {
+                logger.info(`Sending status response ${error.code} for interaction error: ${error}`);
+                await this.sendStatus(error.code);
+            } else {
+                logger.error(error);
+                await this.sendStatus(StatusCode.Failure);
+            }
         } finally {
             this.exchange.close();
         }
@@ -159,6 +164,9 @@ export class InteractionServerMessenger extends InteractionMessenger<MatterDevic
 
     async sendDataReport(dataReport: DataReport) {
         const messageBytes = TlvDataReport.encode(dataReport);
+        if (!Array.isArray(dataReport.values)) {
+            throw new Error(`DataReport.values must be an array, got: ${dataReport.values}`);
+        }
         if (messageBytes.length > MAX_SPDU_LENGTH) {
             // DataReport is too long, it needs to be sent in chunks
             const attributeReportsToSend = [...dataReport.values];

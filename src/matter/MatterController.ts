@@ -196,7 +196,7 @@ class RootCertificateManager {
                 authorityKeyIdentifier: this.rootKeyIdentifier,
             },
         };
-        const signature = Crypto.sign(this.rootKeyPair.privateKey, CertificateManager.rootCertToAsn1(unsignedCertificate));
+        const signature = Crypto.signPkcs8(this.rootKeyPair.privateKey, CertificateManager.rootCertToAsn1(unsignedCertificate));
         return TlvRootCertificate.encode({ ...unsignedCertificate, signature });
     }
 
@@ -221,7 +221,7 @@ class RootCertificateManager {
                 authorityKeyIdentifier: this.rootKeyIdentifier,
             },
         };
-        const signature = Crypto.sign(this.rootKeyPair.privateKey, CertificateManager.nocCertToAsn1(unsignedCertificate));
+        const signature = Crypto.signPkcs8(this.rootKeyPair.privateKey, CertificateManager.nocCertToAsn1(unsignedCertificate));
         return TlvOperationalCertificate.encode({ ...unsignedCertificate, signature });
     }
 }

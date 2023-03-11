@@ -20,6 +20,7 @@ export class FabricManager {
 
     addFabric(fabric: Fabric) {
         this.fabrics.push(fabric);
+        fabric.setRemoveCallback(() => this.removeFabric(fabric.fabricIndex));
         return new FabricIndex(this.fabrics.length);
     }
 

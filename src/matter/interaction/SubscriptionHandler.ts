@@ -119,8 +119,6 @@ export class SubscriptionHandler {
                 },
             })),
         });
-
-        await messenger.waitForSuccess();
     }
 
     async attributeChangeListener(path: AttributePath, schema: TlvSchema<any>, version: number, value: any) {
@@ -157,10 +155,6 @@ export class SubscriptionHandler {
             })),
         });
 
-        // Only expect answer for non-empty data reports
-        if (values.length) {
-            await messenger.waitForSuccess();
-        }
         messenger.close();
     }
 }

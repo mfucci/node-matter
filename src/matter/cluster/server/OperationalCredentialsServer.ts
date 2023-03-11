@@ -27,16 +27,16 @@ interface OperationalCredentialsServerConf {
     devicePrivateKey: ByteArray,
     deviceCertificate: ByteArray,
     deviceIntermediateCertificate: ByteArray,
-    certificateDeclaration: ByteArray,
+    certificationDeclaration: ByteArray,
 }
 
 function signWithDeviceKey(conf: OperationalCredentialsServerConf,session: SecureSession<MatterDevice>, data: ByteArray) {
-    return Crypto.sign(conf.devicePrivateKey, [data, session.getAttestationChallengeKey()]);
+    return Crypto.signPkcs8(conf.devicePrivateKey, [data, session.getAttestationChallengeKey()]);
 }
 
 export const OperationalCredentialsClusterHandler: (conf: OperationalCredentialsServerConf) => ClusterServerHandlers<typeof OperationalCredentialsCluster> = (conf) => ({
     requestAttestation: async ({ request: {attestationNonce}, session }) => {
-        const elements = TlvAttestation.encode({ declaration: conf.certificateDeclaration, attestationNonce, timestamp: 0 });
+        const elements = TlvAttestation.encode({ declaration: conf.certificationDeclaration, attestationNonce, timestamp: 0 });
         return {elements: elements, signature: signWithDeviceKey(conf, session as SecureSession<MatterDevice>, elements)};
     },
 
@@ -114,18 +114,14 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
     removeFabric: async ({ request: {fabricIndex}, session }) => {
         const device = session.getContext();
 
-        const status = tryCatch(() => {
-                device.removeFabric(fabricIndex);
+        const fabric = device.getFabricByIndex(fabricIndex);
 
-                // TODO persist fabrics
-                // TODO: depending on cases destroy the secure session and delete all data!
+        if (fabric === undefined) {
+            return { status: OperationalCertStatus.InvalidFabricIndex };
+        }
 
-                return OperationalCertStatus.Success;
-            },
-            FabricNotFoundError, OperationalCertStatus.InvalidFabricIndex
-        );
-
-        return { status };
+        fabric.remove();
+        return { status: OperationalCertStatus.Success };
     },
 
     addRootCert: async ({ request: {certificate}, session} ) => {

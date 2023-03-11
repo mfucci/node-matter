@@ -20,6 +20,9 @@ import { VendorId } from "./common/VendorId";
 import { NodeId } from "./common/NodeId";
 import { ByteArray } from "@project-chip/matter.js";
 import { FabricIndex } from "./common/FabricIndex";
+import { Logger } from "../log/Logger";
+
+const logger = Logger.get("MatterDevice");
 
 requireMinNodeVersion(16);
 
@@ -87,8 +90,8 @@ export class MatterDevice {
         return fabricIndex;
     }
 
-    removeFabric(fabricIndex: FabricIndex) {
-        this.fabricManager.removeFabric(fabricIndex);
+    getFabricByIndex(fabricIndex: FabricIndex) {
+        return this.fabricManager.getFabrics().find(fabric => fabric.fabricIndex.index === fabricIndex.index);
     }
 
     initiateExchange(fabric: Fabric, nodeId: NodeId, protocolId: number) {

@@ -6,7 +6,21 @@
 
 import { MessageExchange } from "../../common/MessageExchange";
 import { GeneralStatusCode, ProtocolStatusCode, MessageType, SECURE_CHANNEL_PROTOCOL_ID } from "./SecureChannelMessages";
-import { ByteArray, DataReader, DataWriter, Endian, TlvSchema } from "@project-chip/matter.js";
+import { ByteArray, TlvSchema } from "@project-chip/matter.js";
+import { MatterError } from "../../../error/MatterError";
+import { TlvSecureChannelStatusMessage } from "./SecureChannelStatusMessageSchema";
+import {Message} from "../../../codec/MessageCodec";
+
+/** Error base Class for all errors related to the status response messages. */
+export class ChannelStatusResponseError extends MatterError {
+    public constructor(
+        message: string,
+        public readonly generalStatusCode: GeneralStatusCode,
+        public readonly protocolStatusCode: ProtocolStatusCode,
+    ) {
+        super(`(${generalStatusCode}/${protocolStatusCode}) ${message}`);
+    }
+}
 
 export class SecureChannelMessenger<ContextT> {
     constructor(
@@ -16,7 +30,7 @@ export class SecureChannelMessenger<ContextT> {
     async nextMessage(expectedMessageType?: number) {
         const message = await this.exchange.nextMessage();
         const messageType = message.payloadHeader.messageType;
-        this.throwIfError(messageType, message.payload);
+        this.throwIfErrorStatusReport(message);
         if (expectedMessageType !== undefined && messageType !== expectedMessageType) throw new Error(`Received unexpected message type: ${messageType}, expected: ${expectedMessageType}`);
         return message;
     }
@@ -53,20 +67,23 @@ export class SecureChannelMessenger<ContextT> {
     }
 
     private async sendStatusReport(generalStatus: GeneralStatusCode, protocolStatus: ProtocolStatusCode) {
-        const writer = new DataWriter(Endian.Little);
-        writer.writeUInt16(generalStatus);
-        writer.writeUInt32(SECURE_CHANNEL_PROTOCOL_ID);
-        writer.writeUInt16(protocolStatus);
-        await this.exchange.send(MessageType.StatusReport, writer.toByteArray());
+        await this.exchange.send(MessageType.StatusReport, TlvSecureChannelStatusMessage.encode({
+            generalStatus,
+            protocolId: SECURE_CHANNEL_PROTOCOL_ID,
+            protocolStatus
+        }));
     }
 
-    protected throwIfError(messageType: number, payload: ByteArray) {
+    protected throwIfErrorStatusReport(message: Message) {
+        const { payloadHeader: { messageType }, payload } = message;
         if (messageType !== MessageType.StatusReport) return;
-        const reader = new DataReader(payload, Endian.Little);
-        const generalStatus = reader.readUInt16();
-        if (generalStatus === GeneralStatusCode.Success) return;
-        const protocolId = reader.readUInt32();
-        const protocolStatus = reader.readUInt16();
-        throw new Error(`Received error status: ${generalStatus} ${protocolId} ${protocolStatus}`);
+
+        const { generalStatus, protocolId, protocolStatus } = TlvSecureChannelStatusMessage.decode(payload);
+        if (generalStatus !== GeneralStatusCode.Success) {
+            throw new ChannelStatusResponseError(`Received general error status (${protocolId})`, generalStatus, protocolStatus);
+        }
+        if (protocolStatus !== ProtocolStatusCode.Success) {
+            throw new ChannelStatusResponseError(`Received general success status, but protocol status is not Success`, generalStatus, protocolStatus);
+        }
     }
 }

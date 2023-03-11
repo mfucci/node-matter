@@ -77,4 +77,8 @@ export class UnsecureSession<T> implements Session<T> {
     getPeerNodeId() {
         return undefined;
     }
+
+    destroy() {
+        throw new Error("The unsecure session should never be destroyed.");
+    }
 }

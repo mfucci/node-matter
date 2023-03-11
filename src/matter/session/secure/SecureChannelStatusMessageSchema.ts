@@ -30,3 +30,5 @@ export class SecureChannelStatusMessageSchema extends Schema<StatusMessage, Byte
         return { generalStatus, protocolId, protocolStatus };
     }
 }
+
+export const TlvSecureChannelStatusMessage = new SecureChannelStatusMessageSchema();

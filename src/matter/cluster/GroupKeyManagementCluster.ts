@@ -20,7 +20,7 @@ const TlvGroupKeyMap = TlvObject({
 /** @see {@link MatterCoreSpecificationV1_0} § 11.2.6.2 */
 const TlvGroupKeySet = TlvObject({
     groupKeySetID: TlvField(0, TlvUInt16),
-    groupKeySecurityPolicy: TlvField(1, TlvEnum<GroupKeySecurityPolicyEnum>()),
+    groupKeySecurityPolicy: TlvField(1, TlvEnum<GroupKeySecurityPolicy>()),
 
     epochKey0: TlvField(2, TlvNullable(TlvString.bound({ maxLength: 16 }))),
     epochStartTime0: TlvField(3, TlvNullable(TlvUInt64)), // epoch_us
@@ -32,7 +32,7 @@ const TlvGroupKeySet = TlvObject({
     epochStartTime2: TlvField(7, TlvNullable(TlvUInt64)), // epoch_us
 
     /** Provisional Field, Correct default behavior is that implied by value PerGroupID. */
-    GroupKeyMulticastPolicy: TlvField(8, TlvEnum<GroupKeySecurityPolicyEnum>()),
+    GroupKeyMulticastPolicy: TlvField(8, TlvEnum<GroupKeySecurityPolicy>()),
 });
 
 /** @see {@link MatterCoreSpecificationV1_0} § 11.2.6.3 */
@@ -43,7 +43,7 @@ const TlvGroupInfoMap = TlvObject({
 });
 
 /** @see {@link MatterCoreSpecificationV1_0} § 11.2.6 table 88 */
-export const enum GroupKeyMulticastPolicyEnum {
+export const enum GroupKeyMulticastPolicy {
     /** The 16-bit Group Identifier of the MulticastAddress SHALL be the Group ID of the group. */
     PerGroupID = 0x00,
   
@@ -52,7 +52,7 @@ export const enum GroupKeyMulticastPolicyEnum {
   }
 
 /** @see {@link MatterCoreSpecificationV1_0} § 11.2.6.2 table 87 */
-export const enum GroupKeySecurityPolicyEnum {
+export const enum GroupKeySecurityPolicy {
     /** Message counter synchronization using trust-first */
     TrustFirst = 0x00,
   
@@ -61,27 +61,27 @@ export const enum GroupKeySecurityPolicyEnum {
   }
 
   /** @see {@link MatterCoreSpecificationV1_0} § 11.2.9.1 */
-const TlvKeySetWriteRequest= TlvObject({
+const TlvKeySetWriteRequest = TlvObject({
     groupKeySet: TlvField(0, TlvGroupKeySet)
 });
 
   /** @see {@link MatterCoreSpecificationV1_0} § 11.2.9.2 */
-const TlvKeySetReadRequest= TlvObject({
+const TlvKeySetReadRequest = TlvObject({
     groupKeySetId: TlvField(0, TlvUInt16)
 });
 
 /** @see {@link MatterCoreSpecificationV1_0} § 11.2.9.3 */
-const TlvKeySetReadResponse= TlvObject({
+const TlvKeySetReadResponse = TlvObject({
     groupKeySet: TlvField(0, TlvGroupKeySet),
 });
 
   /** @see {@link MatterCoreSpecificationV1_0} § 11.2.9.4 */
-const TlvKeySetRemoveRequest= TlvObject({
+const TlvKeySetRemoveRequest = TlvObject({
     groupKeySetId: TlvField(0, TlvUInt16)
 });
 
 /** @see {@link MatterCoreSpecificationV1_0} § 11.2.9.6 */
-const TlvKeySetReadAllIndicesResponse= TlvObject({
+const TlvKeySetReadAllIndicesResponse = TlvObject({
     groupKeySetIds: TlvField(0, TlvArray(TlvUInt16))
 });
 

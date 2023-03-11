@@ -4,29 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-    AccessLevel,
-    Attribute,
-    Cluster,
-    Command,
-    OptionalAttribute, OptionalCommand,
-    OptionalWritableAttribute,
-    TlvNoArguments,
-    TlvNoResponse
-} from "./Cluster";
-import {
-    BitFlag,
-    MatterApplicationClusterSpecificationV1_0,
-    TlvBitmap,
-    TlvBoolean,
-    TlvEnum,
-    TlvField,
-    TlvNullable,
-    TlvObject,
-    TlvSchema,
-    TlvUInt16,
-    TlvUInt8
-} from "@project-chip/matter.js";
+import { AccessLevel, Attribute, Cluster, Command, OptionalAttribute, OptionalCommand, OptionalWritableAttribute, TlvNoArguments, TlvNoResponse } from "./Cluster";
+import { BitFlag, MatterApplicationClusterSpecificationV1_0, TlvBitmap, TlvBoolean, TlvEnum, TlvField, TlvNullable, TlvObject, TlvSchema, TlvUInt16, TlvUInt8 } from "@project-chip/matter.js";
 
 /**
  * Defined how the devices should behave when it is powered on.

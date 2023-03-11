@@ -25,9 +25,9 @@ TODO: If the Scenes server cluster is implemented on the same endpoint, the foll
 
 // TODO Put in a more central place once used by other clusters
 const getFabricFromSession = (session: SecureSession<MatterDevice>): Fabric => {
-    if (!session.isSecure()) throw new Error("addGroup can only be called on a secure session");
+    if (!session.isSecure()) throw new Error("Session needs to be a secure session");
     const fabric = session.getFabric();
-    if (fabric === undefined) throw new Error("addGroup is called but the fabric has not been defined yet");
+    if (fabric === undefined) throw new Error("Session needs to have an associated Fabric");
     return fabric;
 }
 

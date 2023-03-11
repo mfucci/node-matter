@@ -48,7 +48,7 @@ export const GroupsClusterHandler: () => ClusterServerHandlers<typeof GroupsClus
 
         let fabricGroups = fabric.getScopedClusterDataInstance<Map<number, string>>(GroupsCluster.id);
         if (fabricGroups === undefined) {
-            fabricGroups = new Map<number, string>();
+            fabricGroups = new Map();
             fabric.setScopedClusterDataInstance(GroupsCluster.id, fabricGroups);
         }
 

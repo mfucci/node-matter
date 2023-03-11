@@ -11,11 +11,16 @@ import { VendorId } from "../common/VendorId";
 import { ByteArray, DataWriter, Endian, toBigInt } from "@project-chip/matter.js";
 import { FabricId } from "../common/FabricId";
 import { FabricIndex } from "../common/FabricIndex";
+import { SecureSession } from "../session/SecureSession";
 
 const COMPRESSED_FABRIC_ID_INFO = ByteArray.fromString("CompressedFabric");
 const GROUP_SECURITY_INFO = ByteArray.fromString("GroupKey v1.0");
 
 export class Fabric {
+
+    private readonly sessions = new Array<SecureSession<any>>();
+
+    private removeCallback: (() => void) | undefined;
 
     constructor(
         readonly fabricIndex: FabricIndex,
@@ -39,7 +44,7 @@ export class Fabric {
     }
 
     sign(data: ByteArray) {
-        return Crypto.sign(this.keyPair.privateKey, data);
+        return Crypto.signPkcs8(this.keyPair.privateKey, data);
     }
 
     verifyCredentials(operationalCert: ByteArray, intermediateCACert: ByteArray | undefined) {
@@ -55,6 +60,26 @@ export class Fabric {
         writer.writeUInt64(nodeId.id);
         return Crypto.hmac(this.operationalIdentityProtectionKey, writer.toByteArray());
     }
+
+    addSession(session: SecureSession<any>) {
+        this.sessions.push(session);
+    }
+
+    removeSession(session: SecureSession<any>) {
+        const index = this.sessions.indexOf(session);
+        if (index >= 0) {
+            this.sessions.splice(index, 1);
+        }
+    }
+
+    setRemoveCallback(callback: () => void) {
+        this.removeCallback = callback;
+    }
+
+    remove() {
+        this.sessions.forEach(session => session.destroy());
+        this.removeCallback?.();
+    }
 }
 
 export class FabricBuilder {
@@ -65,12 +90,12 @@ export class FabricBuilder {
     private operationalCert?: ByteArray;
     private fabricId?: FabricId;
     private nodeId?: NodeId;
-    private rootNodeId?: NodeId; 
+    private rootNodeId?: NodeId;
     private rootPublicKey?: ByteArray;
     private identityProtectionKey?: ByteArray;
 
     constructor(
-        private readonly fabricIndex: FabricIndex, 
+        private readonly fabricIndex: FabricIndex,
     ) {}
 
     getPublicKey() {

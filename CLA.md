@@ -112,3 +112,4 @@ Contributor signatures: Github Login: Full name (email address), Country
 - @mfucci: Marco Fucci di Napoli (mfucci@gmail.com), USA
 - @Apollon77: Ingo Fischer (iobroker@fischer-ka.de), Germany
 - @vves: Wesley Felteau (vves@cellohill.com), USA
+- @JimBuzbee: Jim Buzbee (JimBuzbee@gmail.com), USA

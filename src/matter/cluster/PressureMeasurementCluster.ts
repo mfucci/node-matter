@@ -26,6 +26,8 @@ import {
  * @see {@link MatterApplicationClusterSpecificationV1_0} § 2.4
  */
 export const PressureMeasurementCluster = Cluster({
+    // TODO create two cluster definitions ... One with set Extended Flag and one without to make
+    //  Attributes correctly optional
     id: 0x0403,
     name: "PressureMeasurement",
     revision: 3,

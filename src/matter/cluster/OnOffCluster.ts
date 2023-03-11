@@ -82,7 +82,8 @@ const TlvOnWithTimedOffRequest = TlvObject({
  * @see {@link MatterApplicationClusterSpecificationV1_0} § 1.5
  */
 export const OnOffCluster = Cluster({
-    // TODO create two cluster definitions ... One with set Lighting Flag and one without to make Attributes correctly optional
+    // TODO create two cluster definitions ... One with set Lighting Flag and one without to make
+    //  Attributes and Comments correctly optional
     id: 0x06,
     name: "OnOff",
     revision: 4,

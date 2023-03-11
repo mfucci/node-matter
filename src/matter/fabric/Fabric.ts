@@ -83,7 +83,7 @@ export class Fabric {
         this.removeCallback?.();
     }
 
-    getScopedClusterDataInstance<T>(clusterId: number): T {
+    getScopedClusterDataInstance<T>(clusterId: number): T | undefined {
         return this.scopedClusterData.get(clusterId);
     }
 

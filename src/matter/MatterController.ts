@@ -7,9 +7,9 @@
 import { SECURE_CHANNEL_PROTOCOL_ID } from "./session/secure/SecureChannelMessages";
 import { ResumptionRecord, SessionManager } from "./session/SessionManager";
 import { NetInterface } from "../net/NetInterface";
-import { ExchangeManager, MessageChannel } from "./common/ExchangeManager";
+import {ExchangeManager, ExchangeProvider, MessageChannel} from "./common/ExchangeManager";
 import { PaseClient } from "./session/secure/PaseClient";
-import {ClusterClient, ExchangeProvider, InteractionClient} from "./interaction/InteractionClient";
+import {ClusterClient, InteractionClient} from "./interaction/InteractionClient";
 import { BasicInformationCluster } from "./cluster/BasicInformationCluster";
 import { CommissioningError, GeneralCommissioningCluster, RegulatoryLocationType, CommissioningSuccessFailureResponse } from "./cluster/GeneralCommissioningCluster";
 import { CertificateChainType, TlvCertSigningRequest, OperationalCredentialsCluster } from "./cluster/OperationalCredentialsCluster";
@@ -122,8 +122,8 @@ export class MatterController {
         return peerNodeId;
     }
 
-    async resume(peerNodeId: NodeId, timeoutS = 60) {
-        const scanResult = await this.scanner.findDevice(this.fabric, peerNodeId, timeoutS);
+    async resume(peerNodeId: NodeId, timeoutSeconds = 60) {
+        const scanResult = await this.scanner.findDevice(this.fabric, peerNodeId, timeoutSeconds);
         if (scanResult === undefined) throw new Error("The device being commissioned cannot be found on the network");
         const { ip: operationalIp, port: operationalPort } = scanResult;
 
@@ -141,13 +141,13 @@ export class MatterController {
         return channel;
     }
 
-    async connect(nodeId: NodeId, timeoutS?: number) {
+    async connect(nodeId: NodeId, timeoutSeconds?: number) {
         let channel: MessageChannel<any>;
         try {
             channel = this.channelManager.getChannel(this.fabric, nodeId);
         } catch (error) {
             if (error instanceof NoChannelError) {
-                channel = await this.resume(nodeId, timeoutS);
+                channel = await this.resume(nodeId, timeoutSeconds);
             } else {
                 throw error;
             }

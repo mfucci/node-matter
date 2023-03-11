@@ -4,19 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Message, MessageCodec, SessionType } from "../../codec/MessageCodec";
-import { Crypto } from "../../crypto/Crypto";
-import { NetInterface, NetListener } from "../../net/NetInterface";
-import { Session } from "../session/Session";
-import { SessionManager } from "../session/SessionManager";
-import { Channel } from "../../net/Channel";
-import { MessageExchange } from "./MessageExchange";
-import { ProtocolHandler } from "./ProtocolHandler";
-import { ChannelManager } from "./ChannelManager";
-import { Fabric } from "../fabric/Fabric";
-import { Logger } from "../../log/Logger";
-import { NodeId } from "./NodeId";
-import { ByteArray } from "@project-chip/matter.js";
+import {Message, MessageCodec, SessionType} from "../../codec/MessageCodec";
+import {Crypto} from "../../crypto/Crypto";
+import {NetInterface, NetListener} from "../../net/NetInterface";
+import {Session} from "../session/Session";
+import {SessionManager} from "../session/SessionManager";
+import {Channel} from "../../net/Channel";
+import {MessageExchange} from "./MessageExchange";
+import {ProtocolHandler} from "./ProtocolHandler";
+import {ChannelManager} from "./ChannelManager";
+import {Fabric} from "../fabric/Fabric";
+import {Logger} from "../../log/Logger";
+import {NodeId} from "./NodeId";
+import {ByteArray} from "@project-chip/matter.js";
+import {MatterController} from "../MatterController";
+import {INTERACTION_PROTOCOL_ID} from "../interaction/InteractionServer";
 
 const logger = Logger.get("ExchangeManager");
 
@@ -126,5 +128,28 @@ export class MessageCounter {
             this.messageCounter = 0;
         }
         return this.messageCounter;
+    }
+}
+
+export class ExchangeProvider {
+    constructor(
+        private readonly exchangeManager: ExchangeManager<MatterController>,
+        private channel: MessageChannel<MatterController>,
+        private readonly reconnectChannelFunc?: () => Promise<MessageChannel<MatterController>>,
+    ) {
+    }
+
+    addProtocolHandler(handler: ProtocolHandler<MatterController>) {
+        this.exchangeManager.addProtocolHandler(handler);
+    }
+
+    initiateExchange(): MessageExchange<MatterController> {
+        return this.exchangeManager.initiateExchangeWithChannel(this.channel, INTERACTION_PROTOCOL_ID);
+    }
+
+    async reconnectChannel() {
+        if (this.reconnectChannelFunc === undefined) return false;
+        this.channel = await this.reconnectChannelFunc();
+        return true;
     }
 }

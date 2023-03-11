@@ -25,7 +25,7 @@ import {
 import { ByteArray, TlvSchema, TypeFromSchema } from "@project-chip/matter.js";
 import { Message } from "../../codec/MessageCodec";
 import { MatterError } from "../../error/MatterError";
-import {ExchangeProvider} from "./InteractionClient";
+import {ExchangeProvider} from "../common/ExchangeManager";
 
 export const enum MessageType {
     StatusResponse = 0x01,

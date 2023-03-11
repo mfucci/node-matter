@@ -4,18 +4,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { MessageExchange, RetransmissionLimitReachedError } from "../common/MessageExchange";
-import { MatterController } from "../MatterController";
-import { capitalize } from "../../util/String";
-import { Attribute, AttributeJsType, Attributes, Cluster, Command, Commands, TlvNoResponse, RequestType, ResponseType } from "../cluster/Cluster";
-import {DataReport, InteractionClientMessenger, IncomingInteractionClientMessenger} from "./InteractionMessenger";
-import { ResultCode } from "../cluster/server/CommandServer";
-import { ClusterClient } from "../cluster/client/ClusterClient";
-import { ExchangeManager, MessageChannel } from "../common/ExchangeManager";
-import { INTERACTION_PROTOCOL_ID } from "./InteractionServer";
-import { ProtocolHandler } from "../common/ProtocolHandler";
-import { StatusCode } from "./InteractionMessages";
-import { TlvSchema, TlvStream } from "@project-chip/matter.js";
+import {MessageExchange} from "../common/MessageExchange";
+import {MatterController} from "../MatterController";
+import {capitalize} from "../../util/String";
+import {
+    Attribute,
+    AttributeJsType,
+    Attributes,
+    Cluster,
+    Command,
+    Commands,
+    RequestType,
+    ResponseType,
+    TlvNoResponse
+} from "../cluster/Cluster";
+import {DataReport, IncomingInteractionClientMessenger, InteractionClientMessenger} from "./InteractionMessenger";
+import {ResultCode} from "../cluster/server/CommandServer";
+import {ClusterClient} from "../cluster/client/ClusterClient";
+import {ExchangeProvider} from "../common/ExchangeManager";
+import {INTERACTION_PROTOCOL_ID} from "./InteractionServer";
+import {ProtocolHandler} from "../common/ProtocolHandler";
+import {StatusCode} from "./InteractionMessages";
+import {TlvSchema, TlvStream} from "@project-chip/matter.js";
 
 interface GetRawValueResponse { // TODO Remove when restructuring Responses
     endpointId: number;
@@ -76,35 +86,14 @@ export class SubscriptionClient implements ProtocolHandler<MatterController> {
     }
 }
 
-export class ExchangeProvider {
-    constructor(
-        private readonly exchangeManager: ExchangeManager<MatterController>,
-        private channel: MessageChannel<MatterController>,
-        private readonly reconnectChannelFunc?: () => Promise<MessageChannel<MatterController>>,
-    ) {}
-
-    addProtocolHandlerToExchangeManager(handler: ProtocolHandler<MatterController>) {
-        this.exchangeManager.addProtocolHandler(handler);
-    }
-
-    initiateExchange(): MessageExchange<MatterController> {
-        return this.exchangeManager.initiateExchangeWithChannel(this.channel, INTERACTION_PROTOCOL_ID);
-    }
-
-    async reconnectChannel() {
-        if (this.reconnectChannelFunc === undefined) return false;
-        this.channel = await this.reconnectChannelFunc();
-        return true;
-    }
-}
-
 export class InteractionClient {
     private readonly subscriptionListeners = new Map<number, (dataReport: DataReport) => void>();
 
     constructor(
         private readonly exchangeProvider: ExchangeProvider,
     ) {
-        this.exchangeProvider.addProtocolHandlerToExchangeManager(new SubscriptionClient(this.subscriptionListeners));
+        // TODO: Right now we potentially add multiple handlers for the same protocol, We need to fix this
+        this.exchangeProvider.addProtocolHandler(new SubscriptionClient(this.subscriptionListeners));
     }
 
     async getAllAttributes(): Promise<{}> {

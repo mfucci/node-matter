@@ -154,7 +154,7 @@ export const LevelControlCluster = Cluster({
         startUpCurrentLevel: OptionalWritableAttribute(0x4000, TlvNullable(TlvUInt8), { persistent: true }),
     },
     commands: commonCommands,
- });
+});
 
  /**
  * Attributes and commands for Pulse Width Modulation (Provisional)
@@ -184,4 +184,4 @@ export const LevelControlCluster = Cluster({
         /** Changes current frequency to the requested frequency, or to the closest frequency. */
         moveToClosestFrequency: Command(0x8, MoveToClosestFrequencyCommandRequest, 0x8, TlvNoResponse),
     },
- });
+});

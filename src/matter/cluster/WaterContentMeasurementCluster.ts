@@ -11,10 +11,10 @@ import {BitFlag, MatterApplicationClusterSpecificationV1_0, TlvBitmap, TlvInt16,
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 2.6.4 */
 const  attributes = {
     /** Represents the water content in % as follows: MeasuredValue = 100 x water content */
-    measuredValue: Attribute(0, TlvNullable(TlvUInt16.bound({ min: 0, max: 10000 }))),
+    measuredValue: Attribute(0, TlvNullable(TlvUInt16.bound({ max: 10000 }))),
 
     /** Indicates the minimum value of MeasuredValue that can be measured. */
-    minMeasuredValue: Attribute(1, TlvNullable(TlvUInt16.bound({ min: 0 }))),
+    minMeasuredValue: Attribute(1, TlvNullable(TlvUInt16)),
 
     /** Indicates the maximum value of MeasuredValue that can be measured. */
     maxMeasuredValue: Attribute(2, TlvNullable(TlvUInt16.bound({ max: 10000 }))),
@@ -23,7 +23,7 @@ const  attributes = {
      * The magnitude of the possible error that is associated with MeasuredValue
      * attribute using the same unit
      */
-    tolerance: OptionalAttribute(3, TlvUInt16.bound({ min: 0, max: 2048 /* 0x0800 */ })),
+    tolerance: OptionalAttribute(3, TlvUInt16.bound({ max: 2048 /* 0x0800 */ })),
 };
 
 /**

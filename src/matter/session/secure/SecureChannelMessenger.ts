@@ -5,10 +5,10 @@
  */
 
 import { MessageExchange } from "../../common/MessageExchange";
-import { GeneralStatusCode, ProtocolStatusCode, MessageType } from "./SecureChannelMessages";
+import {GeneralStatusCode, ProtocolStatusCode, MessageType, SECURE_CHANNEL_PROTOCOL_ID} from "./SecureChannelMessages";
 import { ByteArray, TlvSchema } from "@project-chip/matter.js";
 import { MatterError } from "../../../error/MatterError";
-import { decodeStatusReport, encodeStatusReport } from "./SecureChannelStatusMessageSchema";
+import { SecureChannelStatusMessageSchema } from "./SecureChannelStatusMessageSchema";
 
 /** Error base Class for all errors related to the status response messages. */
 export class ChannelStatusResponseError extends MatterError {
@@ -66,12 +66,19 @@ export class SecureChannelMessenger<ContextT> {
     }
 
     private async sendStatusReport(generalStatus: GeneralStatusCode, protocolStatus: ProtocolStatusCode) {
-        await this.exchange.send(MessageType.StatusReport, encodeStatusReport(generalStatus, protocolStatus));
+        const statusReportSchema = new SecureChannelStatusMessageSchema();
+        await this.exchange.send(MessageType.StatusReport, statusReportSchema.encode({
+            generalStatus,
+            protocolId: SECURE_CHANNEL_PROTOCOL_ID,
+            protocolStatus
+        }));
     }
 
     protected throwIfError(messageType: number, payload: ByteArray) {
         if (messageType !== MessageType.StatusReport) return;
-        const { generalStatus, protocolId, protocolStatus } = decodeStatusReport(payload);
+
+        const statusReportSchema = new SecureChannelStatusMessageSchema();
+        const { generalStatus, protocolId, protocolStatus } = statusReportSchema.decode(payload);
         if (generalStatus !== GeneralStatusCode.Success) {
             throw new ChannelStatusResponseError(`Received general error status (${protocolId})`, generalStatus, protocolStatus);
         }

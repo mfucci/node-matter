@@ -31,7 +31,8 @@ const TlvGroupKeySet = TlvObject({
     epochKey2: TlvField(6, TlvNullable(TlvString.bound({ maxLength: 16 }))),
     epochStartTime2: TlvField(7, TlvNullable(TlvUInt64)), // epoch_us
 
-    GroupKeyMulticastPolicy: TlvOptionalField(8, TlvEnum<GroupKeySecurityPolicyEnum>()),
+    /** Provisional Field, Correct default behavior is that implied by value PerGroupID. */
+    GroupKeyMulticastPolicy: TlvField(8, TlvEnum<GroupKeySecurityPolicyEnum>()),
 });
 
 /** @see {@link MatterCoreSpecificationV1_0} § 11.2.6.3 */
@@ -110,7 +111,7 @@ export const GroupKeyManagementCluster = Cluster({
         maxGroupsPerFabric: Attribute(2, TlvUInt16, { default: 0 }), 
 
         /** Maximum number of group key sets this node supports per fabric */
-        maxGroupKeysPerFabric: Attribute(3, TlvUInt16.bound({min: 1}),{ default: 1} ), 
+        maxGroupKeysPerFabric: Attribute(3, TlvUInt16.bound({ min: 1 }),{ default: 1} ), 
     },
     
     /** @see {@link MatterCoreSpecificationV1_0} § 11.2.9 */

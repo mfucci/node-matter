@@ -20,6 +20,8 @@ export class Fabric {
 
     private readonly sessions = new Array<SecureSession<any>>();
 
+    private readonly scopedClusterData = new Map<number, any>();
+
     private removeCallback: (() => void) | undefined;
 
     constructor(
@@ -79,6 +81,14 @@ export class Fabric {
     remove() {
         this.sessions.forEach(session => session.destroy());
         this.removeCallback?.();
+    }
+
+    getScopedClusterDataInstance<T>(clusterId: number): T {
+        return this.scopedClusterData.get(clusterId);
+    }
+
+    setScopedClusterDataInstance<T>(clusterId: number, instance: T) {
+        this.scopedClusterData.set(clusterId, instance);
     }
 }
 

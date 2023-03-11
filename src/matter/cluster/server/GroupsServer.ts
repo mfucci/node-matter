@@ -74,8 +74,8 @@ export const GroupsClusterHandler: () => ClusterServerHandlers<typeof GroupsClus
             }
 
             const fabric = getFabricFromSession(session as SecureSession<MatterDevice>)
-            let fabricGroups = fabric.getScopedClusterDataInstance<Map<number, string>>(GroupsCluster.id);
-            if (fabricGroups !== undefined && fabricGroups.get(groupId.id)) {
+            const fabricGroups = fabric.getScopedClusterDataInstance<Map<number, string>>(GroupsCluster.id);
+            if (fabricGroups !== undefined && fabricGroups.has(groupId.id)) {
                 return { status: StatusCode.Success, groupId, groupName: fabricGroups.get(groupId.id) || '' };
             }
             return { status: StatusCode.NotFound, groupId, groupName: '' };
@@ -92,7 +92,7 @@ export const GroupsClusterHandler: () => ClusterServerHandlers<typeof GroupsClus
             }
 
             const fabric = getFabricFromSession(session as SecureSession<MatterDevice>)
-            let fabricGroups = fabric.getScopedClusterDataInstance<Map<number, string>>(GroupsCluster.id);
+            const fabricGroups = fabric.getScopedClusterDataInstance<Map<number, string>>(GroupsCluster.id);
             if (fabricGroups !== undefined) {
                 const allGroupsList = Array.from(fabricGroups.keys());
                 const capacity = allGroupsList.length < 0xff ? 0xff - allGroupsList.length : 0xfe;
@@ -123,7 +123,7 @@ export const GroupsClusterHandler: () => ClusterServerHandlers<typeof GroupsClus
             }
 
             const fabric = getFabricFromSession(session as SecureSession<MatterDevice>)
-            let fabricGroups = fabric.getScopedClusterDataInstance<Map<number, string>>(GroupsCluster.id);
+            const fabricGroups = fabric.getScopedClusterDataInstance<Map<number, string>>(GroupsCluster.id);
 
             if (fabricGroups !== undefined && fabricGroups.has(groupId.id)) {
                 fabricGroups.delete(groupId.id);
@@ -142,8 +142,10 @@ export const GroupsClusterHandler: () => ClusterServerHandlers<typeof GroupsClus
             }
 
             const fabric = getFabricFromSession(session as SecureSession<MatterDevice>)
-            let fabricGroups = fabric.getScopedClusterDataInstance<Map<number, string>>(GroupsCluster.id);
-            fabricGroups.clear();
+            const fabricGroups = fabric.getScopedClusterDataInstance<Map<number, string>>(GroupsCluster.id);
+            if (fabricGroups !== undefined) {
+                fabricGroups.clear();
+            }
 
             throw new StatusResponseError("Return Status", StatusCode.Success);
         },

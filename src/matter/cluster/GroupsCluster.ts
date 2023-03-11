@@ -7,19 +7,7 @@
 import { Attribute, Cluster, Command, TlvNoArguments, TlvNoResponse } from "./Cluster";
 import { StatusCode } from "../interaction/InteractionMessages";
 import { TlvGroupId } from "../common/GroupId";
-import {
-    BitFlag,
-    MatterApplicationClusterSpecificationV1_0,
-    TlvArray,
-    TlvBitmap,
-    TlvEnum,
-    TlvField,
-    TlvNullable,
-    TlvObject,
-    TlvOptionalField,
-    TlvString,
-    TlvUInt8
-} from "@project-chip/matter.js";
+import { BitFlag, MatterApplicationClusterSpecificationV1_0, TlvArray, TlvBitmap, TlvEnum, TlvField, TlvNullable, TlvObject, TlvOptionalField, TlvString, TlvUInt8 } from "@project-chip/matter.js";
 
 /** @see {@link MatterApplicationClusterSpecificationV1_0} § 1.3.7.1 */
 const TlvAddGroupRequest = TlvObject({
@@ -90,10 +78,6 @@ const TlvNameSupportBitmap = TlvBitmap(TlvUInt8, {
     groupNames: BitFlag(7),
 });
 
-const TlvStatusOnlyResponse = TlvObject({
-    status: TlvOptionalField(0, TlvEnum<StatusCode>()),
-});
-
 /**
  * The Groups cluster manages, per endpoint, the content of the node-wide Group
  * Table that is part of the underlying interaction layer.
@@ -157,13 +141,13 @@ export const GroupsCluster = Cluster({
          * Else potentially no response?
          *
          */
-        removeAllGroups: Command(4, TlvNoArguments, 4, TlvRemoveAllGroupResponse),
+        removeAllGroups: Command(4, TlvNoArguments, 4, TlvNoResponse),
 
         /**
          * The AddGroupIfIdentifying command allows a client to add group membership in a particular group for the
          * server endpoint, on condition that the endpoint is identifying itself.
          *
          */
-        addGroupIfIdentifying: Command(5, TlvAddGroupIfIdentifyingRequest, 5, TlvStatusOnlyResponse),
+        addGroupIfIdentifying: Command(5, TlvAddGroupIfIdentifyingRequest, 5, TlvNoResponse),
     }
 });

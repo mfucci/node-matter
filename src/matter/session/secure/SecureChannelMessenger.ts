@@ -9,6 +9,7 @@ import { GeneralStatusCode, ProtocolStatusCode, MessageType, SECURE_CHANNEL_PROT
 import { ByteArray, TlvSchema } from "@project-chip/matter.js";
 import { MatterError } from "../../../error/MatterError";
 import { TlvSecureChannelStatusMessage } from "./SecureChannelStatusMessageSchema";
+import {Message} from "../../../codec/MessageCodec";
 
 /** Error base Class for all errors related to the status response messages. */
 export class ChannelStatusResponseError extends MatterError {
@@ -29,7 +30,7 @@ export class SecureChannelMessenger<ContextT> {
     async nextMessage(expectedMessageType?: number) {
         const message = await this.exchange.nextMessage();
         const messageType = message.payloadHeader.messageType;
-        this.throwIfError(messageType, message.payload);
+        this.throwIfErrorStatusReport(message);
         if (expectedMessageType !== undefined && messageType !== expectedMessageType) throw new Error(`Received unexpected message type: ${messageType}, expected: ${expectedMessageType}`);
         return message;
     }
@@ -73,7 +74,8 @@ export class SecureChannelMessenger<ContextT> {
         }));
     }
 
-    protected throwIfError(messageType: number, payload: ByteArray) {
+    protected throwIfErrorStatusReport(message: Message) {
+        const { payloadHeader: { messageType }, payload } = message;
         if (messageType !== MessageType.StatusReport) return;
 
         const { generalStatus, protocolId, protocolStatus } = TlvSecureChannelStatusMessage.decode(payload);

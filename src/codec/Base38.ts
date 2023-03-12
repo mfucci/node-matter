@@ -32,7 +32,7 @@ class Base38Schema extends Schema<ByteArray, string> {
     private encodeBase38(value: number, charCount: number) {
         let result = "";
         for (let i = 0; i < charCount; i++) {
-            let remainder = value % 38;
+            const remainder = value % 38;
             result += BASE38_ALPHABET[remainder];
             value = (value - remainder) / 38;
         }
@@ -81,9 +81,9 @@ class Base38Schema extends Schema<ByteArray, string> {
     private decodeBase38(encoded: string, offset: number, charCount: number) {
         let result = 0;
         for (let i = charCount - 1; i >= 0; i--) {
-            let char = encoded[offset + i];
+            const char = encoded[offset + i];
             // TODO: replace this with a lookup table for performance
-            let code = BASE38_ALPHABET.indexOf(char);
+            const code = BASE38_ALPHABET.indexOf(char);
             if (code === -1) throw new Error(`Unexpected character ${char} at ${offset + i}`);
             result = result * 38 + code;
         }

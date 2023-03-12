@@ -1,6 +1,6 @@
 /**
  * Cache computed values or resources for a specified duration to improve performances.
- * 
+ *
  * @license
  * Copyright 2022 The node-matter Authors
  * SPDX-License-Identifier: Apache-2.0
@@ -22,7 +22,7 @@ export class Cache<T> {
 
     get(...params: any[]) {
         const key = params.join(",");
-        var value = this.values.get(key);
+        let value = this.values.get(key);
         if (value === undefined) {
             value = this.generator(...params);
             this.values.set(key, value);

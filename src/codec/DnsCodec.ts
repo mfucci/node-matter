@@ -72,19 +72,19 @@ export class DnsCodec {
             const authoritiesCount = reader.readUInt16();
             const additionalRecordsCount = reader.readUInt16();
             const queries = new Array<Query>();
-            for (var i = 0; i < queriesCount; i++) {
+            for (let i = 0; i < queriesCount; i++) {
                 queries.push(this.decodeQuery(reader, message));
             }
             const answers = new Array<Record<any>>();
-            for (var i = 0; i < answersCount; i++) {
+            for (let i = 0; i < answersCount; i++) {
                 answers.push(this.decodeRecord(reader, message));
             }
             const authorities = new Array<Record<any>>();
-            for (var i = 0; i < authoritiesCount; i++) {
+            for (let i = 0; i < authoritiesCount; i++) {
                 authorities.push(this.decodeRecord(reader, message));
             }
             const additionalRecords = new Array<Record<any>>();
-            for (var i = 0; i < additionalRecordsCount; i++) {
+            for (let i = 0; i < additionalRecordsCount; i++) {
                 additionalRecords.push(this.decodeRecord(reader, message));
             }
             return { transactionId, messageType, queries, answers, authorities, additionalRecords };
@@ -157,7 +157,7 @@ export class DnsCodec {
     private static decodeTxtRecord(valueBytes: ByteArray): string[] {
         const reader = new DataReader(valueBytes, Endian.Big);
         const result = new Array<string>();
-        var bytesRead = 0;
+        let bytesRead = 0;
         while (bytesRead < valueBytes.length) {
             const length = reader.readUInt8();
             result.push(reader.readUtf8String(length));
@@ -169,12 +169,12 @@ export class DnsCodec {
     private static decodeAaaaRecord(valueBytes: ByteArray): string {
         const reader = new DataReader(valueBytes, Endian.Big);
         const ipItems = new Array<string>();
-        for (var i = 0; i < 8; i++) {
+        for (let i = 0; i < 8; i++) {
             ipItems.push(reader.readUInt16().toString(16));
         }
         // Compress 0 sequences
         const zeroSequences = new Array<{start: number, length: number}>();
-        for (var i = 0; i < 8; i++) {
+        for (let i = 0; i < 8; i++) {
             if (ipItems[i] !== "0") continue;
             const start = i;
             i++;
@@ -184,7 +184,7 @@ export class DnsCodec {
         if (zeroSequences.length > 0) {
             zeroSequences.sort((a, b) => a.length - b.length);
             const {start, length} = zeroSequences[0];
-            for (var i = start; i < start + length; i++) {
+            for (let i = start; i < start + length; i++) {
                 ipItems[i] = "";
             }
         }
@@ -194,7 +194,7 @@ export class DnsCodec {
     private static decodeARecord(valueBytes: ByteArray): string {
         const reader = new DataReader(valueBytes, Endian.Big);
         const ipItems = new Array<string>();
-        for (var i = 0; i < 4; i++) {
+        for (let i = 0; i < 4; i++) {
             ipItems.push(reader.readUInt8().toString());
         }
         return ipItems.join(".");
@@ -258,7 +258,7 @@ export class DnsCodec {
         parts.forEach(part => {
             if (part === "") {
                 const compressedParts = 8 - parts.length;
-                for (var i = 0; i < compressedParts; i++) {
+                for (let i = 0; i < compressedParts; i++) {
                     writer.writeUInt16(0);
                 }
             }

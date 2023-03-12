@@ -97,6 +97,10 @@ export class MatterController {
         const { elements: attestationElements, signature: attestationSignature } = await operationalCredentialsClusterClient.requestAttestation({ attestationNonce: Crypto.getRandomData(32) });
         // TODO: validate attestationSignature using device public key
         const { elements: csrElements, signature: csrSignature } = await operationalCredentialsClusterClient.requestCertSigning({ certSigningRequestNonce: Crypto.getRandomData(32) });
+        if (deviceAttestation.length === 0 || productAttestation.length === 0 || attestationElements.length === 0 || attestationSignature.length === 0 || csrElements.length === 0 || csrSignature.length === 0) {
+            // TODO: validate the data really
+            throw new Error("Invalid response from device");
+        }
         // TOTO: validate csrSignature using device public key
         const { certSigningRequest } = TlvCertSigningRequest.decode(csrElements);
         const operationalPublicKey = CertificateManager.getPublicKeyFromCsr(certSigningRequest);
@@ -131,7 +135,7 @@ export class MatterController {
         return peerNodeId;
     }
 
-    async connect(nodeId: NodeId) {
+    connect(nodeId: NodeId) {
         return new InteractionClient(this.exchangeManager, this.channelManager.getChannel(this.fabric, nodeId));
     }
 

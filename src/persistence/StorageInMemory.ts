@@ -10,11 +10,14 @@ export class StorageInMemory implements Storage {
     protected store: any = {};
     protected initialized = false;
 
+    // eslint-disable-next-line @typescript-eslint/require-await
     async initialize() {
         this.initialized = true;
     }
 
-    async close() {}
+    async close() {
+        // nothing to do
+    }
 
     get<T>(context: string, key: string): T | undefined {
         if (!this.initialized) throw new Error("Storage not initialized yet!");

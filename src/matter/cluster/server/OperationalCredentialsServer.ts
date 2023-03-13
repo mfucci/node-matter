@@ -114,18 +114,14 @@ export const OperationalCredentialsClusterHandler: (conf: OperationalCredentials
     removeFabric: async ({ request: {fabricIndex}, session }) => {
         const device = session.getContext();
 
-        const status = tryCatch(() => {
-                device.removeFabric(fabricIndex);
+        const fabric = device.getFabricByIndex(fabricIndex);
 
-                // TODO persist fabrics
-                // TODO: depending on cases destroy the secure session and delete all data!
+        if (fabric === undefined) {
+            return { status: OperationalCertStatus.InvalidFabricIndex };
+        }
 
-                return OperationalCertStatus.Success;
-            },
-            FabricNotFoundError, OperationalCertStatus.InvalidFabricIndex
-        );
-
-        return { status };
+        fabric.remove();
+        return { status: OperationalCertStatus.Success };
     },
 
     addRootCert: async ({ request: {certificate}, session} ) => {

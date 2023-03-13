@@ -15,8 +15,18 @@ import { Logger } from "../../log/Logger";
 import { NodeId } from "./NodeId";
 import { ByteArray } from "@project-chip/matter.js";
 import { SecureChannelProtocol } from "../session/secure/SecureChannelProtocol";
+import { MatterError } from "../../error/MatterError";
 
 const logger = Logger.get("MessageExchange");
+
+export class UnexpectedMessageError extends MatterError {
+    public constructor(
+        message: string,
+        public readonly receivedMessage: Message,
+    ) {
+        super(`(${MessageCodec.messageToString(receivedMessage)}) ${message}`);
+    }
+}
 
 /** The base number for the exponential backoff equation. */
 const MRP_BACKOFF_BASE = 1.6;
@@ -146,8 +156,8 @@ export class MessageExchange<ContextT> {
                 }
             } else {
                 // The other side has received our previous message
-                this.sentMessageAckSuccess?.();
                 this.retransmissionTimer?.stop();
+                this.sentMessageAckSuccess?.(message);
                 this.sentMessageAckSuccess = undefined;
                 this.sentMessageAckFailure = undefined;
                 this.sentMessageToAck = undefined;
@@ -166,7 +176,7 @@ export class MessageExchange<ContextT> {
         await this.messagesQueue.write(message);
     }
 
-    async send(messageType: number, payload: ByteArray) {
+    async send(messageType: number, payload: ByteArray, expectAckOnly: boolean = false) {
         if (this.sentMessageToAck !== undefined) throw new Error("The previous message has not been acked yet, cannot send a new message");
 
         this.session.notifyActivity(false);
@@ -192,11 +202,11 @@ export class MessageExchange<ContextT> {
         if (messageType !== MessageType.StandaloneAck) {
             this.receivedMessageToAck = undefined;
         }
-        let ackPromise: Promise<void> | undefined;
+        let ackPromise: Promise<Message> | undefined;
         if (message.payloadHeader.requiresAck) {
             this.sentMessageToAck = message;
             this.retransmissionTimer = Time.getTimer(this.getResubmissionBackOffTime(0), () => this.retransmitMessage(message, 0));
-            const { promise, resolver, rejecter } = await getPromiseResolver<void>();
+            const { promise, resolver, rejecter } = await getPromiseResolver<Message>();
             ackPromise = promise;
             this.sentMessageAckSuccess = resolver;
             this.sentMessageAckFailure = rejecter;
@@ -206,10 +216,15 @@ export class MessageExchange<ContextT> {
 
         if (ackPromise !== undefined) {
             this.retransmissionTimer?.start();
-            await ackPromise;
-            this.retransmissionTimer?.stop();
+            // Await Response to be received (or Message retransmit limit reached which rejects the promise)
+            const responseMessage = await ackPromise;
             this.sentMessageAckSuccess = undefined;
             this.sentMessageAckFailure = undefined;
+            // If we only expect an Ack without data but got data, throw an error
+            const { payloadHeader: { protocolId, messageType } } = responseMessage;
+            if (expectAckOnly && !SecureChannelProtocol.isStandaloneAck(protocolId, messageType)) {
+                throw new UnexpectedMessageError("Expected ack only", responseMessage);
+            }
         }
     }
 

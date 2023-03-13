@@ -73,6 +73,7 @@ export class NetworkNode extends Network {
         const netInterfaceInfo = networkInterfaces()[netInterface];
         if (netInterfaceInfo === undefined) return undefined;
         const ips = netInterfaceInfo.map(({address}) => address).filter(ip => isMatterAddressableIPv6Address(ip))
+        if(0 === ips.length) return undefined;
         return { mac: netInterfaceInfo[0].mac, ips: ips };
     }
 

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { AAAARecord, ARecord, PtrRecord, Record, SrvRecord, TxtRecord } from "../../codec/DnsCodec";
+import { AAAARecord, ARecord, PtrRecord, SrvRecord, TxtRecord } from "../../codec/DnsCodec";
 import { Crypto } from "../../crypto/Crypto";
 import { Broadcaster } from "../common/Broadcaster";
 import { getDeviceMatterQname, getFabricQname, MATTER_COMMISSION_SERVICE_QNAME, MATTER_SERVICE_QNAME, SERVICE_DISCOVERY_QNAME } from "./MdnsConsts";
@@ -45,9 +45,6 @@ export class MdnsBroadcaster implements Broadcaster {
             const ipMac = this.network.getIpMac(netInterface);
             if (ipMac === undefined) return [];
             const { mac, ips } = ipMac;
-            if( ips.length === 0) {
-                return []; // post filtering the mac might not have any valid ips.
-            }
             const hostname = mac.replace(/:/g, "").toUpperCase() + "0000.local";
             logger.debug(`${netInterface} on IP Addrs: ${ips.join(", ")} host: ${hostname}`)
             const records = [

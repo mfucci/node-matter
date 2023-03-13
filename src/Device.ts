@@ -56,7 +56,7 @@ class Device {
     async start() {
         logger.info(`node-matter@${packageJson.version}`);
 
-        const networkInterface = getParameter("interface");
+        const networkInterface = getParameter("broadcastInterface");
         const deviceName = "Matter test device";
         const deviceType = 257 /* Dimmable bulb */;
         const vendorName = "node-matter";

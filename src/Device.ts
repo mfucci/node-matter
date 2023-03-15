@@ -56,7 +56,7 @@ class Device {
     async start() {
         logger.info(`node-matter@${packageJson.version}`);
 
-        const networkInterface = getParameter("broadcastInterface");
+        const broadcastInterface = getParameter("broadcastInterface");
         const deviceName = "Matter test device";
         const deviceType = 257 /* Dimmable bulb */;
         const vendorName = "node-matter";
@@ -91,7 +91,7 @@ class Device {
             .addNetInterface(await UdpInterface.create(5540, "udp4"))
             .addNetInterface(await UdpInterface.create(5540, "udp6"))
             .addScanner(await MdnsScanner.create())
-            .addBroadcaster(await MdnsBroadcaster.create(networkInterface))
+            .addBroadcaster(await MdnsBroadcaster.create(broadcastInterface))
             .addProtocolHandler(secureChannelProtocol)
             .addProtocolHandler(new InteractionServer()
                .addEndpoint(0x00, DEVICE.ROOT, [

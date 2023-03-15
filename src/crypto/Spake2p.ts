@@ -37,7 +37,7 @@ export class Spake2p {
         return { w0, L };
     }
 
-    static async create(context: ByteArray, w0: BN) {
+    static create(context: ByteArray, w0: BN) {
         const random = Crypto.getRandomBN(32, P256_CURVE.p);
         return new Spake2p(context, random, w0);
     }

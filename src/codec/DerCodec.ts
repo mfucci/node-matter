@@ -34,7 +34,7 @@ const enum DerClass {
 }
 export const ObjectId = (objectId: string) => ({ [TAG_ID_KEY]: DerType.ObjectIdentifier as number, [BYTES_KEY]: ByteArray.fromHex(objectId) });
 export const DerObject = (objectId: string, content: any = {}) => ({ [OBJECT_ID_KEY]: ObjectId(objectId), ...content });
-export const BitByteArray = (data: ByteArray, padding: number = 0) => ({ [TAG_ID_KEY]: DerType.BitString as number, [BYTES_KEY]: data, [BITS_PADDING]: padding });
+export const BitByteArray = (data: ByteArray, padding = 0) => ({ [TAG_ID_KEY]: DerType.BitString as number, [BYTES_KEY]: data, [BITS_PADDING]: padding });
 export const ContextTagged = (tagId: number, value?: any) => ({ [TAG_ID_KEY]: tagId | DerClass.ContextSpecific | CONSTRUCTED, [BYTES_KEY]: value === undefined ? new ByteArray(0) : DerCodec.encode(value) });
 export const ContextTaggedBytes = (tagId: number, value: ByteArray) => ({ [TAG_ID_KEY]: tagId | DerClass.ContextSpecific, [BYTES_KEY]: value });
 
@@ -72,7 +72,7 @@ export class DerCodec {
     }
 
     private static encodeDate(date: Date) {
-        return this.encodeAnsi1(DerType.UtcDate, ByteArray.fromString(date.toISOString().replace(/[-:\.T]/g, "").slice(2, 14) + "Z"));
+        return this.encodeAnsi1(DerType.UtcDate, ByteArray.fromString(date.toISOString().replace(/[-:.T]/g, "").slice(2, 14) + "Z"));
     }
 
     private static encodeBoolean(bool: boolean) {
@@ -89,7 +89,7 @@ export class DerCodec {
 
     private static encodeObject(object: any) {
         const attributes = new Array<ByteArray>();
-        for (var key in object) {
+        for (const key in object) {
             attributes.push(this.encode(object[key]));
         }
         return this.encodeAnsi1(DerType.Sequence | CONSTRUCTED, ByteArray.concat(...attributes));
@@ -103,7 +103,7 @@ export class DerCodec {
         const byteArray = new ByteArray(5);
         const dataView = byteArray.getDataView();
         dataView.setUint32(1, value);
-        var start = 0;
+        let start = 0;
         while (true) {
             if (dataView.getUint8(start) !== 0) break;
             if (dataView.getUint8(start + 1) >= 0x80) break;
@@ -117,7 +117,7 @@ export class DerCodec {
         const byteArray = new ByteArray(5);
         const dataView = byteArray.getDataView();
         dataView.setUint32(1, value);
-        var start = 0;
+        let start = 0;
         while (true) {
             if (dataView.getUint8(start) !== 0) break;
             start++;

@@ -44,4 +44,4 @@ class Controller {
     }
 }
 
-new Controller().start();
+new Controller().start().catch(error => logger.error(error));

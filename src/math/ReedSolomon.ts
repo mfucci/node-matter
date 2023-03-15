@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ArraySchema, ByteArray } from "@project-chip/matter.js";
+import { ByteArray } from "@project-chip/matter.js";
 
 class GaloisField {
     private readonly exp = new Array<number>();

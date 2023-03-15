@@ -6,7 +6,8 @@
 
 > We decided to join forces with the official Project CHIP as main home for the Matter standard! Because of this node-matter will be suspended and moved into https://github.com/project-chip/matter.js ! Please follow the new repository for updates!
 
-> We will keep this repository up for a while, but it will not be updated anymore as soon as the move has been finished and a new package "matter-node.js" has been deployed to npm initially.
+> This repository will stay for reference, but we will remove the code and a new package "matter-node.js" will be deployed to npm initially soon. The instructions on how to close and use matter.js from Gitub are a but different, please refer to this README.
+> The last status of this Repo with last working codebase is https://github.com/mfucci/node-matter/tree/be78234cdd4888d794493281428163cfc8e40770
 > We will also update documentation and try to move the discussions or such over as soon as we know what's possible.
 
 > Please do not do any new code contributions to this project, but direct it to the new home! 

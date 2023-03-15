@@ -2,6 +2,18 @@
 
 [![license](https://img.shields.io/badge/license-Apache2-green.svg?style=flat)](https://raw.githubusercontent.com/mfucci/node-matter/master/LICENSE) 
 
+## THIS REPOSITORY HAS BEEN MOVED!!
+
+> We decided to join forces with the official Project CHIP as main home for the Matter standard! Because of this node-matter will be suspended and moved into https://github.com/project-chip/matter.js ! Please follow the new repository for updates!
+
+> We will keep this repository up for a while, but it will not be updated anymore as soon as the move has been finished and a new package "matter-node.js" has been deployed to npm initially.
+> We will also update documentation and try to move the discussions or such over as soon as we know what's possible.
+
+> Please do not do any new code contributions to this project, but direct it to the new home! 
+
+## THIS REPOSITORY HAS BEEN MOVED!!
+
+
 Matter protocol for node.js with no native dependencies (and very limited dependencies).
 
 > This package requires Node 16+ for the required Crypto primitives

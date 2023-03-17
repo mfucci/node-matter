@@ -51,11 +51,13 @@ export class MdnsServer {
         const { transactionId, messageType, queries } = message;
         if (messageType !== MessageType.Query) return;
 
-        const answers = message.queries.flatMap(query => this.queryRecords(query, records));
+        const answers = queries.flatMap(query => this.queryRecords(query, records));
         if (answers.length === 0) return;
 
         const additionalRecords = records.filter(record => !answers.includes(record));
-        this.multicastServer.send(DnsCodec.encode({ transactionId, answers, additionalRecords }), netInterface);
+        this.multicastServer.send(DnsCodec.encode({ transactionId, answers, additionalRecords }), netInterface).catch(() => {
+            // ignore because already catched in UdpMulticastServer
+        });
     }
 
     async announce() {

@@ -17,7 +17,7 @@ export function isIPv6(ip: string) {
 export function iPv4ToNumber(ip: string) {
     const dataView = new ByteArray(4).getDataView();
     const ipParts = ip.split(".");
-    for (var i = 0; i < 4; i++) {
+    for (let i = 0; i < 4; i++) {
         dataView.setUint8(i, parseInt(ipParts[i]));
     }
     return dataView.getUint32(0);

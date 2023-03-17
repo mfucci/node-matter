@@ -100,7 +100,7 @@ export class QrCodeSchema extends Schema<string, string> {
         let bitCount = 0;
 
         // Mode: Alphanumeric
-        bitStringBuilder.push("0010"); 
+        bitStringBuilder.push("0010");
         bitCount += 4;
 
         // Length
@@ -116,9 +116,9 @@ export class QrCodeSchema extends Schema<string, string> {
         }
 
         // Terminator
-        bitStringBuilder.push("0000"); 
+        bitStringBuilder.push("0000");
         bitCount += 4;
-        
+
         // Bit padding
         const remainingBits = 8 - bitCount % 8;
         if (remainingBits !== 0) {
@@ -203,7 +203,7 @@ export class QrCodeSchema extends Schema<string, string> {
         return code;
     }
 
-    protected decodeInternal(encoded: string): string {
+    protected decodeInternal(_encoded: string): string {
         throw new Error("Method not implemented.");
     }
 }

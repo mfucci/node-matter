@@ -191,4 +191,4 @@ class Device {
     }
 }
 
-new Device().start();
+new Device().start().catch(error => logger.error(error));

@@ -42,7 +42,7 @@ export class Crypto {
         const cipher = crypto.createCipheriv(ENCRYPT_ALGORITHM, key, nonce, { authTagLength: AUTH_TAG_LENGTH });
         if (aad !== undefined) {
             cipher.setAAD(aad, { plaintextLength: data.length})
-        };
+        }
         const encrypted = cipher.update(data);
         cipher.final();
         return ByteArray.concat(encrypted, cipher.getAuthTag());
@@ -53,7 +53,7 @@ export class Crypto {
         const plaintextLength = data.length - AUTH_TAG_LENGTH;
         if (aad !== undefined) {
             cipher.setAAD(aad, { plaintextLength })
-        };
+        }
         cipher.setAuthTag(data.slice(plaintextLength));
         const result = cipher.update(data.slice(0, plaintextLength));
         cipher.final();

@@ -25,13 +25,20 @@
   "scripts": {
     "clean": "rm -rf build",
     "build": "npm run clean; tsc",
-    "test": "TZ=utc mocha"
+    "test": "TZ=utc mocha",
+    "lint": "eslint src/**/*.ts",
+    "lint-fix": "eslint --fix **/*.ts"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0",
     "@types/bytebuffer": "^5.0.43",
     "@types/elliptic": "^6.4.14",
     "@types/mocha": "^9.1.1",
+    "@typescript-eslint/eslint-plugin": "^5.54.0",
+    "@typescript-eslint/parser": "^5.54.0",
+    "eslint": "^8.35.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-import-resolver-typescript": "^3.5.3",
     "mocha": "^10.0.0",
     "ts-node": "^10.5.0",
     "typescript": "^4.5.5"

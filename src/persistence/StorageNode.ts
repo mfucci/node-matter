@@ -5,16 +5,11 @@
  */
 
 import { Time } from "../time/Time";
-import { Storage } from "./Storage";
 import { readFile, writeFile } from "fs/promises";
-import { Logger } from "../log/Logger";
-import { ByteArray } from "@project-chip/matter.js";
-import {StorageInMemory} from "./StorageInMemory";
+import { StorageInMemory } from "./StorageInMemory";
 
 /** We store changes 1s after a value was set to the storage, but not more often than every 1s. */
 const COMMIT_DELAY = 1000 /* 1s */;
-
-const logger = Logger.get("StorageNode");
 
 export class StorageNode extends StorageInMemory {
     private readonly commitTimer = Time.getTimer(COMMIT_DELAY, () => this.commit());

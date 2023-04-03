@@ -50,11 +50,5 @@
   },
   "files": [
     "build/**/*"
-  ],
-  "main": "build/index.js",
-  "types": "build/index.d.ts",
-  "bin": {
-    "matter": "./build/Device.js",
-    "matter-controller": "./build/Controller.js"
-  }
+  ]
 }
